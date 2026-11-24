@@ -232,7 +232,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
     <label class="scn"><span class="vh" data-i18n="scene"></span><select id="scene"></select></label><button id="gen" data-i18n="gen"></button>
     <button id="clear" data-i18n="clear"></button>
   </div>
-  <div class="grp"><label for="size"><span data-i18n="size"></span> <input id="size" type="range" min="8" max="64" value="14"> <span id="sv">14</span></label></div>
+  <div class="grp"><label for="size"><span data-i18n="size"></span> <input id="size" type="range" min="0" max="4" step="1" value="1"> <span id="sv">16×16</span></label></div>
 </div>
 <div class="ctxbar" id="ctxbar" hidden></div>
 <div class="bar"><div class="grp" id="biomes"><span data-i18n="decor"></span></div></div>
@@ -711,7 +711,7 @@ const t=k=>T[lang][k];
 const TY={humanoid:['Humanoid','Humanoïde'],undead:['Undead','Mort-vivant'],beast:['Beast','Bête'],fiend:['Fiend','Fiélon'],fey:['Fey','Fée'],giant:['Giant','Géant'],ooze:['Ooze','Vase'],monstrosity:['Monstrosity','Monstruosité'],elemental:['Elemental','Élémentaire'],celestial:['Celestial','Céleste'],plant:['Plant','Plante'],dragon:['Dragon','Dragon'],construct:['Construct','Créature artificielle'],aberration:['Aberration','Aberration']};
 const tyName=k=>TY[k]?tr(TY[k]):k;
 const num=v=>lang==='fr'?String(v).replace('.',','):String(v);
-let N=14,H=[],F=[],scene='forest_road',MARKS=[],CTX=null,CTXN='',selMark=null,tokens=[],rot=0,tool='move',hist=[],drag=null,painting=null,hover=null,lastPainted='',bio='gen',t0=performance.now();
+const CAM={z:1,px:0,py:0};let N=16,H=[],F=[],scene='forest_road',MARKS=[],CTX=null,CTXN='',selMark=null,tokens=[],rot=0,tool='move',hist=[],drag=null,painting=null,hover=null,lastPainted='',bio='gen',t0=performance.now();
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function blank(n){return Array.from({length:n},()=>Array(n).fill(0))}
 let INI={o:[],cur:0,round:0};
@@ -723,11 +723,13 @@ function applyState(d){if(!(d&&d.H&&d.N))return false;N=d.N;H=decG(d.H,1);F=Arra
 function load(){try{const c=JSON.parse(localStorage.getItem('luparis-ctx'));if(c&&c.id){const o=towns()[c.id];if(o&&applyState(o)){CTX=c.id;CTXN=c.n||o.name||'';return true}}}catch(e){}try{return applyState(JSON.parse(localStorage.getItem('luparis-tac')))}catch(e){}return false}
 function tid(){return 't'+Math.random().toString(36).slice(2,9)}
 function snap(){hist.push(JSON.stringify({H,F,tokens,marks:MARKS}));if(hist.length>60)hist.shift()}
-if(!load()){H=blank(N);F=blank(N)}
-document.getElementById('size').value=N;document.getElementById('sv').textContent=N;
+const SIZES=[8,16,32,64,128];function sizeIdx(n){let i=SIZES.findIndex(s=>s>=n);return i<0?SIZES.length-1:i}function showSize(){document.getElementById('size').value=sizeIdx(N);document.getElementById('sv').textContent=N+'×'+N}
+function resizeTo(n){const nh=blank(n),nf=blank(n);for(let x=0;x<Math.min(n,N);x++)for(let y=0;y<Math.min(n,N);y++){nh[x][y]=H[x][y];nf[x][y]=F[x][y]}N=n;H=nh;F=nf;CAM.z=1;CAM.px=0;CAM.py=0;tokens=tokens.filter(k=>k.x<n&&k.y<n);MARKS=MARKS.filter(m=>m.x<n&&m.y<n)}
+if(!load()){H=blank(N);F=blank(N)}else if(!SIZES.includes(N))resizeTo(SIZES[sizeIdx(N)]);
+showSize();
 function rnd(x,y,k){let h=Math.imul(x+1,374761393)^Math.imul(y+7,668265263)^Math.imul(k+3,2246822519);h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
 function mul(hex,f){const n=parseInt(hex.slice(1),16);const c=[n>>16,(n>>8)&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(v*f))));return`rgb(${c})`}
-let TW,LH,ox,oy,W,Hc,TW0;const CAM={z:1,px:0,py:0};
+let TW,LH,ox,oy,W,Hc,TW0;
 function layout(){const r=stage.getBoundingClientRect(),dpr=window.devicePixelRatio||1;W=r.width;Hc=r.height;cv.width=W*dpr;cv.height=Hc*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
 TW0=Math.min((W*0.94)/N,(Hc*0.78)/(N/2+2));camSet();draw()}
 function camSet(){TW=TW0*CAM.z;LH=TW*0.28;ox=W/2+CAM.px;oy=(Hc-(N*TW/2))/2+LH*2.6+CAM.py}
@@ -1076,7 +1078,7 @@ function seedOf(id,d){if(d&&+d.seed)return +d.seed;let h=2166136261;for(const c 
 function ctxBar(){const el=document.getElementById('ctxbar');if(!el)return;el.hidden=!CTX;if(!CTX)return;el.innerHTML=`<b>${esc(t('ctx_town'))} : ${esc(CTXN)} <span class="small">(${N}×${N})</span></b><button type="button" id="ctx_regen">${esc(t('ctx_regen'))}</button><button type="button" class="go" id="ctx_back">${esc(t('ctx_back'))}</button>`}
 document.getElementById('ctxbar').addEventListener('click',e=>{if(e.target.id==='ctx_back')leaveTown();else if(e.target.id==='ctx_regen'&&CTX){const o=towns()[CTX];regenTown(o&&o.src,CTX)}});
 function regenTown(d,id){snap();N=d&&d.c==='town'?64:128;H=blank(N);F=blank(N);tokens=[];MARKS=[];INI={o:[],cur:0,round:0};rot=0;const old=RNG;RNG=mulberry(seedOf(id,d));try{genCity(d)}finally{RNG=old}finishCtx(d)}
-function finishCtx(d){for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x.dataset.b===bio);legend();document.getElementById('size').value=Math.min(64,N);document.getElementById('sv').textContent=N;CAM.z=1;CAM.px=0;CAM.py=0;save();if(d&&CTX){const o=towns();if(o[CTX]){o[CTX].src=d;try{localStorage.setItem('luparis-towns',JSON.stringify(o))}catch(e){}}}ctxBar();layout()}
+function finishCtx(d){for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x.dataset.b===bio);legend();showSize();CAM.z=1;CAM.px=0;CAM.py=0;save();if(d&&CTX){const o=towns();if(o[CTX]){o[CTX].src=d;try{localStorage.setItem('luparis-towns',JSON.stringify(o))}catch(e){}}}ctxBar();layout()}
 function openTown(id,name,d){if(!CTX)save();CTX='town:'+id;CTXN=name;const o=towns()[CTX];if(o&&applyState(o)&&o.v===2){finishCtx(o.src||d)}else regenTown(d,CTX);location.hash='#carte'}
 function leaveTown(){CTX=null;CTXN='';try{localStorage.setItem('luparis-ctx','null')}catch(e){}if(!load()){H=blank(N);F=blank(N)}finishCtx(null)}
 window.lupOpenTown=openTown;
@@ -1088,8 +1090,7 @@ function fillScenes(){const el=document.getElementById('scene'),L=t('scn');if(!L
 document.getElementById('scene').addEventListener('change',e=>{scene=e.target.value;runScene()});
 document.getElementById('gen').onclick=runScene;
 setTimeout(()=>{ctxBar();renderMarks()});
-document.getElementById('size').addEventListener('input',e=>{const n=+e.target.value;document.getElementById('sv').textContent=n;snap();
- const nh=blank(n),nf=blank(n);for(let x=0;x<Math.min(n,N);x++)for(let y=0;y<Math.min(n,N);y++){nh[x][y]=H[x][y];nf[x][y]=F[x][y]}N=n;H=nh;F=nf;CAM.z=1;CAM.px=0;CAM.py=0;tokens=tokens.filter(k=>k.x+tfp(k)<=n&&k.y+tfp(k)<=n);MARKS=MARKS.filter(m=>m.x<n&&m.y<n);save();layout()});
+document.getElementById('size').addEventListener('input',e=>{const n=SIZES[+e.target.value]||16;if(n===N){showSize();return}snap();resizeTo(n);showSize();save();layout()});
 cv.style.cursor='grab';const ro=new ResizeObserver(layout);ro.observe(stage);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const FPS=['0','1/8','1/4','1/2',...Array.from({length:30},(_,i)=>String(i+1))];
