@@ -4,6 +4,8 @@ Site tout-en-un pour la campagne Luparis (règles maison D&D 5.5 × Daggerheart)
 
 ## Lancer en local
 
+Sous Windows : double-clic sur `Lancer-Luparis.bat` (il faut Python). Sinon :
+
 Le site lit des fichiers voisins (`world.svg`, `world-burgs.json`, `srd-monsters.json`), il faut donc un petit serveur :
 
 ```
