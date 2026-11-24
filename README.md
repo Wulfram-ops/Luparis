@@ -1,4 +1,4 @@
-# Luparis — Tactical Table
+# Luparis
 
 Site tout-en-un pour la campagne Luparis (règles maison D&D 5.5 × Daggerheart) : battle map isométrique, fiches de personnage par campagne, bestiaire avec générateur IA, livre de règles, carte du monde et cartes de villes jouables. Bilingue anglais/français.
 

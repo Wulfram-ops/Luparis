@@ -4,7 +4,7 @@ src,out=sys.argv[1],sys.argv[2]
 d=json.load(open(src));p=d['pack'];W,H=d['info']['width'],d['info']['height'];SEED=int(d['info']['seed'])
 V=[v['p'] for v in p['vertices']];cells=p['cells'];feat=p['features']
 RENAME={'Sanctuaria':'Tlanoxa'}
-STATE_RENAME={'Kethei':'Ketheia'}
+STATE_RENAME={'Kethei':'Ketheia',"El'Diel":"El'Dielese"}
 land=lambda c:c['h']>=20
 def poly(c): return 'M'+'L'.join(f"{V[v][0]:.1f},{V[v][1]:.1f}" for v in c['v'])+'Z'
 def islake(c): f=c['f']; return 0<f<len(feat) and feat[f] and feat[f].get('type')=='lake'
@@ -114,8 +114,9 @@ PYR={}
 for st in (S_ITZ,S_XAL):
     cb=p['burgs'][p['states'][st]['capital']];PYR[cb['name']]=(cb['x']+9,cb['y']+3)
 POR=(890.0,758.0)
+ZIG=(1302.0,427.0);ANOR=(bxy("Anor'Londo")[0],bxy("Anor'Londo")[1]+2)
 burgcells={b['cell'] for b in p['burgs'][1:] if b and 'cell' in b}|set(BURG_MOVE.values())
-avoid=[(TREE,30),(VOL,34),(POR,12)]+[(q,14) for q in PYR.values()]
+avoid=[(TREE,30),(VOL,34),(POR,12),(ZIG,22),((ANOR[0],ANOR[1]-6),18)]+[(q,14) for q in PYR.values()]
 # stamps
 rng=random.Random(SEED)
 stamps=[]
@@ -215,6 +216,37 @@ def pyr(x,y,s=1):
 for q in PYR.values(): o.append(pyr(q[0],q[1],1.1))
 px,py=POR
 o.append(f'<g transform="translate({px:.1f},{py:.1f})"><ellipse rx="10" ry="4" cy="1" fill="#2a0f1a" opacity=".35"/><path d="M-7,0 L-7,-13 Q0,-22 7,-13 L7,0" fill="none" stroke="#2b2523" stroke-width="3"/><path d="M-5.2,0 L-5.2,-12.4 Q0,-19.5 5.2,-12.4 L5.2,0Z" fill="#7b2a7a"/><path d="M-3.5,-1 L-3.5,-11.5 Q0,-16.5 3.5,-11.5 L3.5,-1Z" fill="#b84ac0"/><path d="M-1.6,-2 Q-2,-8 0,-12 Q2,-8 1.6,-2Z" fill="#7cf09a" opacity=".85"/></g>')
+def silvermtn(x,y):
+    g=f'<g transform="translate({x:.1f},{y+17:.1f})">'
+    g+='<ellipse cx="0" cy="1" rx="30" ry="4" fill="#4a525a" opacity=".25"/>'
+    g+='<path d="M-30,0 L-14,-20 L-9,-16 L-1,-36 L7,-24 L11,-28 L30,0Z" fill="#e6eaee" stroke="#3e464e" stroke-width=".8" stroke-linejoin="round"/>'
+    g+='<path d="M-1,-36 L7,-24 L11,-28 L30,0 L6,0 L3,-14 L-2,-22Z" fill="#a2acb6"/><path d="M-14,-20 L-9,-16 L-12,-6 L-20,0 L-30,0Z" fill="#c3cbd3"/>'
+    g+='<path d="M-1,-36 L3,-31 L0,-30 L-3,-31Z M11,-28 L13,-25 L10,-25Z" fill="#ffffff"/>'
+    g+='<path d="M-22,-6 L-16,-9 M14,-10 L20,-6 M-6,-27 L-3,-24 M4,-8 L9,-5" stroke="#ffffff" stroke-width="1.1" stroke-linecap="round" opacity=".9"/>'
+    # town on the slope
+    g+='<path d="M-11,-12 L9,-12 L9,-6 L-11,-6Z" fill="#8c8478" stroke="#2a211a" stroke-width=".6"/>'
+    for hx,hc in((-9,'#5d6f86'),(-4,'#7a8ea6'),(1,'#5d6f86'),(5,'#7a8ea6')):
+        g+=f'<path d="M{hx},-12 L{hx+1.8},-15.5 L{hx+3.6},-12Z" fill="{hc}" stroke="#2a211a" stroke-width=".5"/>'
+    g+='<path d="M-1.5,-12 L-1.5,-19 L.5,-21 L2.5,-19 L2.5,-12Z" fill="#b9c2cb" stroke="#2a211a" stroke-width=".5"/><path d="M.5,-21 L.5,-24" stroke="#2a211a" stroke-width=".5"/><path d="M-.6,-9 L1.6,-9 L1.6,-6 L-.6,-6Z" fill="#2a211a"/>'
+    return g+'</g>'
+o.append(silvermtn(*ZIG))
+def flycath(x,y):
+    g=f'<g transform="translate({x:.1f},{y:.1f})"><ellipse cx="0" cy="1" rx="17" ry="3.5" fill="#1e2a1a" opacity=".3"/>'
+    for ax,tx in((-16,-8),(16,8),(-5,-3),(7,3)):
+        mx=(ax+tx)/2+(2 if ax<0 else -2);g+=f'<path d="M{ax},-1 Q{mx},-12 {tx},-23" fill="none" stroke="#3a342e" stroke-width=".9" stroke-dasharray="1.3 .5"/><path d="M{ax},-1 Q{mx},-12 {tx},-23" fill="none" stroke="#b8ada0" stroke-width=".35" stroke-dasharray=".6 1.2"/>'
+        g+=f'<path d="M{ax-1.3},.6 L{ax+1.3},.6 L{ax+.7},-1.4 L{ax-.7},-1.4Z" fill="#5a5248" stroke="#2b2723" stroke-width=".4"/>'
+    g+='<path d="M-15,-25 Q0,-23 15,-25 L9,-17 L3,-10 L-1,-8 L-5,-12 L-11,-18Z" fill="#7c6a56" stroke="#3a2e22" stroke-width=".6"/><path d="M3,-10 L9,-17 L15,-25 Q8,-24 4,-24 L2,-15Z" fill="#5e4f40"/>'
+    g+='<path d="M-15,-25 Q0,-27 15,-25 Q0,-23 -15,-25Z" fill="#6e9a58"/>'
+    # cathedral
+    g+='<path d="M-9,-25 L-9,-36 L9,-36 L9,-25Z" fill="#ddd6c4" stroke="#3a3128" stroke-width=".6"/><path d="M-9,-36 L0,-42 L9,-36Z" fill="#6c7a8c" stroke="#3a3128" stroke-width=".6"/>'
+    for sx,sh in((-11,-44),(11,-44)):
+        g+=f'<path d="M{sx-2.4},-25 L{sx-2.4},-38 L{sx+2.4},-38 L{sx+2.4},-25Z" fill="#e8e2d2" stroke="#3a3128" stroke-width=".6"/><path d="M{sx-2.6},-38 L{sx},{sh-4} L{sx+2.6},-38Z" fill="#59677a" stroke="#3a3128" stroke-width=".5"/>'
+    g+='<path d="M-2,-36 L-2,-47 L2,-47 L2,-36Z" fill="#e8e2d2" stroke="#3a3128" stroke-width=".5"/><path d="M-2.4,-47 L0,-56 L2.4,-47Z" fill="#59677a" stroke="#3a3128" stroke-width=".5"/><path d="M0,-56 L0,-59 M-1,-58 L1,-58" stroke="#d9b54a" stroke-width=".6"/>'
+    g+='<circle cx="0" cy="-32" r="2.2" fill="#e9c25a" stroke="#3a3128" stroke-width=".5"/>'
+    for wx in(-6,-3,3,6): g+=f'<path d="M{wx-.8},-26 L{wx-.8},-29.5 Q{wx},-31 {wx+.8},-29.5 L{wx+.8},-26Z" fill="#e9c25a"/>'
+    g+='<path d="M-1.4,-25 L-1.4,-28 Q0,-29.4 1.4,-28 L1.4,-25Z" fill="#3a3128"/>'
+    return g+'</g>'
+o.append(flycath(*ANOR))
 o.append('</g><g id="w-burgs" class="ly-burgs"></g><g id="w-slabels">')
 st={s['i']:s for s in p['states'] if not s.get('removed')}
 for sid,s in st.items():
@@ -234,6 +266,8 @@ for b in p['burgs'][1:]:
     if b['name'] in BURG_MOVE:
         mc=cells[BURG_MOVE[b['name']]];sn=st.get(mc['state'],{}).get('name','');e.update(x=round(mc['p'][0],1),y=round(mc['p'][1],1)+2,s=STATE_RENAME.get(sn,sn))
     if b['name']=='Vardrassil': e.update(lm='tree',x=round(TREE[0],1),y=round(TREE[1],1),lh=40)
+    if b['name']=='Zigilgathol': e.update(lm='silver',x=ZIG[0],y=ZIG[1],lh=22)
+    if b['name']=="Anor'Londo": e.update(lm='cath',x=round(ANOR[0],1),y=round(ANOR[1],1),lh=58)
     if b['name'] in PYR: e.update(lm='pyr',x=round(PYR[b['name']][0],1),y=round(PYR[b['name']][1],1),lh=19)
     B.append(e)
 json.dump(B,open(out.replace('.svg','-burgs.json'),'w',encoding='utf-8',errors='replace'),ensure_ascii=False,separators=(',',':'))

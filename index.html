@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Luparis — Tactical Table</title>
+<title>Luparis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Cinzel:wght@600&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <style>
@@ -14,7 +14,7 @@
    LAYOUT: titre discret, barres d'outils et de décor, plateau plein cadre, aide en bas */
 :root{color-scheme:light dark;
 --bg:light-dark(#eef0e6,#15181a);--ink:light-dark(#22261f,#e6e8e0);--muted:light-dark(#5c6355,#9aa194);
---panel:light-dark(#ffffff,#1f2427);--line:light-dark(#cfd4c4,#343b3f);--acc:#c0703a;--acc2:light-dark(#8a4a22,#e09a64)}
+--panel:light-dark(#ffffff,#1f2427);--line:light-dark(#cfd4c4,#343b3f);--acc:#6b7a3c;--acc2:light-dark(#4b5726,#b3c286)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Alegreya Sans",system-ui,sans-serif;overflow-x:clip}
@@ -132,6 +132,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 .mx .rh{font-size:14px;font-weight:600;padding-right:4px}
 .cell{border:1px solid var(--line);border-radius:10px;padding:6px 4px;text-align:center}
 .cell .v{font:700 20px/1.1 "Alegreya Sans",sans-serif;font-variant-numeric:tabular-nums}
+.sth{text-align:center;border:1px dashed var(--line);border-radius:10px;padding:4px}.mx .sth b{font-size:13px}.stp{display:flex;justify-content:center;align-items:center;gap:6px}.stp button{min-width:28px;padding:2px 6px}.sv{font:700 18px/1.1 "Alegreya Sans",sans-serif;min-width:2ch}.sv.bad{color:#c0392b}.sth small{display:block;font-size:11px;color:var(--muted)}
 .cell .c{font-size:12px;color:var(--muted);min-height:16px}
 .step{display:flex;justify-content:center;gap:4px}
 .step button{min-height:32px;min-width:32px;padding:0;border:1px solid var(--line);font-size:18px}
@@ -253,6 +254,10 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
     <label class="scn"><span class="vh" data-i18n="t_surf"></span><select id="surfk"></select></label>
     <button data-t="env" data-i18n="t_env"></button>
     <label class="scn"><span class="vh" data-i18n="t_env"></span><select id="envk"></select></label><label class="scn envdc"><span>DD</span><input id="envdc" type="number" min="5" max="30" value="12"></label>
+    <button data-t="obj" data-i18n="t_obj"></button>
+    <label class="scn"><span class="vh" data-i18n="t_obj"></span><select id="objk"></select></label>
+    <button data-t="pref" data-i18n="t_pref"></button>
+    <label class="scn"><span class="vh" data-i18n="t_pref"></span><select id="prefk"></select></label>
     <label for="size" class="szl"><span data-i18n="size"></span> <input id="size" type="range" min="0" max="4" step="1" value="1"> <span id="sv">16×16</span></label>
   </div>
   <div class="grp">
@@ -347,6 +352,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
   <div class="sgrid" id="c_mods">
       <section class="card mod" data-mod="mx"><h3 data-i18n="sk_matrix"></h3><div id="c_mx"></div></section>
       <section class="card mod" data-mod="dv"><h3 data-i18n="sk_dv"></h3><div class="seg" id="c_dv"></div></section>
+      <section class="card mod" data-mod="don"><h3 data-i18n="sk_don"></h3><div id="c_don" class="tiers"></div></section>
       <section class="card mod" data-mod="sch"><h3 data-i18n="sk_schools"></h3><div id="c_sch" class="tiers"></div></section>
       <section class="card mod" data-mod="fam"><h3 data-i18n="sk_fams"></h3><div id="c_fam" class="tiers"></div></section>
       <section class="card mod" data-mod="apx"><h3>Apex</h3><p class="small" id="c_apxn"></p><div id="c_apx" class="tiers"></div></section>
@@ -397,18 +403,21 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 <p class="lead">Luparis plays with the D&D 5.5 rules. This book only describes what changes. Anything not written here stays the D&D rule.</p>
 <h2 id="r-matrice">1. The Matrix of Intents</h2>
 <p>The six D&D ability scores are replaced by nine cells: an intent (Power, Finesse, Resilience) applied to a domain (Physical, Mental, Social). Always name the intent with its domain: Physical Finesse, Mental Resilience. Each cell has a modifier, like a D&D ability. The context of the action picks the cell, never the school of magic.</p>
+<p><b>Six stats, nine cells.</b> You buy six stats: the three intents and the three domains. Each cell is the sum of its intent and its domain: Physical Power = Power + Physical. A stat starts at 0 and can drop to −1. Being bad at something is a choice: lowering a stat to −1 gives back 20 XP.</p>
+<p><b>Cap by level:</b> stats up to +3 until level 5, +5 until level 10, +7 until level 15, no cap beyond. XP stays the real limit: each +1 costs double the previous one.</p>
 <table><thead><tr><th></th><th>Physical</th><th>Mental</th><th>Social</th></tr></thead><tbody>
 <tr><th>Power</th><td>Strength</td><td>Intellect, offensive spells</td><td>Authority, intimidation</td></tr>
 <tr><th>Finesse</th><td>Dexterity, Evasion</td><td>Perception, subtle spells</td><td>Persuasion, deception</td></tr>
 <tr><th>Resilience</th><td>Constitution: thresholds, Stamina</td><td>Willpower: Mana, resisting magic</td><td>Composure: resisting influence</td></tr></tbody></table>
 <p class="ex">Example: an Aegis mage who projects an imposing aura during a negotiation uses Social Power. If they forge a hammer of light to strike, they use Mental Power.</p>
 <h2 id="r-perso">2. The character</h2>
-<p>There are no classes. Each character spends XP on the schools of magic, weapon masteries and matrix cells they want. Their stats tell their life story, whatever their people: no race gives a bonus.</p>
+<p>There are no classes. Each character spends XP on the schools of magic, weapon masteries and stats they want. Their stats tell their life story, whatever their people: no race gives a bonus.</p>
 <p>Everyone starts with a d6 hit die, then buys d8, d10 and d12 with XP.</p>
+<p><b>Speed:</b> 6 tiles (30 ft) per turn. The Fleet-footed feat adds 2 tiles per rank (2 ranks, 40 XP each). Heavy armor costs 2 tiles.</p>
 <h3>XP costs (v0.3)</h3>
 <p>Level equals XP earned divided by 100: 150 XP to create a level 1 character, 2,000 at level 20. The Character tab does all the math.</p>
 <table><thead><tr><th>Purchase</th><th>Cost of each step</th><th>Total</th></tr></thead><tbody>
-<tr><td>Matrix cell, +1 to +5</td><td>5, 10, 20, 40, 80</td><td>155</td></tr><tr><td>Armor training: light, medium, heavy</td><td>20, 40, 80</td><td>140</td></tr><tr><td>Shield training</td><td>40</td><td>40</td></tr>
+<tr><td>Stat (intent or domain), each +1</td><td>20, 40, 80, 160, 320… (−1 gives back 20)</td><td>+3: 140, +5: 620</td></tr><tr><td>Feat: Fleet-footed, 2 ranks</td><td>40, 40</td><td>80</td></tr><tr><td>Armor training: light, medium, heavy</td><td>20, 40, 80</td><td>140</td></tr><tr><td>Shield training</td><td>40</td><td>40</td></tr>
 <tr><td>Tier in a discipline (school, weapon family or Apex), 1 to 5</td><td>40, 80, 160, 240, 320</td><td>840</td></tr>
 <tr><td>Hit die d8, d10, d12</td><td>80, 160, 240</td><td>480</td></tr></tbody></table>
 <p><b>Armor and shield training:</b> like proficiencies in D&D. Wearing armor you are not trained for gives no armor value (your thresholds are those of an unarmored body) and −2 Evasion. A shield without training gives no bonus and no Parry. Medium armor needs light training first, heavy armor needs medium.</p>
@@ -561,18 +570,21 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 <p class="lead">Luparis se joue avec les règles de D&D 5.5. Ce livre ne décrit que ce qui change. Tout ce qui n'y figure pas reste la règle de D&D.</p>
 <h2 id="r-matrice">1. La Matrice des intentions</h2>
 <p>Les six caractéristiques de D&D sont remplacées par neuf cases : une intention (Puissance, Finesse, Résistance) appliquée à un domaine (Physique, Mental, Social). On annonce toujours l'intention d'abord : « Finesse physique », « Résistance mentale ». Chaque case a un modificateur, comme une caractéristique de D&D. C'est le contexte de l'action qui choisit la case, jamais l'école de magie.</p>
+<p><b>Six stats, neuf cases.</b> On achète six stats : les trois intentions et les trois domaines. Chaque case est la somme de son intention et de son domaine : Puissance physique = Puissance + Physique. Une stat part de 0 et peut descendre à −1. Être mauvais dans un domaine est un choix : descendre une stat à −1 rend 20 XP.</p>
+<p><b>Plafond par niveau :</b> stats jusqu'à +3 jusqu'au niveau 5, +5 jusqu'au 10, +7 jusqu'au 15, sans plafond au-delà. L'XP reste la vraie limite : chaque +1 coûte le double du précédent.</p>
 <table><thead><tr><th></th><th>Physique</th><th>Mental</th><th>Social</th></tr></thead><tbody>
 <tr><th>Puissance</th><td>Force</td><td>Intelligence, sorts offensifs</td><td>Autorité, intimidation</td></tr>
 <tr><th>Finesse</th><td>Dextérité, Esquive</td><td>Perception, sorts subtils</td><td>Persuasion, tromperie</td></tr>
 <tr><th>Résistance</th><td>Constitution : seuils, Souffle</td><td>Volonté : Mana, résister à la magie</td><td>Sang-froid : résister à l'influence</td></tr></tbody></table>
 <p class="ex">Exemple : un mage de l'Égide qui projette une aura imposante pendant une négociation utilise la Puissance sociale. S'il forge un marteau de lumière pour frapper, il utilise la Puissance mentale.</p>
 <h2 id="r-perso">2. Le personnage</h2>
-<p>Il n'y a pas de classes. Chaque personnage achète en XP les écoles de magie, les maîtrises d'armes et les cases de la matrice qu'il veut. Ses statistiques racontent son vécu, quel que soit son peuple : aucune race ne donne de bonus.</p>
+<p>Il n'y a pas de classes. Chaque personnage achète en XP les écoles de magie, les maîtrises d'armes et les stats qu'il veut. Ses statistiques racontent son vécu, quel que soit son peuple : aucune race ne donne de bonus.</p>
 <p>Tout le monde commence avec un dé de vie d6. On achète ensuite d8, d10 puis d12 avec de l'XP.</p>
+<p><b>Déplacement :</b> 6 cases (30 pieds) par tour. Le don Pas rapide ajoute 2 cases par rang (2 rangs, 40 XP chacun). Une armure lourde retire 2 cases.</p>
 <h3>Barème d'XP (v0.3)</h3>
 <p>Le niveau vaut l'XP gagnée divisée par 100 : 150 XP pour créer un personnage de niveau 1, 2 000 au niveau 20. L'onglet Personnage fait tous les calculs.</p>
 <table><thead><tr><th>Achat</th><th>Coût de chaque palier</th><th>Total</th></tr></thead><tbody>
-<tr><td>Case de la matrice, de +1 à +5</td><td>5, 10, 20, 40, 80</td><td>155</td></tr><tr><td>Entraînement aux armures : légères, intermédiaires, lourdes</td><td>20, 40, 80</td><td>140</td></tr><tr><td>Entraînement aux boucliers</td><td>40</td><td>40</td></tr>
+<tr><td>Stat (intention ou domaine), chaque +1</td><td>20, 40, 80, 160, 320… (−1 rend 20)</td><td>+3 : 140, +5 : 620</td></tr><tr><td>Don : Pas rapide, 2 rangs</td><td>40, 40</td><td>80</td></tr><tr><td>Entraînement aux armures : légères, intermédiaires, lourdes</td><td>20, 40, 80</td><td>140</td></tr><tr><td>Entraînement aux boucliers</td><td>40</td><td>40</td></tr>
 <tr><td>Tier d'une discipline (école, famille d'armes ou Apex), de 1 à 5</td><td>40, 80, 160, 240, 320</td><td>840</td></tr>
 <tr><td>Dé de vie d8, d10, d12</td><td>80, 160, 240</td><td>480</td></tr></tbody></table>
 <p><b>Entraînement aux armures et aux boucliers :</b> comme les maîtrises de D&D. Porter une armure sans l'entraînement correspondant ne donne aucune valeur d'armure (les seuils sont ceux d'un corps sans armure) et −2 à l'Esquive. Un bouclier sans entraînement ne donne ni bonus ni Parade. Les armures intermédiaires demandent d'abord l'entraînement léger, les lourdes l'intermédiaire.</p>
@@ -733,7 +745,7 @@ const ORDER=['gen','prairie','foret','montagne','volcan','desert','neige','marai
 let placing=null,meas=null,selTok=null;
 let lang='en',unit='ft';try{const p=JSON.parse(localStorage.getItem('luparis-prefs'));if(p){if(p.lang==='fr')lang='fr';if(p.unit==='m')unit='m'}}catch(e){}
 const LI=()=>lang==='fr'?1:0,tr=v=>Array.isArray(v)?v[LI()]:v;
-const T={en:{title:'Luparis Tactical Table',sub:'Prototype: sculpt a battle map in a few clicks.',u_ft:'feet',u_m:'meters',tab_map:'Map',tab_best:'Bestiary',tab_rules:'Rules',toc:'Contents',ver:'Draft v0.7, filled in as we go',
+const T={en:{title:'Luparis',sub:'Prototype: sculpt a battle map in a few clicks.',u_ft:'feet',u_m:'meters',tab_map:'Map',tab_best:'Bestiary',tab_rules:'Rules',toc:'Contents',ver:'Draft v0.7, filled in as we go',
 t_up:'Raise',t_down:'Dig',t_flat:'Flatten',t_pj:'Ally token',t_foe:'Enemy token',t_move:'Interact',t_measure:'Measure',rot:'Rotate',undo:'Undo',gen:'Generate',clear:'Clear all',size:'Size',decor:'Setting',
 h_click:'<b>Left click</b> applies the tool; drag to paint. You can aim at the top or the sides of a tile. <b>Right click and drag</b> moves the view; the mouse wheel zooms. On mobile, pick a tool, then tap.',
 h_keys:'<b>Keyboard, row by row</b> (keys follow the physical rows, whatever your layout; each button shows its key): number row <b>1–5</b> the tabs; top row (Q W E R T Y on QWERTY, A Z E R T Y on AZERTY) the tools; middle row the settings; bottom row generate, fit, zoom out, zoom in, undo. Rotate is the second key of the top row. Heights on the hovered tile: <b>Shift + 1 2 3</b> height, <b>Shift + 4</b> ditch, <b>Shift + 5</b> chasm, <b>Shift + 0</b> ground (hold and drag to paint). <b>Esc</b> back to Interact, <b>Ctrl+Z</b> undo.',
@@ -749,7 +761,7 @@ add:'Add a monster',editing:'Edit: ',m_ac:'AC (D&D)',m_hp:'HP (D&D)',m_habs:'Hab
 prev:(v)=>`Luparis: Evasion ${v.esq} · Thresholds ${v.maj}/${v.sev} · ${v.cases} Vitality box${v.cases>1?'es':''}`,
 io_sum:'Export or import the bestiary',io_note:'Copy the bestiary to back it up or move it to another browser, then paste it here to import it.',exp:'Copy the bestiary',impb:'Import pasted text',reset:'Restore the base bestiary',reset_c:'Confirm: erase your monsters?',
 imp_ph:'Paste a copied bestiary here',copied:'Bestiary copied.',copy_no:'Copy refused: the text is in the box below, copy it by hand.',imported:n=>`${n} monsters imported.`,bad:'This text is not a valid bestiary.',restored:'Examples restored.'},
-fr:{title:'Table tactique de Luparis',sub:'Prototype : sculpte une battle map en quelques clics.',u_ft:'pieds',u_m:'mètres',tab_map:'Carte',tab_best:'Bestiaire',tab_rules:'Règles',toc:'Sommaire',ver:'Brouillon v0.7, complété au fur et à mesure',
+fr:{title:'Luparis',sub:'Prototype : sculpte une battle map en quelques clics.',u_ft:'pieds',u_m:'mètres',tab_map:'Carte',tab_best:'Bestiaire',tab_rules:'Règles',toc:'Sommaire',ver:'Brouillon v0.7, complété au fur et à mesure',
 t_up:'Monter',t_down:'Creuser',t_flat:'Aplanir',t_pj:'Pion allié',t_foe:'Pion ennemi',t_move:'Interagir',t_measure:'Mesurer',rot:'Pivoter',undo:'Annuler',gen:'Générer',clear:'Tout effacer',size:'Taille',decor:'Décor',
 h_click:'<b>Clic gauche</b> applique l\'outil, en glissant pour peindre ; on peut viser le sommet ou les flancs d\'une case. <b>Clic droit maintenu</b> déplace la vue ; la molette zoome. Sur mobile, choisis l\'outil puis touche.',
 h_keys:'<b>Clavier, ligne par ligne</b> (les touches suivent les rangées physiques, quel que soit ton clavier ; chaque bouton affiche sa touche) : rangée des chiffres <b>1–5</b> les onglets ; rangée du haut (A Z E R T Y en AZERTY) les outils ; rangée du milieu les décors ; rangée du bas générer, ajuster, dézoomer, zoomer, annuler. Pivoter est la deuxième touche de la rangée du haut. Hauteurs sur la case survolée : <b>Maj + 1 2 3</b> hauteur, <b>Maj + 4</b> fossé, <b>Maj + 5</b> gouffre, <b>Maj + 0</b> sol (garder et glisser pour peindre). <b>Échap</b> revenir à Interagir, <b>Ctrl+Z</b> annuler.',
@@ -769,20 +781,20 @@ const t=k=>T[lang][k];
 const TY={humanoid:['Humanoid','Humanoïde'],undead:['Undead','Mort-vivant'],beast:['Beast','Bête'],fiend:['Fiend','Fiélon'],fey:['Fey','Fée'],giant:['Giant','Géant'],ooze:['Ooze','Vase'],monstrosity:['Monstrosity','Monstruosité'],elemental:['Elemental','Élémentaire'],celestial:['Celestial','Céleste'],plant:['Plant','Plante'],dragon:['Dragon','Dragon'],construct:['Construct','Créature artificielle'],aberration:['Aberration','Aberration']};
 const tyName=k=>TY[k]?tr(TY[k]):k;
 const num=v=>lang==='fr'?String(v).replace('.',','):String(v);
-const CAM={z:1,px:0,py:0};let N=16,H=[],F=[],scene='forest_road',MARKS=[],ENV={},CTX=null,CTXN='',selMark=null,tokens=[],rot=0,tool='move',hist=[],drag=null,painting=null,hover=null,lastPainted='',bio='gen',t0=performance.now();
+const CAM={z:1,px:0,py:0};let N=16,H=[],F=[],scene='forest_road',MARKS=[],OBJS=[],ENV={},CTX=null,CTXN='',selMark=null,tokens=[],rot=0,tool='move',hist=[],drag=null,painting=null,hover=null,lastPainted='',bio='gen',t0=performance.now();
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function blank(n){return Array.from({length:n},()=>Array(n).fill(0))}
 let INI={o:[],cur:0,round:0};
 function encG(G,neg){return G.map(r=>r.map(v=>String.fromCharCode(neg?99+v:48+v)).join(''))}
 function decG(G,neg){return G.map(r=>typeof r==='string'?[...r].map(c=>c.charCodeAt(0)-(neg?99:48)):r)}
 function towns(){try{return JSON.parse(localStorage.getItem('luparis-towns'))||{}}catch(e){return{}}}
-function save(){const st={v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV};try{if(CTX){const o=towns();o[CTX]={...st,name:CTXN};localStorage.setItem('luparis-towns',JSON.stringify(o))}else localStorage.setItem('luparis-tac',JSON.stringify(st));localStorage.setItem('luparis-ctx',JSON.stringify(CTX?{id:CTX,n:CTXN}:null))}catch(e){}if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks()}
-function applyState(d){if(!(d&&d.H&&d.N))return false;N=d.N;H=decG(d.H,1);F=Array.isArray(d.F)&&d.F.length===d.N?decG(d.F,0):blank(d.N);if(d.scene)scene=d.scene;tokens=d.tokens||[];rot=d.rot||0;bio=B[d.bio]?d.bio:'gen';INI=d.ini&&Array.isArray(d.ini.o)?d.ini:{o:[],cur:0,round:0};MARKS=Array.isArray(d.marks)?d.marks:[];ENV=d.env&&typeof d.env==='object'?d.env:{};return true}
+function save(){const st={v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV,objs:OBJS};try{if(CTX){const o=towns();o[CTX]={...st,name:CTXN};localStorage.setItem('luparis-towns',JSON.stringify(o))}else localStorage.setItem('luparis-tac',JSON.stringify(st));localStorage.setItem('luparis-ctx',JSON.stringify(CTX?{id:CTX,n:CTXN}:null))}catch(e){}if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks()}
+function applyState(d){if(!(d&&d.H&&d.N))return false;N=d.N;H=decG(d.H,1);F=Array.isArray(d.F)&&d.F.length===d.N?decG(d.F,0):blank(d.N);if(d.scene)scene=d.scene;tokens=d.tokens||[];rot=d.rot||0;bio=B[d.bio]?d.bio:'gen';INI=d.ini&&Array.isArray(d.ini.o)?d.ini:{o:[],cur:0,round:0};MARKS=Array.isArray(d.marks)?d.marks:[];ENV=d.env&&typeof d.env==='object'?d.env:{};OBJS=Array.isArray(d.objs)?d.objs.filter(o=>o&&OBJT[o.k]):[];return true}
 function load(){try{const c=JSON.parse(localStorage.getItem('luparis-ctx'));if(c&&c.id){const o=towns()[c.id];if(o&&applyState(o)){CTX=c.id;CTXN=c.n||o.name||'';return true}}}catch(e){}try{return applyState(JSON.parse(localStorage.getItem('luparis-tac')))}catch(e){}return false}
 function tid(){return 't'+Math.random().toString(36).slice(2,9)}
-function snap(){hist.push(JSON.stringify({H,F,tokens,marks:MARKS,env:ENV}));if(hist.length>60)hist.shift()}
+function snap(){hist.push(JSON.stringify({H,F,tokens,marks:MARKS,env:ENV,objs:OBJS}));if(hist.length>60)hist.shift()}
 const SIZES=[8,16,32,64,128];function sizeIdx(n){let i=SIZES.findIndex(s=>s>=n);return i<0?SIZES.length-1:i}function showSize(){document.getElementById('size').value=sizeIdx(N);document.getElementById('sv').textContent=N+'×'+N}
-function resizeTo(n){const nh=blank(n),nf=blank(n);for(let x=0;x<Math.min(n,N);x++)for(let y=0;y<Math.min(n,N);y++){nh[x][y]=H[x][y];nf[x][y]=F[x][y]}N=n;H=nh;F=nf;CAM.z=1;CAM.px=0;CAM.py=0;tokens=tokens.filter(k=>k.x<n&&k.y<n);MARKS=MARKS.filter(m=>m.x<n&&m.y<n);for(const key of Object.keys(ENV)){const[a,b]=key.split(',').map(Number);if(a>=n||b>=n)delete ENV[key]}}
+function resizeTo(n){const nh=blank(n),nf=blank(n);for(let x=0;x<Math.min(n,N);x++)for(let y=0;y<Math.min(n,N);y++){nh[x][y]=H[x][y];nf[x][y]=F[x][y]}N=n;H=nh;F=nf;CAM.z=1;CAM.px=0;CAM.py=0;tokens=tokens.filter(k=>k.x<n&&k.y<n);MARKS=MARKS.filter(m=>m.x<n&&m.y<n);OBJS=OBJS.filter(o=>o.x<n&&o.y<n);for(const key of Object.keys(ENV)){const[a,b]=key.split(',').map(Number);if(a>=n||b>=n)delete ENV[key]}}
 if(!load()){H=blank(N);F=blank(N)}else if(!SIZES.includes(N))resizeTo(SIZES[sizeIdx(N)]);
 showSize();
 function rnd(x,y,k){let h=Math.imul(x+1,374761393)^Math.imul(y+7,668265263)^Math.imul(k+3,2246822519);h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
@@ -854,10 +866,71 @@ function ftex(f,t,x,y){const[cx,cy]=t[0];ctx.save();poly(t);ctx.clip();ctx.lineW
  else if(f===11){ctx.fillStyle='rgba(80,60,35,.4)';for(let i=0;i<4;i++){const[px,py]=inD(cx,cy,.15+rnd(x,y,i)*.7,.15+rnd(x,y,i+6)*.7);ctx.fillRect(px,py,2,1.5)}}
  ctx.restore()}
 let drawQ=false;function draw(){if(drawQ)return;drawQ=true;requestAnimationFrame(()=>{drawQ=false;drawNow()})}
+const OBJT={door:{n:['Door','Porte'],tg:['open','ouverte','closed','fermée']},chest:{n:['Chest','Coffre'],tg:['open','ouvert','closed','fermé']},table:{n:['Table','Table']},chair:{n:['Chair','Chaise']},bench:{n:['Bench','Banc']},barrel:{n:['Barrel','Tonneau']},crate:{n:['Crate','Caisse']},bed:{n:['Bed','Lit']},counter:{n:['Counter','Comptoir']},hearth:{n:['Hearth','Âtre']},shelf:{n:['Bookshelf','Bibliothèque']},statue:{n:['Statue','Statue']},altar:{n:['Altar','Autel']},brazier:{n:['Brazier','Brasero']},lever:{n:['Lever','Levier'],tg:['pulled','abaissé','up','levé']},trap:{n:['Trapdoor','Trappe'],tg:['open','ouverte','closed','fermée']}};
+let objSel='door',prefSel='tavern';
+function objAt(x,y){return OBJS.findIndex(o=>o.x===x&&o.y===y)}
+function objName(o){const d=OBJT[o.k];if(!d)return'';return tr(d.n)+(d.tg?' ('+(lang==='fr'?(o.o?d.tg[1]:d.tg[3]):(o.o?d.tg[0]:d.tg[2]))+')':'')}
+function objToggle(c){const i=objAt(c.x,c.y);if(i<0||!OBJT[OBJS[i].k].tg)return false;snap();OBJS[i].o=!OBJS[i].o;save();draw();return true}
+function oP(cx,cy,u,v,z){const[a,b]=inD(cx,cy,u,v);return[a,b-z]}
+function obox(cx,cy,u0,v0,u1,v1,z0,z1,c,ln){const P=(u,v,z)=>oP(cx,cy,u,v,z),s=ln===0?null:'rgba(20,14,8,.55)';
+ poly([P(u1,v0,z0),P(u1,v1,z0),P(u1,v1,z1),P(u1,v0,z1)],mul(c,.7),s,.6);poly([P(u0,v1,z0),P(u1,v1,z0),P(u1,v1,z1),P(u0,v1,z1)],mul(c,.86),s,.6);poly([P(u0,v0,z1),P(u1,v0,z1),P(u1,v1,z1),P(u0,v1,z1)],c,s,.6)}
+function ocyl(cx,cy,u,v,r,z0,z1,c){const[x,y]=inD(cx,cy,u,v),rx=r*TW*.5,ry=rx*.5;ctx.fillStyle=mul(c,.8);ctx.strokeStyle='rgba(20,14,8,.55)';ctx.lineWidth=.6;ctx.beginPath();ctx.moveTo(x-rx,y-z0);ctx.lineTo(x-rx,y-z1);ctx.ellipse(x,y-z1,rx,ry,0,Math.PI,0,true);ctx.lineTo(x+rx,y-z0);ctx.ellipse(x,y-z0,rx,ry,0,0,Math.PI);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(x,y-z1,rx,ry,0,0,Math.PI*2);ctx.fill();ctx.stroke()}
+function doorAxis(x,y){const w=(a,b)=>ok(a,b)&&(F[a][b]===4||H[a][b]>=2);const gx=w(x-1,y)||w(x+1,y),gy=w(x,y-1)||w(x,y+1);const alongX=gx||!gy;return(alongX?0:1)^(rot%2)}
+function drawObj(o,vx,vy,h){const[cx,cy]=scr(vx,vy,h),Z=LH,k=o.k;
+ if(k==='door'){const ax=doorAxis(o.x,o.y),hz=Z*1.9,wood='#7a4f2c';
+  if(!o.o){if(ax===0)obox(cx,cy,.04,.44,.96,.56,0,hz,wood);else obox(cx,cy,.44,.04,.56,.96,0,hz,wood);const[a,b]=ax===0?oP(cx,cy,.75,.56,hz*.5):oP(cx,cy,.56,.75,hz*.5);ctx.fillStyle='#d8b24a';ctx.beginPath();ctx.arc(a,b,Math.max(1,TW*.025),0,7);ctx.fill()}
+  else{if(ax===0)obox(cx,cy,.04,.5,.14,1,0,hz,wood);else obox(cx,cy,.5,.04,1,.14,0,hz,wood)}return}
+ if(k==='chest'){obox(cx,cy,.22,.3,.78,.7,0,Z*.45,'#8a5a2b');if(o.o){const[a,b]=oP(cx,cy,.5,.5,Z*.47);ctx.fillStyle='#f2cf4a';ctx.beginPath();ctx.ellipse(a,b,TW*.12,TW*.05,0,0,7);ctx.fill();obox(cx,cy,.22,.22,.78,.3,Z*.45,Z*.95,'#7a4c22')}else{obox(cx,cy,.22,.3,.78,.7,Z*.45,Z*.6,'#7a4c22');obox(cx,cy,.47,.68,.53,.72,Z*.3,Z*.5,'#d8b24a',0)}return}
+ if(k==='table'){for(const[u,v]of[[.2,.2],[.8,.2],[.2,.8],[.8,.8]])obox(cx,cy,u-.04,v-.04,u+.04,v+.04,0,Z*.55,'#5e3d22',0);obox(cx,cy,.1,.1,.9,.9,Z*.55,Z*.68,'#a0703f');return}
+ if(k==='chair'){obox(cx,cy,.32,.32,.68,.68,0,Z*.4,'#8b5e34');obox(cx,cy,.32,.32,.68,.4,Z*.4,Z*.95,'#7a4f2c');return}
+ if(k==='bench'){obox(cx,cy,.08,.36,.92,.64,0,Z*.4,'#8b5e34');return}
+ if(k==='barrel'){ocyl(cx,cy,.5,.5,.34,0,Z*.9,'#8a5a2b');const[x,y]=inD(cx,cy,.5,.5);ctx.strokeStyle='#3b2a1a';ctx.lineWidth=1;for(const f of[.25,.7]){ctx.beginPath();ctx.ellipse(x,y-Z*.9*f,TW*.17,TW*.085,0,0,Math.PI);ctx.stroke()}return}
+ if(k==='crate'){obox(cx,cy,.18,.18,.82,.82,0,Z*.8,'#b08850');const P=(u,v,z)=>oP(cx,cy,u,v,z);ctx.strokeStyle='rgba(60,40,20,.7)';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(...P(.82,.18,0));ctx.lineTo(...P(.82,.82,Z*.8));ctx.moveTo(...P(.18,.82,0));ctx.lineTo(...P(.82,.82,Z*.8));ctx.stroke();return}
+ if(k==='bed'){obox(cx,cy,.1,.12,.9,.88,0,Z*.4,'#6b4428');obox(cx,cy,.14,.16,.86,.84,Z*.4,Z*.55,'#b9483e',0);obox(cx,cy,.16,.18,.84,.38,Z*.55,Z*.68,'#efe8d8',0);return}
+ if(k==='counter'){obox(cx,cy,0,.15,1,.85,0,Z*1.05,'#7a4f2c');obox(cx,cy,0,.12,1,.88,Z*1.05,Z*1.15,'#a0703f');return}
+ if(k==='hearth'){obox(cx,cy,.05,.05,.95,.95,0,Z*1.1,'#8d8a83');const[x,y]=oP(cx,cy,.5,.5,Z*1.12);const g=ctx.createRadialGradient(x,y,0,x,y,TW*.3);g.addColorStop(0,'rgba(255,200,80,.95)');g.addColorStop(1,'rgba(255,90,20,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y,TW*.3,TW*.16,0,0,7);ctx.fill();return}
+ if(k==='shelf'){obox(cx,cy,.08,.3,.92,.7,0,Z*2,'#6b4428');const P=(u,z)=>oP(cx,cy,u,.7,z);const cols=['#8e2f2f','#2f5f8e','#3d7a3a','#b08a2a'];for(let r=0;r<3;r++)for(let i=0;i<5;i++){const u=.12+i*.16,z=Z*(.2+r*.6);ctx.fillStyle=cols[(i+r)%4];ctx.beginPath();const a=P(u,z),b=P(u+.12,z),c2=P(u+.12,z+Z*.4),d=P(u,z+Z*.4);ctx.moveTo(...a);ctx.lineTo(...b);ctx.lineTo(...c2);ctx.lineTo(...d);ctx.fill()}return}
+ if(k==='statue'){obox(cx,cy,.2,.2,.8,.8,0,Z*.4,'#9a968c');ocyl(cx,cy,.5,.5,.16,Z*.4,Z*1.6,'#c8c3b6');const[x,y]=oP(cx,cy,.5,.5,Z*1.85);ctx.fillStyle='#c8c3b6';ctx.strokeStyle='rgba(20,14,8,.55)';ctx.beginPath();ctx.arc(x,y,TW*.08,0,7);ctx.fill();ctx.stroke();return}
+ if(k==='altar'){obox(cx,cy,.12,.25,.88,.75,0,Z*.8,'#d7d0c0');obox(cx,cy,.1,.22,.9,.78,Z*.8,Z*.92,'#8e2f2f',0);const[x,y]=oP(cx,cy,.5,.5,Z*.95);ctx.fillStyle='#f6e7a0';ctx.fillRect(x-1,y-TW*.12,2,TW*.12);return}
+ if(k==='brazier'){ocyl(cx,cy,.5,.5,.08,0,Z*.9,'#4a4038');ocyl(cx,cy,.5,.5,.26,Z*.9,Z*1.1,'#5a4e44');const[x,y]=oP(cx,cy,.5,.5,Z*1.15),tm=(performance.now()-t0)/1000,f=reduce?1:1+.12*Math.sin(tm*9+o.x);ctx.fillStyle='#ff8a2a';ctx.beginPath();ctx.moveTo(x-TW*.1,y);ctx.quadraticCurveTo(x,y-TW*.35*f,x+TW*.1,y);ctx.fill();ctx.fillStyle='#ffd36a';ctx.beginPath();ctx.moveTo(x-TW*.05,y);ctx.quadraticCurveTo(x,y-TW*.2*f,x+TW*.05,y);ctx.fill();return}
+ if(k==='lever'){obox(cx,cy,.35,.35,.65,.65,0,Z*.25,'#6f6a60');const[a,b]=oP(cx,cy,.5,.5,Z*.25),[c2,d]=o.o?oP(cx,cy,.85,.5,Z*.5):oP(cx,cy,.3,.5,Z*1.1);ctx.strokeStyle='#3b2a1a';ctx.lineWidth=Math.max(1.5,TW*.04);ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(c2,d);ctx.stroke();ctx.fillStyle='#b9483e';ctx.beginPath();ctx.arc(c2,d,Math.max(1.5,TW*.05),0,7);ctx.fill();return}
+ if(k==='trap'){const P=(u,v)=>oP(cx,cy,u,v,.5);if(o.o){poly([P(.15,.15),P(.85,.15),P(.85,.85),P(.15,.85)],'#120d09');obox(cx,cy,.15,.05,.85,.15,0,Z*.8,'#6b4428')}else{poly([P(.15,.15),P(.85,.15),P(.85,.85),P(.15,.85)],'#6b4428','rgba(20,14,8,.7)',1);ctx.strokeStyle='rgba(20,14,8,.5)';ctx.beginPath();ctx.moveTo(...P(.5,.15));ctx.lineTo(...P(.5,.85));ctx.stroke()}return}}
+// ---- prefabs
+const PREF={tavern:['Tavern','Taverne'],house:['House','Maison'],shop:['Shop','Échoppe'],forge:['Forge','Forge'],chapel:['Chapel','Chapelle'],tower:['Watchtower','Tour de guet'],barn:['Barn','Grange']};
+function prefGen(k,rr){const ri=n=>Math.floor(rr()*n),G=[],O=[];let w,h;
+ const sz={tavern:[9,7,3,2],house:[5,4,2,2],shop:[6,5,2,2],forge:[7,5,2,2],chapel:[6,10,1,3],tower:[5,5,0,1],barn:[8,6,3,2]}[k];w=sz[0]+ri(sz[2]+1);h=sz[1]+ri(sz[3]+1);
+ for(let x=0;x<w;x++){G[x]=[];for(let y=0;y<h;y++)G[x][y]=(x===0||y===0||x===w-1||y===h-1)?'W':'.'}
+ const put=(x,y,kk,o)=>{if(x>0&&y>0&&x<w-1&&y<h-1&&G[x][y]==='.'&&!O.some(q=>q.x===x&&q.y===y)){O.push({x,y,k:kk,o:!!o});return true}return false};
+ const door=(x,y)=>{G[x][y]='D';O.push({x,y,k:'door',o:false})};
+ const free=(x,y)=>x>0&&y>0&&x<w-1&&y<h-1&&G[x][y]==='.'&&!O.some(q=>q.x===x&&q.y===y);
+ const fd=1+ri(w-2);door(fd,h-1);
+ if(k==='tavern'){const kx=w-4;for(let y=1;y<h-1;y++)G[kx][y]='W';const kd=1+ri(h-2);door(kx,kd);
+  for(let y=1;y<h-1;y++)if(y!==kd&&rr()<.9)put(kx-1,y,'counter');
+  put(kx+1+ri(2),1,'hearth');for(let i=0;i<5;i++)put(kx+1+ri(2),1+ri(h-2),rr()<.5?'barrel':'crate');
+  for(let y=2;y<h-2;y+=3)for(let x=2;x<kx-2;x+=3)if(rr()<.85){put(x,y,'table');put(x+1,y,'chair');put(x-1,y,'chair');if(rr()<.5)put(x,y+1,'chair')}
+  if(rr()<.7)put(1,1,'hearth');put(1,h-2,'barrel');if(rr()<.5)put(kx-1,h-2,'chest')}
+ else if(k==='house'){put(1,1,'bed');if(w>5)put(2,1,'bed');put(w-2,1,'hearth');const tx=2+ri(Math.max(1,w-4)),ty=Math.min(h-3,2);if(put(tx,ty,'table')){put(tx+1,ty,'chair');put(tx-1,ty,'chair')}put(1,h-2,'chest');if(rr()<.6)put(w-2,h-2,'barrel');if(rr()<.4)put(w-2,2,'shelf')}
+ else if(k==='shop'){for(let x=1;x<w-1;x++)if(Math.abs(x-fd)>0&&rr()<.9)put(x,h-3,'counter');for(let x=1;x<w-1;x++)put(x,1,rr()<.6?'shelf':'crate');put(1,2,'chest');if(rr()<.6)put(w-2,2,'barrel')}
+ else if(k==='forge'){put(1,1,'hearth');put(2,1,'hearth');put(3,2,'statue');put(w-2,1,'barrel');put(w-2,2,'crate');put(w-3,1,'crate');put(1,h-2,'chest');if(rr()<.5)put(w-2,h-2,'brazier');const t=put(4,1,'table')}
+ else if(k==='chapel'){G[fd][h-1]='W';O.splice(O.findIndex(q=>q.k==='door'),1);const cxm=Math.floor(w/2);door(cxm,h-1);put(cxm,1,'altar');put(cxm-1,1,'brazier');put(cxm+1,1,'brazier');for(let y=3;y<h-2;y+=2){for(let x=1;x<w-1;x++)if(x!==cxm&&(w%2||x!==cxm-1))put(x,y,'bench')}if(rr()<.6){put(1,1,'statue');put(w-2,1,'statue')}}
+ else if(k==='tower'){put(1,1,'brazier');put(w-2,1,'crate');put(w-2,h-2,'barrel');put(1,h-2,'chest');put(2,2,'trap');if(rr()<.5)put(w-2,2,'lever')}
+ else if(k==='barn'){const bd=1+ri(w-2);if(G[bd][0]==='W'){door(bd,0)}for(let i=0;i<Math.round(w*h/5);i++){const x=1+ri(w-2),y=1+ri(h-2);if(free(x,y)&&Math.abs(x-fd)+Math.abs(y-(h-1))>1)put(x,y,rr()<.5?'crate':'barrel')}}
+ return{w,h,G,O,wh:k==='tower'?3:2}}
+function prefPlace(c,k,quiet){const rr=Math.random,P=prefGen(k,rr),r=Math.floor(rr()*4);
+ const tf=(x,y)=>r===0?[x,y]:r===1?[P.h-1-y,x]:r===2?[P.w-1-x,P.h-1-y]:[y,P.w-1-x];const W=r%2?P.h:P.w,Hh=r%2?P.w:P.h;
+ const x0=Math.max(0,Math.min(N-W,c.x-Math.floor(W/2))),y0=Math.max(0,Math.min(N-Hh,c.y-Math.floor(Hh/2)));if(W>N||Hh>N)return false;
+ if(!quiet)snap();for(let x=x0-1;x<=x0+W;x++)for(let y=y0-1;y<=y0+Hh;y++){if(!ok(x,y))continue;const inn=x>=x0&&y>=y0&&x<x0+W&&y<y0+Hh;if(inn||H[x][y]<0||F[x][y]===4||F[x][y]===5){H[x][y]=0;if(F[x][y]===4||F[x][y]===5||inn)F[x][y]=0}delete ENV[x+','+y]}
+ OBJS=OBJS.filter(o=>!(o.x>=x0-1&&o.y>=y0-1&&o.x<=x0+W&&o.y<=y0+Hh));
+ for(let x=0;x<P.w;x++)for(let y=0;y<P.h;y++){const[a,b]=tf(x,y),gx=x0+a,gy=y0+b,g=P.G[x][y];if(g==='W'){H[gx][gy]=P.wh;F[gx][gy]=4}else{H[gx][gy]=0;F[gx][gy]=3}}
+ for(const o of P.O){const[a,b]=tf(o.x,o.y);OBJS.push({x:x0+a,y:y0+b,k:o.k,o:o.o})}
+ tokens=tokens.filter(t=>{const n=tfp(t);for(let i=t.x;i<t.x+n;i++)for(let j=t.y;j<t.y+n;j++)if(ok(i,j)&&F[i][j]===4)return false;return true});if(!quiet){save();draw()}return{x0,y0,W,Hh}}
+
+function fillObj(){const a=document.getElementById('objk'),b=document.getElementById('prefk');if(a)a.innerHTML=Object.keys(OBJT).map(k=>`<option value="${k}"${k===objSel?' selected':''}>${esc(tr(OBJT[k].n))}</option>`).join('');if(b)b.innerHTML=Object.keys(PREF).map(k=>`<option value="${k}"${k===prefSel?' selected':''}>${esc(tr(PREF[k]))}</option>`).join('')}
 function drawNow(){const b=B[bio];const lod=TW>=9,lodS=TW>=5;if(hover){const ti=tokAt(hover),tk=ti>=0?tokens[ti]:null;
   const mk=MARKS.findIndex(m=>m.x===hover.x&&m.y===hover.y);if(mk>=0&&!(tokAt(hover)>=0)){info.textContent=`${t("t_mark")} ${mk+1} · ${MARKS[mk].l||t('mk_ph')}`}else
-  info.textContent=(tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)} (${t('stop')}) · `:'')+(tk&&tk.nm?`${tr(tk.nm)} ${tk.num||''} · ${t('esq')} ${tk.esq} · ${t('thr')} ${tk.maj}/${tk.sev} · ${t('box')} ${tk.hp}/${tk.hpMax}`:`${tr(b.n)} · ${t('tile')} ${hover.x+1}, ${hover.y+1} — ${label(H[hover.x][hover.y],F[hover.x][hover.y])}${H[hover.x][hover.y]>0?' · '+tr(ELEV[H[hover.x][hover.y]]):''}${envOf(hover.x+','+hover.y)?` · ${tr(ENVT[envOf(hover.x+','+hover.y).k].n)} : ${envRule(envOf(hover.x+','+hover.y))}`:''}`)}
+  info.textContent=(tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)} (${t('stop')}) · `:'')+(tk&&tk.nm?`${tr(tk.nm)} ${tk.num||''} · ${t('esq')} ${tk.esq} · ${t('thr')} ${tk.maj}/${tk.sev} · ${t('box')} ${tk.hp}/${tk.hpMax}`:`${tr(b.n)} · ${t('tile')} ${hover.x+1}, ${hover.y+1} — ${label(H[hover.x][hover.y],F[hover.x][hover.y])}${H[hover.x][hover.y]>0?' · '+tr(ELEV[H[hover.x][hover.y]]):''}${objAt(hover.x,hover.y)>=0?' · '+objName(OBJS[objAt(hover.x,hover.y)]):''}${envOf(hover.x+','+hover.y)?` · ${tr(ENVT[envOf(hover.x+','+hover.y).k].n)} : ${envRule(envOf(hover.x+','+hover.y))}`:''}`)}
  else info.textContent=tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)}. ${t('click_tile')}`:tool==='measure'?t('meas_hint'):t('hover');stage.style.background=`radial-gradient(ellipse at 50% 40%,${mul(b.bg[0],.36)},${mul(b.bg[1],.24)})`;ctx.clearRect(0,0,W,Hc);
+ const OM=new Map();for(const o of OBJS)OM.set(o.x+','+o.y,o);
  for(const c of cells()){const h=H[c.x][c.y],{vx,vy}=c;{const sx=ox+(vx-vy)*TW/2,sy=oy+(vx+vy)*TW/4;if(sx<-TW||sx>W+TW||sy<-TW-LH*4||sy>Hc+TW+LH*3)continue}
   if(h<0)pit(c,h);
   else{const f=F[c.x][c.y],t=dia(vx,vy,h);if(h>0){const g=dia(vx,vy,0),sc=f===4?FW.side[h-1]:f===5?'#6a4a2e':FSIDE[f]?FSIDE[f]:b.side[h-1];
@@ -869,6 +942,7 @@ function drawNow(){const b=B[bio];const lod=TW>=9,lodS=TW>=5;if(hover){const ti=
   if(painting&&painting.area&&inArea(c,painting.area))poly(dia(vx,vy,Math.max(h,0)),'rgba(192,112,58,.35)','#c0703a',1);else if(hover&&hover.x===c.x&&hover.y===c.y)poly(dia(vx,vy,Math.max(h,0)),'rgba(192,112,58,.32)','#c0703a',2);
   if(h>0&&!F[c.x][c.y]&&TW>=7){const[cx,cy]=scr(vx,vy,h);deco(b.deco[h-1],cx,cy,h,c.x,c.y)}
   {const ek=ENV[c.x+','+c.y];if(ek)drawEnv(ek,vx,vy,h,c.x,c.y)}
+  {const ob=OM.get(c.x+','+c.y);if(ob&&h>=0&&TW>=4)drawObj(ob,vx,vy,h)}
   for(const k of tokens)if(tokCell(k,c))drawTokAt(k)}
  drawMarks();if(meas)drawMeas();
  if(hasAnim()||(bio==='volcan'&&!reduce))requestAnimationFrame(tick)}
@@ -893,6 +967,7 @@ function drawEnv(k,vx,vy,h,x,y){k=k&&k.k||k;const e=ENVT[k];if(!e)return;const t
  else if(k==='holy'){ctx.strokeStyle='rgba(255,245,200,.9)';ctx.lineWidth=1.5;const[px,py]=inD(cx,cy,.5,.5);ctx.beginPath();ctx.moveTo(px,py-TW*.12);ctx.lineTo(px,py+TW*.04);ctx.moveTo(px-TW*.06,py-TW*.06);ctx.lineTo(px+TW*.06,py-TW*.06);ctx.stroke()}
  ctx.restore()}
 function fillEnv(){const el=document.getElementById('envk');if(!el)return;el.innerHTML=Object.keys(ENVT).map(k=>`<option value="${k}"${k===envSel?' selected':''} title="${esc(tr(ENVT[k].r))}">${esc(tr(ENVT[k].n))}</option>`).join('')}
+document.getElementById('objk').addEventListener('change',e=>{objSel=e.target.value;setTool('obj')});document.getElementById('prefk').addEventListener('change',e=>{prefSel=e.target.value;setTool('pref')});
 document.getElementById('envk').addEventListener('change',e=>{envSel=e.target.value;setTool('env')});
 document.getElementById('surfk').addEventListener('change',e=>{surfSel=+e.target.value;setTool('surf')});
 
@@ -958,6 +1033,8 @@ function apply(c,inv){const key=c.x+','+c.y;if(painting&&lastPainted===key)retur
  if(inv&&t!=='mark'){if(t==='up')t='down';else if(t==='down')t='up';else if(t==='pj'||t==='foe'||t==='move'||t==='place'){const i=tokAt(c);if(i>=0){const id=tokens[i].id;tokens.splice(i,1);INI.o=INI.o.filter(o=>o.id!==id)}return}}
  if(t==='up')H[c.x][c.y]=Math.min(3,h+1);else if(t==='down'){H[c.x][c.y]=Math.max(-2,h-1);if(H[c.x][c.y]<0)F[c.x][c.y]=0}else if(t==='flat'){H[c.x][c.y]=0;F[c.x][c.y]=0}
  else if(t==='env'){const key=c.x+','+c.y,cur=envOf(key);if(!painting.em)painting.em=cur&&cur.k===envSel?'del':'set';if(painting.em==='del')delete ENV[key];else ENV[key]={k:envSel,dc:envDC()};return}
+ else if(t==='obj'){painting=null;if(h<0)return;const i=objAt(c.x,c.y);if(i>=0&&OBJS[i].k===objSel)OBJS.splice(i,1);else{if(i>=0)OBJS.splice(i,1);OBJS.push({x:c.x,y:c.y,k:objSel,o:false})}save();return}
+ else if(t==='pref'){painting=null;hist.pop();prefPlace(c,prefSel);return}
  else if(t==='mark'){const i=MARKS.findIndex(m=>m.x===c.x&&m.y===c.y);if(inv){if(i>=0){MARKS.splice(i,1);save()}}else if(i>=0){selMark=MARKS[i].id;const e=document.querySelector(`#mk_list input[data-id="${selMark}"]`);if(e)setTimeout(()=>e.focus(),30)}else{const m={id:tid(),x:c.x,y:c.y,l:''};MARKS.push(m);selMark=m.id;save();setTimeout(()=>{const e=document.querySelector(`#mk_list input[data-id="${m.id}"]`);if(e)e.focus()},30)}painting=null;return}
  else if((t==='pj'||t==='foe')&&tokAt(c)<0&&h>-2)tokens.push({id:tid(),x:c.x,y:c.y,t,n:nextName(t),init:0});
  else if(t==='place'&&placing&&tokAt(c)<0&&h>-2){if(placing.ally){const ch=CH.list.find(x=>x.id===placing.ally);if(!ch)return;if(tokens.some(k=>k.cid===ch.id)){const k=tokens.find(k=>k.cid===ch.id);k.x=c.x;k.y=c.y;return}const D=derived(ch);
@@ -970,10 +1047,11 @@ let pan=null;cv.addEventListener('wheel',e=>{e.preventDefault();const[mx,my]=pos
 const AREA_T=new Set(['up','down','flat','env','surf']);
 function inArea(c,ar){return ar&&c.x>=Math.min(ar.a.x,ar.b.x)&&c.x<=Math.max(ar.a.x,ar.b.x)&&c.y>=Math.min(ar.a.y,ar.b.y)&&c.y<=Math.max(ar.a.y,ar.b.y)}
 function areaApply(ar){const x0=Math.min(ar.a.x,ar.b.x),x1=Math.max(ar.a.x,ar.b.x),y0=Math.min(ar.a.y,ar.b.y),y1=Math.max(ar.a.y,ar.b.y);let allEnv=true;if(tool==='env')for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const v=ENV[x+','+y];if(!v||(v.k||v)!==envSel)allEnv=false}
- for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const h=H[x][y];if(tool==='up')H[x][y]=Math.min(3,h+1);else if(tool==='down'){const v=Math.max(-2,h-1);setH({x,y},v)}else if(tool==='flat'){H[x][y]=0;F[x][y]=0}else if(tool==='env'){const key=x+','+y;if(allEnv)delete ENV[key];else ENV[key]={k:envSel,dc:envDC()}}else if(tool==='surf'){if(H[x][y]>=0)F[x][y]=surfSel}}}
+ for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const h=H[x][y];if(tool==='up')H[x][y]=Math.min(3,h+1);else if(tool==='down'){const v=Math.max(-2,h-1);setH({x,y},v)}else if(tool==='flat'){H[x][y]=0;F[x][y]=0;const oi=objAt(x,y);if(oi>=0)OBJS.splice(oi,1)}else if(tool==='env'){const key=x+','+y;if(allEnv)delete ENV[key];else ENV[key]={k:envSel,dc:envDC()}}else if(tool==='surf'){if(H[x][y]>=0)F[x][y]=surfSel}}}
 cv.addEventListener('pointerdown',e=>{const[mx,my]=pos(e),c=pick(mx,my);
- if(e.button===1||e.button===2||(!c&&CAM.z>1)||(c&&tool==='move'&&e.button===0&&tokAt(c)<0&&CAM.z>1)){cv.setPointerCapture(e.pointerId);pan={x:e.clientX,y:e.clientY};cv.style.cursor='grabbing';e.preventDefault();return}
+ if(e.button===1||e.button===2||(!c&&CAM.z>1)||(c&&tool==='move'&&e.button===0&&tokAt(c)<0&&objAt(c.x,c.y)<0&&CAM.z>1)){cv.setPointerCapture(e.pointerId);pan={x:e.clientX,y:e.clientY};cv.style.cursor='grabbing';e.preventDefault();return}
  if(!c)return;cv.setPointerCapture(e.pointerId);snap();const inv=e.button===2;
+ if(tool==='move'&&!inv&&tokAt(c)<0&&objToggle(c))return;
  if(tool==='move'&&!inv){const i=tokAt(c);if(i>=0){drag=i;meas={a:{x:c.x,y:c.y},b:{x:c.x,y:c.y},live:false,drag:true};draw()}return}
  if(tool==='measure'){meas={a:c,b:c,live:true};draw();return}
  if(AREA_T.has(tool)&&!inv){painting={inv,area:{a:c,b:c}};draw();return}
@@ -999,7 +1077,7 @@ function legend(){const b=B[bio];if(typeof fillBio==='function'){const el=docume
 bz.addEventListener('click',e=>{const b=e.target.closest('button[data-b]');if(!b)return;bio=b.dataset.b;for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x===b);legend();if(typeof fillScenes==='function')fillScenes();save();draw()});
 document.getElementById('rot').onclick=()=>{rot=(rot+1)%4;save();draw()};
 document.getElementById('zin').onclick=()=>zoomAt(1.4,W/2,Hc/2);document.getElementById('zout').onclick=()=>zoomAt(1/1.4,W/2,Hc/2);document.getElementById('zfit').onclick=()=>{CAM.z=1;CAM.px=0;CAM.py=0;camSet();draw()};
-document.getElementById('undo').onclick=()=>{const s=hist.pop();if(!s)return;const d=JSON.parse(s);H=d.H;F=d.F||blank(N);tokens=d.tokens;MARKS=d.marks||MARKS;ENV=d.env||{};save();draw()};
+document.getElementById('undo').onclick=()=>{const s=hist.pop();if(!s)return;const d=JSON.parse(s);H=d.H;F=d.F||blank(N);tokens=d.tokens;MARKS=d.marks||MARKS;ENV=d.env||{};OBJS=d.objs||[];save();draw()};
 const KH={'0':0,'1':1,'2':2,'3':3,'4':-1,'5':-2},held=new Set();
 function setH(c,v){if(!c||H[c.x][c.y]===v)return;H[c.x][c.y]=v;if(v<0)F[c.x][c.y]=0;if(v===-2)tokens=tokens.filter(k=>!covers(k,c.x,c.y))}
 function pickTool(t){const b=document.querySelector(`#tools button[data-t="${t}"]`);if(b)b.click()}
@@ -1012,7 +1090,7 @@ document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,sele
  });
 document.addEventListener('keyup',e=>{const dg=/^Digit([0-5])$/.exec(e.code);if(dg)held.delete(dg[1])});
 window.addEventListener('blur',()=>held.clear());
-document.getElementById('clear').onclick=()=>{snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];ENV={};save();draw()};
+document.getElementById('clear').onclick=()=>{snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];OBJS=[];ENV={};save();draw()};
 let RNG=Math.random;const R=n=>Math.floor(RNG()*n),ok=(x,y)=>x>=0&&y>=0&&x<N&&y<N;
 function genFree(){const p=B[bio].gen;
  if(p.rooms){for(let x=0;x<N;x++){H[x][0]=3;H[x][N-1]=3}for(let y=0;y<N;y++){H[0][y]=3;H[N-1][y]=3}
@@ -1053,12 +1131,9 @@ const SCN={
    if(rr()<.5){const cx=x0+w,cy=y0+R(h);if(ok(cx,cy)&&!H[cx][cy]&&!F[cx][cy]){H[cx][cy]=1;F[cx][cy]=5}}}
   for(let i=0;i<50;i++){const x=R(N),y=R(N);if(!F[x][y]&&!H[x][y]){H[x][y]=-1;break}}
   for(let x=0;x<N;x++)for(let y=0;y<N;y++)if(!F[x][y]&&!H[x][y]&&rr()<.06)H[x][y]=pickw([[1,1],[3,1]])}},
- tavern:{bio:'prairie',run(){const hs=HS(),w=Math.min(N-4,(6+R(3))*hs),h=Math.min(N-4,(5+R(2))*hs),x0=2+R(Math.max(1,N-w-3)),y0=2+R(Math.max(1,N-h-3));
-  for(let x=x0;x<x0+w;x++)for(let y=y0;y<y0+h;y++){const edge=x===x0||y===y0||x===x0+w-1||y===y0+h-1;H[x][y]=edge?2:0;F[x][y]=edge?4:3}
-  const dx=x0+1+R(w-2),dy=y0+h-1;H[dx][dy]=0;F[dx][dy]=3;const bx=x0+1+R(w-2);H[bx][y0]=0;F[bx][y0]=3;
-  for(let x=x0+1;x<x0+w-1;x++)if(x!==bx&&rr()<.85){H[x][y0+1]=1;F[x][y0+1]=5}
-  for(let i=0;i<4;i++){const x=x0+1+R(w-2),y=y0+3+R(Math.max(1,h-5));if(ok(x,y)&&F[x][y]===3&&H[x][y]===0&&!(x===dx)){H[x][y]=1;F[x][y]=5}}
-  const path=[];let x=dx,y=dy+1;while(ok(x,y)){path.push([x,y]);if(rr()<.3)x=Math.max(0,Math.min(N-1,x+(rr()<.5?-1:1)));path.push([x,y]);y++}for(const[a,b]of path)if(ok(a,b)&&!F[a][b])F[a][b]=1;
+ tavern:{bio:'prairie',run(){const mid={x:Math.floor(N/2),y:Math.floor(N/2)},r=prefPlace(mid,'tavern',true)||prefPlace(mid,'house',true);if(!r)return;const x0=r.x0,y0=r.y0,w=r.W,h=r.Hh;
+  const dr=OBJS.find(o=>o.k==='door'&&(o.x===x0||o.y===y0||o.x===x0+w-1||o.y===y0+h-1))||{x:x0,y:y0+h-1};const ddx=dr.x===x0?-1:dr.x===x0+w-1?1:0,ddy=ddx?0:dr.y===y0?-1:1;
+  const path=[];let x=dr.x+ddx,y=dr.y+ddy;while(ok(x,y)){path.push([x,y]);if(rr()<.3){if(ddx)y=Math.max(0,Math.min(N-1,y+(rr()<.5?-1:1)));else x=Math.max(0,Math.min(N-1,x+(rr()<.5?-1:1)))}path.push([x,y]);x+=ddx;y+=ddy}for(const[a,b]of path)if(ok(a,b)&&!F[a][b])F[a][b]=1;
   const sw=rr()<.5,sx=sw?x0+w+1:x0-4,sy=y0+R(Math.max(1,h-2));if(freeRect(sx,sy,3,2,0))house(sx,sy,3,2,2);
   for(let x=0;x<N;x++)for(let y=0;y<N;y++)if(!F[x][y]&&!H[x][y]){const r=rr();if(r<.05)H[x][y]=1;else if(r<.1)H[x][y]=3;else if(r<.12){H[x][y]=1;F[x][y]=5}}}},
  bridge:{bio:'prairie',run(){const rw=Math.max(2,Math.round(N/7)),riv=orient(wander(N,2,N-rw-2,rw)),road=[];const vert=riv.length&&false;for(const[x,y]of riv)if(ok(x,y))H[x][y]=-1;
@@ -1177,12 +1252,12 @@ function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1
 function seedOf(id,d){if(d&&+d.seed)return +d.seed;let h=2166136261;for(const c of String(id))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0}
 function ctxBar(){const el=document.getElementById('ctxbar');if(!el)return;el.hidden=!CTX;if(!CTX)return;const mem=CTX.startsWith('mem:');el.innerHTML=`<b>${esc(mem?L2('Saved map','Carte enregistrée'):t('ctx_town'))} : ${esc(CTXN)} <span class="small">(${N}×${N})</span></b><button type="button" id="ctx_regen">${esc(mem?L2('Back to the saved version','Revenir à la version enregistrée'):t('ctx_regen'))}</button><button type="button" class="go" id="ctx_back">${esc(t('ctx_back'))}</button>`}
 document.getElementById('ctxbar').addEventListener('click',e=>{if(e.target.id==='ctx_back')leaveTown();else if(e.target.id==='ctx_regen'&&CTX){if(CTX.startsWith('mem:')){const m=memList().find(x=>'mem:'+x.id===CTX);if(m){snap();applyState(m.st);finishCtx(null)}return}const o=towns()[CTX];regenTown(o&&o.src,CTX)}});
-function regenTown(d,id){snap();ENV={};N=d&&d.c==='town'?64:128;H=blank(N);F=blank(N);tokens=[];MARKS=[];INI={o:[],cur:0,round:0};rot=0;const old=RNG;RNG=mulberry(seedOf(id,d));try{genCity(d)}finally{RNG=old}finishCtx(d)}
+function regenTown(d,id){snap();ENV={};N=d&&d.c==='town'?64:128;H=blank(N);F=blank(N);tokens=[];MARKS=[];OBJS=[];INI={o:[],cur:0,round:0};rot=0;const old=RNG;RNG=mulberry(seedOf(id,d));try{genCity(d)}finally{RNG=old}finishCtx(d)}
 function finishCtx(d){for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x.dataset.b===bio);legend();showSize();CAM.z=1;CAM.px=0;CAM.py=0;save();if(d&&CTX){const o=towns();if(o[CTX]){o[CTX].src=d;try{localStorage.setItem('luparis-towns',JSON.stringify(o))}catch(e){}}}ctxBar();layout()}
 function memList(){try{return JSON.parse(localStorage.getItem('luparis-maps'))||[]}catch(e){return[]}}
 function memSave(l){try{localStorage.setItem('luparis-maps',JSON.stringify(l));return true}catch(e){alert(L2('Browser storage is full: delete an old saved map.','Le stockage du navigateur est plein : supprime une ancienne carte enregistrée.'));return false}}
 function memThumb(){try{const c=document.createElement('canvas'),w=240,h=Math.round(240*cv.height/cv.width);c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#2b2a26';x.fillRect(0,0,w,h);x.drawImage(cv,0,0,w,h);return c.toDataURL('image/jpeg',.7)}catch(e){return''}}
-function memStateNow(){return{v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV}}
+function memStateNow(){return{v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV,objs:OBJS}}
 document.getElementById('savemap').addEventListener('click',()=>{const box=document.getElementById('savebox');box.hidden=false;const d=new Date();document.getElementById('save_n').value=(CTX&&CTXN?CTXN:tr(B[bio].n))+' — '+d.toLocaleDateString(lang);document.getElementById('save_n').focus();document.getElementById('save_n').select()});
 document.getElementById('savebox').addEventListener('submit',e=>{e.preventDefault();const n=document.getElementById('save_n').value.trim().slice(0,80)||L2('Battle map','Battle map');const l=memList();l.unshift({id:'m'+Date.now().toString(36),n,d:new Date().toISOString(),st:memStateNow(),th:memThumb()});if(memSave(l)){document.getElementById('savebox').hidden=true;document.getElementById('save_msg').textContent=L2('Saved. Find it in the World tab, “Saved maps”.','Enregistrée. Retrouve-la dans l\'onglet Monde, « Cartes enregistrées ».');setTimeout(()=>{document.getElementById('save_msg').textContent=''},4000);if(typeof renderMem==='function')renderMem()}});
 document.getElementById('save_cancel').addEventListener('click',()=>{document.getElementById('savebox').hidden=true});
@@ -1192,7 +1267,7 @@ function openTown(id,name,d){if(!CTX)save();CTX='town:'+id;CTXN=name;const o=tow
 function leaveTown(){CTX=null;CTXN='';try{localStorage.setItem('luparis-ctx','null')}catch(e){}if(!load()){H=blank(N);F=blank(N)}finishCtx(null)}
 window.lupOpenTown=openTown;
 const SCN_ORDER=['forest_road','forest_clearing','bandit_camp','snow_forest','mtn_bend','mtn_pass','cave','dungeon','ruins','graveyard','river_ford','bridge','marsh_walk','oasis','lava_field','crossroads','farmland','tavern','outskirts','village_square','docks','free'];
-function runScene(){snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];ENV={};NZ=null;RNG=Math.random;const sc=SCN[scene]||SCN.free;sc.run();save();draw()}
+function runScene(){snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];OBJS=[];ENV={};NZ=null;RNG=Math.random;const sc=SCN[scene]||SCN.free;sc.run();save();draw()}
 const SCN_BIO={gen:['ruins','graveyard','dungeon','cave','crossroads'],prairie:['crossroads','farmland','tavern','outskirts','village_square','docks','bridge','river_ford','ruins','graveyard'],foret:['forest_road','forest_clearing','bandit_camp','river_ford','crossroads','tavern','ruins'],montagne:['mtn_bend','mtn_pass','cave','ruins','bridge'],volcan:['lava_field','cave','mtn_pass','ruins'],desert:['oasis','ruins','mtn_pass','crossroads','village_square'],neige:['snow_forest','mtn_pass','mtn_bend','cave','village_square'],marais:['marsh_walk','river_ford','ruins','bandit_camp'],donjon:['dungeon','cave','graveyard','ruins']};
 function scenesFor(b){return[...(SCN_BIO[b]||[]),'free']}
 function fillScenes(){const el=document.getElementById('scene'),L=t('scn');if(!L)return;const list=scenesFor(bio);if(!list.includes(scene))scene=list[0];el.innerHTML=list.map(k=>`<option value="${k}"${k===scene?' selected':''}>${esc(t('scn')[k])}</option>`).join('')}
@@ -1274,51 +1349,56 @@ function route(){const v=({'#bestiaire':'bestiaire','#regles':'regles','#fiche':
  for(const a of document.querySelectorAll('.tabs a'))a.toggleAttribute('aria-current',a.dataset.v===v),a.dataset.v===v&&a.setAttribute('aria-current','page');if(v==='carte'){requestAnimationFrame(layout);if(placing)requestAnimationFrame(()=>stage.scrollIntoView({block:'center'}));else window.scrollTo(0,0)}else window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);
 Object.assign(T.en,{tab_sheet:'Character',sk_name:'Name',sk_people:'People',sk_xp:'XP earned',sk_level:'Level',sk_spent:'XP spent',sk_left:'XP left',sk_over:'Over budget by',
-sk_matrix:'Matrix of Intents',sk_dv:'Hit die',sk_schools:'Schools of magic',sk_fams:'Weapon families',sk_def:'Defense',sk_armor:'Armor',sk_shield:'Shield',
+sk_don:'Feats',sk_matrix:'Matrix of Intents',sk_dv:'Hit die',sk_schools:'Schools of magic',sk_fams:'Weapon families',sk_def:'Defense',sk_armor:'Armor',sk_shield:'Shield',
 sk_eva:'Evasion',sk_armv:'Armor value',sk_minor:'Minor',sk_major:'Major',sk_severe:'Severe',sk_init:'Initiative',sk_res:'Vitality and resources',sk_vit:'Vitality',sk_st:'Stamina',
 sk_short:'Short rest',sk_long:'Long rest',sk_atk:'Attacks and spells',sk_target:'Target Evasion',sk_attack:'Attack',sk_damage:'Damage',sk_addw:'Add a weapon',sk_wname:'Weapon name',
 sk_fam:'Family',sk_size:'Size',sk_add:'Add',sk_remove:'Remove',sk_spell:'basic spell',sk_dc:'DC',sk_nospell:'Buy a Tier in a school to get its spells.',sk_log:'Rolls',sk_nolog:'Your rolls will show up here.',
 sk_hit:'Hit',sk_miss:'Miss',sk_crit:'Critical!',sk_notes:'Notes',sk_io:'Save or share the sheet',sk_copy:'Copy the sheet',sk_import:'Import pasted sheet',sk_new:'New character',
 sk_copied:'Sheet copied.',sk_bad:'This text is not a valid sheet.',sk_done:'Sheet imported.',sk_demo:'Example character: change anything, the sheet recalculates.',
-sk_costs:'XP costs, v0.3: matrix +1 to +5 costs 5, 10, 20, 40, 80 (155 in total); armor training light 20, medium 60, heavy 140 in total; shield training 40; Tiers 1 to 5 cost 40, 80, 160, 240, 320 (840 in total); schools, weapon families and the Apex are disciplines: the highest costs ×1, the 2nd ×1.5, the 3rd ×2, the next ones ×3; hit die d8, d10, d12 cost 80, 240, 480 in total. Level = XP earned ÷ 100. Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17.',
+sk_costs:'XP costs, v0.4: each of the 6 stats costs 20, 40, 80, 160… per +1 (cap +3 to level 5, +5 to 10, +7 to 15), and −1 gives back 20; Fleet-footed 40 per rank; armor training light 20, medium 60, heavy 140 in total; shield training 40; Tiers 1 to 5 cost 40, 80, 160, 240, 320 (840 in total); schools, weapon families and the Apex are disciplines: the highest costs ×1, the 2nd ×1.5, the 3rd ×2, the next ones ×3; hit die d8, d10, d12 cost 80, 240, 480 in total. Level = XP earned ÷ 100. Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17.',
 sk_mb:b=>`Mastery +${b}`,sk_next:n=>`next +${n} XP`,sk_lock:(tt,l)=>`Tier ${tt} from level ${l}`,sk_fx:n=>`effects up to ${n}`,sk_unm:'not mastered',
 sz:{one:'One-handed (d6)',poly1:'Versatile, one hand (d8)',poly2:'Versatile, two hands (d10)',two:'Two-handed (d12)'},
 it:['Power','Finesse','Resilience'],dm:['Physical','Mental','Social'],hint:{P_phy:'Strength',F_phy:'Evasion',R_phy:'Thresholds, Stamina',P_men:'Offensive spells',F_men:'Perception',R_men:'Mana',P_soc:'Authority',F_soc:'Persuasion',R_soc:'Composure'}});
 Object.assign(T.fr,{tab_sheet:'Personnage',sk_name:'Nom',sk_people:'Peuple',sk_xp:'XP gagnée',sk_level:'Niveau',sk_spent:'XP dépensée',sk_left:'XP restante',sk_over:'Budget dépassé de',
-sk_matrix:'Matrice des intentions',sk_dv:'Dé de vie',sk_schools:'Écoles de magie',sk_fams:"Familles d'armes",sk_def:'Défense',sk_armor:'Armure',sk_shield:'Bouclier',
+sk_don:'Dons',sk_matrix:'Matrice des intentions',sk_dv:'Dé de vie',sk_schools:'Écoles de magie',sk_fams:"Familles d'armes",sk_def:'Défense',sk_armor:'Armure',sk_shield:'Bouclier',
 sk_eva:'Esquive',sk_armv:"Valeur d'armure",sk_minor:'Mineur',sk_major:'Majeur',sk_severe:'Sévère',sk_init:'Initiative',sk_res:'Vitalité et ressources',sk_vit:'Vitalité',sk_st:'Souffle',
 sk_short:'Repos court',sk_long:'Repos long',sk_atk:'Attaques et sorts',sk_target:'Esquive de la cible',sk_attack:'Attaque',sk_damage:'Dégâts',sk_addw:'Ajouter une arme',sk_wname:"Nom de l'arme",
 sk_fam:'Famille',sk_size:'Gabarit',sk_add:'Ajouter',sk_remove:'Retirer',sk_spell:'sort de base',sk_dc:'DD',sk_nospell:'Achète un Tier dans une école pour obtenir ses sorts.',sk_log:'Jets',sk_nolog:'Tes jets s\'afficheront ici.',
 sk_hit:'Touché',sk_miss:'Raté',sk_crit:'Critique !',sk_notes:'Notes',sk_io:'Sauvegarder ou partager la fiche',sk_copy:'Copier la fiche',sk_import:'Importer la fiche collée',sk_new:'Nouveau personnage',
 sk_copied:'Fiche copiée.',sk_bad:"Ce texte n'est pas une fiche valide.",sk_done:'Fiche importée.',sk_demo:'Personnage d\'exemple : change ce que tu veux, la fiche recalcule tout.',
-sk_costs:"Coûts en XP, v0.3 : une case de la matrice de +1 à +5 coûte 5, 10, 20, 40, 80 (155 au total) ; entraînement aux armures légères 20, intermédiaires 60, lourdes 140 au total ; aux boucliers 40 ; les Tiers 1 à 5 coûtent 40, 80, 160, 240, 320 (840 au total) ; écoles, familles d'armes et Apex sont des disciplines : la plus haute coûte ×1, la 2e ×1,5, la 3e ×2, les suivantes ×3 ; dé de vie d8, d10, d12 : 80, 240, 480 au total. Niveau = XP gagnée ÷ 100. Tier 2 dès le niveau 3, Tier 3 dès le 5, Tier 4 dès le 11, Tier 5 dès le 17.",
+sk_costs:"Coûts en XP, v0.4 : chacune des 6 stats coûte 20, 40, 80, 160… par +1 (plafond +3 jusqu'au niveau 5, +5 jusqu'au 10, +7 jusqu'au 15), et −1 rend 20 ; Pas rapide 40 par rang ; entraînement aux armures légères 20, intermédiaires 60, lourdes 140 au total ; aux boucliers 40 ; les Tiers 1 à 5 coûtent 40, 80, 160, 240, 320 (840 au total) ; écoles, familles d'armes et Apex sont des disciplines : la plus haute coûte ×1, la 2e ×1,5, la 3e ×2, les suivantes ×3 ; dé de vie d8, d10, d12 : 80, 240, 480 au total. Niveau = XP gagnée ÷ 100. Tier 2 dès le niveau 3, Tier 3 dès le 5, Tier 4 dès le 11, Tier 5 dès le 17.",
 sk_mb:b=>`Maîtrise +${b}`,sk_next:n=>`suivant +${n} XP`,sk_lock:(tt,l)=>`Tier ${tt} dès le niveau ${l}`,sk_fx:n=>`effets jusqu'à ${n}`,sk_unm:'non maîtrisée',
 sz:{one:'À une main (d6)',poly1:'Polyvalente, une main (d8)',poly2:'Polyvalente, deux mains (d10)',two:'À deux mains (d12)'},
 it:['Puissance','Finesse','Résistance'],dm:['physique','mentale','sociale'],dmH:['Physique','Mental','Social'],hint:{P_phy:'Force',F_phy:'Esquive',R_phy:'Seuils, Souffle',P_men:'Sorts offensifs',F_men:'Perception',R_men:'Mana',P_soc:'Autorité',F_soc:'Persuasion',R_soc:'Sang-froid'}});
-const COST={cell:[0,5,15,35,75,155],prof:{arm:[0,20,60,140],shd:40},tier:[0,40,120,280,520,840],dv:{6:0,8:80,10:240,12:480},mult:[1,1.5,2,3]},GATE=[1,1,3,5,11,17],MANA=[0,2,6,14,24,36],STAM=[0,1,3,7,12,18];
+const stCost=v=>v<0?-20*(-v):20*(2**v-1);
+const COST={pas:40,cell:[0,5,15,35,75,155],prof:{arm:[0,20,60,140],shd:40},tier:[0,40,120,280,520,840],dv:{6:0,8:80,10:240,12:480},mult:[1,1.5,2,3]},GATE=[1,1,3,5,11,17],MANA=[0,2,6,14,24,36],STAM=[0,1,3,7,12,18];
 const INT=['P','F','R'],DOM=['phy','men','soc'];
+const stCap=(c=C)=>{const L=lvl(c);return L<=5?3:L<=10?5:L<=15?7:99};
+function syncCells(c){const S=c.st;c.cells=Object.fromEntries(INT.flatMap(i=>DOM.map(d=>[i+'_'+d,(S[i]||0)+(S[d]||0)])))}
+function stFromCells(cl){const g=k=>+(cl&&cl[k])||0,all=INT.flatMap(i=>DOM.map(d=>g(i+'_'+d))),m=all.reduce((a,b)=>a+b,0)/9,cl3=v=>Math.max(-1,Math.min(3,Math.round(v))),S={};
+ for(const i of INT)S[i]=cl3(DOM.reduce((a,d)=>a+g(i+'_'+d),0)/3-m/2);for(const d of DOM)S[d]=cl3(INT.reduce((a,i)=>a+g(i+'_'+d),0)/3-m/2);return S}
 const SDIE={afflux:12,creuset:8,mirage:8,horizon:6,eidolon:8,egide:8,harmonie:6};const SCH={afflux:['Surge','Afflux'],creuset:['Crucible','Creuset'],mirage:['Mirage','Mirage'],horizon:['Horizon','Horizon'],eidolon:['Eidolon','Eidolon'],egide:['Aegis','Égide'],harmonie:['Harmony','Harmonie']};
 const FAM={taille:{n:['Cutting','Taille'],c:'P_phy'},estoc:{n:['Thrusting','Estoc'],c:'F_phy'},cont:{n:['Blunt','Contondantes'],c:'P_phy'},hast:{n:['Polearms','Hast'],c:'P_phy'},tir:{n:['Ranged and thrown','Tir et jet'],c:'F_phy'},martial:{n:['Martial arts','Arts martiaux'],c:'F_phy',sz:{one:['One hand busy','Une main occupée'],poly1:['Both hands free','Mains libres']}},nat:{n:['Natural weapons','Armes naturelles'],c:'P_phy',sz:{one:['Small (claws, beak)','Petite (griffes, bec)'],poly1:['Medium (fangs, horns)','Moyenne (crocs, cornes)'],poly2:['Large (tail, tusks)','Grande (queue, défenses)'],two:['Huge (crushing jaws)','Énorme (mâchoire broyante)']}}};
 function szLabel(f,k){const o=FAM[f]&&FAM[f].sz;return o?(o[k]?tr(o[k]):''):T[lang].sz[k]}function szKeys(f){const o=FAM[f]&&FAM[f].sz;return o?Object.keys(o):Object.keys(SZ)}
 const SZ={one:6,poly1:8,poly2:10,two:12};
 const ARM={none:[['None','Aucune'],0,'l'],cuir:[['Leather','Cuir'],1,'l'],clou:[['Studded leather','Cuir clouté'],2,'l'],chem:[['Chain shirt','Chemise de mailles'],3,'m'],cuira:[['Breastplate, scale','Cuirasse, écailles'],4,'m'],demi:[['Half plate','Demi-plate'],5,'m'],cotte:[['Chain mail','Cotte de mailles'],6,'h'],clib:[['Splint','Clibanion'],7,'h'],harn:[['Plate','Harnois'],8,'h']};
 const SHD={none:[['None','Aucun'],0],bocle:[['Buckler','Bocle'],0],rond:[['Small shield','Rondache'],1],ecu:[['Heater shield','Écu'],1],grand:[['Large shield','Grand bouclier'],2],pavois:[['Tower shield','Pavois'],2]};
-const blankC=()=>({id:tid(),camp:'',name:'',people:'',xp:150,cells:Object.fromEntries(INT.flatMap(i=>DOM.map(d=>[i+'_'+d,0]))),dv:6,sch:Object.fromEntries(Object.keys(SCH).map(k=>[k,0])),apex:0,prof:{arm:0,shd:0},fam:Object.fromEntries(Object.keys(FAM).map(k=>[k,0])),armor:'none',shield:'none',weapons:[],used:{hp:0,mana:0,st:0},notes:'',demo:false});
-function demoC(){const c=blankC();Object.assign(c,{camp:lang==='fr'?'Exemple':'Example',name:'Kael',people:lang==='fr'?'Humain':'Human',xp:300,dv:8,prof:{arm:2,shd:0},armor:'chem',shield:'none',demo:true});c.cells.P_phy=3;c.cells.R_phy=2;c.cells.F_phy=1;c.fam.taille=1;
+const blankC=()=>({id:tid(),camp:'',name:'',people:'',xp:150,st:{P:0,F:0,R:0,phy:0,men:0,soc:0},pas:0,cells:Object.fromEntries(INT.flatMap(i=>DOM.map(d=>[i+'_'+d,0]))),dv:6,sch:Object.fromEntries(Object.keys(SCH).map(k=>[k,0])),apex:0,prof:{arm:0,shd:0},fam:Object.fromEntries(Object.keys(FAM).map(k=>[k,0])),armor:'none',shield:'none',weapons:[],used:{hp:0,mana:0,st:0},notes:'',demo:false});
+function demoC(){const c=blankC();Object.assign(c,{camp:lang==='fr'?'Exemple':'Example',name:'Kael',people:lang==='fr'?'Humain':'Human',xp:300,dv:8,prof:{arm:2,shd:0},armor:'chem',shield:'none',demo:true});c.st={P:1,F:0,R:1,phy:1,men:0,soc:-1};syncCells(c);c.fam.taille=1;
  c.weapons=[{n:lang==='fr'?'Épée longue':'Longsword',f:'taille',s:'poly2'},{n:lang==='fr'?'Dague':'Dagger',f:'estoc',s:'one'}];return c}
 let CH;try{CH=JSON.parse(localStorage.getItem('luparis-chars'))}catch(e){}
 if(!CH||!Array.isArray(CH.list)||!CH.list.length){let old;try{old=JSON.parse(localStorage.getItem('luparis-sheet'))}catch(e){}CH={list:[old&&old.cells?old:demoC()],active:null}}
-for(const c of CH.list){if(!c.prof)c.prof={arm:armNeed(c.armor||'none'),shd:c.shield&&c.shield!=='none'?1:0};if(c.sch&&c.sch.apex!=null){if(c.sch.apex>0&&!c.apex)c.apex=c.sch.apex;delete c.sch.apex}if(c.apex==null)c.apex=0;for(const k of Object.keys(FAM))if(c.fam&&c.fam[k]==null)c.fam[k]=0;if(!c.id)c.id=tid();if(c.camp==null)c.camp=c.demo?(lang==='fr'?'Exemple':'Example'):'';if(!c.used)c.used={hp:0,mana:0,st:0}}
+for(const c of CH.list){if(!c.prof)c.prof={arm:armNeed(c.armor||'none'),shd:c.shield&&c.shield!=='none'?1:0};if(c.sch&&c.sch.apex!=null){if(c.sch.apex>0&&!c.apex)c.apex=c.sch.apex;delete c.sch.apex}if(c.apex==null)c.apex=0;for(const k of Object.keys(FAM))if(c.fam&&c.fam[k]==null)c.fam[k]=0;if(!c.id)c.id=tid();if(c.camp==null)c.camp=c.demo?(lang==='fr'?'Exemple':'Example'):'';if(!c.used)c.used={hp:0,mana:0,st:0};if(!c.st)c.st=stFromCells(c.cells);if(c.pas==null)c.pas=0;syncCells(c)}
 let C=CH.list.find(c=>c.id===CH.active)||CH.list[0];if(!CH.list.some(c=>c.id===CH.active))CH.active=null;
 function saveC(){try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}if(typeof renderPlace==='function')renderPlace();if(typeof renderHand==='function')renderHand()}
 const lvl=(c=C)=>Math.max(1,Math.floor((+c.xp||0)/100)),mb=tier=>tier>0?tier+1:0,sgn=v=>(v>=0?'+':'')+v;
 function discs(c=C){return[...Object.keys(c.sch).map(k=>['sch',k,c.sch[k]]),...Object.keys(c.fam).map(k=>['fam',k,c.fam[k]]),['apx','apex',c.apex||0]].filter(d=>d[2]>0).sort((a,b)=>b[2]-a[2])}
 function discCost(c=C){return discs(c).reduce((s,d,i)=>s+Math.round(COST.tier[d[2]]*COST.mult[Math.min(i,3)]),0)}
-function spent(){const pr=C.prof||{};let s=discCost()+COST.prof.arm[pr.arm||0]+(pr.shd?COST.prof.shd:0);for(const k in C.cells)s+=COST.cell[C.cells[k]];return s+COST.dv[C.dv]}
+function spent(){const pr=C.prof||{};let s=discCost()+COST.prof.arm[pr.arm||0]+(pr.shd?COST.prof.shd:0);for(const k in C.st)s+=stCost(C.st[k]);return s+(C.pas||0)*COST.pas+COST.dv[C.dv]}
 function armNeed(k){return k==='none'?0:({l:1,m:2,h:3})[(ARM[k]||ARM.none)[2]]}
 function derived(c=C){const L=lvl(c),a=ARM[c.armor]||ARM.none,cl=c.cells,pr=c.prof||{arm:0,shd:0},armOk=armNeed(c.armor)<=(pr.arm||0),shdOk=c.shield==='none'||!!pr.shd,cap=a[2]==='l'?99:a[2]==='m'?2:0,nat=2*(c.apex||0),av=Math.max(armOk?a[1]:0,nat);
  const eva=10+Math.min(cl.F_phy,cap)+(shdOk?(SHD[c.shield]||SHD.none)[1]:0)-(armOk?0:2),base=c.dv+L+cl.R_phy,ts=Object.values(c.sch),maxT=Math.max(0,...ts);
- return{L,eva,av,armOk,shdOk,minor:av,major:base+av,severe:2*base+av,hp:1+Math.ceil(L*c.dv/12),mana:ts.reduce((s,x)=>s+MANA[x],0)+cl.R_men*Math.floor(maxT/2),nat,st:Math.max(0,Object.values(c.fam).reduce((s,x)=>s+STAM[x],0)+STAM[c.apex||0]+cl.R_phy),init:cl.F_phy}}
+ return{L,eva,av,armOk,shdOk,minor:av,major:base+av,severe:2*base+av,hp:1+Math.ceil(L*c.dv/12),mana:ts.reduce((s,x)=>s+MANA[x],0)+cl.R_men*Math.floor(maxT/2),nat,st:Math.max(0,Object.values(c.fam).reduce((s,x)=>s+STAM[x],0)+STAM[c.apex||0]+cl.R_phy),init:cl.F_phy,mv:6+2*(c.pas||0)-(armOk&&a[2]==='h'?2:0)}}
 function cellName(k){const[i,d]=k.split('_');const ii=INT.indexOf(i),di=DOM.indexOf(d);return lang==='fr'?`${T.fr.it[ii]} ${T.fr.dm[di]}`:`${T.en.dm[di]} ${T.en.it[ii]}`}
 function camps(){return[...new Set(CH.list.map(c=>c.camp||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,lang))}
 function renderList(){const groups=[...camps(),''].filter(g=>CH.list.some(c=>(c.camp||'')===g)),nn=$('c_nn')?$('c_nn').value:'',nc=$('c_nc')?$('c_nc').value:'';
@@ -1335,8 +1415,9 @@ function renderSheet(){$('c_camps').innerHTML=camps().map(x=>opt(x,x)).join('');
  $('c_demo').textContent=C.demo?t('sk_demo'):'';
  $('c_sum').innerHTML=`<span class="pill">${t('sk_level')} <b>${D.L}</b></span><span class="pill">${t('sk_spent')} <b>${sp}</b></span>`+(left>=0?`<span class="pill">${t('sk_left')} <b>${left}</b></span>`:`<span class="pill bad">${t('sk_over')} <b>${-left}</b></span>`);
  const hd=lang==='fr'?T.fr.dmH:T.en.dm;
- $('c_mx').innerHTML=`<div class="mx"><span></span>${hd.map(d=>`<span class="hd">${d}</span>`).join('')}`+INT.map((i,ii)=>`<span class="rh">${T[lang].it[ii]}</span>`+DOM.map(d=>{const k=i+'_'+d,v=C.cells[k];
-  return`<div class="cell" title="${esc(cellName(k))}"><div class="v">${sgn(v)}</div><div class="c">${esc(T[lang].hint[k])}</div><div class="step"><button type="button" data-cell="${k}" data-d="-1" aria-label="${esc(cellName(k))} −"${v<=0?' disabled':''}>−</button><button type="button" data-cell="${k}" data-d="1" aria-label="${esc(cellName(k))} +"${v>=5?' disabled':''}>+</button></div><div class="c">${v<5?t('sk_next')(COST.cell[v+1]-COST.cell[v]):''}</div></div>`}).join('')).join('')+'</div>';
+ const cap=stCap(),S=C.st,stB=(k,name)=>{const v=S[k];return`<div class="sth"><b>${esc(name)}</b><div class="stp"><button type="button" data-stat="${k}" data-d="-1" aria-label="${esc(name)} −"${v<=-1?' disabled':''}>−</button><span class="sv${v>cap?' bad':''}">${sgn(v)}</span><button type="button" data-stat="${k}" data-d="1" aria-label="${esc(name)} +"${v>=cap?' disabled':''}>+</button></div><small>${v<cap?t('sk_next')(stCost(v+1)-stCost(v)):L2('cap','plafond')}</small></div>`};
+ $('c_mx').innerHTML=`<p class="small">${L2(`Each cell = its row + its column. Stats from −1 to ${cap>50?'no limit':'+'+cap} at level ${D.L} (cap +3 up to level 5, +5 up to 10, +7 up to 15, none beyond). Each +1 costs double the previous (20, 40, 80…). A stat at −1 gives back 20 XP.`,`Chaque case = sa ligne + sa colonne. Stats de −1 à ${cap>50?'sans limite':'+'+cap} au niveau ${D.L} (plafond +3 jusqu'au niveau 5, +5 jusqu'au 10, +7 jusqu'au 15, aucun au-delà). Chaque +1 coûte le double du précédent (20, 40, 80…). Une stat à −1 rend 20 XP.`)}</p><div class="mx"><span></span>${DOM.map((d,di)=>stB(d,hd[di])).join('')}`+INT.map((i,ii)=>stB(i,T[lang].it[ii])+DOM.map(d=>{const k=i+'_'+d,v=C.cells[k];
+  return`<div class="cell" title="${esc(cellName(k))}"><div class="v">${sgn(v)}</div><div class="c">${esc(T[lang].hint[k])}</div></div>`}).join('')).join('')+'</div>'+(Object.values(S).some(v=>v>cap)?`<p class="warn">${L2('A stat is above the cap for this level.','Une stat dépasse le plafond de ce niveau.')}</p>`:'');
  $('c_dv').innerHTML=[6,8,10,12].map(d=>`<button type="button" data-dv="${d}" aria-pressed="${C.dv===d}">d${d}<small>${COST.dv[d]} XP</small></button>`).join('');
  const tierRow=(grp,k,name,v)=>{const lock=GATE.findIndex((l,ti)=>ti>0&&D.L<l);const rk=v?discs().findIndex(d=>d[0]===grp&&d[1]===k):-1,rm=rk>=0?COST.mult[Math.min(rk,3)]:0;return`<div class="tr"><div><div class="tn">${esc(name)}${rk>=0?` <span class="small">(${rk+1}${lang==='fr'?(rk?'e':'re'):(['st','nd','rd'][rk]||'th')} ${L2('discipline','discipline')}, ×${String(rm).replace('.',lang==='fr'?',':'.')})</span>`:''}</div><div class="ti">${v?t('sk_mb')(mb(v))+(grp==='sch'?' · '+esc(t('sk_fx')(v))+' · Mana '+MANA[v]:` · ${t('sk_st')} ${STAM[v]}`):'—'}</div></div>
   <div class="pips">${[1,2,3,4,5].map(n=>`<button type="button" data-${grp}="${k}" data-t="${n}" aria-pressed="${n<=v}" aria-label="${esc(name)} Tier ${n}"${D.L<GATE[n]?' disabled':''}>${n}</button>`).join('')}</div></div>`};
@@ -1348,7 +1429,8 @@ function renderSheet(){$('c_camps').innerHTML=camps().map(x=>opt(x,x)).join('');
  $('c_shield').innerHTML=Object.keys(SHD).map(k=>opt(k,`${tr(SHD[k][0])}${SHD[k][1]?' (+'+SHD[k][1]+')':''}`,k===C.shield)).join('');
  const st=(k,v)=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`;
  {const pr=C.prof||(C.prof={arm:0,shd:0}),lv=[L2('None','Aucun'),L2('Light','Légères'),L2('Medium','Intermédiaires'),L2('Heavy','Lourdes')];$('c_prof').innerHTML=`<div class="prof"><span class="small">${L2('Armor training','Entraînement aux armures')}</span><div class="seg">${lv.map((n,i)=>`<button type="button" data-prof="arm" data-v="${i}" aria-pressed="${(pr.arm||0)===i}">${n}<small>${COST.prof.arm[i]} XP</small></button>`).join('')}</div><label class="ck"><input type="checkbox" data-prof="shd"${pr.shd?' checked':''}> ${L2('Shield training','Entraînement aux boucliers')} (${COST.prof.shd} XP)</label>${D.armOk?'':`<p class="warn">${L2('Not trained for this armor: no armor value and −2 Evasion.','Pas d\'entraînement pour cette armure : aucune valeur d\'armure et −2 à l\'Esquive.')}</p>`}${D.shdOk?'':`<p class="warn">${L2('Not trained for shields: no bonus, no Parry.','Pas d\'entraînement aux boucliers : ni bonus ni Parade.')}</p>`}</div>`}
- $('c_def').innerHTML=st(t('sk_eva'),D.eva)+st(t('sk_armv'),D.av)+st(t('sk_minor'),D.minor)+st(t('sk_major'),D.major)+st(t('sk_severe'),D.severe)+st(t('sk_init'),sgn(D.init));
+ $('c_def').innerHTML=st(t('sk_eva'),D.eva)+st(t('sk_armv'),D.av)+st(t('sk_minor'),D.minor)+st(t('sk_major'),D.major)+st(t('sk_severe'),D.severe)+st(t('sk_init'),sgn(D.init))+st(L2('Speed','Déplacement'),`${D.mv} ${L2('tiles','cases')}`);
+ $('c_don').innerHTML=`<div class="tr"><div><div class="tn">${L2('Fleet-footed','Pas rapide')}</div><div class="ti">${L2(`+2 tiles per rank, ${COST.pas} XP each. Base 6 tiles (30 ft); heavy armor −2.`,`+2 cases par rang, ${COST.pas} XP chacun. Base 6 cases (30 pieds) ; armure lourde −2.`)}</div></div><div class="pips">${[1,2].map(n=>`<button type="button" data-pas="${n}" aria-pressed="${n<=(C.pas||0)}" aria-label="${L2('Fleet-footed','Pas rapide')} ${n}">${n}</button>`).join('')}</div></div>`;
  if(!C.used)C.used={hp:0,mana:0,st:0};const U=C.used,cur={};for(const[k,m]of[['hp',D.hp],['mana',D.mana],['st',D.st]]){U[k]=Math.max(0,Math.min(m,+U[k]||0));cur[k]=m-U[k]}
  const trk=(k,lab,m,cls)=>`<div class="trk"><div><b>${lab}</b><div class="bar2 ${cls}"><i style="width:${m?Math.round(100*cur[k]/m):0}%"></i></div></div><div class="ctl"><button type="button" data-trk="${k}" data-d="-1" aria-label="${lab} −">−</button><span class="num">${cur[k]} / ${m}</span><button type="button" data-trk="${k}" data-d="1" aria-label="${lab} +">+</button></div></div>`;
  $('c_trk').innerHTML=trk('hp',t('sk_vit'),D.hp,'hp')+trk('mana','Mana',D.mana,'mn')+trk('st',t('sk_st'),D.st,'');
@@ -1372,7 +1454,8 @@ function rollDmg(name,nd,dd,mod,key){const n=lastCrit[key]?nd*2:nd,rs=Array.from
  logIt(`${esc(name)} · ${t('sk_damage')}${lang==='fr'?' :':':'} ${n}d${dd}${mod?sgn(mod):''} [${rs.join(', ')}] = <b>${tot}</b>`)}
 const fiche=$('v-fiche');
 fiche.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const ds=b.dataset;
- if(ds.cell){C.cells[ds.cell]=Math.max(0,Math.min(5,C.cells[ds.cell]+(+ds.d)));C.demo=false}
+ if(ds.stat){const v=C.st[ds.stat]+(+ds.d);if(v<-1||(+ds.d>0&&v>stCap()))return;C.st[ds.stat]=v;syncCells(C);C.demo=false}
+ else if(ds.pas!=null){const n=+ds.pas;C.pas=C.pas===n?n-1:n;C.demo=false}
  else if(ds.dv){C.dv=+ds.dv;C.demo=false}
  else if(ds.apx){const n=+ds.t;C.apex=(C.apex||0)===n?n-1:n;C.demo=false}
  else if(ds.sch||ds.fam){const g=ds.sch?'sch':'fam',k=ds.sch||ds.fam,n=+ds.t;C[g][k]=C[g][k]===n?n-1:n;C.demo=false}
@@ -1384,8 +1467,8 @@ fiche.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)retu
  else if(b.id==='c_short'){const U=C.used;U.hp=Math.floor(U.hp/2);U.mana=Math.ceil(U.mana/2);U.st=0}
  else if(b.id==='c_long'){C.used={hp:0,mana:0,st:0}}
  else if(b.id==='c_copy'){const txt=JSON.stringify(C);navigator.clipboard.writeText(txt).then(()=>{$('c_msg').textContent=t('sk_copied')},()=>{$('c_paste').value=txt;$('c_paste').select()});return}
- else if(b.id==='c_imp'){try{const o=JSON.parse($('c_paste').value);if(!o||!o.cells||!o.sch||!o.fam)throw 0;const c=blankC();
-   for(const k in c.cells)c.cells[k]=Math.max(0,Math.min(5,+o.cells[k]||0));for(const k in c.sch)c.sch[k]=Math.max(0,Math.min(5,+o.sch[k]||0));for(const k in c.fam)c.fam[k]=Math.max(0,Math.min(5,+o.fam[k]||0));
+ else if(b.id==='c_imp'){try{const o=JSON.parse($('c_paste').value);if(!o||!(o.cells||o.st)||!o.sch||!o.fam)throw 0;const c=blankC();
+   if(o.st&&typeof o.st==='object')for(const k in c.st)c.st[k]=Math.max(-1,Math.min(20,Math.round(+o.st[k]||0)));else c.st=stFromCells(o.cells);c.pas=Math.max(0,Math.min(2,Math.round(+o.pas||0)));syncCells(c);for(const k in c.sch)c.sch[k]=Math.max(0,Math.min(5,+o.sch[k]||0));for(const k in c.fam)c.fam[k]=Math.max(0,Math.min(5,+o.fam[k]||0));
    c.name=String(o.name||'');c.people=String(o.people||'');c.xp=Math.max(0,+o.xp||0);c.dv=[6,8,10,12].includes(+o.dv)?+o.dv:6;c.armor=ARM[o.armor]?o.armor:'none';c.shield=SHD[o.shield]?o.shield:'none';c.notes=String(o.notes||'');
    c.used={hp:Math.max(0,+(o.used&&o.used.hp)||0),mana:Math.max(0,+(o.used&&o.used.mana)||0),st:Math.max(0,+(o.used&&o.used.st)||0)};c.weapons=(Array.isArray(o.weapons)?o.weapons:[]).filter(w=>w&&FAM[w.f]&&SZ[w.s]).map(w=>({n:String(w.n||'?'),f:w.f,s:w.s}));c.camp=String(o.camp||'');CH.list.push(c);CH.active=c.id;C=c;$('c_msg').textContent=t('sk_done')}catch(err){$('c_msg').textContent=t('sk_bad')}}
  else if(b.id==='c_del'){if(!b.dataset.armed){b.dataset.armed='1';b.textContent=t('sk_confirm2');setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent=t('sk_del')}},3000);return}delete b.dataset.armed;b.textContent=t('sk_del');
@@ -1440,8 +1523,8 @@ $('c_tgt').addEventListener('input',()=>{});
 $('c_wf').addEventListener('submit',e=>{e.preventDefault();const n=$('c_wn').value.trim();if(!n)return;C.weapons.push({n,f:$('c_wfam').value,s:$('c_wsz').value});$('c_wn').value='';saveC();renderSheet()});
 T.en.sk_confirm2='Confirm: erase the sheet?';T.fr.sk_confirm2='Confirmer : effacer la fiche ?';
 
-Object.assign(T.en,{savemap:'Save the map',save_name:'Name',w_mem:'Saved maps',t_surf:'Ground',t_env:'Effect',sk_lay:'Drag a module by its ⠿ handle to reorder.',sk_cols:'Columns',sk_layreset:'Reset layout',t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Remove one with its ✕ in this list.',ctx_town:'Town map',ctx_regen:'Reset to the original town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},z_fit:'Fit',z_out:'Zoom out',scn:{forest_clearing:'Forest clearing',bandit_camp:'Bandit camp',snow_forest:'Snowy forest',mtn_pass:'Mountain pass',cave:'Cave',dungeon:'Dungeon rooms',ruins:'Ruins',graveyard:'Graveyard',river_ford:'River ford',marsh_walk:'Swamp boardwalk',oasis:'Desert oasis',lava_field:'Lava field',crossroads:'Crossroads',farmland:'Farmland',village_square:'Village square',docks:'Docks',forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain'}});
-Object.assign(T.fr,{savemap:'Enregistrer la carte',save_name:'Nom',w_mem:'Cartes enregistrées',t_surf:'Sol',t_env:'Effet',sk_lay:'Glisse un module par sa poignée ⠿ pour le déplacer.',sk_cols:'Colonnes',sk_layreset:'Réinitialiser l\'agencement',t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Retire-le avec sa croix ✕ dans cette liste.',ctx_town:'Carte de ville',ctx_regen:'Revenir à la ville d\'origine',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},z_fit:'Ajuster',z_out:'Dézoomer',scn:{forest_clearing:'Clairière',bandit_camp:'Camp de bandits',snow_forest:'Forêt enneigée',mtn_pass:'Col de montagne',cave:'Grotte',dungeon:'Salles de donjon',ruins:'Ruines',graveyard:'Cimetière',river_ford:'Gué',marsh_walk:'Passerelles du marais',oasis:'Oasis',lava_field:'Champ de lave',crossroads:'Carrefour',farmland:'Champs et ferme',village_square:'Place de village',docks:'Quais',forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre'}});
+Object.assign(T.en,{t_obj:'Object',t_pref:'Building',savemap:'Save the map',save_name:'Name',w_mem:'Saved maps',t_surf:'Ground',t_env:'Effect',sk_lay:'Drag a module by its ⠿ handle to reorder.',sk_cols:'Columns',sk_layreset:'Reset layout',t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Remove one with its ✕ in this list.',ctx_town:'Town map',ctx_regen:'Reset to the original town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},z_fit:'Fit',z_out:'Zoom out',scn:{forest_clearing:'Forest clearing',bandit_camp:'Bandit camp',snow_forest:'Snowy forest',mtn_pass:'Mountain pass',cave:'Cave',dungeon:'Dungeon rooms',ruins:'Ruins',graveyard:'Graveyard',river_ford:'River ford',marsh_walk:'Swamp boardwalk',oasis:'Desert oasis',lava_field:'Lava field',crossroads:'Crossroads',farmland:'Farmland',village_square:'Village square',docks:'Docks',forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain'}});
+Object.assign(T.fr,{t_obj:'Objet',t_pref:'Bâtiment',savemap:'Enregistrer la carte',save_name:'Nom',w_mem:'Cartes enregistrées',t_surf:'Sol',t_env:'Effet',sk_lay:'Glisse un module par sa poignée ⠿ pour le déplacer.',sk_cols:'Colonnes',sk_layreset:'Réinitialiser l\'agencement',t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Retire-le avec sa croix ✕ dans cette liste.',ctx_town:'Carte de ville',ctx_regen:'Revenir à la ville d\'origine',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},z_fit:'Ajuster',z_out:'Dézoomer',scn:{forest_clearing:'Clairière',bandit_camp:'Camp de bandits',snow_forest:'Forêt enneigée',mtn_pass:'Col de montagne',cave:'Grotte',dungeon:'Salles de donjon',ruins:'Ruines',graveyard:'Cimetière',river_ford:'Gué',marsh_walk:'Passerelles du marais',oasis:'Oasis',lava_field:'Champ de lave',crossroads:'Carrefour',farmland:'Champs et ferme',village_square:'Place de village',docks:'Quais',forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre'}});
 setTimeout(()=>{fillScenes();fillSz()});
 Object.assign(T.en,{pl_title:'Quick place',pl_ally:'Ally (characters)',pl_foe:'Enemy (bestiary)',pl_hint:'Pick a name, then click tiles on the map. Esc to stop.',pl_choose:'— choose —',
 in_title:'Initiative',in_roll:'Roll',in_next:'Next turn',in_end:'End',in_rnd:n=>`Round ${n}`,in_empty:'Place tokens, then roll. Allies use Physical Finesse, monsters their initiative bonus.',
@@ -1678,7 +1761,7 @@ function wUp(e){wP.delete(e.pointerId);if(wP.size<2)wPinch=null;if(!wDrag)return
 wst.addEventListener('pointerup',wUp);wst.addEventListener('pointercancel',e=>{wP.delete(e.pointerId);wDrag=null;wPinch=null});
 function wShow(g){const S=$('w_sel');S.hidden=false;const b=wBurgs.find(x=>x.g===g),m=wMarks.find(x=>x.g===g);
  if(!b){if(m)S.innerHTML=`<h3>${esc(m.n)}</h3><p class="small">${esc(m.note||'')}</p>`;return}
- const L=WST.lore[b.id]||{},kind=b.lm==='tree'?t('w_lmtree'):b.lm==='pyr'?t('w_lmpyr'):t('w_k')[b.c]||'',pop=b.d&&b.d.pop?` · ${t('w_pop')} ${(+b.d.pop).toLocaleString(lang)}`:'';
+ const L=WST.lore[b.id]||{},kind=b.lm==='tree'?t('w_lmtree'):b.lm==='pyr'?t('w_lmpyr'):b.lm==='silver'?L2('Silver-mining city','Cité minière d\'argent'):b.lm==='cath'?L2('Flying cathedral, chained to the ground','Cathédrale volante, enchaînée au sol'):t('w_k')[b.c]||'',pop=b.d&&b.d.pop?` · ${t('w_pop')} ${(+b.d.pop).toLocaleString(lang)}`:'';
  const url=(L.u||'').trim(),safe=/^https:\/\//.test(url);
  S.innerHTML=`<h3>${esc(b.n)}</h3><p class="small">${esc(kind)}${b.s?' · '+esc(b.s):''}${pop}</p>
  <label><span>${t('w_lore')}</span><textarea id="w_lore" rows="5" data-id="${esc(b.id)}" placeholder="${esc(t('w_lore_ph'))}">${esc(L.t||'')}</textarea></label>
@@ -1719,8 +1802,8 @@ $('w_res').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
 new ResizeObserver(()=>{if(WS&&!$('v-monde').hidden)wApply()}).observe(wst);
 
 function nm0(m){return tr(m.n)}
-function applyLang(){document.documentElement.lang=lang;document.title=lang==='fr'?'Luparis — Table tactique':'Luparis — Tactical Table';
- for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillBio==='function')fillBio();
+function applyLang(){document.documentElement.lang=lang;document.title='Luparis';
+ for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof fillBio==='function')fillBio();
  for(const e of document.querySelectorAll('[data-i18n-html]'))e.innerHTML=t(e.dataset.i18nHtml);
  for(const e of document.querySelectorAll('[data-i18n-ph]'))e.placeholder=t(e.dataset.i18nPh);
  for(const b of bz.querySelectorAll('button[data-b]'))b.querySelector('.bn').textContent=tr(B[b.dataset.b].n);
