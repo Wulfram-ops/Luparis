@@ -68,14 +68,26 @@ def terr(c):
     if b==12 and h<26: return 'marsh'
     if b==10: return 'tuft'
     return 'grass'
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
+def dissolve(cl,simp=.35):
+    ps=[Polygon([V[v] for v in c['v']]).buffer(0) for c in cl]
+    if not ps: return ''
+    u=unary_union(ps).simplify(simp,preserve_topology=True)
+    geoms=getattr(u,'geoms',[u]);out=[]
+    for g in geoms:
+        for ring in [g.exterior,*g.interiors]:
+            pts=list(ring.coords)[:-1]
+            if len(pts)>=3: out.append('M'+'L'.join(f"{x:.1f},{y:.1f}" for x,y in pts)+'Z')
+    return ''.join(out)
 def grp(fn):
     g={}
     for c in cells:
         k=fn(c)
-        if k is not None: g.setdefault(k,[]).append(poly(c))
+        if k is not None: g.setdefault(k,[]).append(c)
     return g
 base=grp(lambda c: basecol(c) if land(c) else None)
-lakes=[poly(c) for c in cells if not land(c) and islake(c)]
+lakes=dissolve([c for c in cells if not land(c) and islake(c)])
 coast=[];border=[];wall=[]
 for c in cells:
     for j in c['c']:
@@ -187,7 +199,7 @@ for c in cells:
         add('hill',x+r(5)-3,y+r(4)+2,1);add('hill',x+r(5)+4,y+r(4)+5,.8)
     elif t in('trees','wild','pines'):
         k={'trees':'tree','wild':'wtree'}.get(t,'spine' if snowy(c) else 'pine')
-        for _ in range(9): TC.append((k,x+r(22),y+r(20)+3,.85+rng.random()*.25))
+        for _ in range(7): TC.append((k,x+r(22),y+r(20)+3,.85+rng.random()*.25))
     elif t=='jungle':
         add('palm',x-3+r(2),y+1+r(2),1);add('palm',x+4+r(2),y+3+r(2),.9);add('bush',x+r(3),y+6+r(2),1.2);add('bush',x-6+r(2),y+5,1)
     elif t=='dune':
@@ -197,9 +209,9 @@ for c in cells:
     elif t=='marsh':
         if rng.random()<.4: add('marsh',x+r(6),y+r(5),1)
     elif t=='tuft':
-        if rng.random()<.45: add('tuft',x+r(6),y+r(5),1.1)
+        if rng.random()<.3: add('tuft',x+r(6),y+r(5),1.1)
     elif t=='grass':
-        if rng.random()<.22: add('grass',x+r(8),y+r(6),1.1)
+        if rng.random()<.12: add('grass',x+r(8),y+r(6),1.1)
 # spaced placement: mountains (big first), then trees
 _grid={}
 def _near(x,y,R_):
@@ -215,7 +227,7 @@ for sc,k,x,y in MC:
 _tg={}
 for k,x,y,sc in TC:
     gx,gy=int(x//10),int(y//10)
-    if any(math.hypot(x-a,y-b)<4.6 for i in range(gx-1,gx+2) for j in range(gy-1,gy+2) for a,b in _tg.get((i,j),())): continue
+    if any(math.hypot(x-a,y-b)<5.2 for i in range(gx-1,gx+2) for j in range(gy-1,gy+2) for a,b in _tg.get((i,j),())): continue
     if any(((x-a)/(9.5*(b+.4)))**2+((y-c_)/(5.2*(b+.4)))**2<1 for a,c_,b,_ in _near(x,y,0)): continue
     _tg.setdefault((gx,gy),[]).append((x,y));add(k,x,y,sc)
 stamps.sort()
@@ -223,17 +235,17 @@ DIM={**{m+v:(30,22) for m in ('mtn','mtns','mtnr','mtnd') for v in 'abc'},'mtn':
 VB={**{m+v:(-15,-21) for m in ('mtn','mtns','mtnr','mtnd') for v in 'abc'},'mtn':(-13,-18),'mtns':(-13,-18),'mtnr':(-13,-18),'hill':(-8,-6),'tree':(-5,-11),'wtree':(-5,-11),'pine':(-4,-12),'spine':(-4,-12),'palm':(-5,-10),'bush':(-3,-4),'dune':(-7,-4),'scrub':(-4,-4),'marsh':(-4,-4),'tuft':(-3,-3),'grass':(-3,-3)}
 o=[f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {W} {H}" id="wsvg">',defs,f'<rect x="0" y="0" width="{W}" height="{H}" fill="#7b9893"/>']
 o.append(f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#po)"/>')
-cj="".join(coast)
+cj=dissolve([c for c in cells if land(c)],.25)
 o.append(f'<defs><path id="cst" d="{cj}"/></defs><g fill="none" stroke-linecap="round" stroke-linejoin="round">')
 o.append('<use href="#cst" stroke="#9ab2a7" stroke-opacity=".35" stroke-width="110"/><use href="#cst" stroke="#9fb7ab" stroke-opacity=".45" stroke-width="64"/>')
 for w_ in (34,24,15):
     o.append(f'<use href="#cst" stroke="#3f5c57" stroke-opacity=".38" stroke-width="{w_}"/><use href="#cst" stroke="#a2b9ad" stroke-width="{w_-1.3}"/>')
 o.append('</g>')
-for col,ps in base.items(): o.append(f'<path d="{"".join(ps)}" fill="{col}" stroke="{col}" stroke-width="0.8"/>')
+for col,ps in base.items(): o.append(f'<path d="{dissolve(ps)}" fill="{col}" stroke="{col}" stroke-width="0.8" stroke-linejoin="round"/>')
 FCOL={'trees':'#8fa463','wild':'#6c8450','pines':'#6f8562','jungle':'#86a35e'}
 for t_,col in FCOL.items():
-    ps=[poly(c) for c in cells if land(c) and terr(c)==t_ and not any(math.hypot(c['p'][0]-q[0],c['p'][1]-q[1])<r_ for q,r_ in avoid)]
-    if ps: o.append(f'<path d="{"".join(ps)}" fill="{col}" stroke="{col}" stroke-width="5" stroke-linejoin="round" opacity=".85"/>')
+    ps=dissolve([c for c in cells if land(c) and terr(c)==t_ and not any(math.hypot(c['p'][0]-q[0],c['p'][1]-q[1])<r_ for q,r_ in avoid)])
+    if ps: o.append(f'<path d="{ps}" fill="{col}" stroke="{col}" stroke-width="5" stroke-linejoin="round" opacity=".85"/>')
 if lakes: o.append(f'<path d="{"".join(lakes)}" fill="#9ab8b0" stroke="#9ab8b0" stroke-width="0.8"/>')
 o.append(f'<use href="#cst" fill="none" stroke="#2e2419" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>')
 bd="".join(border)
