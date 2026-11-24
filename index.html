@@ -783,6 +783,9 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 </template>
 <aside class="rolls" id="rolls" aria-label="Jets"><div class="rlh"><button type="button" class="rlt" id="rl_tog" aria-expanded="true"><span id="rl_ttl"></span> <span class="rlc" id="rl_cnt"></span></button><button type="button" id="rl_clr" class="rlx"></button></div><ol id="rl_list" aria-live="polite"></ol></aside>
 <script>
+var FOLD={},INIP={};try{FOLD=JSON.parse(localStorage.getItem('luparis-fold'))||{}}catch(e){}
+function foldSave(){try{localStorage.setItem('luparis-fold',JSON.stringify(FOLD))}catch(e){}}
+
 {
 const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),stage=document.getElementById('stage'),info=document.getElementById('info');
 const B={
@@ -1472,8 +1475,8 @@ const DIFF=[['trivial',0,['Trivial','Trivial']],['easy',5,['Easy','Facile']],['m
 function campsGet(){try{return JSON.parse(localStorage.getItem('luparis-camps'))||{}}catch(e){return{}}}
 function campsPut(o){try{localStorage.setItem('luparis-camps',JSON.stringify(o))}catch(e){}}
 function campRec(o,name){if(!o[name]){const xs=CH.list.filter(c=>(c.camp||'')===name).map(c=>+c.xp||0);o[name]={xp:xs.length?Math.max(...xs):150,log:[]}}return o[name]}
-function campSync(){const o=campsGet();let ch=false;for(const c of CH.list){const r=c.camp&&o[c.camp];if(r&&c.xp!==r.xp){c.xp=r.xp;ch=true}}if(ch)saveC()}
-function campAward(name,x,label){if(!name)return;const o=campsGet(),r=campRec(o,name);r.xp=Math.max(0,r.xp+x);r.log.unshift({d:Date.now(),l:String(label||'').slice(0,80),x});r.log=r.log.slice(0,60);campsPut(o);campSync();if(CH.active)renderSheet();else renderList()}
+function campSync(){const o=campsGet();let ch=false;for(const c of CH.list){const r=c.camp&&o[c.camp];if(r&&c.xp!==r.xp){c.xp=r.xp;ch=true}}if(ch)try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}}
+function campAward(name,x,label){if(!name)return;const o=campsGet(),r=campRec(o,name);r.xp=Math.max(0,r.xp+x);r.log.unshift({d:Date.now(),l:String(label||'').slice(0,80),x});r.log=r.log.slice(0,60);campsPut(o);campSync();if(CH.active)renderSheet();else renderList();if(typeof renderHand==='function')renderHand()}
 function campPanel(){const o=campsGet(),names=camps();if(!names.length)return'';const ti=lang==='fr'?1:0;
  return`<section class="card campgm"><h3>${L2('Campaign XP','XP de campagne')} <span class="pill">${L2('GM','MJ')}</span></h3><p class="small">${L2('Every character of a campaign shares its XP. Only the game master awards it here, or when ending a fight.','Tous les personnages d\'une campagne partagent son XP. Seul le MJ l\'attribue, ici ou à la fin d\'un combat.')}</p>`+
  names.map(n=>{const r=o[n]||{xp:Math.max(150,...CH.list.filter(c=>c.camp===n).map(c=>+c.xp||0)),log:[]};return`<div class="campx"><div class="cxh"><b>${esc(n)}</b> <span class="pill">${r.xp} XP · ${L2('level','niveau')} ${Math.max(1,Math.floor(r.xp/100))}</span></div>
@@ -1744,7 +1747,6 @@ function hAtk(name,ab){const r=dRoll(20);return`${esc(name)} · d20 (${r}) ${sgn
 function hDmg(name,n,d,mod){const rs=Array.from({length:n},()=>dRoll(d)),tot=rs.reduce((a,b)=>a+b,0)+mod;return`${esc(name)} · ${n}d${d}${mod?sgn(mod):''} [${rs.join(', ')}] = <b>${tot}</b>`}
 function trk(lbl,key,max,used){const left=Math.max(0,max-used);return`<div class="htrk"><span>${lbl}</span><button type="button" data-ht="${key}" data-d="1" aria-label="${esc(lbl)} −">−</button><b>${left}/${max}</b><button type="button" data-ht="${key}" data-d="-1" aria-label="${esc(lbl)} +">+</button></div>`}
 let pfOpen=true;try{const v=localStorage.getItem('luparis-pf');if(v!=null)pfOpen=JSON.parse(v)}catch(e){}
-const INIP={};
 function pfSheet(c,D){const ti=lang==='fr'?1:0,a=ARM[c.armor]||ARM.none,sh=SHD[c.shield]||SHD.none,S=c.st||{},hd=lang==='fr'?T.fr.dmH:T.en.dm,Q=handSel[c.id+'_pf']||(handSel[c.id+'_pf']={sf:-1,adv:0});
  const box=(k,v)=>`<div class="pfb"><span>${k}</span><b>${v}</b></div>`;
  const mx=`<table class="pfmx"><tr><th></th>${DOM.map((d,i)=>`<th>${hd[i]} <small>${sgn(S[d]||0)}</small></th>`).join('')}</tr>${INT.map((i,ii)=>`<tr><th>${T[lang].it[ii]} <small>${sgn(S[i]||0)}</small></th>${DOM.map(d=>{const k=i+'_'+d;return`<td><button type="button" data-pfr="${k}" title="${esc(cellName(k))} · ${esc(T[lang].hint[k])}">${sgn(c.cells[k]||0)}</button></td>`}).join('')}</tr>`).join('')}</table>`;
@@ -2032,8 +2034,6 @@ window.addEventListener('hashchange',()=>setTimeout(kbHints));setTimeout(kbHints
 
 
 // ---- foldable panels and cards
-let FOLD={};try{FOLD=JSON.parse(localStorage.getItem('luparis-fold'))||{}}catch(e){}
-function foldSave(){try{localStorage.setItem('luparis-fold',JSON.stringify(FOLD))}catch(e){}}
 function foldKey(sec){const h=sec.querySelector('h3');return'p:'+(sec.dataset.mod||sec.id||(h&&(h.dataset.i18n||h.textContent.trim().slice(0,30)))||'')}
 function foldApply(root){(root||document).querySelectorAll('section.card').forEach(sec=>{const h=sec.querySelector('h3');if(!h)return;let w=h;while(w.parentNode&&w.parentNode!==sec)w=w.parentNode;if(w!==h)w.classList.add('foldwrap');
  const k=foldKey(sec),on=!!FOLD[k];sec.classList.toggle('fold',on);h.classList.add('foldh');h.setAttribute('role','button');h.tabIndex=0;h.setAttribute('aria-expanded',String(!on))})}
