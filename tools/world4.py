@@ -24,13 +24,35 @@ def effh(c):
     h=c['h']
     if dist(c,SKY)<34: h=max(h,52 if dist(c,SKY)>14 else 46)
     return h
+# --- Wall (Desolate Lands | Kaurgath) extended north to the coast; desert up to the wall
+WP=[]
+for c in cells:
+    for j in c['c']:
+        if j<=c['i'] or j>=len(cells): continue
+        o=cells[j]
+        if land(c) and land(o) and {c['state'],o['state']}=={15,6}:
+            sv=set(o['v']);sh=[v for v in c['v'] if v in sv]
+            if len(sh)>=2: WP+=[V[sh[0]],V[sh[1]]]
+def cellAt(x,y): return min((c for c in cells if abs(c['p'][0]-x)<25 and abs(c['p'][1]-y)<25),key=lambda c:(c['p'][0]-x)**2+(c['p'][1]-y)**2,default=None)
+WTOP=min(WP,key=lambda q:q[1]);WBOT=max(WP,key=lambda q:q[1]);WEXT=[tuple(WTOP)]
+_r=random.Random(SEED+77);x,y=WTOP
+while True:
+    ny=y-5;nx=x+(_r.random()-.55)*2.2;cc=cellAt(nx,ny)
+    if cc is None or not land(cc): WEXT.append((nx,ny));break
+    WEXT.append((nx,ny));x,y=nx,ny
+MAINF=cellAt(*WTOP)['f']
+def wallX(y):
+    if y<=WTOP[1]:
+        return min(WEXT,key=lambda q:abs(q[1]-y))[0]
+    near=sorted(WP,key=lambda q:abs(q[1]-y))[:2];return sum(q[0] for q in near)/len(near)
+def desx(c): return c['state']==S_DES or (c['f']==MAINF and land(c) and c['p'][0]>wallX(c['p'][1])+1 and c['p'][1]<=WBOT[1]+10)
 def basecol(c):
     s=c['state'];sn=snowy(c);h=effh(c)
     if sn=='nw': return '#e9ebe6'
     if sn=='tundra': return '#e2e6da'
     if sn=='snow': return '#eff2ef'
     if s==S_SYL: return '#94b77e'
-    if s==S_DES: return '#ecd7a2'
+    if desx(c): return '#ecd7a2'
     if s==S_WAR: return '#cf9a6a' if h>=27 else '#e1b783'
     if s in (S_XAL,S_ITZ): return '#9fc77c'
     if h>=48: return '#d6d0bf'
@@ -43,7 +65,7 @@ def terr(c):
         if h>=38: return 'hill'
         if sn=='snow' and b in (5,6,7,8,9): return 'pines'
         return 'tuft'
-    if s==S_DES: return 'mtn' if h>=48 else 'dune'
+    if desx(c): return 'mtn' if h>=48 else 'dune'
     if s==S_WAR: return 'mtnr' if h>=27 else 'scrub'
     if h>=62: return 'mtns'
     if h>=48: return 'mtn'
@@ -75,6 +97,7 @@ for c in cells:
         elif land(c) and c['state']!=o['state']:
             border.append(seg)
             if {c['state'],o['state']}=={15,6}: wall.append(seg)
+for a,b in zip(WEXT,WEXT[1:]): wall.append(f"M{a[0]:.1f},{a[1]:.1f}L{b[0]:.1f},{b[1]:.1f}")
 O='#3b3026'
 SYM={
 'mtn':f'<symbol id="i-mtn" viewBox="-13 -18 26 19" overflow="visible"><path d="M-12,0 L-2,-16 L0,-14 L3,-17 L12,0Z" fill="#cfc6b2"/><path d="M3,-17 L12,0 L4,0 L1,-8 L-1,-12 L0,-14Z" fill="#8f816d"/><path d="M-12,0 L-2,-16 L0,-14 L3,-17 L12,0" fill="none" stroke="{O}" stroke-width=".9" stroke-linejoin="round"/><path d="M-6,-6 L-4,-8 M-8,-3 L-6,-5" stroke="{O}" stroke-width=".5"/></symbol>',
@@ -101,7 +124,7 @@ v=max(cand,key=lambda c:c['h']);VOL=(v['p'][0]+4,v['p'][1]-4)
 PYR={}
 for st in (S_ITZ,S_XAL):
     cb=p['burgs'][p['states'][st]['capital']];PYR[cb['name']]=(cb['x']+9,cb['y']+3)
-des=[c for c in cells if land(c) and c['state']==S_DES];pc=max(des,key=lambda c:c['p'][1]-c['p'][0]);POR=tuple(pc['p'])
+des=[c for c in cells if land(c) and c['state']==S_DES];pc=max(des,key=lambda c:c['p'][1]+c['p'][0]);POR=tuple(pc['p'])
 burgcells={b['cell'] for b in p['burgs'][1:] if b and 'cell' in b}
 avoid=[(TREE,30),(VOL,34),(POR,12)]+[(q,14) for q in PYR.values()]
 # stamps
