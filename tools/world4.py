@@ -27,28 +27,15 @@ def effh(c):
     h=c['h']
     if dist(c,SKY)<34: h=max(h,52 if dist(c,SKY)>14 else 46)
     return h
-# --- Wall (Desolate Lands | Kaurgath) extended north to the coast; desert up to the wall
-WP=[]
+# --- Border Desolate Lands | Kaurgath-Thaukar redrawn as a line east of Ilkath; the wall follows it
+_ilk=burg['Ilkath'];LINEX=_ilk['x']+11;MAINF=cells[_ilk['cell']]['f']
+S_THA=next(s_['i'] for s_ in p['states'] if s_.get('name')=='Thaukar')
 for c in cells:
-    for j in c['c']:
-        if j<=c['i'] or j>=len(cells): continue
-        o=cells[j]
-        if land(c) and land(o) and {c['state'],o['state']}=={15,6}:
-            sv=set(o['v']);sh=[v for v in c['v'] if v in sv]
-            if len(sh)>=2: WP+=[V[sh[0]],V[sh[1]]]
-def cellAt(x,y): return min((c for c in cells if abs(c['p'][0]-x)<25 and abs(c['p'][1]-y)<25),key=lambda c:(c['p'][0]-x)**2+(c['p'][1]-y)**2,default=None)
-WTOP=min(WP,key=lambda q:q[1]);WBOT=max(WP,key=lambda q:q[1]);WEXT=[tuple(WTOP)]
-_r=random.Random(SEED+77);x,y=WTOP
-while True:
-    ny=y-5;nx=x+(_r.random()-.55)*2.2;cc=cellAt(nx,ny)
-    if cc is None or not land(cc): WEXT.append((nx,ny));break
-    WEXT.append((nx,ny));x,y=nx,ny
-MAINF=cellAt(*WTOP)['f']
-def wallX(y):
-    if y<=WTOP[1]:
-        return min(WEXT,key=lambda q:abs(q[1]-y))[0]
-    near=sorted(WP,key=lambda q:abs(q[1]-y))[:2];return sum(q[0] for q in near)/len(near)
-def desx(c): return c['state']==S_DES or (c['f']==MAINF and land(c) and c['p'][0]>wallX(c['p'][1])+1 and c['p'][1]<=WBOT[1]+10)
+    if c['f']==MAINF and land(c) and 670<=c['p'][1]<=795 and c['state'] in (S_DES,6,S_THA):
+        if c['p'][0]>LINEX: c['state']=S_DES
+        elif c['state']==S_DES: c['state']=6
+def isWall(a,b): return MAINF==a['f']==b['f'] and S_DES in (a['state'],b['state']) and {a['state'],b['state']}-{S_DES}<= {6,S_THA} and min(a['p'][1],b['p'][1])<=800
+def desx(c): return c['state']==S_DES
 def basecol(c):
     s=c['state'];sn=snowy(c);h=effh(c)
     if sn=='nw': return '#e9ebe6'
@@ -99,8 +86,7 @@ for c in cells:
         if land(c)!=land(o): coast.append(seg)
         elif land(c) and c['state']!=o['state']:
             border.append(seg)
-            if {c['state'],o['state']}=={15,6}: wall.append(seg)
-for a,b in zip(WEXT,WEXT[1:]): wall.append(f"M{a[0]:.1f},{a[1]:.1f}L{b[0]:.1f},{b[1]:.1f}")
+            if isWall(c,o): wall.append(seg)
 O='#3b3026'
 SYM={
 'mtn':f'<symbol id="i-mtn" viewBox="-13 -18 26 19" overflow="visible"><path d="M-12,0 L-2,-16 L0,-14 L3,-17 L12,0Z" fill="#cfc6b2"/><path d="M3,-17 L12,0 L4,0 L1,-8 L-1,-12 L0,-14Z" fill="#8f816d"/><path d="M-12,0 L-2,-16 L0,-14 L3,-17 L12,0" fill="none" stroke="{O}" stroke-width=".9" stroke-linejoin="round"/><path d="M-6,-6 L-4,-8 M-8,-3 L-6,-5" stroke="{O}" stroke-width=".5"/></symbol>',
@@ -243,7 +229,7 @@ B=[]
 for b in p['burgs'][1:]:
     if not b or b.get('removed') or 'x' not in b:continue
     cap=b.get('capital',0);city=b.get('group')=='cities' or cap;nm=RENAME.get(b['name'],b['name'])
-    e={'i':b['i'],'n':nm,'x':round(b['x'],1),'y':round(b['y'],1),'c':'cap' if cap else ('city' if city else 'town'),'s':STATE_RENAME.get(st.get(b.get('state',0),{}).get('name',''),st.get(b.get('state',0),{}).get('name','')),
+    e={'i':b['i'],'n':nm,'x':round(b['x'],1),'y':round(b['y'],1),'c':'cap' if cap else ('city' if city else 'town'),'s':STATE_RENAME.get(st.get(cells[b['cell']]['state'],{}).get('name',''),st.get(cells[b['cell']]['state'],{}).get('name','')),
        'pop':round(b.get('population',0)*1000),'ft':''.join(k[0] for k in ('citadel','walls','plaza','temple','shanty') if b.get(k)),'port':1 if b.get('port') else 0,'river':1 if cells[b['cell']].get('r') else 0,'seed':SEED+b['i']}
     if b['name'] in BURG_MOVE:
         mc=cells[BURG_MOVE[b['name']]];sn=st.get(mc['state'],{}).get('name','');e.update(x=round(mc['p'][0],1),y=round(mc['p'][1],1)+2,s=STATE_RENAME.get(sn,sn))
