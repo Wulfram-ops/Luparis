@@ -105,6 +105,58 @@ SYM={
 'tuft':f'<symbol id="i-tuft" viewBox="-3 -3 6 4" overflow="visible"><path d="M-2,0 L-2.6,-2 M-.8,0 L-.8,-2.6 M.4,0 L1,-2" stroke="#8b958a" stroke-width=".55"/><path d="M1,.2 Q2.2,-.6 3,.2" stroke="#ffffff" stroke-width=".8" fill="none"/></symbol>',
 'grass':f'<symbol id="i-grass" viewBox="-3 -3 6 4" overflow="visible"><path d="M-1.6,0 L-2.2,-2 M-.6,0 L-.6,-2.5 M.4,0 L1,-2" stroke="#7f9a5a" stroke-width=".55"/></symbol>',
 }
+# ---- new terrain icons (generated) ----
+def _pts(L): return ' '.join(f'{x},{y}' for x,y in L)
+MSH={
+ 'a':dict(sil=[(-13,0),(-7,-8),(-5,-7),(0,-20),(4,-13),(6,-14),(13,0)],
+          sh=[[(0,-20),(4,-13),(6,-14),(13,0),(1,0),(1.5,-7),(-1,-13)]],
+          rid=[[(0,-20),(-1,-13),(1.5,-7),(1,0)],[(-7,-8),(-6,-4)]],
+          snow=[[(-4,-12.5),(0,-20),(3.6,-13.6),(2,-12.8),(.6,-14.2),(-1.2,-12),(-2.6,-13.2)]],
+          hat=[(2,-15,4,-12),(3,-11,6,-8),(4,-7,8,-4),(6,-11,9,-7),(2.5,-6,5,-2),(8,-6,11,-2)]),
+ 'b':dict(sil=[(-14,0),(-6,-16),(-3,-12),(2,-19),(7,-10),(9,-11),(14,0)],
+          sh=[[(2,-19),(7,-10),(9,-11),(14,0),(4,0),(4,-9)],[(-6,-16),(-3,-12),(-2,-8),(-3,0),(-5,-7)]],
+          rid=[[(2,-19),(4,-9),(4,0)],[(-6,-16),(-5,-7),(-3,0)]],
+          snow=[[(-1.5,-13),(2,-19),(5.2,-13.4),(3.5,-12.6),(2.2,-14),(.4,-12.2)],[(-8.6,-12),(-6,-16),(-4,-13),(-5.6,-12.4),(-7,-11.4)]],
+          hat=[(5,-14,7,-11),(5.5,-9,9,-6),(7,-5,11,-2),(9.5,-8,12,-4),(-4,-11,-3,-8),(-3.5,-6,-3,-3)]),
+ 'c':dict(sil=[(-14,0),(-9,-7),(-3,-17),(0,-15),(3,-19),(9,-8),(14,0)],
+          sh=[[(3,-19),(9,-8),(14,0),(2,0),(2.5,-9),(1,-14)]],
+          rid=[[(3,-19),(1,-14),(2.5,-9),(2,0)],[(-3,-17),(-4,-10),(-6,-4)]],
+          snow=[[(-5,-13.5),(-3,-17),(0,-15),(3,-19),(6,-13.2),(4.2,-13.8),(2.4,-12.6),(.6,-14),(-1.6,-12.6),(-3.4,-13.8)]],
+          hat=[(4,-15,6,-12),(4,-11,8,-8),(4,-6,8,-3),(8,-9,11,-5),(9,-4,12,-1)])}
+def msym(sid,shape,lit,shade,ink,snow=False):
+    S=MSH[shape];g=f'<symbol id="i-{sid}" viewBox="-15 -21 30 22" overflow="visible">'
+    g+=f'<ellipse cx="3" cy="0" rx="14" ry="2.2" fill="#3b2a1a" opacity=".16"/>'
+    g+=f'<polygon points="{_pts(S["sil"]+[(S["sil"][-1][0],0),(S["sil"][0][0],0)])}" fill="{lit}"/>'
+    for P in S['sh']: g+=f'<polygon points="{_pts(P)}" fill="{shade}"/>'
+    if snow:
+        for P in S['snow']: g+=f'<polygon points="{_pts(P)}" fill="#fbfaf4" stroke="{ink}" stroke-width=".35" stroke-linejoin="round"/>'
+    g+='<g stroke="'+ink+'" stroke-width=".45" stroke-linecap="round" opacity=".7">'+''.join(f'<path d="M{a},{b} L{c},{d}"/>' for a,b,c,d in S['hat'])+'</g>'
+    for R_ in S['rid']: g+=f'<polyline points="{_pts(R_)}" fill="none" stroke="{ink}" stroke-width=".55" stroke-linecap="round" opacity=".8"/>'
+    g+=f'<polyline points="{_pts(S["sil"])}" fill="none" stroke="{ink}" stroke-width="1" stroke-linejoin="round" stroke-linecap="round"/>'
+    return g+'</symbol>'
+for sh in 'abc':
+    SYM['mtn'+sh]=msym('mtn'+sh,sh,'#efe5ca','#b9a37e',O)
+    SYM['mtns'+sh]=msym('mtns'+sh,sh,'#ece3cc','#a99476',O,True)
+    SYM['mtnr'+sh]=msym('mtnr'+sh,sh,'#d38f62','#94553a','#4a2a1c')
+    SYM['mtnd'+sh]=msym('mtnd'+sh,sh,'#ead7a6','#c4a46e','#5a4026')
+def tsym(sid,dark,mid,light,ink):
+    g=f'<symbol id="i-{sid}" viewBox="-5 -11 10 12" overflow="visible"><ellipse cx="1" cy="0" rx="3.6" ry="1" fill="#2a2414" opacity=".22"/><path d="M-.6,0 L-.5,-3.5 L.5,-3.5 L.6,0Z" fill="#5a4129" stroke="{ink}" stroke-width=".35"/>'
+    C=[(-2.2,-5,2.6),(2.1,-5.3,2.5),(0,-7.6,2.8),(0,-4,2.4)]
+    g+=''.join(f'<circle cx="{x}" cy="{y}" r="{r}" fill="{mid}" stroke="{ink}" stroke-width=".7"/>' for x,y,r in C)
+    g+=''.join(f'<circle cx="{x}" cy="{y}" r="{r-.35}" fill="{mid}"/>' for x,y,r in C)
+    g+=f'<path d="M1.2,-3 A2.6,2.6 0 0 0 4.3,-5.6 A2.4,2.4 0 0 1 1,-2Z" fill="{dark}"/><path d="M-2.4,-4.2 Q0,-2.6 2.4,-3.6 Q1,-1.8 -.2,-1.8 Q-1.8,-2.2 -2.4,-4.2Z" fill="{dark}" opacity=".8"/>'
+    g+=f'<circle cx="-.9" cy="-8.4" r="1.2" fill="{light}"/><circle cx="-2.9" cy="-5.8" r=".9" fill="{light}"/>'
+    return g+'</symbol>'
+def psym(sid,dark,mid,ink,snow=False):
+    g=f'<symbol id="i-{sid}" viewBox="-4 -12 8 13" overflow="visible"><ellipse cx="1" cy="0" rx="3" ry=".9" fill="#2a2414" opacity=".22"/><path d="M-.5,0 L.5,0 L.5,-1.8 L-.5,-1.8Z" fill="#5a4129"/>'
+    for y0,w,h in ((-1.6,3.6,4.6),(-4.4,2.9,4.4),(-7.1,2.1,4.2)):
+        g+=f'<path d="M{-w},{y0} L0,{y0-h} L{w},{y0} Q0,{y0+.8} {-w},{y0}Z" fill="{mid}" stroke="{ink}" stroke-width=".55" stroke-linejoin="round"/><path d="M0,{y0-h} L{w},{y0} Q{w/2},{y0+.5} .3,{y0+.4}Z" fill="{dark}"/>'
+        if snow: g+=f'<path d="M{-w*.7},{y0-h*.32} L0,{y0-h} L{w*.6},{y0-h*.35} L.2,{y0-h*.5}Z" fill="#fbfaf4"/>'
+    return g+'</symbol>'
+SYM['tree']=tsym('tree','#56713a','#7d9a52','#a6bd78','#27301b')
+SYM['wtree']=tsym('wtree','#3c5530','#57733f','#7f9a5c','#1f2a17')
+SYM['pine']=psym('pine','#344b30','#4e6a45','#1f2a19')
+SYM['spine']=psym('spine','#3d5240','#566f55','#1f2a19',True)
 defs='<defs>'+''.join(SYM.values())+'<pattern id="po" width="34" height="18" patternUnits="userSpaceOnUse"><path d="M3,10 Q7,7 11,10 T19,10" fill="none" stroke="#2f4a46" stroke-opacity=".22" stroke-width=".6"/><path d="M20,3 Q23,1 26,3" fill="none" stroke="#2f4a46" stroke-opacity=".15" stroke-width=".5"/></pattern></defs>'
 # landmarks positions
 TREE=(bxy('Vardrassil')[0]+20,bxy('Vardrassil')[1]+6)
@@ -116,10 +168,10 @@ for st in (S_ITZ,S_XAL):
 POR=(890.0,758.0)
 ZIG=(1302.0,427.0);ANOR=(bxy("Anor'Londo")[0],bxy("Anor'Londo")[1]+2)
 burgcells={b['cell'] for b in p['burgs'][1:] if b and 'cell' in b}|set(BURG_MOVE.values())
-avoid=[(TREE,30),(VOL,34),(POR,12),(ZIG,22),((ANOR[0],ANOR[1]-6),18)]+[(q,14) for q in PYR.values()]
+avoid=[(TREE,34),((TREE[0],TREE[1]-38),34),(VOL,34),(POR,12),(ZIG,22),((ANOR[0],ANOR[1]-6),18)]+[(q,14) for q in PYR.values()]
 # stamps
 rng=random.Random(SEED)
-stamps=[]
+stamps=[];MC=[];TC=[]
 def add(kind,x,y,s=1): stamps.append((y,kind,x,s))
 for c in cells:
     if not land(c): continue
@@ -127,15 +179,15 @@ for c in cells:
     if any(math.hypot(x-q[0],y-q[1])<r for q,r in avoid): continue
     if c['i'] in burgcells: continue
     t=terr(c);r=lambda a: (rng.random()-.5)*a
-    if t in('mtn','mtns','mtnr'): add(t,x+r(4),y+r(3)+6,.85+rng.random()*.35)
+    if t in('mtn','mtns','mtnr'):
+        k=('mtnd' if t=='mtn' and desx(c) else t);hh=effh(c);sc=max(.8,min(1.45,.8+(hh-48)/55))
+        MC.append((sc,k,x+r(5),y+r(4)+5));
+        if hh>=60: MC.append((sc*.85,k,x+r(14),y+r(10)+5))
     elif t=='hill':
         add('hill',x+r(5)-3,y+r(4)+2,1);add('hill',x+r(5)+4,y+r(4)+5,.8)
-    elif t=='trees':
-        for dx,dy in((-4,-1),(3,0),(0,4),(-2,6) if rng.random()<.5 else (5,5)): add('tree',x+dx+r(2),y+dy+r(2),.9+rng.random()*.25)
-    elif t=='wild':
-        for dx,dy in((-5,-2),(0,-3),(4,0),(-3,3),(2,5),(-6,5)): add('wtree',x+dx+r(2),y+dy+r(2),.95+rng.random()*.25)
-    elif t=='pines':
-        for dx,dy in((-4,0),(2,-1),(0,4),(5,4)): add('spine' if snowy(c) else 'pine',x+dx+r(2),y+dy+r(2),.9+rng.random()*.25)
+    elif t in('trees','wild','pines'):
+        k={'trees':'tree','wild':'wtree'}.get(t,'spine' if snowy(c) else 'pine')
+        for _ in range(9): TC.append((k,x+r(22),y+r(20)+3,.85+rng.random()*.25))
     elif t=='jungle':
         add('palm',x-3+r(2),y+1+r(2),1);add('palm',x+4+r(2),y+3+r(2),.9);add('bush',x+r(3),y+6+r(2),1.2);add('bush',x-6+r(2),y+5,1)
     elif t=='dune':
@@ -148,9 +200,27 @@ for c in cells:
         if rng.random()<.45: add('tuft',x+r(6),y+r(5),1.1)
     elif t=='grass':
         if rng.random()<.22: add('grass',x+r(8),y+r(6),1.1)
+# spaced placement: mountains (big first), then trees
+_grid={}
+def _near(x,y,R_):
+    gx,gy=int(x//24),int(y//24)
+    for i in range(gx-2,gx+3):
+        for j in range(gy-2,gy+3):
+            for q in _grid.get((i,j),()): yield q
+def _put(q): _grid.setdefault((int(q[0]//24),int(q[1]//24)),[]).append(q)
+MC.sort(key=lambda t:-t[0])
+for sc,k,x,y in MC:
+    if all(((x-a)/(9.5*(sc+b)))**2+((y-c_)/(5.2*(sc+b)))**2>=1 for a,c_,b,_ in _near(x,y,0)):
+        _put((x,y,sc,'m'));add(k+'abc'[int(rng.random()*3)],x,y,sc)
+_tg={}
+for k,x,y,sc in TC:
+    gx,gy=int(x//10),int(y//10)
+    if any(math.hypot(x-a,y-b)<4.6 for i in range(gx-1,gx+2) for j in range(gy-1,gy+2) for a,b in _tg.get((i,j),())): continue
+    if any(((x-a)/(9.5*(b+.4)))**2+((y-c_)/(5.2*(b+.4)))**2<1 for a,c_,b,_ in _near(x,y,0)): continue
+    _tg.setdefault((gx,gy),[]).append((x,y));add(k,x,y,sc)
 stamps.sort()
-DIM={'mtn':(26,19),'mtns':(26,19),'mtnr':(26,19),'hill':(16,7),'tree':(8,10),'wtree':(8,10),'pine':(8,12),'spine':(8,12),'palm':(10,11),'bush':(6,5),'dune':(14,5),'scrub':(8,5),'marsh':(8,5),'tuft':(6,4),'grass':(6,4)}
-VB={'mtn':(-13,-18),'mtns':(-13,-18),'mtnr':(-13,-18),'hill':(-8,-6),'tree':(-4,-9),'wtree':(-4,-9),'pine':(-4,-11),'spine':(-4,-11),'palm':(-5,-10),'bush':(-3,-4),'dune':(-7,-4),'scrub':(-4,-4),'marsh':(-4,-4),'tuft':(-3,-3),'grass':(-3,-3)}
+DIM={**{m+v:(30,22) for m in ('mtn','mtns','mtnr','mtnd') for v in 'abc'},'mtn':(26,19),'mtns':(26,19),'mtnr':(26,19),'hill':(16,7),'tree':(10,12),'wtree':(10,12),'pine':(8,13),'spine':(8,13),'palm':(10,11),'bush':(6,5),'dune':(14,5),'scrub':(8,5),'marsh':(8,5),'tuft':(6,4),'grass':(6,4)}
+VB={**{m+v:(-15,-21) for m in ('mtn','mtns','mtnr','mtnd') for v in 'abc'},'mtn':(-13,-18),'mtns':(-13,-18),'mtnr':(-13,-18),'hill':(-8,-6),'tree':(-5,-11),'wtree':(-5,-11),'pine':(-4,-12),'spine':(-4,-12),'palm':(-5,-10),'bush':(-3,-4),'dune':(-7,-4),'scrub':(-4,-4),'marsh':(-4,-4),'tuft':(-3,-3),'grass':(-3,-3)}
 o=[f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 {W} {H}" id="wsvg">',defs,f'<rect x="0" y="0" width="{W}" height="{H}" fill="#7b9893"/>']
 o.append(f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#po)"/>')
 cj="".join(coast)
@@ -160,6 +230,10 @@ for w_ in (34,24,15):
     o.append(f'<use href="#cst" stroke="#3f5c57" stroke-opacity=".38" stroke-width="{w_}"/><use href="#cst" stroke="#a2b9ad" stroke-width="{w_-1.3}"/>')
 o.append('</g>')
 for col,ps in base.items(): o.append(f'<path d="{"".join(ps)}" fill="{col}" stroke="{col}" stroke-width="0.8"/>')
+FCOL={'trees':'#8fa463','wild':'#6c8450','pines':'#6f8562','jungle':'#86a35e'}
+for t_,col in FCOL.items():
+    ps=[poly(c) for c in cells if land(c) and terr(c)==t_ and not any(math.hypot(c['p'][0]-q[0],c['p'][1]-q[1])<r_ for q,r_ in avoid)]
+    if ps: o.append(f'<path d="{"".join(ps)}" fill="{col}" stroke="{col}" stroke-width="5" stroke-linejoin="round" opacity=".85"/>')
 if lakes: o.append(f'<path d="{"".join(lakes)}" fill="#9ab8b0" stroke="#9ab8b0" stroke-width="0.8"/>')
 o.append(f'<use href="#cst" fill="none" stroke="#2e2419" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>')
 bd="".join(border)
@@ -204,13 +278,37 @@ if wall:
     w_="".join(wall)
     o.append(f'<path d="{w_}" fill="none" stroke="#3a3128" stroke-width="5.2" stroke-linecap="round"/><path d="{w_}" fill="none" stroke="#9b9285" stroke-width="3.4" stroke-linecap="round"/><path d="{w_}" fill="none" stroke="#3a3128" stroke-width="1.6" stroke-dasharray="1.1 1.3"/>')
 def tree(x,y,s=1):
+    rr=random.Random(7)
     g=f'<g transform="translate({x:.1f},{y:.1f}) scale({s})">'
-    g+='<path d="M-2.2,0 Q-1.5,-9 -1,-14 L1,-14 Q1.5,-9 2.2,0 Q4,1 6,1 L-6,1 Q-4,1 -2.2,0Z" fill="#6b4a2e" stroke="#3b2a1a" stroke-width=".5"/>'
-    for cx,cy,r,col in((-9,-17,8,'#3f6f3c'),(9,-17,8,'#3f6f3c'),(0,-24,10,'#4c8546'),(-6,-27,6,'#5a9452'),(7,-27,6,'#5a9452'),(0,-32,6.5,'#69a35e')):
-        g+=f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{col}" stroke="#2c4a2a" stroke-width=".5"/>'
-    g+='<circle cx="-3" cy="-30" r="1.6" fill="#a9d48f" opacity=".8"/><circle cx="4" cy="-22" r="1.2" fill="#e8f2c8" opacity=".8"/><circle cx="-5" cy="-18" r=".9" fill="#ffe9a0"/><circle cx="6" cy="-26" r=".9" fill="#ffe9a0"/></g>'
-    return g
-o.append(tree(TREE[0],TREE[1],1.15))
+    g+='<defs><radialGradient id="wtg"><stop offset="0" stop-color="#fff6c8" stop-opacity=".75"/><stop offset=".55" stop-color="#e9f3a8" stop-opacity=".25"/><stop offset="1" stop-color="#e9f3a8" stop-opacity="0"/></radialGradient></defs>'
+    g+='<ellipse cx="0" cy="-52" rx="62" ry="54" fill="url(#wtg)"/><ellipse cx="4" cy="2" rx="40" ry="6" fill="#2a2414" opacity=".25"/>'
+    # roots
+    for d in ('M-6,-4 Q-18,-2 -30,4','M-4,-2 Q-12,2 -18,7','M5,-4 Q18,-3 31,3','M3,-1 Q10,3 16,8','M0,-1 Q1,4 -2,9'):
+        g+=f'<path d="{d}" fill="none" stroke="#3b2a1a" stroke-width="4.2" stroke-linecap="round"/><path d="{d}" fill="none" stroke="#7a5636" stroke-width="2.6" stroke-linecap="round"/>'
+    # trunk with branches
+    g+='<path d="M-11,0 Q-7,-14 -6,-26 Q-7,-36 -16,-46 L-12,-48 Q-4,-40 -2,-34 Q-1,-44 -6,-58 L-1,-59 Q3,-46 3,-36 Q8,-46 17,-50 L19,-46 Q9,-40 7,-28 Q7,-14 12,0Z" fill="#7a5636" stroke="#2e2014" stroke-width="1.1" stroke-linejoin="round"/>'
+    g+='<path d="M3,-36 Q8,-24 7,-12 Q8,-5 12,0 L4,0 Q3,-14 3,-36Z" fill="#5a3e25"/>'
+    g+='<path d="M-6,-6 Q-4,-16 -5,-24 M-1,-8 Q0,-18 -1,-28 M4,-10 Q5,-18 4,-26" fill="none" stroke="#3b2a1a" stroke-width=".6" opacity=".7"/>'
+    # canopy: many leaf clusters, back to front
+    cl=[]
+    for k in range(34):
+        a=rr.uniform(0,2*math.pi);rad=rr.uniform(0,1)**.6
+        cx=math.cos(a)*44*rad;cy=-66+math.sin(a)*30*rad-(1-rad)*6;cl.append((cy,cx,rr.uniform(8,13)))
+    cl.sort()
+    g+=''.join(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r_:.1f}" fill="#4f7a3c" stroke="#1f2e17" stroke-width="1.2"/>' for cy,cx,r_ in cl)
+    g+=''.join(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r_-.7:.1f}" fill="{["#4f7a3c","#5d8a45","#67974c"][i%3]}"/>' for i,(cy,cx,r_) in enumerate(cl))
+    g+=''.join(f'<path d="M{cx-r_*.55:.1f},{cy-r_*.2:.1f} A{r_*.6:.1f},{r_*.6:.1f} 0 0 1 {cx+r_*.3:.1f},{cy-r_*.62:.1f}" fill="none" stroke="#a8cc7a" stroke-width="1.4" stroke-linecap="round" opacity=".75"/>' for cy,cx,r_ in cl[::2])
+    g+=''.join(f'<path d="M{cx-r_*.5:.1f},{cy+r_*.55:.1f} A{r_*.7:.1f},{r_*.7:.1f} 0 0 0 {cx+r_*.7:.1f},{cy+r_*.1:.1f}" fill="none" stroke="#2f4a24" stroke-width="1.2" opacity=".6"/>' for cy,cx,r_ in cl[1::2])
+    # glowing lights and small dwellings in the crown
+    for k in range(22):
+        a=rr.uniform(0,2*math.pi);rad=rr.uniform(.15,.95);px=math.cos(a)*42*rad;py=-64+math.sin(a)*27*rad
+        g+=f'<circle cx="{px:.1f}" cy="{py:.1f}" r="{rr.uniform(.7,1.3):.1f}" fill="#ffe58a" opacity=".95"/>'
+    for hx,hy in ((-18,-50),(14,-56),(-4,-78),(22,-70),(-26,-66)):
+        g+=f'<path d="M{hx-3},{hy} L{hx-3},{hy-3} L{hx},{hy-5.5} L{hx+3},{hy-3} L{hx+3},{hy}Z" fill="#d9c59a" stroke="#2e2014" stroke-width=".5"/><path d="M{hx-3.6},{hy-3} L{hx},{hy-6.3} L{hx+3.6},{hy-3}" fill="none" stroke="#7a3a2a" stroke-width="1"/><rect x="{hx-.7}" y="{hy-2.2}" width="1.4" height="1.6" fill="#ffd35a"/>'
+    # hanging bridges
+    g+='<path d="M-18,-50 Q-2,-44 14,-56" fill="none" stroke="#3b2a1a" stroke-width=".6" stroke-dasharray="1 .8"/><path d="M-4,-78 Q10,-70 22,-70" fill="none" stroke="#3b2a1a" stroke-width=".6" stroke-dasharray="1 .8"/>'
+    return g+'</g>'
+o.append(tree(TREE[0],TREE[1],.62))
 vx,vy=VOL
 o.append(f'<g transform="translate({vx:.1f},{vy:.1f})"><path d="M-26,0 L-7,-30 L7,-30 L26,0Z" fill="#7d6a58" stroke="#3b2f25" stroke-width=".8"/><path d="M0,-30 L7,-30 L26,0 L8,0Z" fill="#5c4c3e"/><path d="M-7,-30 Q0,-27 7,-30" fill="#c4442a"/><path d="M-3,-29 Q-5,-18 -9,-8 M2,-29 Q4,-20 2,-12 Q1,-6 5,0" stroke="#e8732f" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M-2,-33 Q-7,-40 -2,-46 Q3,-52 -1,-60 M3,-33 Q9,-41 6,-50" stroke="#7a7a7a" stroke-opacity=".55" stroke-width="3.2" fill="none" stroke-linecap="round"/></g>')
 def pyr(x,y,s=1):
@@ -296,7 +394,7 @@ for b in p['burgs'][1:]:
        'pop':round(b.get('population',0)*1000),'ft':''.join(k[0] for k in ('citadel','walls','plaza','temple','shanty') if b.get(k)),'port':1 if b.get('port') else 0,'river':1 if cells[b['cell']].get('r') else 0,'seed':SEED+b['i']}
     if b['name'] in BURG_MOVE:
         mc=cells[BURG_MOVE[b['name']]];sn=st.get(mc['state'],{}).get('name','');e.update(x=round(mc['p'][0],1),y=round(mc['p'][1],1)+2,s=STATE_RENAME.get(sn,sn))
-    if b['name']=='Vardrassil': e.update(lm='tree',x=round(TREE[0],1),y=round(TREE[1],1),lh=40)
+    if b['name']=='Vardrassil': e.update(lm='tree',x=round(TREE[0],1),y=round(TREE[1],1),lh=62)
     if b['name']=='Zigilgathol': e.update(lm='silver',x=ZIG[0],y=ZIG[1],lh=22)
     if b['name']=="Anor'Londo": e.update(lm='cath',x=round(ANOR[0],1),y=round(ANOR[1],1),lh=58)
     if b['name'] in PYR: e.update(lm='pyr',x=round(PYR[b['name']][0],1),y=round(PYR[b['name']][1],1),lh=19)
