@@ -33,6 +33,17 @@ label{font-size:15px;color:var(--muted);display:flex;align-items:center;gap:6px;
 input[type=range]{width:96px;accent-color:var(--acc)}
 .ctxbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px max(2vw,8px) 0;padding:8px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}.ctxbar b{margin-right:auto}.ctxbar[hidden]{display:none}
 .mks{list-style:none;margin:6px 0 0;padding:0}.mks li{display:grid;grid-template-columns:28px 1fr 36px;gap:6px;align-items:center;margin-bottom:6px}.mks .n{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#7a3fb0;color:#fff;font-weight:700;font-size:13px}.mks input{min-height:36px}.mks li.sel input{outline:2px solid #7a3fb0}
+.hand{margin:10px max(2vw,8px) 0;padding:12px;border-radius:14px;background:var(--panel);border:1px solid var(--line)}
+.hhead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:10px}.hhead h3{margin:0;margin-right:auto}.hsel{display:flex;gap:6px;align-items:center}.hsel select{min-height:38px}
+.htrk{display:flex;gap:6px;align-items:center}.htrk button{width:34px;min-height:34px;padding:0}.htrk b{min-width:44px;text-align:center}
+.hcards{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}
+.hc{flex:0 0 220px;scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:12px;border:1px solid var(--line);border-top:5px solid #888;background:var(--bg)}
+.hc.k-atk{border-top-color:#b0453a}.hc.k-spl{border-top-color:#7a3fb0}.hc.k-man{border-top-color:#c58a1d}.hc.k-def{border-top-color:#2f6f9f}.hc.k-cus{border-top-color:#5c7a4a}.hc.k-add{border-style:dashed}
+.hc .ht{font-size:12px;text-transform:uppercase;letter-spacing:.04em;opacity:.75}.hc .hn{font-weight:700;font-size:17px}.hc .hb{font-size:14px;line-height:1.35}
+.hc .hbt{display:flex;gap:6px;margin-top:auto}.hc .hbt button{min-height:36px}.hc input,.hc textarea,.hc select{width:100%}
+.hand button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:9px;padding:0 10px;font:inherit;cursor:pointer}.hand button.go{background:var(--acc);border-color:var(--acc);color:#fff}.hand button:disabled{opacity:.4;cursor:not-allowed}
+.fx{display:flex;flex-wrap:wrap;gap:4px}.chip{font-size:12px;min-height:28px;padding:2px 7px;border-radius:999px}.chip.on{background:#7a3fb0;color:#fff;border-color:#7a3fb0}.hc.k-man .chip.on{background:#c58a1d;border-color:#c58a1d}
+.hlog{margin:8px 0 0;padding-left:18px;font-size:14px}.hlog .cr{color:#2f8f4f;font-weight:700}.hlog .ko{color:#b0453a;font-weight:700}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .scn select{min-height:40px}
 .stage{user-select:none;-webkit-user-select:none;position:relative;margin:6px max(2vw,8px) 0;height:min(72vh,760px);min-height:380px;border-radius:16px;overflow:hidden;transition:background .4s}
@@ -249,6 +260,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
     <div class="row"><button type="button" class="go" id="in_roll" data-i18n="in_roll"></button><button type="button" id="in_next" data-i18n="in_next"></button><button type="button" id="in_end" data-i18n="in_end"></button></div>
     <p class="small" id="in_round"></p><ol class="ini" id="in_list"></ol></section>
 </aside></div>
+<section class="hand" id="hand" aria-label="Cartes"></section>
 <div class="help">
   <div data-i18n-html="h_click"></div>
   <div data-i18n-html="h_keys"></div>
@@ -1192,7 +1204,7 @@ let CH;try{CH=JSON.parse(localStorage.getItem('luparis-chars'))}catch(e){}
 if(!CH||!Array.isArray(CH.list)||!CH.list.length){let old;try{old=JSON.parse(localStorage.getItem('luparis-sheet'))}catch(e){}CH={list:[old&&old.cells?old:demoC()],active:null}}
 for(const c of CH.list){if(!c.id)c.id=tid();if(c.camp==null)c.camp=c.demo?(lang==='fr'?'Exemple':'Example'):'';if(!c.used)c.used={hp:0,mana:0,st:0}}
 let C=CH.list.find(c=>c.id===CH.active)||CH.list[0];if(!CH.list.some(c=>c.id===CH.active))CH.active=null;
-function saveC(){try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}if(typeof renderPlace==='function')renderPlace()}
+function saveC(){try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}if(typeof renderPlace==='function')renderPlace();if(typeof renderHand==='function')renderHand()}
 const lvl=(c=C)=>Math.max(1,Math.floor((+c.xp||0)/100)),mb=tier=>tier>0?tier+1:0,sgn=v=>(v>=0?'+':'')+v;
 function spent(){let s=0;for(const k in C.cells)s+=COST.cell[C.cells[k]];for(const k in C.sch)s+=COST.tier[C.sch[k]];for(const k in C.fam)s+=COST.tier[C.fam[k]];return s+COST.dv[C.dv]}
 function derived(c=C){const L=lvl(c),a=ARM[c.armor]||ARM.none,cap=a[2]==='l'?99:a[2]==='m'?2:0,cl=c.cells,av=a[1];
@@ -1339,7 +1351,50 @@ $('ai_out').addEventListener('click',e=>{if(e.target.id==='ai_add'&&aiCand){MON.
 Object.assign(T.en,{pl_search:'Search',pl_search_ph:'Name of an ally or a monster',pl_none:'No match.',tk_ally:'ally',tk_close:'Close',tk_del:'Remove from map',tk_simple:'Simple token: no stats attached.'});
 Object.assign(T.fr,{pl_search:'Rechercher',pl_search_ph:"Nom d'un allié ou d'un monstre",pl_none:'Aucun résultat.',tk_ally:'allié',tk_close:'Fermer',tk_del:'Retirer du plateau',tk_simple:'Pion simple : aucune stat associée.'});
 function tokHp(k,dl){if(!k||!k.hpMax)return;k.hp=Math.max(0,Math.min(k.hpMax,k.hp+dl));if(k.cid){const ch=CH.list.find(c=>c.id===k.cid);if(ch){ch.used.hp=k.hpMax-k.hp;saveC();if(ch===C&&CH.active)renderSheet()}}save();draw();renderTok()}
-function renderTok(){const P=document.getElementById('tk_panel');if(!P)return;const k=tokens.find(x=>x.id===selTok);if(!k){P.hidden=true;return}P.hidden=false;
+const L2=(en,fr)=>lang==='fr'?fr:en;let handId=null;const HLOG=[];
+try{handId=JSON.parse(localStorage.getItem('luparis-hand'))}catch(e){}
+const FX=[[1,['Pressed hit','Coup appuyé'],['+1 box on a hit','+1 case si le sort touche']],[1,['Offset','Déport'],['Cast from another point','Lancer depuis un autre point']],[1,['Shift','Déplacement'],['Move yourself or the target','Bouger soi-même ou la cible']],[1,['Light control','Contrôle léger'],['Push 10 ft or slow','Repousser de 10 pieds ou ralentir']],[2,['Multiply','Multiplication'],['One more target (2 per target)','Une cible de plus (2 par cible)']],[2,['Heavy control','Contrôle lourd'],['Prone, grappled, restrained, blinded…','À terre, agrippé, entravé, aveuglé…']],[2,['Persistence','Persistance'],['Lasts 1 minute','Dure 1 minute']],[3,['Major control','Contrôle majeur'],['Stunned, paralyzed','Étourdi, paralysé']],[3,['Area','Zone'],['Everyone within 20 ft; half on a save','Tous dans 6 m ; moitié sur une réussite']]];
+const FXS={creuset:[[1,['Heal','Soin'],['Target regains 1 box (1 per box)','La cible regagne 1 case (1 par case)']]],harmonie:[[1,['Heal','Soin'],['Target regains 1 box (1 per box)','La cible regagne 1 case (1 par case)']],[1,['Song of rest','Chant de repos'],['Out of combat: +1 box on a short rest','Hors combat : +1 case au repos court']]],egide:[[2,['Aegis ward','Bouclier d\'Égide'],['An ally ignores the next box lost','Un allié ignore la prochaine case perdue']]]};
+const MAN=[[1,['Pressed hit','Coup appuyé'],['+1 box on a hit','+1 case si le coup touche']],[2,['Cleave','Clive'],['One more adjacent foe (2 per target)','Un ennemi adjacent de plus (2 par cible)']],[1,['Charge','Charge ou bond'],['Move before striking','Se déplacer avant de frapper']],[1,['Lunge','Allonge'],['Strike further','Frapper plus loin']],[1,['Shove','Bousculer'],['Push or break guard','Repousser, briser la garde']],[2,['Disarm, trip','Désarmer, renverser'],['Disarm, knock prone, immobilize','Désarmer, renverser, immobiliser']],[2,['Stance','Posture tenue'],['One effect held 1 minute','Un effet maintenu 1 minute']],[3,['Whirlwind','Tourbillon'],['All adjacent foes','Tous les ennemis adjacents']],[1,['Extra parry','Parade supplémentaire'],['Parry again this round','Parer encore ce round']],[3,['Extra action','Action supplémentaire'],['One more action this turn','Une action de plus ce tour']]];
+const handSel={};
+function handChar(){const k=tokens.find(x=>x.id===selTok&&x.cid);const id=k?k.cid:handId;return CH.list.find(c=>c.id===id)||null}
+function hRoll(h){HLOG.unshift(h);if(HLOG.length>6)HLOG.pop();renderHand()}
+function hAtk(name,ab){const r=dRoll(20);return`${esc(name)} · d20 (${r}) ${sgn(ab)} = <b>${r+ab}</b>${r===20?` <span class="cr">${t('sk_crit')}</span>`:r===1?` <span class="ko">${t('sk_miss')}</span>`:''}`}
+function hDmg(name,n,d,mod){const rs=Array.from({length:n},()=>dRoll(d)),tot=rs.reduce((a,b)=>a+b,0)+mod;return`${esc(name)} · ${n}d${d}${mod?sgn(mod):''} [${rs.join(', ')}] = <b>${tot}</b>`}
+function trk(lbl,key,max,used){const left=Math.max(0,max-used);return`<div class="htrk"><span>${lbl}</span><button type="button" data-ht="${key}" data-d="1" aria-label="${esc(lbl)} −">−</button><b>${left}/${max}</b><button type="button" data-ht="${key}" data-d="-1" aria-label="${esc(lbl)} +">+</button></div>`}
+function renderHand(){const P=document.getElementById('hand');if(!P)return;const c=handChar();
+ const sel=`<label class="hsel"><span>${L2('Character','Personnage')}</span><select id="h_ch"><option value="">—</option>${CH.list.map(x=>`<option value="${esc(x.id)}"${c&&c.id===x.id?' selected':''}>${esc(x.name||'?')}${x.camp?' · '+esc(x.camp):''}</option>`).join('')}</select></label>`;
+ if(!c){P.innerHTML=`<div class="hhead"><h3>${L2('Ability cards','Cartes de capacités')}</h3>${sel}</div><p class="small">${L2('Pick a character, or select a character token on the map.','Choisis un personnage, ou sélectionne le pion d\'un personnage sur la carte.')}</p>`;return}
+ const D=derived(c),u=c.used||(c.used={hp:0,mana:0,st:0}),manaL=D.mana-u.mana,stL=D.st-u.st;const cards=[];
+ const shd=(SHD[c.shield]||SHD.none);
+ cards.push(`<div class="hc k-def"><div class="ht">${L2('Defense','Défense')}</div><div class="hn">${L2('Evasion','Esquive')} ${D.eva}</div><div class="hb">${L2('Thresholds','Seuils')} ${D.minor} / ${D.major} / ${D.severe}${c.shield!=='none'?`<br>${esc(tr(shd[0]))} : ${L2('Parry (reaction): the hit costs one box less','Parade (réaction) : le coup coûte une case de moins')}`:''}</div></div>`);
+ (c.weapons||[]).forEach((w,i)=>{const tier=c.fam[w.f]||0,mod=c.cells[FAM[w.f]?FAM[w.f].c:'P_phy']||0,ab=mod+mb(tier),nd=Math.max(1,tier),dd=SZ[w.s]||6;
+  cards.push(`<div class="hc k-atk"><div class="ht">${L2('Attack','Attaque')} · ${esc(tr(FAM[w.f]?FAM[w.f].n:['','']))}</div><div class="hn">${esc(w.n)}</div><div class="hb">${L2('Attack','Attaque')} <b>${sgn(ab)}</b> · ${L2('Damage','Dégâts')} <b>${nd}d${dd}${mod?sgn(mod):''}</b>${tier?'':` <span class="small">(${L2('untrained','sans maîtrise')})</span>`}</div><div class="hbt"><button type="button" class="go" data-ha="atk" data-i="${i}">${L2('Attack','Attaque')}</button><button type="button" data-ha="dmg" data-i="${i}">${L2('Damage','Dégâts')}</button></div></div>`)});
+ const sMod=c.cells.P_men||0;
+ for(const k of Object.keys(SCH)){const tier=c.sch[k]||0;if(!tier)continue;const ab=sMod+mb(tier),list=[...FX,...(FXS[k]||[])],st=handSel[c.id+k]||(handSel[c.id+k]=new Set()),cost=[...st].reduce((s,i)=>s+list[i][0],0);
+  cards.push(`<div class="hc k-spl"><div class="ht">${L2('Spell','Sort')} · Tier ${tier}</div><div class="hn">${esc(tr(SCH[k]))}</div><div class="hb">${L2('Attack','Attaque')} <b>${sgn(ab)}</b> · ${L2('Save DC','DD')} <b>${8+ab}</b> · ${L2('Damage','Dégâts')} <b>${tier}d8</b></div>
+  <div class="fx">${list.map((f,i)=>{const on=st.has(i),dis=!on&&(f[0]+cost>tier);return`<button type="button" class="chip${on?' on':''}" data-hf="${k}" data-i="${i}" title="${esc(tr(f[2]))}"${dis?' disabled':''}>${esc(tr(f[1]))} <b>${f[0]}</b></button>`}).join('')}</div>
+  <div class="hbt"><button type="button" class="go" data-ha="cast" data-k="${k}"${cost>manaL?' disabled':''}>${L2('Cast','Lancer')}${cost?` (${cost} ${L2('Mana','Mana')})`:''}</button><button type="button" data-ha="sdmg" data-k="${k}">${L2('Damage','Dégâts')}</button></div></div>`)}
+ const famT=Math.max(0,...Object.values(c.fam));if(famT>0||D.st>0){const st=handSel[c.id+'_m']||(handSel[c.id+'_m']=new Set()),cost=[...st].reduce((s,i)=>s+MAN[i][0],0);
+  cards.push(`<div class="hc k-man"><div class="ht">${L2('Maneuvers','Manœuvres')} · Tier ${famT}</div><div class="hn">${L2('Breath','Souffle')} ${stL}/${D.st}</div><div class="fx">${MAN.map((f,i)=>{const on=st.has(i),dis=!on&&(f[0]+cost>Math.max(famT,1));return`<button type="button" class="chip${on?' on':''}" data-hm="${i}" title="${esc(tr(f[2]))}"${dis?' disabled':''}>${esc(tr(f[1]))} <b>${f[0]}</b></button>`}).join('')}</div>
+  <div class="hbt"><button type="button" class="go" data-ha="man"${!cost||cost>stL?' disabled':''}>${L2('Use','Utiliser')}${cost?` (${cost} ${L2('Breath','Souffle')})`:''}</button></div></div>`)}
+ (c.cards||[]).forEach((x,i)=>cards.push(`<div class="hc k-cus"><div class="ht">${esc(x.k||L2('Feat','Don'))}</div><div class="hn">${esc(x.n)}</div><div class="hb">${esc(x.t).replace(/\n/g,'<br>')}</div><div class="hbt"><button type="button" data-ha="cdel" data-i="${i}" aria-label="${L2('Remove','Retirer')} ${esc(x.n)}">×</button></div></div>`));
+ cards.push(`<form class="hc k-add" id="h_add"><div class="ht">${L2('New card','Nouvelle carte')}</div><select id="h_ak"><option>${L2('Feat','Don')}</option><option>${L2('Item','Objet')}</option><option>${L2('Trait','Trait')}</option><option>${L2('Condition','État')}</option></select><input id="h_an" required maxlength="60" placeholder="${L2('Name','Nom')}"><textarea id="h_at" rows="3" maxlength="400" placeholder="${L2('What it does','Ce que ça fait')}"></textarea><div class="hbt"><button class="go" type="submit">${L2('Add','Ajouter')}</button></div></form>`);
+ P.innerHTML=`<div class="hhead"><h3>${esc(c.name||'?')} <span class="small">${L2('level','niveau')} ${D.L}</span></h3>${sel}${trk(L2('Vitality','Vitalité'),'hp',D.hp,u.hp)}${D.mana?trk('Mana','mana',D.mana,u.mana):''}${D.st?trk(L2('Breath','Souffle'),'st',D.st,u.st):''}</div>
+ <div class="hcards">${cards.join('')}</div>${HLOG.length?`<ol class="hlog">${HLOG.map(x=>`<li>${x}</li>`).join('')}</ol>`:''}`}
+document.getElementById('hand').addEventListener('change',e=>{if(e.target.id==='h_ch'){handId=e.target.value||null;try{localStorage.setItem('luparis-hand',JSON.stringify(handId))}catch(x){}selTok=null;if(typeof renderTok==='function')renderTok();renderHand()}});
+document.getElementById('hand').addEventListener('submit',e=>{if(e.target.id!=='h_add')return;e.preventDefault();const c=handChar();if(!c)return;(c.cards||(c.cards=[])).push({k:$('h_ak').value,n:$('h_an').value.trim().slice(0,60),t:$('h_at').value.slice(0,400)});saveC();renderHand()});
+document.getElementById('hand').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const c=handChar();if(!c)return;const ds=b.dataset,D=derived(c),u=c.used;
+ if(ds.ht){const max=ds.ht==='hp'?D.hp:ds.ht==='mana'?D.mana:D.st;u[ds.ht]=Math.max(0,Math.min(max,u[ds.ht]+(+ds.d)));if(ds.ht==='hp')for(const k of tokens)if(k.cid===c.id){k.hp=D.hp-u.hp;save();draw()}saveC();renderHand();return}
+ if(ds.hf){const st=handSel[c.id+ds.hf],i=+ds.i;st.has(i)?st.delete(i):st.add(i);renderHand();return}
+ if(ds.hm!=null){const st=handSel[c.id+'_m'],i=+ds.hm;st.has(i)?st.delete(i):st.add(i);renderHand();return}
+ if(ds.ha==='atk'||ds.ha==='dmg'){const w=c.weapons[+ds.i],tier=c.fam[w.f]||0,mod=c.cells[FAM[w.f].c]||0;hRoll(ds.ha==='atk'?hAtk(w.n,mod+mb(tier)):hDmg(w.n,Math.max(1,tier),SZ[w.s]||6,mod));return}
+ if(ds.ha==='cast'||ds.ha==='sdmg'){const k=ds.k,tier=c.sch[k],ab=(c.cells.P_men||0)+mb(tier),list=[...FX,...(FXS[k]||[])],st=handSel[c.id+k],nm=tr(SCH[k]);
+  if(ds.ha==='sdmg'){hRoll(hDmg(nm,tier,8,0));return}const cost=[...st].reduce((s,i)=>s+list[i][0],0);if(cost>D.mana-u.mana)return;u.mana+=cost;const fx=[...st].map(i=>tr(list[i][1])).join(', ');st.clear();saveC();hRoll(hAtk(nm,ab)+(cost?` · −${cost} Mana`:'')+(fx?` · ${esc(fx)}`:''));return}
+ if(ds.ha==='man'){const st=handSel[c.id+'_m'],cost=[...st].reduce((s,i)=>s+MAN[i][0],0);if(!cost||cost>D.st-u.st)return;u.st+=cost;const fx=[...st].map(i=>tr(MAN[i][1])).join(', ');st.clear();saveC();hRoll(`${esc(fx)} · −${cost} ${L2('Breath','Souffle')}`);return}
+ if(ds.ha==='cdel'){c.cards.splice(+ds.i,1);saveC();renderHand()}});
+
+function renderTok(){renderHand();const P=document.getElementById('tk_panel');if(!P)return;const k=tokens.find(x=>x.id===selTok);if(!k){P.hidden=true;return}P.hidden=false;
  const ch=k.cid?CH.list.find(c=>c.id===k.cid):null,m=k.mid?MON.find(x=>x.id===k.mid):null,name=k.nm?tr(k.nm)+(k.num?' '+k.num:''):k.n;
  const st=(a,b)=>`<div class="stat"><div class="k">${a}</div><div class="v">${b}</div></div>`;let h=`<h3>${esc(name)}</h3>`;
  if(!k.hpMax&&!ch){h+=`<p class="small">${t('tk_simple')}</p>`}
