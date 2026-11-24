@@ -46,6 +46,7 @@ input[type=range]{width:96px;accent-color:var(--acc)}
 .hc .hbt{display:flex;gap:6px;margin-top:auto}.hc .hbt button{min-height:36px}.hc input,.hc textarea,.hc select{width:100%}
 .hand button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:9px;padding:0 10px;font:inherit;cursor:pointer}.hand button.go{background:var(--acc);border-color:var(--acc);color:#fff}.hand button:disabled{opacity:.4;cursor:not-allowed}
 .fx{display:flex;flex-wrap:wrap;gap:4px}.inf{display:flex;flex-direction:column;gap:4px;font-size:13px}.inf label{display:flex;gap:6px;align-items:center}.inf select{min-height:32px;flex:1}.chip{font-size:12px;min-height:28px;padding:2px 7px;border-radius:999px}.chip.on{background:#7a3fb0;color:#fff;border-color:#7a3fb0}.hc.k-man .chip.on{background:#c58a1d;border-color:#c58a1d}
+.matks{display:flex;flex-direction:column;gap:6px;margin:8px 0}.matk{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center}.matk button{min-height:34px;padding:0 10px}
 .hlog{margin:8px 0 0;padding-left:18px;font-size:14px}.hlog .cr{color:#2f8f4f;font-weight:700}.hlog .ko{color:#b0453a;font-weight:700}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .scn select{min-height:40px}
@@ -241,6 +242,8 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
     <button data-t="move" aria-pressed="true" data-i18n="t_move"></button>
     <button data-t="measure" data-i18n="t_measure"></button>
     <button data-t="mark" data-i18n="t_mark"></button>
+    <button data-t="env" data-i18n="t_env"></button>
+    <label class="scn"><span class="vh" data-i18n="t_env"></span><select id="envk"></select></label>
   </div>
   <div class="grp">
     <button id="rot" data-i18n="rot"></button>
@@ -754,20 +757,20 @@ const t=k=>T[lang][k];
 const TY={humanoid:['Humanoid','Humanoïde'],undead:['Undead','Mort-vivant'],beast:['Beast','Bête'],fiend:['Fiend','Fiélon'],fey:['Fey','Fée'],giant:['Giant','Géant'],ooze:['Ooze','Vase'],monstrosity:['Monstrosity','Monstruosité'],elemental:['Elemental','Élémentaire'],celestial:['Celestial','Céleste'],plant:['Plant','Plante'],dragon:['Dragon','Dragon'],construct:['Construct','Créature artificielle'],aberration:['Aberration','Aberration']};
 const tyName=k=>TY[k]?tr(TY[k]):k;
 const num=v=>lang==='fr'?String(v).replace('.',','):String(v);
-const CAM={z:1,px:0,py:0};let N=16,H=[],F=[],scene='forest_road',MARKS=[],CTX=null,CTXN='',selMark=null,tokens=[],rot=0,tool='move',hist=[],drag=null,painting=null,hover=null,lastPainted='',bio='gen',t0=performance.now();
+const CAM={z:1,px:0,py:0};let N=16,H=[],F=[],scene='forest_road',MARKS=[],ENV={},CTX=null,CTXN='',selMark=null,tokens=[],rot=0,tool='move',hist=[],drag=null,painting=null,hover=null,lastPainted='',bio='gen',t0=performance.now();
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function blank(n){return Array.from({length:n},()=>Array(n).fill(0))}
 let INI={o:[],cur:0,round:0};
 function encG(G,neg){return G.map(r=>r.map(v=>String.fromCharCode(neg?99+v:48+v)).join(''))}
 function decG(G,neg){return G.map(r=>typeof r==='string'?[...r].map(c=>c.charCodeAt(0)-(neg?99:48)):r)}
 function towns(){try{return JSON.parse(localStorage.getItem('luparis-towns'))||{}}catch(e){return{}}}
-function save(){const st={v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS};try{if(CTX){const o=towns();o[CTX]={...st,name:CTXN};localStorage.setItem('luparis-towns',JSON.stringify(o))}else localStorage.setItem('luparis-tac',JSON.stringify(st));localStorage.setItem('luparis-ctx',JSON.stringify(CTX?{id:CTX,n:CTXN}:null))}catch(e){}if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks()}
-function applyState(d){if(!(d&&d.H&&d.N))return false;N=d.N;H=decG(d.H,1);F=Array.isArray(d.F)&&d.F.length===d.N?decG(d.F,0):blank(d.N);if(d.scene)scene=d.scene;tokens=d.tokens||[];rot=d.rot||0;bio=B[d.bio]?d.bio:'gen';INI=d.ini&&Array.isArray(d.ini.o)?d.ini:{o:[],cur:0,round:0};MARKS=Array.isArray(d.marks)?d.marks:[];return true}
+function save(){const st={v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV};try{if(CTX){const o=towns();o[CTX]={...st,name:CTXN};localStorage.setItem('luparis-towns',JSON.stringify(o))}else localStorage.setItem('luparis-tac',JSON.stringify(st));localStorage.setItem('luparis-ctx',JSON.stringify(CTX?{id:CTX,n:CTXN}:null))}catch(e){}if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks()}
+function applyState(d){if(!(d&&d.H&&d.N))return false;N=d.N;H=decG(d.H,1);F=Array.isArray(d.F)&&d.F.length===d.N?decG(d.F,0):blank(d.N);if(d.scene)scene=d.scene;tokens=d.tokens||[];rot=d.rot||0;bio=B[d.bio]?d.bio:'gen';INI=d.ini&&Array.isArray(d.ini.o)?d.ini:{o:[],cur:0,round:0};MARKS=Array.isArray(d.marks)?d.marks:[];ENV=d.env&&typeof d.env==='object'?d.env:{};return true}
 function load(){try{const c=JSON.parse(localStorage.getItem('luparis-ctx'));if(c&&c.id){const o=towns()[c.id];if(o&&applyState(o)){CTX=c.id;CTXN=c.n||o.name||'';return true}}}catch(e){}try{return applyState(JSON.parse(localStorage.getItem('luparis-tac')))}catch(e){}return false}
 function tid(){return 't'+Math.random().toString(36).slice(2,9)}
-function snap(){hist.push(JSON.stringify({H,F,tokens,marks:MARKS}));if(hist.length>60)hist.shift()}
+function snap(){hist.push(JSON.stringify({H,F,tokens,marks:MARKS,env:ENV}));if(hist.length>60)hist.shift()}
 const SIZES=[8,16,32,64,128];function sizeIdx(n){let i=SIZES.findIndex(s=>s>=n);return i<0?SIZES.length-1:i}function showSize(){document.getElementById('size').value=sizeIdx(N);document.getElementById('sv').textContent=N+'×'+N}
-function resizeTo(n){const nh=blank(n),nf=blank(n);for(let x=0;x<Math.min(n,N);x++)for(let y=0;y<Math.min(n,N);y++){nh[x][y]=H[x][y];nf[x][y]=F[x][y]}N=n;H=nh;F=nf;CAM.z=1;CAM.px=0;CAM.py=0;tokens=tokens.filter(k=>k.x<n&&k.y<n);MARKS=MARKS.filter(m=>m.x<n&&m.y<n)}
+function resizeTo(n){const nh=blank(n),nf=blank(n);for(let x=0;x<Math.min(n,N);x++)for(let y=0;y<Math.min(n,N);y++){nh[x][y]=H[x][y];nf[x][y]=F[x][y]}N=n;H=nh;F=nf;CAM.z=1;CAM.px=0;CAM.py=0;tokens=tokens.filter(k=>k.x<n&&k.y<n);MARKS=MARKS.filter(m=>m.x<n&&m.y<n);for(const key of Object.keys(ENV)){const[a,b]=key.split(',').map(Number);if(a>=n||b>=n)delete ENV[key]}}
 if(!load()){H=blank(N);F=blank(N)}else if(!SIZES.includes(N))resizeTo(SIZES[sizeIdx(N)]);
 showSize();
 function rnd(x,y,k){let h=Math.imul(x+1,374761393)^Math.imul(y+7,668265263)^Math.imul(k+3,2246822519);h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
@@ -785,7 +788,7 @@ function inD(cx,cy,u,v){return[cx+(u-v)*TW/2,cy+(u+v)*TW/4]}
 let CC=null,CCk='';function cells(){const k=N+':'+rot;if(CCk!==k){const a=[];for(let x=0;x<N;x++)for(let y=0;y<N;y++){const[vx,vy]=view(x,y);a.push({x,y,vx,vy})}CC=a.sort((a,b)=>(a.vx+a.vy)-(b.vx+b.vy)||a.vx-b.vx);CCk=k}return CC}
 function unview(vx,vy){switch(rot){case 1:return[vy,N-1-vx];case 2:return[N-1-vx,N-1-vy];case 3:return[N-1-vy,vx];default:return[vx,vy]}}
 function gv(vx,vy){let x,y;switch(rot){case 1:x=vy;y=N-1-vx;break;case 2:x=N-1-vx;y=N-1-vy;break;case 3:x=N-1-vy;y=vx;break;default:x=vx;y=vy}return x>=0&&y>=0&&x<N&&y<N?H[x][y]:null}
-function hasAnim(){if(reduce||N>40)return false;const p=B[bio].pit;if(p!=='lava'&&p!=='water'&&p!=='swamp')return false;for(const r of H)for(const v of r)if(v<0)return true;return false}
+function hasAnim(){if(reduce||N>40)return false;if(Object.values(ENV).includes('fire'))return true;const p=B[bio].pit;if(p!=='lava'&&p!=='water'&&p!=='swamp')return false;for(const r of H)for(const v of r)if(v<0)return true;return false}
 function specks(cx,cy,x,y){const s=B[bio].sp;for(let i=0;i<4;i++){if(rnd(x,y,i)>s.d)continue;const[px,py]=inD(cx,cy,.18+rnd(x,y,i+10)*.64,.18+rnd(x,y,i+20)*.64);const c=s.c[Math.floor(rnd(x,y,i+30)*s.c.length)];const z=TW/40;
  ctx.fillStyle=c;ctx.strokeStyle=c;ctx.lineWidth=Math.max(1,z*.8);ctx.beginPath();
  if(s.k==='tuft'||s.k==='leaf'){ctx.moveTo(px-z*1.5,py);ctx.lineTo(px-z*.5,py-z*3);ctx.moveTo(px,py);ctx.lineTo(px,py-z*3.6);ctx.moveTo(px+z*1.5,py);ctx.lineTo(px+z*.6,py-z*3);ctx.stroke()}
@@ -833,7 +836,7 @@ function ftex(f,t,x,y){const[cx,cy]=t[0];ctx.save();poly(t);ctx.clip();ctx.lineW
 let drawQ=false;function draw(){if(drawQ)return;drawQ=true;requestAnimationFrame(()=>{drawQ=false;drawNow()})}
 function drawNow(){const b=B[bio];const lod=TW>=9,lodS=TW>=5;if(hover){const ti=tokAt(hover),tk=ti>=0?tokens[ti]:null;
   const mk=MARKS.findIndex(m=>m.x===hover.x&&m.y===hover.y);if(mk>=0&&!(tokAt(hover)>=0)){info.textContent=`${t("t_mark")} ${mk+1} · ${MARKS[mk].l||t('mk_ph')}`}else
-  info.textContent=(tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)} (${t('stop')}) · `:'')+(tk&&tk.nm?`${tr(tk.nm)} ${tk.num||''} · ${t('esq')} ${tk.esq} · ${t('thr')} ${tk.maj}/${tk.sev} · ${t('box')} ${tk.hp}/${tk.hpMax}`:`${tr(b.n)} · ${t('tile')} ${hover.x+1}, ${hover.y+1} — ${label(H[hover.x][hover.y],F[hover.x][hover.y])}`)}
+  info.textContent=(tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)} (${t('stop')}) · `:'')+(tk&&tk.nm?`${tr(tk.nm)} ${tk.num||''} · ${t('esq')} ${tk.esq} · ${t('thr')} ${tk.maj}/${tk.sev} · ${t('box')} ${tk.hp}/${tk.hpMax}`:`${tr(b.n)} · ${t('tile')} ${hover.x+1}, ${hover.y+1} — ${label(H[hover.x][hover.y],F[hover.x][hover.y])}${ENV[hover.x+','+hover.y]?` · ${tr(ENVT[ENV[hover.x+','+hover.y]].n)} : ${tr(ENVT[ENV[hover.x+','+hover.y]].r)}`:''}`)}
  else info.textContent=tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)}. ${t('click_tile')}`:tool==='measure'?t('meas_hint'):t('hover');stage.style.background=`radial-gradient(ellipse at 50% 40%,${mul(b.bg[0],.36)},${mul(b.bg[1],.24)})`;ctx.clearRect(0,0,W,Hc);
  for(const c of cells()){const h=H[c.x][c.y],{vx,vy}=c;{const sx=ox+(vx-vy)*TW/2,sy=oy+(vx+vy)*TW/4;if(sx<-TW||sx>W+TW||sy<-TW-LH*4||sy>Hc+TW+LH*3)continue}
   if(h<0)pit(c,h);
@@ -845,10 +848,32 @@ function drawNow(){const b=B[bio];const lod=TW>=9,lodS=TW>=5;if(hover){const ti=
    if(h>0){ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(...t[3]);ctx.lineTo(...t[0]);ctx.lineTo(...t[1]);ctx.stroke()}}
   if(hover&&hover.x===c.x&&hover.y===c.y)poly(dia(vx,vy,Math.max(h,0)),'rgba(192,112,58,.32)','#c0703a',2);
   if(h>0&&!F[c.x][c.y]&&TW>=7){const[cx,cy]=scr(vx,vy,h);deco(b.deco[h-1],cx,cy,h,c.x,c.y)}
+  {const ek=ENV[c.x+','+c.y];if(ek)drawEnv(ek,vx,vy,h,c.x,c.y)}
   for(const k of tokens)if(tokCell(k,c))drawTokAt(k)}
  drawMarks();if(meas)drawMeas();
  if(hasAnim()||(bio==='volcan'&&!reduce))requestAnimationFrame(tick)}
 function ctr(c){const[vx,vy]=view(c.x,c.y),h=Math.max(H[c.x][c.y],0);const[cx,cy]=scr(vx,vy,h);return[cx,cy+TW/4]}
+const ENVT={fire:{n:['Flames','Flammes'],c:'rgba(255,110,30,.5)',r:['Entering or starting a turn here: 1 box (Physical Resilience save DC 12 avoids it).','Entrer ou commencer son tour ici : 1 case (sauvegarde de Résistance physique DD 12 pour l\'éviter).']},
+ acid:{n:['Acid','Acide'],c:'rgba(120,220,40,.5)',r:['Entering: 1 box, armor counts as 2 lower until repaired (Physical Finesse DC 12 avoids it).','En entrant : 1 case, l\'armure compte 2 de moins jusqu\'à réparation (Finesse physique DD 12 pour l\'éviter).']},
+ ice:{n:['Ice','Glace'],c:'rgba(190,235,255,.55)',r:['Difficult terrain. Moving more than half speed: Physical Finesse DC 10 or fall prone.','Terrain difficile. Bouger de plus de la moitié de sa vitesse : Finesse physique DD 10 ou à terre.']},
+ poison:{n:['Poison cloud','Nuage toxique'],c:'rgba(150,80,190,.45)',r:['Lightly obscured. Starting a turn here: Physical Resilience DC 12 or poisoned until the end of the next turn.','Légèrement obscurci. Commencer son tour ici : Résistance physique DD 12 ou empoisonné jusqu\'à la fin du tour suivant.']},
+ dark:{n:['Magical darkness','Ténèbres'],c:'rgba(10,8,20,.62)',r:['Heavily obscured: creatures inside are effectively blinded.','Fortement obscurci : les créatures à l\'intérieur sont comme aveuglées.']},
+ web:{n:['Webs','Toiles'],c:'rgba(245,245,245,.35)',r:['Difficult terrain. Entering: Physical Finesse DC 12 or restrained (Physical Power DC 12 to break free).','Terrain difficile. En entrant : Finesse physique DD 12 ou entravé (Puissance physique DD 12 pour se libérer).']},
+ fog:{n:['Fog','Brouillard'],c:'rgba(220,225,230,.55)',r:['Heavily obscured.','Fortement obscurci.']},
+ thorns:{n:['Thorns','Ronces'],c:'rgba(110,80,40,.45)',r:['Difficult terrain. Moving through: 1 box per 2 tiles (Physical Finesse DC 12 avoids it).','Terrain difficile. Traverser : 1 case toutes les 2 cases (Finesse physique DD 12 pour l\'éviter).']},
+ holy:{n:['Consecrated ground','Sol consacré'],c:'rgba(255,230,120,.42)',r:['Undead and fiends inside have one less Mastery die.','Les morts-vivants et fiélons à l\'intérieur ont un dé de Maîtrise de moins.']}};
+let envSel='fire';
+function drawEnv(k,vx,vy,h,x,y){const e=ENVT[k];if(!e)return;const t=dia(vx,vy,Math.max(h,0)),tm=(performance.now()-t0)/1000;poly(t,e.c);if(TW<9)return;const[cx,cy]=t[0];ctx.save();poly(t);ctx.clip();
+ if(k==='fire'){for(let i=0;i<3;i++){const[px,py]=inD(cx,cy,.25+rnd(x,y,i)*.5,.25+rnd(x,y,i+5)*.5),f=reduce?1:1+.15*Math.sin(tm*8+i*2+x),s=TW*.12*f;ctx.fillStyle=i%2?'#ffb02e':'#ff5a1f';ctx.beginPath();ctx.moveTo(px,py-s*2.2);ctx.quadraticCurveTo(px+s,py-s*.6,px,py);ctx.quadraticCurveTo(px-s,py-s*.6,px,py-s*2.2);ctx.fill()}}
+ else if(k==='acid'||k==='poison'){ctx.fillStyle=k==='acid'?'rgba(200,255,120,.8)':'rgba(220,170,255,.6)';for(let i=0;i<4;i++){const[px,py]=inD(cx,cy,.2+rnd(x,y,i)*.6,.2+rnd(x,y,i+7)*.6);ctx.beginPath();ctx.arc(px,py,TW*(k==='acid'?.03:.09)*(.6+rnd(x,y,i+3)),0,7);ctx.fill()}}
+ else if(k==='ice'){ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.2;for(let i=0;i<2;i++){const[a1,b1]=inD(cx,cy,.2+i*.35,.15),[a2,b2]=inD(cx,cy,.45+i*.35,.5);ctx.beginPath();ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke()}}
+ else if(k==='web'){ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=.8;const[mx,my]=inD(cx,cy,.5,.5);for(const p of t){ctx.beginPath();ctx.moveTo(mx,my);ctx.lineTo(p[0],p[1]);ctx.stroke()}for(const r of[.15,.3]){ctx.beginPath();t.forEach((p,i)=>{const q=[mx+(p[0]-mx)*r*2,my+(p[1]-my)*r*2];i?ctx.lineTo(...q):ctx.moveTo(...q)});ctx.closePath();ctx.stroke()}}
+ else if(k==='thorns'){ctx.strokeStyle='rgba(70,45,20,.9)';ctx.lineWidth=1.2;for(let i=0;i<4;i++){const[px,py]=inD(cx,cy,.2+rnd(x,y,i)*.6,.2+rnd(x,y,i+4)*.6);ctx.beginPath();ctx.moveTo(px-TW*.06,py);ctx.lineTo(px,py-TW*.06);ctx.lineTo(px+TW*.06,py);ctx.stroke()}}
+ else if(k==='holy'){ctx.strokeStyle='rgba(255,245,200,.9)';ctx.lineWidth=1.5;const[px,py]=inD(cx,cy,.5,.5);ctx.beginPath();ctx.moveTo(px,py-TW*.12);ctx.lineTo(px,py+TW*.04);ctx.moveTo(px-TW*.06,py-TW*.06);ctx.lineTo(px+TW*.06,py-TW*.06);ctx.stroke()}
+ ctx.restore()}
+function fillEnv(){const el=document.getElementById('envk');if(!el)return;el.innerHTML=Object.keys(ENVT).map(k=>`<option value="${k}"${k===envSel?' selected':''} title="${esc(tr(ENVT[k].r))}">${esc(tr(ENVT[k].n))}</option>`).join('')}
+document.getElementById('envk').addEventListener('change',e=>{envSel=e.target.value;setTool('env')});
+
 function drawMarks(){MARKS.forEach((m,i)=>{if(m.x<0||m.y<0||m.x>=N||m.y>=N)return;const[x,y]=ctr(m),s=Math.max(10,TW*.2);ctx.save();ctx.strokeStyle='#2a1a33';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-s*2.6);ctx.stroke();
  ctx.fillStyle=m.id===selMark?'#f2c14e':'#7a3fb0';ctx.beginPath();ctx.moveTo(x,y-s*2.6);ctx.lineTo(x+s*1.7,y-s*2.1);ctx.lineTo(x,y-s*1.6);ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
  ctx.fillStyle='#fff';ctx.font=`700 ${Math.max(10,s*.8)}px "Alegreya Sans",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=m.id===selMark?'#2a1a33':'#fff';ctx.fillText(i+1,x+s*.65,y-s*2.1);ctx.restore()})}
@@ -909,6 +934,7 @@ function label(h,f){if(f&&h>=0)return tr(FL[f])+(h>0?` (+${h})`:'');const L=B[bi
 function apply(c,inv){const key=c.x+','+c.y;if(painting&&lastPainted===key)return;lastPainted=key;const h=H[c.x][c.y];let t=tool;
  if(inv&&t!=='mark'){if(t==='up')t='down';else if(t==='down')t='up';else if(t==='pj'||t==='foe'||t==='move'||t==='place'){const i=tokAt(c);if(i>=0){const id=tokens[i].id;tokens.splice(i,1);INI.o=INI.o.filter(o=>o.id!==id)}return}}
  if(t==='up')H[c.x][c.y]=Math.min(3,h+1);else if(t==='down'){H[c.x][c.y]=Math.max(-2,h-1);if(H[c.x][c.y]<0)F[c.x][c.y]=0}else if(t==='flat'){H[c.x][c.y]=0;F[c.x][c.y]=0}
+ else if(t==='env'){const key=c.x+','+c.y;if(!painting.em)painting.em=ENV[key]===envSel?'del':'set';if(painting.em==='del')delete ENV[key];else ENV[key]=envSel;return}
  else if(t==='mark'){const i=MARKS.findIndex(m=>m.x===c.x&&m.y===c.y);if(inv){if(i>=0){MARKS.splice(i,1);save()}}else if(i>=0){selMark=MARKS[i].id;const e=document.querySelector(`#mk_list input[data-id="${selMark}"]`);if(e)setTimeout(()=>e.focus(),30)}else{const m={id:tid(),x:c.x,y:c.y,l:''};MARKS.push(m);selMark=m.id;save();setTimeout(()=>{const e=document.querySelector(`#mk_list input[data-id="${m.id}"]`);if(e)e.focus()},30)}painting=null;return}
  else if((t==='pj'||t==='foe')&&tokAt(c)<0&&h>-2)tokens.push({id:tid(),x:c.x,y:c.y,t,n:nextName(t),init:0});
  else if(t==='place'&&placing&&tokAt(c)<0&&h>-2){if(placing.ally){const ch=CH.list.find(x=>x.id===placing.ally);if(!ch)return;if(tokens.some(k=>k.cid===ch.id)){const k=tokens.find(k=>k.cid===ch.id);k.x=c.x;k.y=c.y;return}const D=derived(ch);
@@ -928,7 +954,7 @@ cv.addEventListener('pointermove',e=>{if(pan){CAM.px+=e.clientX-pan.x;CAM.py+=e.
  if(c&&held.size){const k=[...held].pop();setH(c,KH[k]);save()}
  if(meas&&meas.live&&c)meas.b=c;
  if(drag!==null&&c&&tokens[drag]){const k=tokens[drag],n=tfp(k),a=anchor(c,n);if((a.x!==k.x||a.y!==k.y)&&fits(a.x,a.y,n,k.id)){k.x=a.x;k.y=a.y;if(meas&&meas.drag)meas.b={x:c.x,y:c.y}}}
- else if(painting&&c&&(tool==='up'||tool==='down'||tool==='flat'))apply(c,painting.inv);draw()});
+ else if(painting&&c&&(tool==='up'||tool==='down'||tool==='flat'||tool==='env'))apply(c,painting.inv);draw()});
 const end=()=>{if(pan){pan=null;cv.style.cursor=tool==='move'?'grab':'crosshair';return}if(drag!==null&&meas&&meas.drag&&meas.a.x===meas.b.x&&meas.a.y===meas.b.y&&tokens[drag]){selTok=tokens[drag].id;renderTok()}if(painting||drag!==null)save();painting=null;drag=null;if(meas){meas.live=false;if(meas.drag){meas=null;draw()}}};
 cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
 cv.addEventListener('pointerleave',()=>{hover=null;draw()});
@@ -942,7 +968,7 @@ function legend(){const b=B[bio];const it=[[b.g[0],t('ground')],[b.top[0],label(
 bz.addEventListener('click',e=>{const b=e.target.closest('button[data-b]');if(!b)return;bio=b.dataset.b;for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x===b);legend();if(typeof fillScenes==='function')fillScenes();save();draw()});
 document.getElementById('rot').onclick=()=>{rot=(rot+1)%4;save();draw()};
 document.getElementById('zin').onclick=()=>zoomAt(1.4,W/2,Hc/2);document.getElementById('zout').onclick=()=>zoomAt(1/1.4,W/2,Hc/2);document.getElementById('zfit').onclick=()=>{CAM.z=1;CAM.px=0;CAM.py=0;camSet();draw()};
-document.getElementById('undo').onclick=()=>{const s=hist.pop();if(!s)return;const d=JSON.parse(s);H=d.H;F=d.F||blank(N);tokens=d.tokens;MARKS=d.marks||MARKS;save();draw()};
+document.getElementById('undo').onclick=()=>{const s=hist.pop();if(!s)return;const d=JSON.parse(s);H=d.H;F=d.F||blank(N);tokens=d.tokens;MARKS=d.marks||MARKS;ENV=d.env||{};save();draw()};
 const KH={'0':0,'1':1,'2':2,'3':3,'4':-1,'5':-2},held=new Set();
 function setH(c,v){if(!c||H[c.x][c.y]===v)return;H[c.x][c.y]=v;if(v<0)F[c.x][c.y]=0;if(v===-2)tokens=tokens.filter(k=>!covers(k,c.x,c.y))}
 function pickTool(t){const b=document.querySelector(`#tools button[data-t="${t}"]`);if(b)b.click()}
@@ -955,7 +981,7 @@ document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,sele
  });
 document.addEventListener('keyup',e=>{const dg=/^Digit([0-5])$/.exec(e.code);if(dg)held.delete(dg[1])});
 window.addEventListener('blur',()=>held.clear());
-document.getElementById('clear').onclick=()=>{snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];save();draw()};
+document.getElementById('clear').onclick=()=>{snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];ENV={};save();draw()};
 let RNG=Math.random;const R=n=>Math.floor(RNG()*n),ok=(x,y)=>x>=0&&y>=0&&x<N&&y<N;
 function genFree(){const p=B[bio].gen;
  if(p.rooms){for(let x=0;x<N;x++){H[x][0]=3;H[x][N-1]=3}for(let y=0;y<N;y++){H[0][y]=3;H[N-1][y]=3}
@@ -1120,19 +1146,19 @@ function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1
 function seedOf(id,d){if(d&&+d.seed)return +d.seed;let h=2166136261;for(const c of String(id))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0}
 function ctxBar(){const el=document.getElementById('ctxbar');if(!el)return;el.hidden=!CTX;if(!CTX)return;el.innerHTML=`<b>${esc(t('ctx_town'))} : ${esc(CTXN)} <span class="small">(${N}×${N})</span></b><button type="button" id="ctx_regen">${esc(t('ctx_regen'))}</button><button type="button" class="go" id="ctx_back">${esc(t('ctx_back'))}</button>`}
 document.getElementById('ctxbar').addEventListener('click',e=>{if(e.target.id==='ctx_back')leaveTown();else if(e.target.id==='ctx_regen'&&CTX){const o=towns()[CTX];regenTown(o&&o.src,CTX)}});
-function regenTown(d,id){snap();N=d&&d.c==='town'?64:128;H=blank(N);F=blank(N);tokens=[];MARKS=[];INI={o:[],cur:0,round:0};rot=0;const old=RNG;RNG=mulberry(seedOf(id,d));try{genCity(d)}finally{RNG=old}finishCtx(d)}
+function regenTown(d,id){snap();ENV={};N=d&&d.c==='town'?64:128;H=blank(N);F=blank(N);tokens=[];MARKS=[];INI={o:[],cur:0,round:0};rot=0;const old=RNG;RNG=mulberry(seedOf(id,d));try{genCity(d)}finally{RNG=old}finishCtx(d)}
 function finishCtx(d){for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x.dataset.b===bio);legend();showSize();CAM.z=1;CAM.px=0;CAM.py=0;save();if(d&&CTX){const o=towns();if(o[CTX]){o[CTX].src=d;try{localStorage.setItem('luparis-towns',JSON.stringify(o))}catch(e){}}}ctxBar();layout()}
 function openTown(id,name,d){if(!CTX)save();CTX='town:'+id;CTXN=name;const o=towns()[CTX];if(o&&applyState(o)&&o.v===2){finishCtx(o.src||d)}else regenTown(d,CTX);location.hash='#carte'}
 function leaveTown(){CTX=null;CTXN='';try{localStorage.setItem('luparis-ctx','null')}catch(e){}if(!load()){H=blank(N);F=blank(N)}finishCtx(null)}
 window.lupOpenTown=openTown;
 const SCN_ORDER=['forest_road','forest_clearing','bandit_camp','snow_forest','mtn_bend','mtn_pass','cave','dungeon','ruins','graveyard','river_ford','bridge','marsh_walk','oasis','lava_field','crossroads','farmland','tavern','outskirts','village_square','docks','free'];
-function runScene(){snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];NZ=null;RNG=Math.random;const sc=SCN[scene]||SCN.free;sc.run();save();draw()}
+function runScene(){snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];ENV={};NZ=null;RNG=Math.random;const sc=SCN[scene]||SCN.free;sc.run();save();draw()}
 const SCN_BIO={gen:['ruins','graveyard','dungeon','cave','crossroads'],prairie:['crossroads','farmland','tavern','outskirts','village_square','docks','bridge','river_ford','ruins','graveyard'],foret:['forest_road','forest_clearing','bandit_camp','river_ford','crossroads','tavern','ruins'],montagne:['mtn_bend','mtn_pass','cave','ruins','bridge'],volcan:['lava_field','cave','mtn_pass','ruins'],desert:['oasis','ruins','mtn_pass','crossroads','village_square'],neige:['snow_forest','mtn_pass','mtn_bend','cave','village_square'],marais:['marsh_walk','river_ford','ruins','bandit_camp'],donjon:['dungeon','cave','graveyard','ruins']};
 function scenesFor(b){return[...(SCN_BIO[b]||[]),'free']}
 function fillScenes(){const el=document.getElementById('scene'),L=t('scn');if(!L)return;const list=scenesFor(bio);if(!list.includes(scene))scene=list[0];el.innerHTML=list.map(k=>`<option value="${k}"${k===scene?' selected':''}>${esc(t('scn')[k])}</option>`).join('')}
 document.getElementById('scene').addEventListener('change',e=>{scene=e.target.value;runScene()});
 document.getElementById('gen').onclick=runScene;
-setTimeout(()=>{ctxBar();renderMarks()});
+setTimeout(()=>{ctxBar();renderMarks();fillEnv()});
 document.getElementById('size').addEventListener('input',e=>{const n=SIZES[+e.target.value]||16;if(n===N){showSize();return}snap();resizeTo(n);showSize();save();layout()});
 cv.style.cursor='grab';const ro=new ResizeObserver(layout);ro.observe(stage);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1366,8 +1392,8 @@ $('c_tgt').addEventListener('input',()=>{});
 $('c_wf').addEventListener('submit',e=>{e.preventDefault();const n=$('c_wn').value.trim();if(!n)return;C.weapons.push({n,f:$('c_wfam').value,s:$('c_wsz').value});$('c_wn').value='';saveC();renderSheet()});
 T.en.sk_confirm2='Confirm: erase the sheet?';T.fr.sk_confirm2='Confirmer : effacer la fiche ?';
 
-Object.assign(T.en,{sk_lay:'Drag a module by its ⠿ handle to reorder.',sk_cols:'Columns',sk_layreset:'Reset layout',t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Remove one with its ✕ in this list.',ctx_town:'Town map',ctx_regen:'Reset to the original town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},z_fit:'Fit',z_out:'Zoom out',scn:{forest_clearing:'Forest clearing',bandit_camp:'Bandit camp',snow_forest:'Snowy forest',mtn_pass:'Mountain pass',cave:'Cave',dungeon:'Dungeon rooms',ruins:'Ruins',graveyard:'Graveyard',river_ford:'River ford',marsh_walk:'Swamp boardwalk',oasis:'Desert oasis',lava_field:'Lava field',crossroads:'Crossroads',farmland:'Farmland',village_square:'Village square',docks:'Docks',forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain'}});
-Object.assign(T.fr,{sk_lay:'Glisse un module par sa poignée ⠿ pour le déplacer.',sk_cols:'Colonnes',sk_layreset:'Réinitialiser l\'agencement',t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Retire-le avec sa croix ✕ dans cette liste.',ctx_town:'Carte de ville',ctx_regen:'Revenir à la ville d\'origine',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},z_fit:'Ajuster',z_out:'Dézoomer',scn:{forest_clearing:'Clairière',bandit_camp:'Camp de bandits',snow_forest:'Forêt enneigée',mtn_pass:'Col de montagne',cave:'Grotte',dungeon:'Salles de donjon',ruins:'Ruines',graveyard:'Cimetière',river_ford:'Gué',marsh_walk:'Passerelles du marais',oasis:'Oasis',lava_field:'Champ de lave',crossroads:'Carrefour',farmland:'Champs et ferme',village_square:'Place de village',docks:'Quais',forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre'}});
+Object.assign(T.en,{t_env:'Effect',sk_lay:'Drag a module by its ⠿ handle to reorder.',sk_cols:'Columns',sk_layreset:'Reset layout',t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Remove one with its ✕ in this list.',ctx_town:'Town map',ctx_regen:'Reset to the original town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},z_fit:'Fit',z_out:'Zoom out',scn:{forest_clearing:'Forest clearing',bandit_camp:'Bandit camp',snow_forest:'Snowy forest',mtn_pass:'Mountain pass',cave:'Cave',dungeon:'Dungeon rooms',ruins:'Ruins',graveyard:'Graveyard',river_ford:'River ford',marsh_walk:'Swamp boardwalk',oasis:'Desert oasis',lava_field:'Lava field',crossroads:'Crossroads',farmland:'Farmland',village_square:'Village square',docks:'Docks',forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain'}});
+Object.assign(T.fr,{t_env:'Effet',sk_lay:'Glisse un module par sa poignée ⠿ pour le déplacer.',sk_cols:'Colonnes',sk_layreset:'Réinitialiser l\'agencement',t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Retire-le avec sa croix ✕ dans cette liste.',ctx_town:'Carte de ville',ctx_regen:'Revenir à la ville d\'origine',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},z_fit:'Ajuster',z_out:'Dézoomer',scn:{forest_clearing:'Clairière',bandit_camp:'Camp de bandits',snow_forest:'Forêt enneigée',mtn_pass:'Col de montagne',cave:'Grotte',dungeon:'Salles de donjon',ruins:'Ruines',graveyard:'Cimetière',river_ford:'Gué',marsh_walk:'Passerelles du marais',oasis:'Oasis',lava_field:'Champ de lave',crossroads:'Carrefour',farmland:'Champs et ferme',village_square:'Place de village',docks:'Quais',forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre'}});
 setTimeout(()=>{fillScenes();fillSz()});
 Object.assign(T.en,{pl_title:'Quick place',pl_ally:'Ally (characters)',pl_foe:'Enemy (bestiary)',pl_hint:'Pick a name, then click tiles on the map. Esc to stop.',pl_choose:'— choose —',
 in_title:'Initiative',in_roll:'Roll',in_next:'Next turn',in_end:'End',in_rnd:n=>`Round ${n}`,in_empty:'Place tokens, then roll. Allies use Physical Finesse, monsters their initiative bonus.',
@@ -1479,6 +1505,9 @@ document.getElementById('hand').addEventListener('click',e=>{const b=e.target.cl
  if(ds.ha==='man'){const st=handSel[c.id+'_m'],cost=[...st].reduce((s,i)=>s+MAN[i][0],0);if(!cost||cost>D.st-u.st)return;u.st+=cost;const fx=[...st].map(i=>tr(MAN[i][1])).join(', ');st.clear();saveC();hRoll(`${esc(fx)} · −${cost} ${L2('Breath','Souffle')}`);return}
  if(ds.ha==='cdel'){c.cards.splice(+ds.i,1);saveC();renderHand()}});
 
+const TKLOG=[],TKCRIT={};
+function parseAtk(txt){const out=[],body=txt.replace(/^[^:]*?(Attacks?|Attaques?)\s*:\s*/i,'');const re=/([^·:;.,+\d][^·:;,+]*?)(?:\s*×\s*(\d+))?\s+([+-]\d+)\s*,\s*(\d+)d(\d+)\s*(?:([+-])\s*(\d+))?/g;let m;
+ while((m=re.exec(body))){out.push({n:m[1].trim().replace(/^(Attacks?|Attaques?)\s*:\s*/i,''),k:+(m[2]||1),ab:+m[3],nd:+m[4],dd:+m[5],mod:m[6]?(m[6]==='-'?-1:1)*+m[7]:0})}return out}
 function renderTok(){renderHand();const P=document.getElementById('tk_panel');if(!P)return;const k=tokens.find(x=>x.id===selTok);if(!k){P.hidden=true;return}P.hidden=false;
  const ch=k.cid?CH.list.find(c=>c.id===k.cid):null,m=k.mid?MON.find(x=>x.id===k.mid):null,name=k.nm?tr(k.nm)+(k.num?' '+k.num:''):k.n;
  const st=(a,b)=>`<div class="stat"><div class="k">${a}</div><div class="v">${b}</div></div>`;let h=`<h3>${esc(name)}</h3>`;
@@ -1488,9 +1517,13 @@ function renderTok(){renderHand();const P=document.getElementById('tk_panel');if
   if(ch){const D=derived(ch);for(const[key,lab,mx]of[['mana','Mana',D.mana],['st',t('sk_st'),D.st]])if(mx)h+=`<div class="trk"><div><b>${lab}</b></div><div class="ctl"><button type="button" data-tkres="${key}" data-d="-1" aria-label="${lab} −">−</button><span class="num">${mx-(ch.used[key]||0)} / ${mx}</span><button type="button" data-tkres="${key}" data-d="1" aria-label="${lab} +">+</button></div></div>`;
    h+=ch.weapons.map(w=>{const tier=ch.fam[w.f]||0,mod=ch.cells[FAM[w.f].c];return`<p class="tline"><b>${esc(w.n)}</b> · ${t('sk_attack')} ${sgn(mod+mb(tier))} · ${Math.max(1,tier)}d${SZ[w.s]}${mod?sgn(mod):''}</p>`}).join('');
    h+=Object.keys(SCH).filter(x=>ch.sch[x]).map(x=>{const tier=ch.sch[x],ab=ch.cells.P_men+mb(tier);return`<p class="tline"><b>${esc(tr(SCH[x]))}</b> · Tier ${tier} · ${t('sk_attack')} ${sgn(ab)} · ${tier}d${SDIE[x]||8} · ${t('sk_dc')} ${8+ab}</p>`}).join('')}
-  const no=m?noT(m):k.no;if(no)h+=`<p class="tno">${esc(no)}</p>`;if(m)h+=`<p class="small">${esc(tyName(m.type))} · ${lang==='fr'?'FP':'CR'} ${esc(m.fp)} · ${m.pv} ${t('hp')}</p>`}
+  const no=m?noT(m):k.no;if(no)h+=`<p class="tno">${esc(no)}</p>`;const MA=parseAtk(no||'');if(MA.length)h+=`<div class="matks">${MA.map((a,i)=>`<div class="matk"><span>${esc(a.n)}${a.k>1?' ×'+a.k:''}</span><button type="button" class="go" data-ma="${i}" data-r="atk" aria-label="${esc(a.n)} : ${t('sk_attack')}">${sgn(a.ab)}</button><button type="button" data-ma="${i}" data-r="dmg" aria-label="${esc(a.n)} : ${t('sk_damage')}">${a.nd}d${a.dd}${a.mod?sgn(a.mod):''}</button></div>`).join('')}</div>`+(TKLOG.length?`<ol class="hlog">${TKLOG.map(x=>`<li>${x}</li>`).join('')}</ol>`:'');if(m)h+=`<p class="small">${esc(tyName(m.type))} · ${lang==='fr'?'FP':'CR'} ${esc(m.fp)} · ${m.pv} ${t('hp')}</p>`}
  h+=`<div class="row"><button type="button" data-tkact="del">${t('tk_del')}</button><button type="button" data-tkact="close">${t('tk_close')}</button></div>`;P.innerHTML=h}
 $('tk_panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const k=tokens.find(x=>x.id===selTok);if(!k)return;
+ if(b.dataset.ma!=null){const m=k.mid?MON.find(x=>x.id===k.mid):null,a=parseAtk((m?noT(m):k.no)||'')[+b.dataset.ma];if(!a)return;const nm=(k.nm?tr(k.nm)+(k.num?' '+k.num:''):k.n)+' · '+a.n,key=k.id+'_'+b.dataset.ma;
+  if(b.dataset.r==='atk'){const r=dRoll(20),tot=r+a.ab;TKCRIT[key]=r===20;TKLOG.unshift(`${esc(nm)} · d20 (${r}) ${sgn(a.ab)} = <b>${tot}</b>${r===20?` <span class="cr">${t('sk_crit')}</span>`:r===1?` <span class="ko">${t('sk_miss')}</span>`:''}`)}
+  else{const n=TKCRIT[key]?a.nd*2:a.nd,rs=Array.from({length:n},()=>dRoll(a.dd)),tot=rs.reduce((x,y)=>x+y,0)+a.mod;TKCRIT[key]=false;TKLOG.unshift(`${esc(nm)} · ${n}d${a.dd}${a.mod?sgn(a.mod):''} [${rs.join(', ')}] = <b>${tot}</b>`)}
+  if(TKLOG.length>6)TKLOG.pop();renderTok();return}
  if(b.dataset.tkhp)tokHp(k,+b.dataset.tkhp);
  else if(b.dataset.tkres){const ch=CH.list.find(c=>c.id===k.cid);if(ch){ch.used[b.dataset.tkres]=(ch.used[b.dataset.tkres]||0)-(+b.dataset.d);saveC();if(CH.active===ch.id)renderSheet();renderTok()}}
  else if(b.dataset.tkact==='del'){snap();tokens=tokens.filter(x=>x.id!==k.id);selTok=null;save();draw();renderTok()}
@@ -1630,7 +1663,7 @@ new ResizeObserver(()=>{if(WS&&!$('v-monde').hidden)wApply()}).observe(wst);
 
 function nm0(m){return tr(m.n)}
 function applyLang(){document.documentElement.lang=lang;document.title=lang==='fr'?'Luparis — Table tactique':'Luparis — Tactical Table';
- for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();
+ for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();
  for(const e of document.querySelectorAll('[data-i18n-html]'))e.innerHTML=t(e.dataset.i18nHtml);
  for(const e of document.querySelectorAll('[data-i18n-ph]'))e.placeholder=t(e.dataset.i18nPh);
  for(const b of bz.querySelectorAll('button[data-b]'))b.querySelector('.bn').textContent=tr(B[b.dataset.b].n);
