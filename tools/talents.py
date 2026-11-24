@@ -15,8 +15,6 @@ TAL = [
  dict(k='dodge', g='mar', c=S[:1], n=('Uncanny dodge', 'Esquive instinctive'), req=('Finesse +3', 'Finesse +3'), rq={'st': 'F', 'v': 3},
   r=[('Reaction when a hit you can see lands, 1 Stamina: its damage is halved before the thresholds. Once per round.',
       'Réaction quand un coup que tu vois venir te touche, 1 Souffle : ses dégâts sont divisés par deux avant les seuils. Une fois par round.')]),
- dict(k='momentum', g='mar', c=S[:1], n=('Momentum', 'Élan'),
-  r=[('When you roll a natural 20 or drop an enemy to 0 boxes, regain 2 Stamina.', 'Quand tu fais un 20 naturel ou fais tomber un ennemi à 0 case, tu regagnes 2 Souffle.')]),
  dict(k='pas', g='mar', c=[40, 40], n=('Fleet-footed', 'Pas rapide'),
   r=[('+2 tiles of movement.', '+2 cases de déplacement.'), ('+4 tiles of movement in total.', '+4 cases de déplacement au total.')]),
   dict(k='beast', g='pac', c=S, n=('Companion', 'Compagnon'),
