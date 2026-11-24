@@ -390,12 +390,13 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 <h2 id="r-perso">2. The character</h2>
 <p>There are no classes. Each character spends XP on the schools of magic, weapon masteries and matrix cells they want. Their stats tell their life story, whatever their people: no race gives a bonus.</p>
 <p>Everyone starts with a d6 hit die, then buys d8, d10 and d12 with XP.</p>
-<h3>XP costs (draft v0.1)</h3>
-<p>Level equals XP earned divided by 100: 150 XP to create a level 1 character, 600 for level 6. The Character tab does all the math.</p>
+<h3>XP costs (v0.2)</h3>
+<p>Level equals XP earned divided by 100: 150 XP to create a level 1 character, 2,000 at level 20. The Character tab does all the math.</p>
 <table><thead><tr><th>Purchase</th><th>Cost of each step</th><th>Total</th></tr></thead><tbody>
 <tr><td>Matrix cell, +1 to +5</td><td>5, 10, 15, 20, 25</td><td>75</td></tr>
-<tr><td>Tier in a school or weapon family, 1 to 5</td><td>20, 40, 80, 120, 160</td><td>420</td></tr>
-<tr><td>Hit die d8, d10, d12</td><td>30, 40, 50</td><td>120</td></tr></tbody></table>
+<tr><td>Tier in a discipline (school, weapon family or Apex), 1 to 5</td><td>40, 80, 160, 240, 320</td><td>840</td></tr>
+<tr><td>Hit die d8, d10, d12</td><td>80, 160, 240</td><td>480</td></tr></tbody></table>
+<p><b>Specialization:</b> your disciplines are ranked by Tier. The highest costs normal price, the 2nd ×1.5, the 3rd ×2, every further one ×3. At level 20 (2,000 XP), that buys one discipline at Tier 5 and a second at Tier 4, with the matrix and a d8; a tank who takes the d12 settles for Tier 5 and Tier 3.</p>
 <p><b>Tier gates:</b> Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17, like D&D's major tiers.</p>
 <h2 id="r-defense">3. Defense: Evasion and armor</h2>
 <p>Armor Class is gone. The attacker rolls d20 + bonus against the target's <b>Evasion</b>. On a hit, <b>armor</b> decides how much the blow costs.</p>
@@ -426,10 +427,19 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 <p class="note">Calibration: at every level tested (1, 5 and 10), a character drops after as many attacks as in D&D, within 10%.</p>
 <h2 id="r-maitrise">5. Mastery and magic</h2>
 <p>Spells and weapons follow the same rule. Your <b>Mastery</b> in a school or a weapon is your Tier, from 1 to 5. It sets how many dice you roll; what you use sets the die type.</p>
-<ol><li><b>Basic attack, free.</b> Weapon: Mastery × weapon die + modifier. School's basic spell: Mastery × d8, no modifier.</li>
+<ol><li><b>Basic attack, free.</b> Weapon: Mastery × weapon die + modifier. School's basic spell: Mastery × the school's die, no modifier (see the table of schools).</li>
 <li><b>Effects.</b> Each effect is worth 1 to 5. The total costs that much Mana and cannot exceed your Tier in the school.</li>
 <li><b>Circumstances.</b> A bonus or a penalty changes Mastery by ±1: an inspiring ally, Rage, a weakened or blinded target.</li></ol>
-<h3>Weapon masteries</h3><p>You buy one mastery per weapon family; it covers every weapon of that family. The weapon's size sets the die. Each school's basic spell uses a d8.</p>
+<h3>The schools</h3><p>Each school has its own damage die (basic spell and infusion) and an <b>affinity</b>: a signature effect that costs it less. The smaller the die, the stronger the affinity.</p>
+<table><thead><tr><th>School</th><th>Die</th><th>Affinity</th><th>Domain</th></tr></thead><tbody>
+<tr><td>Surge</td><td>d12</td><td>—</td><td>Destruction, like evocation</td></tr>
+<tr><td>Mirage</td><td>d8</td><td>Heavy control 1, major control 2</td><td>Psychic damage, illusions, fear and charm</td></tr>
+<tr><td>Eidolon</td><td>d8</td><td>Persistence 1</td><td>Souls: curses and purification</td></tr>
+<tr><td>Aegis</td><td>d8</td><td>Aegis ward 1</td><td>Energy condensed into matter: shields, summoned weapons</td></tr>
+<tr><td>Crucible</td><td>d8</td><td>Heal: 2 boxes per point</td><td>Transmutation and healing</td></tr>
+<tr><td>Horizon</td><td>d6</td><td>Offset 0 (free)</td><td>Space and time: teleportation, portals, slowing time</td></tr>
+<tr><td>Harmony</td><td>d6</td><td>Multiply 1 per target</td><td>Resonance: bards, shaping the battlefield</td></tr></tbody></table>
+<h3>Weapon masteries</h3><p>You buy one mastery per weapon family; it covers every weapon of that family. The weapon's size sets the die. Each school's basic spell uses its own die (table below).</p>
 <table><thead><tr><th>Family</th><th>Examples</th><th>Special</th></tr></thead><tbody><tr><td>Cutting weapons</td><td>Sword, axe, sabre, scimitar</td><td>To be defined</td></tr><tr><td>Thrusting weapons</td><td>Rapier, dagger, shortsword, estoc</td><td>To be defined</td></tr><tr><td>Blunt weapons</td><td>Mace, hammer, flail, staff</td><td>Proposal: ignores 2 points of armor value</td></tr><tr><td>Polearms</td><td>Spear, halberd, glaive, pike</td><td>Proposal: reach, strikes at 10 ft (3 m)</td></tr><tr><td>Ranged and thrown weapons</td><td>Bow, crossbow, javelin, sling</td><td>Ranged attacks</td></tr><tr><td>Martial arts</td><td>Fists, feet, knees, elbows</td><td>Uses Physical Finesse. d6 with one hand busy, d8 with both hands free. Proposal: cannot be disarmed, and grabbing or tripping needs no weapon</td></tr><tr><td>Natural weapons</td><td>Claws, fangs, horns, tail</td><td>Uses Physical Power. The die depends on the natural weapon's size, not on hands: small d6, medium d8, large d10, huge d12. Cannot be disarmed; tied to the people or a transformation</td></tr></tbody></table>
 <table><thead><tr><th>Size</th><th>Die</th></tr></thead><tbody><tr><td>One-handed weapon</td><td>d6</td></tr><tr><td>Versatile weapon held in one hand</td><td>d8</td></tr><tr><td>Versatile weapon held in two hands</td><td>d10</td></tr><tr><td>Two-handed weapon</td><td>d12</td></tr></tbody></table>
 <h3>Spell effects</h3>
@@ -543,12 +553,13 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 <h2 id="r-perso">2. Le personnage</h2>
 <p>Il n'y a pas de classes. Chaque personnage achète en XP les écoles de magie, les maîtrises d'armes et les cases de la matrice qu'il veut. Ses statistiques racontent son vécu, quel que soit son peuple : aucune race ne donne de bonus.</p>
 <p>Tout le monde commence avec un dé de vie d6. On achète ensuite d8, d10 puis d12 avec de l'XP.</p>
-<h3>Barème d'XP (brouillon v0.1)</h3>
-<p>Le niveau vaut l'XP gagnée divisée par 100 : 150 XP pour créer un personnage de niveau 1, 600 pour un niveau 6. L'onglet Personnage fait tous les calculs.</p>
+<h3>Barème d'XP (v0.2)</h3>
+<p>Le niveau vaut l'XP gagnée divisée par 100 : 150 XP pour créer un personnage de niveau 1, 2 000 au niveau 20. L'onglet Personnage fait tous les calculs.</p>
 <table><thead><tr><th>Achat</th><th>Coût de chaque palier</th><th>Total</th></tr></thead><tbody>
 <tr><td>Case de la matrice, de +1 à +5</td><td>5, 10, 15, 20, 25</td><td>75</td></tr>
-<tr><td>Tier d'une école ou d'une famille d'armes, de 1 à 5</td><td>20, 40, 80, 120, 160</td><td>420</td></tr>
-<tr><td>Dé de vie d8, d10, d12</td><td>30, 40, 50</td><td>120</td></tr></tbody></table>
+<tr><td>Tier d'une discipline (école, famille d'armes ou Apex), de 1 à 5</td><td>40, 80, 160, 240, 320</td><td>840</td></tr>
+<tr><td>Dé de vie d8, d10, d12</td><td>80, 160, 240</td><td>480</td></tr></tbody></table>
+<p><b>Spécialisation :</b> les disciplines sont classées par Tier. La plus haute coûte le prix normal, la 2e ×1,5, la 3e ×2, toutes les suivantes ×3. Au niveau 20 (2 000 XP), cela permet une discipline au Tier 5 et une deuxième au Tier 4, avec la matrice et un d8 ; un tank qui prend le d12 se contente d'un Tier 5 et d'un Tier 3.</p>
 <p><b>Paliers de Tier :</b> Tier 2 dès le niveau 3, Tier 3 dès le 5, Tier 4 dès le 11, Tier 5 dès le 17, comme les grands paliers de D&D.</p>
 <h2 id="r-defense">3. Défense : Esquive et armure</h2>
 <p>La classe d'armure disparaît. L'attaquant lance d20 + bonus contre l'<b>Esquive</b> de la cible. S'il touche, l'<b>armure</b> détermine combien le coup coûte.</p>
@@ -579,10 +590,19 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 <p class="note">Calibrage : à tous les niveaux testés (1, 5 et 10), un personnage tombe après autant d'attaques que dans D&D, à 10 % près.</p>
 <h2 id="r-maitrise">5. Maîtrise et magie</h2>
 <p>Sorts et armes suivent la même règle. Ta <b>Maîtrise</b> dans une école ou une arme est ton Tier, de 1 à 5. Elle donne le nombre de dés lancés ; ce que tu utilises donne le type de dé.</p>
-<ol><li><b>Attaque de base, gratuite.</b> Arme : Maîtrise × dé de l'arme + modificateur. Sort de base de l'école : Maîtrise × d8, sans modificateur.</li>
+<ol><li><b>Attaque de base, gratuite.</b> Arme : Maîtrise × dé de l'arme + modificateur. Sort de base de l'école : Maîtrise × le dé de l'école, sans modificateur (voir le tableau des écoles).</li>
 <li><b>Effets.</b> Chaque effet vaut de 1 à 5. La somme des valeurs coûte autant de Mana et ne peut pas dépasser ton Tier dans l'école.</li>
 <li><b>Circonstances.</b> Un bonus ou un malus modifie la Maîtrise de ±1 : allié qui inspire, Rage, cible affaiblie ou aveuglée.</li></ol>
-<h3>Maîtrises d'armes</h3><p>On achète une maîtrise par famille d'armes ; elle vaut pour toutes les armes de la famille. Le gabarit de l'arme donne le dé. Le sort de base de chaque école utilise un d8.</p>
+<h3>Les écoles</h3><p>Chaque école a son propre dé de dégâts (sort de base et infusion) et une <b>affinité</b> : un effet de signature qui lui coûte moins cher. Plus le dé est petit, plus l'affinité est forte.</p>
+<table><thead><tr><th>École</th><th>Dé</th><th>Affinité</th><th>Domaine</th></tr></thead><tbody>
+<tr><td>Afflux</td><td>d12</td><td>—</td><td>Destruction, comme l'évocation</td></tr>
+<tr><td>Mirage</td><td>d8</td><td>Contrôle lourd 1, contrôle majeur 2</td><td>Dégâts psychiques, illusions, peur et charme</td></tr>
+<tr><td>Eidolon</td><td>d8</td><td>Persistance 1</td><td>Les âmes : malédictions et purification</td></tr>
+<tr><td>Égide</td><td>d8</td><td>Bouclier d'Égide 1</td><td>Énergie condensée jusqu'à devenir matière : boucliers, armes invoquées</td></tr>
+<tr><td>Creuset</td><td>d8</td><td>Soin : 2 cases par point</td><td>Transmutation et guérison</td></tr>
+<tr><td>Horizon</td><td>d6</td><td>Déport 0 (gratuit)</td><td>Espace et temps : téléportation, portails, ralentir le temps</td></tr>
+<tr><td>Harmonie</td><td>d6</td><td>Multiplication 1 par cible</td><td>Résonance : bardes, influence sur le champ de bataille</td></tr></tbody></table>
+<h3>Maîtrises d'armes</h3><p>On achète une maîtrise par famille d'armes ; elle vaut pour toutes les armes de la famille. Le gabarit de l'arme donne le dé. Le sort de base de chaque école utilise son propre dé (tableau ci-dessous).</p>
 <table><thead><tr><th>Famille</th><th>Exemples</th><th>Particularité</th></tr></thead><tbody><tr><td>Armes de taille</td><td>Épée, hache, sabre, cimeterre</td><td>À définir</td></tr><tr><td>Armes d'estoc</td><td>Rapière, dague, épée courte, estoc</td><td>À définir</td></tr><tr><td>Armes contondantes</td><td>Masse, marteau, fléau, bâton</td><td>Proposition : ignore 2 points de valeur d'armure</td></tr><tr><td>Armes d'hast</td><td>Lance, hallebarde, glaive, pique</td><td>Proposition : allonge, frappe à 10 pieds (3 m)</td></tr><tr><td>Armes de tir et de jet</td><td>Arc, arbalète, javelot, fronde</td><td>Frappe à distance</td></tr><tr><td>Arts martiaux</td><td>Poings, pieds, genoux, coudes</td><td>Utilise la Finesse physique. d6 avec une main occupée, d8 mains libres. Proposition : impossible à désarmer, et saisir ou renverser ne demande pas d'arme</td></tr><tr><td>Armes naturelles</td><td>Griffes, crocs, cornes, queue</td><td>Utilise la Puissance physique. Le dé dépend de la taille de l'arme naturelle, pas des mains : petite d6, moyenne d8, grande d10, énorme d12. Impossible à désarmer ; liée au peuple ou à une transformation</td></tr></tbody></table>
 <table><thead><tr><th>Gabarit</th><th>Dé</th></tr></thead><tbody><tr><td>Arme à une main</td><td>d6</td></tr><tr><td>Arme polyvalente tenue à une main</td><td>d8</td></tr><tr><td>Arme polyvalente tenue à deux mains</td><td>d10</td></tr><tr><td>Arme à deux mains</td><td>d12</td></tr></tbody></table>
 <h3>Effets de sorts</h3>
@@ -1184,7 +1204,7 @@ sk_short:'Short rest',sk_long:'Long rest',sk_atk:'Attacks and spells',sk_target:
 sk_fam:'Family',sk_size:'Size',sk_add:'Add',sk_remove:'Remove',sk_spell:'basic spell',sk_dc:'DC',sk_nospell:'Buy a Tier in a school to get its spells.',sk_log:'Rolls',sk_nolog:'Your rolls will show up here.',
 sk_hit:'Hit',sk_miss:'Miss',sk_crit:'Critical!',sk_notes:'Notes',sk_io:'Save or share the sheet',sk_copy:'Copy the sheet',sk_import:'Import pasted sheet',sk_new:'New character',
 sk_copied:'Sheet copied.',sk_bad:'This text is not a valid sheet.',sk_done:'Sheet imported.',sk_demo:'Example character: change anything, the sheet recalculates.',
-sk_costs:'XP costs, draft v0.1: matrix +1 to +5 costs 5, 10, 15, 20, 25; Tiers 1 to 5 cost 20, 40, 80, 120, 160; hit die d8, d10, d12 cost 30, 70, 120 in total. Level = XP earned ÷ 100. Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17.',
+sk_costs:'XP costs, v0.2: matrix +1 to +5 costs 5, 10, 15, 20, 25; Tiers 1 to 5 cost 40, 80, 160, 240, 320 (840 in total); schools, weapon families and the Apex are disciplines: the highest costs ×1, the 2nd ×1.5, the 3rd ×2, the next ones ×3; hit die d8, d10, d12 cost 80, 240, 480 in total. Level = XP earned ÷ 100. Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17.',
 sk_mb:b=>`Mastery +${b}`,sk_next:n=>`next +${n} XP`,sk_lock:(tt,l)=>`Tier ${tt} from level ${l}`,sk_fx:n=>`effects up to ${n}`,sk_unm:'not mastered',
 sz:{one:'One-handed (d6)',poly1:'Versatile, one hand (d8)',poly2:'Versatile, two hands (d10)',two:'Two-handed (d12)'},
 it:['Power','Finesse','Resilience'],dm:['Physical','Mental','Social'],hint:{P_phy:'Strength',F_phy:'Evasion',R_phy:'Thresholds, Stamina',P_men:'Offensive spells',F_men:'Perception',R_men:'Mana',P_soc:'Authority',F_soc:'Persuasion',R_soc:'Composure'}});
@@ -1195,20 +1215,20 @@ sk_short:'Repos court',sk_long:'Repos long',sk_atk:'Attaques et sorts',sk_target
 sk_fam:'Famille',sk_size:'Gabarit',sk_add:'Ajouter',sk_remove:'Retirer',sk_spell:'sort de base',sk_dc:'DD',sk_nospell:'Achète un Tier dans une école pour obtenir ses sorts.',sk_log:'Jets',sk_nolog:'Tes jets s\'afficheront ici.',
 sk_hit:'Touché',sk_miss:'Raté',sk_crit:'Critique !',sk_notes:'Notes',sk_io:'Sauvegarder ou partager la fiche',sk_copy:'Copier la fiche',sk_import:'Importer la fiche collée',sk_new:'Nouveau personnage',
 sk_copied:'Fiche copiée.',sk_bad:"Ce texte n'est pas une fiche valide.",sk_done:'Fiche importée.',sk_demo:'Personnage d\'exemple : change ce que tu veux, la fiche recalcule tout.',
-sk_costs:"Coûts en XP, brouillon v0.1 : matrice de +1 à +5 = 5, 10, 15, 20, 25 ; Tiers 1 à 5 = 20, 40, 80, 120, 160 ; dé de vie d8, d10, d12 = 30, 70, 120 au total. Niveau = XP gagnée ÷ 100. Tier 2 dès le niveau 3, Tier 3 dès le 5, Tier 4 dès le 11, Tier 5 dès le 17.",
+sk_costs:"Coûts en XP, v0.2 : une case de la matrice de +1 à +5 coûte 5, 10, 15, 20, 25 ; les Tiers 1 à 5 coûtent 40, 80, 160, 240, 320 (840 au total) ; écoles, familles d'armes et Apex sont des disciplines : la plus haute coûte ×1, la 2e ×1,5, la 3e ×2, les suivantes ×3 ; dé de vie d8, d10, d12 : 80, 240, 480 au total. Niveau = XP gagnée ÷ 100. Tier 2 dès le niveau 3, Tier 3 dès le 5, Tier 4 dès le 11, Tier 5 dès le 17.",
 sk_mb:b=>`Maîtrise +${b}`,sk_next:n=>`suivant +${n} XP`,sk_lock:(tt,l)=>`Tier ${tt} dès le niveau ${l}`,sk_fx:n=>`effets jusqu'à ${n}`,sk_unm:'non maîtrisée',
 sz:{one:'À une main (d6)',poly1:'Polyvalente, une main (d8)',poly2:'Polyvalente, deux mains (d10)',two:'À deux mains (d12)'},
 it:['Puissance','Finesse','Résistance'],dm:['physique','mentale','sociale'],dmH:['Physique','Mental','Social'],hint:{P_phy:'Force',F_phy:'Esquive',R_phy:'Seuils, Souffle',P_men:'Sorts offensifs',F_men:'Perception',R_men:'Mana',P_soc:'Autorité',F_soc:'Persuasion',R_soc:'Sang-froid'}});
-const COST={cell:[0,5,15,30,50,75],tier:[0,20,60,140,260,420],dv:{6:0,8:30,10:70,12:120}},GATE=[1,1,3,5,11,17],MANA=[0,2,6,14,24,36],STAM=[0,1,3,7,12,18];
+const COST={cell:[0,5,15,30,50,75],tier:[0,40,120,280,520,840],dv:{6:0,8:80,10:240,12:480},mult:[1,1.5,2,3]},GATE=[1,1,3,5,11,17],MANA=[0,2,6,14,24,36],STAM=[0,1,3,7,12,18];
 const INT=['P','F','R'],DOM=['phy','men','soc'];
-const SCH={afflux:['Surge','Afflux'],creuset:['Crucible','Creuset'],mirage:['Mirage','Mirage'],horizon:['Horizon','Horizon'],eidolon:['Eidolon','Eidolon'],egide:['Aegis','Égide'],harmonie:['Harmony','Harmonie']};
+const SDIE={afflux:12,creuset:8,mirage:8,horizon:6,eidolon:8,egide:8,harmonie:6};const SCH={afflux:['Surge','Afflux'],creuset:['Crucible','Creuset'],mirage:['Mirage','Mirage'],horizon:['Horizon','Horizon'],eidolon:['Eidolon','Eidolon'],egide:['Aegis','Égide'],harmonie:['Harmony','Harmonie']};
 const FAM={taille:{n:['Cutting','Taille'],c:'P_phy'},estoc:{n:['Thrusting','Estoc'],c:'F_phy'},cont:{n:['Blunt','Contondantes'],c:'P_phy'},hast:{n:['Polearms','Hast'],c:'P_phy'},tir:{n:['Ranged and thrown','Tir et jet'],c:'F_phy'},martial:{n:['Martial arts','Arts martiaux'],c:'F_phy',sz:{one:['One hand busy','Une main occupée'],poly1:['Both hands free','Mains libres']}},nat:{n:['Natural weapons','Armes naturelles'],c:'P_phy',sz:{one:['Small (claws, beak)','Petite (griffes, bec)'],poly1:['Medium (fangs, horns)','Moyenne (crocs, cornes)'],poly2:['Large (tail, tusks)','Grande (queue, défenses)'],two:['Huge (crushing jaws)','Énorme (mâchoire broyante)']}}};
 function szLabel(f,k){const o=FAM[f]&&FAM[f].sz;return o?(o[k]?tr(o[k]):''):T[lang].sz[k]}function szKeys(f){const o=FAM[f]&&FAM[f].sz;return o?Object.keys(o):Object.keys(SZ)}
 const SZ={one:6,poly1:8,poly2:10,two:12};
 const ARM={none:[['None','Aucune'],0,'l'],cuir:[['Leather','Cuir'],1,'l'],clou:[['Studded leather','Cuir clouté'],2,'l'],chem:[['Chain shirt','Chemise de mailles'],3,'m'],cuira:[['Breastplate, scale','Cuirasse, écailles'],4,'m'],demi:[['Half plate','Demi-plate'],5,'m'],cotte:[['Chain mail','Cotte de mailles'],6,'h'],clib:[['Splint','Clibanion'],7,'h'],harn:[['Plate','Harnois'],8,'h']};
 const SHD={none:[['None','Aucun'],0],bocle:[['Buckler','Bocle'],0],rond:[['Small shield','Rondache'],1],ecu:[['Heater shield','Écu'],1],grand:[['Large shield','Grand bouclier'],2],pavois:[['Tower shield','Pavois'],2]};
 const blankC=()=>({id:tid(),camp:'',name:'',people:'',xp:150,cells:Object.fromEntries(INT.flatMap(i=>DOM.map(d=>[i+'_'+d,0]))),dv:6,sch:Object.fromEntries(Object.keys(SCH).map(k=>[k,0])),apex:0,fam:Object.fromEntries(Object.keys(FAM).map(k=>[k,0])),armor:'none',shield:'none',weapons:[],used:{hp:0,mana:0,st:0},notes:'',demo:false});
-function demoC(){const c=blankC();Object.assign(c,{camp:lang==='fr'?'Exemple':'Example',name:'Kael',people:lang==='fr'?'Humain':'Human',dv:10,armor:'chem',shield:'none',demo:true});c.cells.P_phy=3;c.cells.R_phy=2;c.cells.F_phy=1;c.fam.taille=1;
+function demoC(){const c=blankC();Object.assign(c,{camp:lang==='fr'?'Exemple':'Example',name:'Kael',people:lang==='fr'?'Humain':'Human',xp:300,dv:8,armor:'chem',shield:'none',demo:true});c.cells.P_phy=3;c.cells.R_phy=2;c.cells.F_phy=1;c.fam.taille=1;
  c.weapons=[{n:lang==='fr'?'Épée longue':'Longsword',f:'taille',s:'poly2'},{n:lang==='fr'?'Dague':'Dagger',f:'estoc',s:'one'}];return c}
 let CH;try{CH=JSON.parse(localStorage.getItem('luparis-chars'))}catch(e){}
 if(!CH||!Array.isArray(CH.list)||!CH.list.length){let old;try{old=JSON.parse(localStorage.getItem('luparis-sheet'))}catch(e){}CH={list:[old&&old.cells?old:demoC()],active:null}}
@@ -1216,7 +1236,9 @@ for(const c of CH.list){if(c.sch&&c.sch.apex!=null){if(c.sch.apex>0&&!c.apex)c.a
 let C=CH.list.find(c=>c.id===CH.active)||CH.list[0];if(!CH.list.some(c=>c.id===CH.active))CH.active=null;
 function saveC(){try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}if(typeof renderPlace==='function')renderPlace();if(typeof renderHand==='function')renderHand()}
 const lvl=(c=C)=>Math.max(1,Math.floor((+c.xp||0)/100)),mb=tier=>tier>0?tier+1:0,sgn=v=>(v>=0?'+':'')+v;
-function spent(){let s=COST.tier[C.apex||0];for(const k in C.cells)s+=COST.cell[C.cells[k]];for(const k in C.sch)s+=COST.tier[C.sch[k]];for(const k in C.fam)s+=COST.tier[C.fam[k]];return s+COST.dv[C.dv]}
+function discs(c=C){return[...Object.keys(c.sch).map(k=>['sch',k,c.sch[k]]),...Object.keys(c.fam).map(k=>['fam',k,c.fam[k]]),['apx','apex',c.apex||0]].filter(d=>d[2]>0).sort((a,b)=>b[2]-a[2])}
+function discCost(c=C){return discs(c).reduce((s,d,i)=>s+Math.round(COST.tier[d[2]]*COST.mult[Math.min(i,3)]),0)}
+function spent(){let s=discCost();for(const k in C.cells)s+=COST.cell[C.cells[k]];return s+COST.dv[C.dv]}
 function derived(c=C){const L=lvl(c),a=ARM[c.armor]||ARM.none,cap=a[2]==='l'?99:a[2]==='m'?2:0,cl=c.cells,nat=2*(c.apex||0),av=Math.max(a[1],nat);
  const eva=10+Math.min(cl.F_phy,cap)+(SHD[c.shield]||SHD.none)[1],base=c.dv+L+cl.R_phy,ts=Object.values(c.sch),maxT=Math.max(0,...ts);
  return{L,eva,av,minor:av,major:base+av,severe:2*base+av,hp:1+Math.ceil(L*c.dv/12),mana:ts.reduce((s,x)=>s+MANA[x],0)+cl.R_men*Math.floor(maxT/2),nat,st:Math.max(0,Object.values(c.fam).reduce((s,x)=>s+STAM[x],0)+STAM[c.apex||0]+cl.R_phy),init:cl.F_phy}}
@@ -1239,7 +1261,7 @@ function renderSheet(){$('c_camps').innerHTML=camps().map(x=>opt(x,x)).join('');
  $('c_mx').innerHTML=`<div class="mx"><span></span>${hd.map(d=>`<span class="hd">${d}</span>`).join('')}`+INT.map((i,ii)=>`<span class="rh">${T[lang].it[ii]}</span>`+DOM.map(d=>{const k=i+'_'+d,v=C.cells[k];
   return`<div class="cell" title="${esc(cellName(k))}"><div class="v">${sgn(v)}</div><div class="c">${esc(T[lang].hint[k])}</div><div class="step"><button type="button" data-cell="${k}" data-d="-1" aria-label="${esc(cellName(k))} −"${v<=0?' disabled':''}>−</button><button type="button" data-cell="${k}" data-d="1" aria-label="${esc(cellName(k))} +"${v>=5?' disabled':''}>+</button></div><div class="c">${v<5?t('sk_next')(COST.cell[v+1]-COST.cell[v]):''}</div></div>`}).join('')).join('')+'</div>';
  $('c_dv').innerHTML=[6,8,10,12].map(d=>`<button type="button" data-dv="${d}" aria-pressed="${C.dv===d}">d${d}<small>${COST.dv[d]} XP</small></button>`).join('');
- const tierRow=(grp,k,name,v)=>{const lock=GATE.findIndex((l,ti)=>ti>0&&D.L<l);return`<div class="tr"><div><div class="tn">${esc(name)}</div><div class="ti">${v?t('sk_mb')(mb(v))+(grp==='sch'?' · '+esc(t('sk_fx')(v))+' · Mana '+MANA[v]:` · ${t('sk_st')} ${STAM[v]}`):'—'}</div></div>
+ const tierRow=(grp,k,name,v)=>{const lock=GATE.findIndex((l,ti)=>ti>0&&D.L<l);const rk=v?discs().findIndex(d=>d[0]===grp&&d[1]===k):-1,rm=rk>=0?COST.mult[Math.min(rk,3)]:0;return`<div class="tr"><div><div class="tn">${esc(name)}${rk>=0?` <span class="small">(${rk+1}${lang==='fr'?(rk?'e':'re'):(['st','nd','rd'][rk]||'th')} ${L2('discipline','discipline')}, ×${String(rm).replace('.',lang==='fr'?',':'.')})</span>`:''}</div><div class="ti">${v?t('sk_mb')(mb(v))+(grp==='sch'?' · '+esc(t('sk_fx')(v))+' · Mana '+MANA[v]:` · ${t('sk_st')} ${STAM[v]}`):'—'}</div></div>
   <div class="pips">${[1,2,3,4,5].map(n=>`<button type="button" data-${grp}="${k}" data-t="${n}" aria-pressed="${n<=v}" aria-label="${esc(name)} Tier ${n}"${D.L<GATE[n]?' disabled':''}>${n}</button>`).join('')}</div></div>`};
  const nl=GATE.findIndex((l,ti)=>ti>0&&D.L<l),ln=nl>0?`<p class="lockn">${esc(t('sk_lock')(nl,GATE[nl]))}</p>`:'';
  $('c_sch').innerHTML=ln+Object.keys(SCH).map(k=>tierRow('sch',k,tr(SCH[k]),C.sch[k])).join('');
@@ -1280,7 +1302,7 @@ fiche.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)retu
  else if(ds.wdel){C.weapons.splice(+ds.wdel,1)}
  else if(ds.roll){if(ds.roll==='atk'||ds.roll==='dmg'){const x=C.weapons[+ds.i],tier=C.fam[x.f]||0,mod=C.cells[FAM[x.f].c];
    if(ds.roll==='atk')rollAtk(x.n,mod+mb(tier),'w'+ds.i);else rollDmg(x.n,Math.max(1,tier),SZ[x.s],mod,'w'+ds.i)}
-  else{const k=ds.k,tier=C.sch[k],nm=tr(SCH[k]);if(ds.roll==='satk')rollAtk(nm,C.cells.P_men+mb(tier),'s'+k);else rollDmg(nm,tier,8,0,'s'+k)}return}
+  else{const k=ds.k,tier=C.sch[k],nm=tr(SCH[k]);if(ds.roll==='satk')rollAtk(nm,C.cells.P_men+mb(tier),'s'+k);else rollDmg(nm,tier,SDIE[k]||8,0,'s'+k)}return}
  else if(b.id==='c_short'){const U=C.used;U.hp=Math.floor(U.hp/2);U.mana=Math.ceil(U.mana/2);U.st=0}
  else if(b.id==='c_long'){C.used={hp:0,mana:0,st:0}}
  else if(b.id==='c_copy'){const txt=JSON.stringify(C);navigator.clipboard.writeText(txt).then(()=>{$('c_msg').textContent=t('sk_copied')},()=>{$('c_paste').value=txt;$('c_paste').select()});return}
@@ -1389,6 +1411,9 @@ const FX=[[1,['Pressed hit','Coup appuyé'],['+1 box on a hit','+1 case si le so
 const FXS={creuset:[[1,['Heal','Soin'],['Target regains 1 box (1 per box)','La cible regagne 1 case (1 par case)']]],harmonie:[[1,['Heal','Soin'],['Target regains 1 box (1 per box)','La cible regagne 1 case (1 par case)']],[1,['Song of rest','Chant de repos'],['Out of combat: +1 box on a short rest','Hors combat : +1 case au repos court']]],egide:[[2,['Aegis ward','Bouclier d\'Égide'],['An ally ignores the next box lost','Un allié ignore la prochaine case perdue']]]};
 const MAN=[[1,['Pressed hit','Coup appuyé'],['+1 box on a hit','+1 case si le coup touche']],[2,['Cleave','Clive'],['One more adjacent foe (2 per target)','Un ennemi adjacent de plus (2 par cible)']],[1,['Charge','Charge ou bond'],['Move before striking','Se déplacer avant de frapper']],[1,['Lunge','Allonge'],['Strike further','Frapper plus loin']],[1,['Shove','Bousculer'],['Push or break guard','Repousser, briser la garde']],[2,['Disarm, trip','Désarmer, renverser'],['Disarm, knock prone, immobilize','Désarmer, renverser, immobiliser']],[2,['Stance','Posture tenue'],['One effect held 1 minute','Un effet maintenu 1 minute']],[3,['Whirlwind','Tourbillon'],['All adjacent foes','Tous les ennemis adjacents']],[1,['Extra parry','Parade supplémentaire'],['Parry again this round','Parer encore ce round']],[3,['Extra action','Action supplémentaire'],['One more action this turn','Une action de plus ce tour']]];
 const handSel={};
+function fxFor(k){const L=[...FX,...(FXS[k]||[])].map(f=>[...f]);const set=(fr,v,txt)=>{const f=L.find(x=>x[1][1]===fr);if(f){f[0]=v;if(txt)f[2]=txt}};
+ if(k==='mirage'){set('Contrôle lourd',1);set('Contrôle majeur',2)}if(k==='eidolon')set('Persistance',1);if(k==='egide')set("Bouclier d'Égide",1);
+ if(k==='creuset')set('Soin',1,['Target regains 2 boxes per point','La cible regagne 2 cases par point']);if(k==='horizon')set('Déport',0);if(k==='harmonie')set('Multiplication',1,['One more target (1 per target)','Une cible de plus (1 par cible)']);return L}
 function handChar(){const k=tokens.find(x=>x.id===selTok&&x.cid);const id=k?k.cid:handId;return CH.list.find(c=>c.id===id)||null}
 function hRoll(h){HLOG.unshift(h);if(HLOG.length>6)HLOG.pop();renderHand()}
 function hAtk(name,ab){const r=dRoll(20);return`${esc(name)} · d20 (${r}) ${sgn(ab)} = <b>${r+ab}</b>${r===20?` <span class="cr">${t('sk_crit')}</span>`:r===1?` <span class="ko">${t('sk_miss')}</span>`:''}`}
@@ -1401,12 +1426,12 @@ function renderHand(){const P=document.getElementById('hand');if(!P)return;const
  const shd=(SHD[c.shield]||SHD.none);
  cards.push(`<div class="hc k-def"><div class="ht">${L2('Defense','Défense')}</div><div class="hn">${L2('Evasion','Esquive')} ${D.eva}</div><div class="hb">${L2('Thresholds','Seuils')} ${D.minor} / ${D.major} / ${D.severe}${c.shield!=='none'?`<br>${esc(tr(shd[0]))} : ${L2('Parry (reaction): the hit costs one box less','Parade (réaction) : le coup coûte une case de moins')}`:''}</div></div>`);
  (c.weapons||[]).forEach((w,i)=>{const tier=c.fam[w.f]||0,mod=c.cells[FAM[w.f]?FAM[w.f].c:'P_phy']||0,ab=mod+mb(tier),nd=Math.max(1,tier),dd=SZ[w.s]||6;
-  const srcs=[...Object.keys(SCH).filter(k=>c.sch[k]>0),...((c.apex||0)>0?['apex']:[])],infK=handSel[c.id+'_inf'+i]||'',infOn=srcs.includes(infK)?infK:'',srcN=k=>k==='apex'?'Apex':tr(SCH[k]),infT=infOn==='apex'?(c.apex||0):infOn?c.sch[infOn]:0,infV=Math.min(infT,handSel[c.id+'_iv'+i]||1),infD=infOn==='apex'?dd:8,infP=infOn==='apex'?L2('Breath','Souffle'):'Mana';
+  const srcs=[...Object.keys(SCH).filter(k=>c.sch[k]>0),...((c.apex||0)>0?['apex']:[])],infK=handSel[c.id+'_inf'+i]||'',infOn=srcs.includes(infK)?infK:'',srcN=k=>k==='apex'?'Apex':tr(SCH[k]),infT=infOn==='apex'?(c.apex||0):infOn?c.sch[infOn]:0,infV=Math.min(infT,handSel[c.id+'_iv'+i]||1),infD=infOn==='apex'?dd:(SDIE[infOn]||8),infP=infOn==='apex'?L2('Breath','Souffle'):'Mana';
   const infH=srcs.length?`<div class="inf"><label><span>${L2('Infusion','Infusion')}</span><select data-hinf="${i}"><option value="">—</option>${srcs.map(k=>`<option value="${k}"${infOn===k?' selected':''}>${esc(srcN(k))}</option>`).join('')}</select></label>${infOn?`<div class="fx">${Array.from({length:infT},(_,n)=>`<button type="button" class="chip${infV===n+1?' on':''}" data-hiv="${i}" data-v="${n+1}">${n+1}</button>`).join('')}</div>`:''}</div>`:'';
   cards.push(`<div class="hc k-atk"><div class="ht">${L2('Attack','Attaque')} · ${esc(tr(FAM[w.f]?FAM[w.f].n:['','']))}</div><div class="hn">${esc(w.n)}</div><div class="hb">${L2('Attack','Attaque')} <b>${sgn(ab)}</b> · ${L2('Damage','Dégâts')} <b>${nd}d${dd}${mod?sgn(mod):''}</b>${infOn?` <b>+${infV}d${infD}</b> (${esc(srcN(infOn))}, ${infV} ${infP})`:''}${tier?'':` <span class="small">(${L2('untrained','sans maîtrise')})</span>`}</div>${infH}<div class="hbt"><button type="button" class="go" data-ha="atk" data-i="${i}">${L2('Attack','Attaque')}</button><button type="button" data-ha="dmg" data-i="${i}">${L2('Damage','Dégâts')}</button></div></div>`)});
  const sMod=c.cells.P_men||0;
- for(const k of Object.keys(SCH)){const tier=c.sch[k]||0;if(!tier)continue;const ab=sMod+mb(tier),list=[...FX,...(FXS[k]||[])],st=handSel[c.id+k]||(handSel[c.id+k]=new Set()),cost=[...st].reduce((s,i)=>s+list[i][0],0);
-  cards.push(`<div class="hc k-spl"><div class="ht">${L2('Spell','Sort')} · Tier ${tier}</div><div class="hn">${esc(tr(SCH[k]))}</div><div class="hb">${L2('Attack','Attaque')} <b>${sgn(ab)}</b> · ${L2('Save DC','DD')} <b>${8+ab}</b> · ${L2('Damage','Dégâts')} <b>${tier}d8</b></div>
+ for(const k of Object.keys(SCH)){const tier=c.sch[k]||0;if(!tier)continue;const ab=sMod+mb(tier),list=fxFor(k),st=handSel[c.id+k]||(handSel[c.id+k]=new Set()),cost=[...st].reduce((s,i)=>s+list[i][0],0);
+  cards.push(`<div class="hc k-spl"><div class="ht">${L2('Spell','Sort')} · Tier ${tier}</div><div class="hn">${esc(tr(SCH[k]))}</div><div class="hb">${L2('Attack','Attaque')} <b>${sgn(ab)}</b> · ${L2('Save DC','DD')} <b>${8+ab}</b> · ${L2('Damage','Dégâts')} <b>${tier}d${SDIE[k]||8}</b></div>
   <div class="fx">${list.map((f,i)=>{const on=st.has(i),dis=!on&&(f[0]+cost>tier);return`<button type="button" class="chip${on?' on':''}" data-hf="${k}" data-i="${i}" title="${esc(tr(f[2]))}"${dis?' disabled':''}>${esc(tr(f[1]))} <b>${f[0]}</b></button>`}).join('')}</div>
   <div class="hbt"><button type="button" class="go" data-ha="cast" data-k="${k}"${cost>manaL?' disabled':''}>${L2('Cast','Lancer')}${cost?` (${cost} ${L2('Mana','Mana')})`:''}</button><button type="button" data-ha="sdmg" data-k="${k}">${L2('Damage','Dégâts')}</button></div></div>`)}
  const famT=Math.max(0,...Object.values(c.fam));if(famT>0||D.st>0){const st=handSel[c.id+'_m']||(handSel[c.id+'_m']=new Set()),cost=[...st].reduce((s,i)=>s+MAN[i][0],0);
@@ -1424,11 +1449,11 @@ document.getElementById('hand').addEventListener('click',e=>{const b=e.target.cl
  if(ds.hiv!=null){handSel[c.id+'_iv'+ds.hiv]=+ds.v;renderHand();return}
  if(ds.hm!=null){const st=handSel[c.id+'_m'],i=+ds.hm;st.has(i)?st.delete(i):st.add(i);renderHand();return}
  if(ds.ha==='atk'||ds.ha==='dmg'){const i=+ds.i,w=c.weapons[i],tier=c.fam[w.f]||0,mod=c.cells[FAM[w.f].c]||0,ik0=handSel[c.id+'_inf'+i]||'',dd=SZ[w.s]||6;
-  const ik=(ik0==='apex'?(c.apex||0)>0:ik0&&c.sch[ik0]>0)?ik0:'',sn=ik==='apex'?'Apex':ik?tr(SCH[ik]):'',iT=ik==='apex'?c.apex:ik?c.sch[ik]:0,iv=Math.min(iT,handSel[c.id+'_iv'+i]||1),iD=ik==='apex'?dd:8,key=c.id+'_'+i;
+  const ik=(ik0==='apex'?(c.apex||0)>0:ik0&&c.sch[ik0]>0)?ik0:'',sn=ik==='apex'?'Apex':ik?tr(SCH[ik]):'',iT=ik==='apex'?c.apex:ik?c.sch[ik]:0,iv=Math.min(iT,handSel[c.id+'_iv'+i]||1),iD=ik==='apex'?dd:(SDIE[ik]||8),key=c.id+'_'+i;
   if(ds.ha==='atk'){let ex='';delete lastInf[key];if(ik){const pool=ik==='apex'?'st':'mana',max=pool==='st'?D.st:D.mana,pn=pool==='st'?L2('Breath','Souffle'):'Mana';if(u[pool]+iv>max){hRoll(`${esc(w.n)} · ${L2('not enough','pas assez de')} ${pn} ${L2('to infuse','pour infuser')} (${iv})`);return}u[pool]+=iv;saveC();lastInf[key]={sn,iv,iD};ex=` · ${L2('infused','infusé')} (${esc(sn)} ${iv}) −${iv} ${pn}`}hRoll(hAtk(w.n,mod+mb(tier))+ex);return}
   const li=lastInf[key];let h=hDmg(w.n,Math.max(1,tier),dd,mod);if(li){h+=' · '+hDmg(li.sn,li.iv,li.iD,0);delete lastInf[key]}hRoll(h);return}
- if(ds.ha==='cast'||ds.ha==='sdmg'){const k=ds.k,tier=c.sch[k],ab=(c.cells.P_men||0)+mb(tier),list=[...FX,...(FXS[k]||[])],st=handSel[c.id+k],nm=tr(SCH[k]);
-  if(ds.ha==='sdmg'){hRoll(hDmg(nm,tier,8,0));return}const cost=[...st].reduce((s,i)=>s+list[i][0],0);if(cost>D.mana-u.mana)return;u.mana+=cost;const fx=[...st].map(i=>tr(list[i][1])).join(', ');st.clear();saveC();hRoll(hAtk(nm,ab)+(cost?` · −${cost} Mana`:'')+(fx?` · ${esc(fx)}`:''));return}
+ if(ds.ha==='cast'||ds.ha==='sdmg'){const k=ds.k,tier=c.sch[k],ab=(c.cells.P_men||0)+mb(tier),list=fxFor(k),st=handSel[c.id+k],nm=tr(SCH[k]);
+  if(ds.ha==='sdmg'){hRoll(hDmg(nm,tier,SDIE[k]||8,0));return}const cost=[...st].reduce((s,i)=>s+list[i][0],0);if(cost>D.mana-u.mana)return;u.mana+=cost;const fx=[...st].map(i=>tr(list[i][1])).join(', ');st.clear();saveC();hRoll(hAtk(nm,ab)+(cost?` · −${cost} Mana`:'')+(fx?` · ${esc(fx)}`:''));return}
  if(ds.ha==='man'){const st=handSel[c.id+'_m'],cost=[...st].reduce((s,i)=>s+MAN[i][0],0);if(!cost||cost>D.st-u.st)return;u.st+=cost;const fx=[...st].map(i=>tr(MAN[i][1])).join(', ');st.clear();saveC();hRoll(`${esc(fx)} · −${cost} ${L2('Breath','Souffle')}`);return}
  if(ds.ha==='cdel'){c.cards.splice(+ds.i,1);saveC();renderHand()}});
 
@@ -1440,7 +1465,7 @@ function renderTok(){renderHand();const P=document.getElementById('tk_panel');if
   <div class="trk"><div><b>${t('sk_vit')}</b><div class="bar2 hp"><i style="width:${Math.round(100*k.hp/k.hpMax)}%"></i></div></div><div class="ctl"><button type="button" data-tkhp="-1" aria-label="${t('sk_vit')} −">−</button><span class="num">${k.hp} / ${k.hpMax}</span><button type="button" data-tkhp="1" aria-label="${t('sk_vit')} +">+</button></div></div>`;
   if(ch){const D=derived(ch);for(const[key,lab,mx]of[['mana','Mana',D.mana],['st',t('sk_st'),D.st]])if(mx)h+=`<div class="trk"><div><b>${lab}</b></div><div class="ctl"><button type="button" data-tkres="${key}" data-d="-1" aria-label="${lab} −">−</button><span class="num">${mx-(ch.used[key]||0)} / ${mx}</span><button type="button" data-tkres="${key}" data-d="1" aria-label="${lab} +">+</button></div></div>`;
    h+=ch.weapons.map(w=>{const tier=ch.fam[w.f]||0,mod=ch.cells[FAM[w.f].c];return`<p class="tline"><b>${esc(w.n)}</b> · ${t('sk_attack')} ${sgn(mod+mb(tier))} · ${Math.max(1,tier)}d${SZ[w.s]}${mod?sgn(mod):''}</p>`}).join('');
-   h+=Object.keys(SCH).filter(x=>ch.sch[x]).map(x=>{const tier=ch.sch[x],ab=ch.cells.P_men+mb(tier);return`<p class="tline"><b>${esc(tr(SCH[x]))}</b> · Tier ${tier} · ${t('sk_attack')} ${sgn(ab)} · ${tier}d8 · ${t('sk_dc')} ${8+ab}</p>`}).join('')}
+   h+=Object.keys(SCH).filter(x=>ch.sch[x]).map(x=>{const tier=ch.sch[x],ab=ch.cells.P_men+mb(tier);return`<p class="tline"><b>${esc(tr(SCH[x]))}</b> · Tier ${tier} · ${t('sk_attack')} ${sgn(ab)} · ${tier}d${SDIE[x]||8} · ${t('sk_dc')} ${8+ab}</p>`}).join('')}
   const no=m?noT(m):k.no;if(no)h+=`<p class="tno">${esc(no)}</p>`;if(m)h+=`<p class="small">${esc(tyName(m.type))} · ${lang==='fr'?'FP':'CR'} ${esc(m.fp)} · ${m.pv} ${t('hp')}</p>`}
  h+=`<div class="row"><button type="button" data-tkact="del">${t('tk_del')}</button><button type="button" data-tkact="close">${t('tk_close')}</button></div>`;P.innerHTML=h}
 $('tk_panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const k=tokens.find(x=>x.id===selTok);if(!k)return;
