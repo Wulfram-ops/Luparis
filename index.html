@@ -133,6 +133,8 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 .cell{border:1px solid var(--line);border-radius:10px;padding:6px 4px;text-align:center}
 .cell .v{font:700 20px/1.1 "Alegreya Sans",sans-serif;font-variant-numeric:tabular-nums}
 .pact{border:1px dashed var(--line);border-radius:10px;padding:8px;margin:0 0 8px}.gifts{margin:4px 0 6px;padding-left:18px;font-size:14px}.small.bad,span.bad{color:#c0392b}
+.aicfg{flex-wrap:wrap;gap:8px;margin:6px 0}.aicfg label[hidden]{display:none}
+.campgm .campx{border-top:1px solid var(--line);padding:8px 0}.cxh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.campgm .chips{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}.cxf input[type=number]{width:80px}.cxf input:not([type]){flex:1;min-width:120px}.cxlog{list-style:none;margin:4px 0 0;padding:0;font-size:13px;color:var(--muted)}.cxlog span{margin-right:6px}
 .tg{margin:12px 0 4px;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.ti.off{opacity:.6}.sfrow{display:flex;gap:8px;align-items:center}.sfrow input{flex:1;min-width:0}#c_don .chips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
 .sth{text-align:center;border:1px dashed var(--line);border-radius:10px;padding:4px}.mx .sth b{font-size:13px}.stp{display:flex;justify-content:center;align-items:center;gap:6px}.stp button{min-width:28px;padding:2px 6px}.sv{font:700 18px/1.1 "Alegreya Sans",sans-serif;min-width:2ch}.sv.bad{color:#c0392b}.sth small{display:block;font-size:11px;color:var(--muted)}
 .cell .c{font-size:12px;color:var(--muted);min-height:16px}
@@ -285,7 +287,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
   <section class="card" id="mk_card"><h3 data-i18n="mk_title"></h3><ol class="mks" id="mk_list"></ol><p class="small" data-i18n="mk_hint"></p></section>
   <section class="card"><h3 data-i18n="in_title"></h3>
     <div class="row"><button type="button" class="go" id="in_roll" data-i18n="in_roll"></button><button type="button" id="in_next" data-i18n="in_next"></button><button type="button" id="in_end" data-i18n="in_end"></button></div>
-    <p class="small" id="in_round"></p><ol class="ini" id="in_list"></ol></section>
+    <p class="small" id="in_round"></p><div id="in_xp" hidden></div><ol class="ini" id="in_list"></ol></section>
 </aside></div>
 <section class="hand" id="hand" aria-label="Cartes"></section>
 <div class="help">
@@ -309,10 +311,13 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
   </div>
   <div class="scroll"><table id="bt"><thead><tr><th data-i18n="c_name"></th><th data-i18n="f_type"></th><th class="r" data-i18n="c_cr"></th><th data-i18n="f_hab"></th><th class="r" data-i18n="c_esq"></th><th class="r" data-i18n="c_thr"></th><th class="r" data-i18n="c_box"></th><th class="r" data-i18n="c_act"></th></tr></thead><tbody></tbody></table></div>
   <p class="small" data-i18n="b_note"></p>
-  <details id="aibox" hidden><summary data-i18n="ai_sum"></summary>
+  <details id="aibox"><summary data-i18n="ai_sum"></summary>
     <p class="small" data-i18n="ai_note"></p>
+    <div class="row aicfg"><label><span data-i18n="ai_prov"></span> <select id="ai_p"></select></label><label id="ai_kl"><span data-i18n="ai_key"></span> <input id="ai_k" type="password" autocomplete="off" size="28"></label><label id="ai_ml"><span data-i18n="ai_model"></span> <input id="ai_m" size="18"></label><label id="ai_ul"><span>URL</span> <input id="ai_u" size="26" placeholder="http://localhost:1234/v1"></label></div>
+    <p class="small" id="ai_hint"></p>
     <textarea id="ai_q" rows="3" data-i18n-ph="ai_ph"></textarea>
     <div class="row" style="margin-top:8px"><button class="go" type="button" id="ai_go" data-i18n="ai_go"></button><span class="small" id="ai_msg" aria-live="polite"></span></div>
+    <div id="ai_paste" hidden><textarea id="ai_r" rows="4" data-i18n-ph="ai_paste_ph"></textarea><div class="row"><button type="button" id="ai_imp" data-i18n="ai_imp"></button></div></div>
     <div id="ai_out"></div>
   </details>
   <details id="addbox"><summary id="addsum"></summary>
@@ -1427,7 +1432,7 @@ function demoC(){const c=blankC();Object.assign(c,{camp:lang==='fr'?'Exemple':'E
 let CH;try{CH=JSON.parse(localStorage.getItem('luparis-chars'))}catch(e){}
 if(!CH||!Array.isArray(CH.list)||!CH.list.length){let old;try{old=JSON.parse(localStorage.getItem('luparis-sheet'))}catch(e){}CH={list:[old&&old.cells?old:demoC()],active:null}}
 for(const c of CH.list){if(!c.prof)c.prof={arm:armNeed(c.armor||'none'),shd:c.shield&&c.shield!=='none'?1:0};if(c.sch&&c.sch.apex!=null){if(c.sch.apex>0&&!c.apex)c.apex=c.sch.apex;delete c.sch.apex}if(c.apex==null)c.apex=0;for(const k of Object.keys(FAM))if(c.fam&&c.fam[k]==null)c.fam[k]=0;if(!c.id)c.id=tid();if(c.camp==null)c.camp=c.demo?(lang==='fr'?'Exemple':'Example'):'';if(!c.used)c.used={hp:0,mana:0,st:0};if(!c.st)c.st=stFromCells(c.cells);if(!c.tal||typeof c.tal!=='object')c.tal={};for(const k in c.tal)if(!TAL[k])delete c.tal[k];if(c.pas){c.tal.pas=Math.max(c.tal.pas||0,c.pas)}delete c.pas;if(!Array.isArray(c.sf))c.sf=[];if(!Array.isArray(c.stances))c.stances=[];syncCells(c)}
-let C=CH.list.find(c=>c.id===CH.active)||CH.list[0];if(!CH.list.some(c=>c.id===CH.active))CH.active=null;
+let C=CH.list.find(c=>c.id===CH.active)||CH.list[0];campSync();if(!CH.list.some(c=>c.id===CH.active))CH.active=null;
 function saveC(){try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}if(typeof renderPlace==='function')renderPlace();if(typeof renderHand==='function')renderHand()}
 const lvl=(c=C)=>Math.max(1,Math.floor((+c.xp||0)/100)),mb=tier=>tier>0?tier+1:0,sgn=v=>(v>=0?'+':'')+v;
 function discs(c=C){return[...Object.keys(c.sch).map(k=>['sch',k,c.sch[k]]),...Object.keys(c.fam).map(k=>['fam',k,c.fam[k]]),['apx','apex',c.apex||0]].filter(d=>d[2]>0).sort((a,b)=>b[2]-a[2])}
@@ -1438,10 +1443,22 @@ function derived(c=C){const L=lvl(c),a=ARM[c.armor]||ARM.none,cl=c.cells,pr=c.pr
  const eva=10+Math.min(cl.F_phy,cap)+(shdOk?(SHD[c.shield]||SHD.none)[1]:0)-(armOk?0:2),base=c.dv+L+cl.R_phy,ts=Object.values(c.sch),maxT=Math.max(0,...ts);
  return{L,eva,av,armOk,shdOk,minor:av,major:base+av,severe:2*base+av,hp:1+Math.ceil(L*c.dv/12),mana:ts.reduce((s,x)=>s+MANA[x],0)+cl.R_men*Math.floor(maxT/2),nat,st:Math.max(0,Object.values(c.fam).reduce((s,x)=>s+STAM[x],0)+STAM[c.apex||0]+cl.R_phy),init:cl.F_phy,mv:6+2*((c.tal||{}).pas||0)-(armOk&&a[2]==='h'?2:0)}}
 function cellName(k){const[i,d]=k.split('_');const ii=INT.indexOf(i),di=DOM.indexOf(d);return lang==='fr'?`${T.fr.it[ii]} ${T.fr.dm[di]}`:`${T.en.dm[di]} ${T.en.it[ii]}`}
+const DIFF=[['trivial',0,['Trivial','Trivial']],['easy',5,['Easy','Facile']],['medium',10,['Medium','Moyen']],['hard',15,['Hard','Difficile']],['deadly',25,['Deadly','Mortel']],['impossible',50,['Impossible','Impossible']]];
+function campsGet(){try{return JSON.parse(localStorage.getItem('luparis-camps'))||{}}catch(e){return{}}}
+function campsPut(o){try{localStorage.setItem('luparis-camps',JSON.stringify(o))}catch(e){}}
+function campRec(o,name){if(!o[name]){const xs=CH.list.filter(c=>(c.camp||'')===name).map(c=>+c.xp||0);o[name]={xp:xs.length?Math.max(...xs):150,log:[]}}return o[name]}
+function campSync(){const o=campsGet();let ch=false;for(const c of CH.list){const r=c.camp&&o[c.camp];if(r&&c.xp!==r.xp){c.xp=r.xp;ch=true}}if(ch)saveC()}
+function campAward(name,x,label){if(!name)return;const o=campsGet(),r=campRec(o,name);r.xp=Math.max(0,r.xp+x);r.log.unshift({d:Date.now(),l:String(label||'').slice(0,80),x});r.log=r.log.slice(0,60);campsPut(o);campSync();if(CH.active)renderSheet();else renderList()}
+function campPanel(){const o=campsGet(),names=camps();if(!names.length)return'';const ti=lang==='fr'?1:0;
+ return`<section class="card campgm"><h3>${L2('Campaign XP','XP de campagne')} <span class="pill">${L2('GM','MJ')}</span></h3><p class="small">${L2('Every character of a campaign shares its XP. Only the game master awards it here, or when ending a fight.','Tous les personnages d\'une campagne partagent son XP. Seul le MJ l\'attribue, ici ou à la fin d\'un combat.')}</p>`+
+ names.map(n=>{const r=o[n]||{xp:Math.max(150,...CH.list.filter(c=>c.camp===n).map(c=>+c.xp||0)),log:[]};return`<div class="campx"><div class="cxh"><b>${esc(n)}</b> <span class="pill">${r.xp} XP · ${L2('level','niveau')} ${Math.max(1,Math.floor(r.xp/100))}</span></div>
+  <div class="chips">${DIFF.map(d=>`<button type="button" class="chip" data-cxa="${esc(n)}" data-x="${d[1]}" data-l="${d[0]}">${esc(d[2][ti])} +${d[1]}</button>`).join('')}</div>
+  <form class="row cxf" data-cxf="${esc(n)}"><input type="number" step="1" placeholder="±XP" aria-label="${L2('XP to add or remove','XP à ajouter ou retirer')}"><input placeholder="${L2('Reason (quest, session…)','Raison (quête, séance…)')}" maxlength="80"><button type="submit">${L2('Apply','Appliquer')}</button></form>
+  ${r.log.length?`<ul class="cxlog">${r.log.slice(0,5).map(e=>`<li><span>${new Date(e.d).toLocaleDateString(lang)}</span> ${esc(DIFF.find(d=>d[0]===e.l)?DIFF.find(d=>d[0]===e.l)[2][ti]:e.l)} <b>${e.x>=0?'+':''}${e.x}</b></li>`).join('')}</ul>`:''}</div>`}).join('')+'</section>'}
 function camps(){return[...new Set(CH.list.map(c=>c.camp||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,lang))}
 function renderList(){const groups=[...camps(),''].filter(g=>CH.list.some(c=>(c.camp||'')===g)),nn=$('c_nn')?$('c_nn').value:'',nc=$('c_nc')?$('c_nc').value:'';
  $('c_listv').innerHTML=`<div class="bhead"><h2>${t('sk_chars')}</h2><span class="small">${t('sk_nchars')(CH.list.length)}</span></div>
- <form class="newc" id="c_nf"><label>${t('sk_name')}<input id="c_nn" required></label><label>${t('sk_camp')}<input id="c_nc" list="c_camps"></label><div class="row"><button class="go" type="submit">${t('sk_create')}</button></div></form>`+
+ <form class="newc" id="c_nf"><label>${t('sk_name')}<input id="c_nn" required></label><label>${t('sk_camp')}<input id="c_nc" list="c_camps"></label><div class="row"><button class="go" type="submit">${t('sk_create')}</button></div></form>`+campPanel()+
  groups.map(g=>`<h3 class="camp">${esc(g||t('sk_nocamp'))}</h3><div class="ccards">`+CH.list.filter(c=>(c.camp||'')===g).map(c=>{const D=derived(c);
   return`<div class="cc"><div class="cn">${esc(c.name||'?')}</div><div class="cs">${esc(c.people||'')}${c.people?' · ':''}${t('sk_level')} ${D.L} · ${t('sk_eva')} ${D.eva} · ${t('sk_vit')} ${D.hp}</div><button type="button" data-open="${esc(c.id)}">${t('sk_open')}</button></div>`}).join('')+'</div>').join('')+(CH.list.length?'':`<p class="small">${t('sk_empty')}</p>`);
  $('c_nn').value=nn;$('c_nc').value=nc}
@@ -1450,7 +1467,7 @@ function renderSheet(){$('c_camps').innerHTML=camps().map(x=>opt(x,x)).join('');
  $('c_sheetv').hidden=false;$('c_listv').hidden=true;
  const D=derived(),sp=spent(),left=(+C.xp||0)-sp;
  for(const[id,v]of[['c_name',C.name],['c_people',C.people],['c_camp',C.camp||''],['c_xp',C.xp],['c_notes',C.notes]]){const e=$(id);if(document.activeElement!==e)e.value=v}
- $('c_demo').textContent=C.demo?t('sk_demo'):'';
+ $('c_demo').textContent=C.demo?t('sk_demo'):'';{const cr=C.camp&&campsGet()[C.camp],e=$('c_xp');e.readOnly=!!cr;e.title=cr?L2('Campaign XP, managed by the GM in the character list.','XP de campagne, gérée par le MJ dans la liste des personnages.'):''}
  $('c_sum').innerHTML=`<span class="pill">${t('sk_level')} <b>${D.L}</b></span><span class="pill">${t('sk_spent')} <b>${sp}</b></span>`+(left>=0?`<span class="pill">${t('sk_left')} <b>${left}</b></span>`:`<span class="pill bad">${t('sk_over')} <b>${-left}</b></span>`);
  const hd=lang==='fr'?T.fr.dmH:T.en.dm;
  const cap=stCap(),S=C.st,stB=(k,name)=>{const v=S[k];return`<div class="sth"><b>${esc(name)}</b><div class="stp"><button type="button" data-stat="${k}" data-d="-1" aria-label="${esc(name)} −"${v<=-1?' disabled':''}>−</button><span class="sv${v>cap?' bad':''}">${sgn(v)}</span><button type="button" data-stat="${k}" data-d="1" aria-label="${esc(name)} +"${v>=cap?' disabled':''}>+</button></div><small>${v<cap?t('sk_next')(stCost(v+1)-stCost(v)):L2('cap','plafond')}</small></div>`};
@@ -1504,6 +1521,7 @@ function rollDmg(name,nd,dd,mod,key){const n=lastCrit[key]?nd*2:nd,rs=Array.from
  logIt(`${esc(name)} · ${t('sk_damage')}${lang==='fr'?' :':':'} ${n}d${dd}${mod?sgn(mod):''} [${rs.join(', ')}] = <b>${tot}</b>`)}
 const fiche=$('v-fiche');
 fiche.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const ds=b.dataset;
+ if(ds.cxa!=null){campAward(ds.cxa,+ds.x,ds.l);return}
  if(ds.stat){const v=C.st[ds.stat]+(+ds.d);if(v<-1||(+ds.d>0&&v>stCap()))return;C.st[ds.stat]=v;syncCells(C);C.demo=false}
  else if(ds.tal){const n=+ds.t,k=ds.tal,TT=C.tal||(C.tal={}),cur=TT[k]||0;TT[k]=cur===n?n-1:n;if(!TT[k])delete TT[k];if(k==='stance')C.stances=(C.stances||[]).slice(0,TT.stance||0);C.demo=false}
  else if(ds.stc!=null){const i=+ds.stc,a=C.stances||(C.stances=[]),j=a.indexOf(i);if(j>=0)a.splice(j,1);else if(a.length<((C.tal||{}).stance||0))a.push(i);else return}
@@ -1533,7 +1551,7 @@ fiche.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)retu
  else if(ds.open){CH.active=ds.open;C=CH.list.find(x=>x.id===ds.open);LOG.length=0;window.scrollTo(0,0)}
  else if(b.id==='c_back'){CH.active=null;window.scrollTo(0,0)}
  else return;saveC();renderSheet()});
-for(const[id,key]of[['c_name','name'],['c_people','people'],['c_camp','camp'],['c_notes','notes']])$(id).addEventListener('input',e=>{if(C){C[key]=e.target.value;saveC()}});
+for(const[id,key]of[['c_name','name'],['c_people','people'],['c_camp','camp'],['c_notes','notes']])$(id).addEventListener('input',e=>{if(C){C[key]=e.target.value;saveC();if(key==='camp'){campSync();const r=C.camp&&campsGet()[C.camp],x=$('c_xp');x.readOnly=!!r;if(r){x.value=C.xp;renderSheet()}}}});
 $('c_don').addEventListener('change',e=>{if(e.target.dataset.patr&&C){C.patron=e.target.value;saveC();renderSheet()}});
 $('c_don').addEventListener('input',e=>{if(e.target.dataset.patn&&C){C.patronN=e.target.value.slice(0,60);saveC();return}const i=e.target.dataset.sfn;if(i==null||!C||!C.sf[+i])return;C.sf[+i].n=e.target.value.slice(0,60);saveC()});
 const POTS=[['soin',['Healing potion','Potion de soins'],['+1 Vitality box','+1 case de Vitalité'],'hp',1],['soin2',['Greater healing potion','Potion de soins supérieure'],['+2 boxes','+2 cases'],'hp',2],['soin3',['Major healing potion','Potion de soins majeure'],['+3 boxes','+3 cases'],'hp',3],['soin5',['Supreme healing potion','Potion de soins suprême'],['+5 boxes','+5 cases'],'hp',5],['vig',['Vigor tonic','Tonique de vigueur'],['+3 Breath','+3 Souffle'],'st',3],['el1',['Minor Mana elixir','Élixir de Mana mineur'],['+2 Mana','+2 Mana'],'mana',2],['el2',['Mana elixir','Élixir de Mana'],['+6 Mana','+6 Mana'],'mana',6],['el3',['Greater Mana elixir','Élixir de Mana supérieur'],['+14 Mana','+14 Mana'],'mana',14]];
@@ -1572,8 +1590,8 @@ $('c_layreset').addEventListener('click',()=>{laySave({});layApply()});
  box.addEventListener('dragend',()=>{if(!dragEl)return;dragEl.classList.remove('dragging');dragEl.draggable=false;dragEl=null;const o=layGet();o.order=[...box.querySelectorAll('.mod')].map(x=>x.dataset.mod);laySave(o)});}
 layApply();
 
-fiche.addEventListener('submit',e=>{if(e.target.id!=='c_nf')return;e.preventDefault();const n=$('c_nn').value.trim();if(!n)return;const c=blankC();c.name=n;c.camp=$('c_nc').value.trim();CH.list.push(c);CH.active=c.id;C=c;saveC();renderSheet();window.scrollTo(0,0)});
-$('c_xp').addEventListener('input',e=>{C.xp=Math.max(0,+e.target.value||0);saveC();renderSheet()});
+fiche.addEventListener('submit',e=>{if(e.target.dataset&&e.target.dataset.cxf!=null){e.preventDefault();const [a,b]=e.target.querySelectorAll('input'),x=Math.round(+a.value||0);if(x)campAward(e.target.dataset.cxf,x,b.value.trim()||L2('Manual','Manuel'));return}if(e.target.id!=='c_nf')return;e.preventDefault();const n=$('c_nn').value.trim();if(!n)return;const c=blankC();c.name=n;c.camp=$('c_nc').value.trim();{const r=c.camp&&campsGet()[c.camp];if(r)c.xp=r.xp}CH.list.push(c);CH.active=c.id;C=c;saveC();renderSheet();window.scrollTo(0,0)});
+$('c_xp').addEventListener('input',e=>{if(e.target.readOnly)return;C.xp=Math.max(0,+e.target.value||0);saveC();renderSheet()});
 $('c_prof').addEventListener('click',e=>{const b=e.target.closest('button[data-prof]');if(!b||!C)return;C.prof=C.prof||{arm:0,shd:0};C.prof.arm=+b.dataset.v;C.demo=false;saveC();renderSheet()});
 $('c_prof').addEventListener('change',e=>{if(e.target.dataset.prof!=='shd'||!C)return;C.prof=C.prof||{arm:0,shd:0};C.prof.shd=e.target.checked?1:0;C.demo=false;saveC();renderSheet()});
 $('c_armor').addEventListener('change',e=>{C.armor=e.target.value;C.demo=false;saveC();renderSheet()});
@@ -1587,13 +1605,13 @@ Object.assign(T.fr,{t_obj:'Objet',t_pref:'Bâtiment',savemap:'Enregistrer la car
 setTimeout(()=>{fillScenes();fillSz()});
 Object.assign(T.en,{pl_title:'Quick place',pl_ally:'Ally (characters)',pl_foe:'Enemy (bestiary)',pl_hint:'Pick a name, then click tiles on the map. Esc to stop.',pl_choose:'— choose —',
 in_title:'Initiative',in_roll:'Roll',in_next:'Next turn',in_end:'End',in_rnd:n=>`Round ${n}`,in_empty:'Place tokens, then roll. Allies use Physical Finesse, monsters their initiative bonus.',
-incl:'incl.',up:'up',down:'down',m_init:'Initiative',ai_sum:'Generate a monster with AI',ai_note:'Describe the monster: name, look, weapons, role. Claude turns it into a Luparis stat block that you check before adding it.',
+incl:'incl.',up:'up',down:'down',m_init:'Initiative',ai_prov:'AI',ai_key:'API key',ai_model:'Model',ai_paste_ph:'Paste the AI answer here',ai_imp:'Import the answer',ai_sum:'Generate a monster with AI',ai_note:'Describe the monster in a sentence: name, look, weapons, role. The AI turns it into a Luparis stat block that you check before adding it.',
 ai_ph:'Ex: Brann the One-Eyed, a bandit chief with a war axe and a hand crossbow, cunning and cowardly',ai_go:'Generate',ai_wait:'Generating…',ai_fail:'Generation failed. Try again or rephrase.',ai_rate:'Too many requests, wait a moment.',
 ai_denied:'Generation is not allowed here.',ai_add:'Add to the bestiary',ai_added:'Added to the bestiary.',sk_back:'← All characters',sk_camp:'Campaign',sk_del:'Delete this character',sk_confirm2:'Confirm: delete this character?',
 sk_chars:'Characters',sk_nchars:n=>`${n} character${n>1?'s':''}`,sk_create:'Create',sk_nocamp:'No campaign',sk_open:'Open',sk_empty:'No character yet: create one above.'});
 Object.assign(T.fr,{pl_title:'Placement rapide',pl_ally:'Allié (personnages)',pl_foe:'Ennemi (bestiaire)',pl_hint:'Choisis un nom, puis clique sur les cases de la carte. Échap pour arrêter.',pl_choose:'— choisir —',
 in_title:'Initiative',in_roll:'Lancer',in_next:'Tour suivant',in_end:'Fin',in_rnd:n=>`Round ${n}`,in_empty:'Place les pions, puis lance. Les alliés utilisent leur Finesse physique, les monstres leur bonus d\'initiative.',
-incl:'dont',up:'de montée',down:'de descente',m_init:'Initiative',ai_sum:'Générer un monstre avec l\'IA',ai_note:'Décris le monstre : nom, allure, armes, rôle. Claude le convertit en profil Luparis que tu vérifies avant de l\'ajouter.',
+incl:'dont',up:'de montée',down:'de descente',m_init:'Initiative',ai_prov:'IA',ai_key:'Clé API',ai_model:'Modèle',ai_paste_ph:'Colle ici la réponse de l\'IA',ai_imp:'Importer la réponse',ai_sum:'Générer un monstre avec l\'IA',ai_note:'Décris le monstre en une phrase : nom, allure, armes, rôle. L\'IA le convertit en profil Luparis que tu vérifies avant de l\'ajouter.',
 ai_ph:'Ex : Brann le Borgne, chef bandit avec une hache de guerre et une arbalète de poing, rusé et lâche',ai_go:'Générer',ai_wait:'Génération en cours…',ai_fail:'La génération a échoué. Réessaie ou reformule.',ai_rate:'Trop de demandes, patiente un instant.',
 ai_denied:'La génération n\'est pas autorisée ici.',ai_add:'Ajouter au bestiaire',ai_added:'Ajouté au bestiaire.',sk_back:'← Tous les personnages',sk_camp:'Campagne',sk_del:'Supprimer ce personnage',sk_confirm2:'Confirmer : supprimer ce personnage ?',
 sk_chars:'Personnages',sk_nchars:n=>`${n} personnage${n>1?'s':''}`,sk_create:'Créer',sk_nocamp:'Sans campagne',sk_open:'Ouvrir',sk_empty:'Aucun personnage : crée-en un ci-dessus.'});
@@ -1610,18 +1628,38 @@ function renderIni(){const L=document.getElementById('in_list');if(!L)return;INI
 const iniSort=()=>INI.o.sort((a,b)=>b.v-a.v||b.b-a.b);
 $('in_roll').onclick=()=>{if(!tokens.length)return;INI.o=tokens.map(k=>{const b=+k.init||0;return{id:k.id||(k.id=tid()),v:dRoll(20)+b,b}});iniSort();INI.cur=0;INI.round=1;save();draw()};
 $('in_next').onclick=()=>{if(!INI.o.length)return;INI.cur++;if(INI.cur>=INI.o.length){INI.cur=0;INI.round++}save();draw()};
-$('in_end').onclick=()=>{INI={o:[],cur:0,round:0};save();draw()};
+function iniReset(){INI={o:[],cur:0,round:0};$('in_xp').hidden=true;save();draw()}
+$('in_end').onclick=()=>{const names=camps();if(!names.length||!INI.o.length){iniReset();return}const ti=lang==='fr'?1:0,here=[...new Set(tokens.filter(k=>k.cid).map(k=>(CH.list.find(c=>c.id===k.cid)||{}).camp).filter(Boolean))],def=here[0]||names[0];
+ const box=$('in_xp');box.hidden=false;box.innerHTML=`<p class="small"><b>${L2('Fight difficulty?','Difficulté du combat ?')}</b> <span class="pill">${L2('GM','MJ')}</span></p><label class="small">${L2('Campaign','Campagne')} <select id="in_xc">${names.map(n=>opt(n,n,n===def)).join('')}</select></label><div class="chips">${DIFF.map(d=>`<button type="button" class="chip" data-ixp="${d[1]}" data-l="${d[0]}">${esc(d[2][ti])} +${d[1]}</button>`).join('')}</div><button type="button" id="in_noxp">${L2('End without XP','Finir sans XP')}</button>`};
+$('in_xp').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='in_noxp'){iniReset();return}if(b.dataset.ixp!=null){campAward($('in_xc').value,+b.dataset.ixp,b.dataset.l);iniReset();const m=$('save_msg');if(m){m.textContent=L2('XP awarded to the campaign.','XP attribuée à la campagne.');setTimeout(()=>{m.textContent=''},3500)}}});
 $('in_list').addEventListener('change',e=>{const i=e.target.dataset.iv;if(i==null)return;INI.o[+i].v=+e.target.value||0;const cur=INI.o[INI.cur];iniSort();INI.cur=Math.max(0,INI.o.indexOf(cur));save();draw()});
 $('in_list').addEventListener('click',e=>{const b=e.target.closest('button[data-ix]');if(!b)return;const i=+b.dataset.ix;INI.o.splice(i,1);if(INI.cur>i)INI.cur--;save();draw()});
 for(const k of tokens)if(!k.id)k.id=tid();
 let SAMPLE=null,aiCand=null;
-(async()=>{try{if(window.claude&&window.claude.use)SAMPLE=await window.claude.use('sample')}catch(e){}$('aibox').hidden=!SAMPLE})();
+const AIP={claude:{n:'Claude (Anthropic)',m:'claude-haiku-5-5',k:1},gemini:{n:'Gemini (Google)',m:'gemini-flash-latest',k:1},openai:{n:'OpenAI',m:'gpt-5-mini',k:1},custom:{n:['OpenAI-compatible (LM Studio, Ollama, OpenRouter…)','Compatible OpenAI (LM Studio, Ollama, OpenRouter…)'],m:'',k:0,u:1},copy:{n:['Copy and paste (no key)','Copier-coller (sans clé)'],k:0}};
+var AIC={p:'copy',k:{},m:{},u:''};try{AIC=Object.assign(AIC,JSON.parse(localStorage.getItem('luparis-ai'))||{})}catch(e){}
+function aiSave(){try{localStorage.setItem('luparis-ai',JSON.stringify(AIC))}catch(e){}}
+function aiUI(){const p=AIC.p,P=AIP[p]||AIP.copy;$('ai_p').innerHTML=(SAMPLE?opt('builtin',L2('Built-in (Claude)','Intégré (Claude)'),p==='builtin'):'')+Object.keys(AIP).map(k=>opt(k,tr(AIP[k].n),k===p)).join('');
+ $('ai_kl').hidden=!P.k||p==='builtin';$('ai_ml').hidden=p==='copy'||p==='builtin';$('ai_ul').hidden=!P.u;$('ai_k').value=AIC.k[p]||'';$('ai_m').value=AIC.m[p]||P.m||'';$('ai_u').value=AIC.u||'';
+ $('ai_paste').hidden=p!=='copy';$('ai_go').textContent=p==='copy'?L2('Copy the prompt','Copier le prompt'):t('ai_go');
+ $('ai_hint').textContent=p==='copy'?L2('The prompt is copied: paste it into Claude, ChatGPT or Gemini, then paste the answer below.','Le prompt est copié : colle-le dans Claude, ChatGPT ou Gemini, puis colle la réponse ci-dessous.'):P.k?L2('Your key stays in this browser only and is sent only to the provider. Game master only: do not use it on a shared computer.','Ta clé reste dans ce navigateur et n\'est envoyée qu\'au fournisseur. Réservé au MJ : ne l\'utilise pas sur un ordinateur partagé.'):p==='custom'?L2('Local server: allow this site in its CORS settings (Ollama: OLLAMA_ORIGINS).','Serveur local : autorise ce site dans ses réglages CORS (Ollama : OLLAMA_ORIGINS).'):''}
+$('ai_p').addEventListener('change',e=>{AIC.p=e.target.value;aiSave();aiUI()});
+$('ai_k').addEventListener('change',e=>{AIC.k[AIC.p]=e.target.value.trim();aiSave()});$('ai_m').addEventListener('change',e=>{AIC.m[AIC.p]=e.target.value.trim();aiSave()});$('ai_u').addEventListener('change',e=>{AIC.u=e.target.value.trim().replace(/\/+$/,'');aiSave()});
+function aiJSON(txt){const a=txt.indexOf('{'),b=txt.lastIndexOf('}');if(a<0||b<a)throw{code:'bad'};return JSON.parse(txt.slice(a,b+1))}
+async function aiCall(prompt){const p=AIC.p,key=AIC.k[p]||'',model=AIC.m[p]||(AIP[p]||{}).m;
+ if(p==='builtin'&&SAMPLE)return SAMPLE.json(prompt,{modelTier:'default'});
+ if(AIP[p]&&AIP[p].k&&!key)throw{code:'nokey'};let r,j;
+ if(p==='claude'){r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:2000,messages:[{role:'user',content:prompt}]})});j=await r.json();if(!r.ok)throw{code:r.status===429?'rate_limited':'http',msg:j.error&&j.error.message};return aiJSON((j.content||[]).map(c=>c.text||'').join(''))}
+ if(p==='gemini'){r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{responseMimeType:'application/json'}})});j=await r.json();if(!r.ok)throw{code:r.status===429?'rate_limited':'http',msg:j.error&&j.error.message};return aiJSON(((j.candidates||[])[0]?.content?.parts||[]).map(x=>x.text||'').join(''))}
+ const base=p==='custom'?AIC.u:'https://api.openai.com/v1';if(!base)throw{code:'nourl'};const h={'content-type':'application/json'};if(key)h.authorization='Bearer '+key;
+ r=await fetch(base+'/chat/completions',{method:'POST',headers:h,body:JSON.stringify({model,messages:[{role:'user',content:prompt}],...(p==='openai'?{response_format:{type:'json_object'}}:{})})});j=await r.json();if(!r.ok)throw{code:r.status===429?'rate_limited':'http',msg:j.error&&(j.error.message||j.error)};return aiJSON(((j.choices||[])[0]?.message?.content)||'')}
+(async()=>{try{if(window.claude&&window.claude.use)SAMPLE=await window.claude.use('sample')}catch(e){}if(SAMPLE&&!localStorage.getItem('luparis-ai'))AIC.p='builtin';aiUI()})();
 function cleanMon(v){if(!v||typeof v!=='object'||!v.n)return null;const cl=(x,a,b,d)=>{x=Math.round(+x);return isFinite(x)?Math.max(a,Math.min(b,x)):d};
  return{id:'u'+Date.now().toString(36),n:String(v.n).slice(0,60),type:TY[v.type]?v.type:'humanoid',fp:FPS.includes(String(v.fp))?String(v.fp):'1',sz:SZK.includes(v.sz)?v.sz:'M',ca:cl(v.ca,5,30,12),pv:cl(v.pv,1,999,10),init:cl(v.init,-5,15,0),
-  hab:Array.isArray(v.hab)?v.hab.filter(h=>B[h]&&h!=='gen'):[],no:String(v.no||'').slice(0,600)}}
+  hab:Array.isArray(v.hab)?v.hab.filter(h=>B[h]&&h!=='gen'):[],no:String(v.no||'').slice(0,600),atk:(Array.isArray(v.atk)?v.atk:[]).slice(0,6).map(a=>a&&({n:String(a.n||'').slice(0,40),k:cl(a.k,1,6,1),ab:cl(a.ab,-5,25,0),nd:cl(a.nd,1,10,1),dd:[4,6,8,10,12].includes(+a.dd)?+a.dd:6,mod:cl(a.mod,-5,15,0)})).filter(a=>a&&a.n)}}
 function showCand(){const m=aiCand,v=conv(m);$('ai_msg').textContent='';
- $('ai_out').innerHTML=`<div class="aiprev"><b>${esc(m.n)}</b> · ${esc(tyName(m.type))} · ${lang==='fr'?'FP':'CR'} ${esc(m.fp)}<div class="small">${t('esq')} ${v.esq} · ${t('thr')} ${v.maj}/${v.sev} · ${t('box')} ${v.cases} (${m.pv} ${t('hp')}) · Init ${sgn(m.init)}</div><p>${esc(m.no)}</p><div class="row"><button class="go" type="button" id="ai_add">${t('ai_add')}</button></div></div>`}
-$('ai_go').onclick=async()=>{const q=$('ai_q').value.trim();if(!q||!SAMPLE)return;const btn=$('ai_go');btn.disabled=true;$('ai_msg').textContent=t('ai_wait');$('ai_out').innerHTML='';
+ $('ai_out').innerHTML=`<div class="aiprev"><b>${esc(m.n)}</b> · ${esc(tyName(m.type))} · ${lang==='fr'?'FP':'CR'} ${esc(m.fp)}<div class="small">${t('esq')} ${v.esq} · ${t('thr')} ${v.maj}/${v.sev} · ${t('box')} ${v.cases} (${m.pv} ${t('hp')}) · Init ${sgn(m.init)}</div>${(m.atk||[]).length?`<ul class="small">${m.atk.map(a=>`<li><b>${esc(a.n)}</b>${a.k>1?' ×'+a.k:''} ${sgn(a.ab)}, ${a.nd}d${a.dd}${a.mod?sgn(a.mod):''}</li>`).join('')}</ul>`:''}<p>${esc(m.no)}</p><div class="row"><button class="go" type="button" id="ai_add">${t('ai_add')}</button></div></div>`}
+$('ai_go').onclick=async()=>{const q=$('ai_q').value.trim();if(!q)return;const btn=$('ai_go');btn.disabled=true;$('ai_msg').textContent=t('ai_wait');$('ai_out').innerHTML='';
  const L=lang==='fr'?'French':'English';
  const prompt=`You convert a game master's description into one monster for "Luparis", a homebrew built on D&D 5.5. Write all text in ${L}.
 Return ONLY a JSON object with these keys:
@@ -1633,11 +1671,14 @@ Return ONLY a JSON object with these keys:
 "pv": D&D hit points (integer),
 "init": initiative bonus (integer, like a D&D Dexterity modifier),
 "hab": array with zero or more of ${JSON.stringify(ORDER.filter(k=>k!=='gen'))},
-"no": notes under 450 characters: a one-line description, then its attacks in Luparis format, then special abilities and tactics.
+"atk": array of its attacks, each {"n": name, "k": attacks per turn with it, "ab": attack bonus, "nd": number of damage dice, "dd": die size (4, 6, 8, 10 or 12), "mod": damage modifier},
+"no": notes under 450 characters: a one-line description, then special abilities and tactics (not the attacks).
 Luparis attacks: Mastery Tier 1 to 5 (CR 0-2 → 1, 3-4 → 2, 5-10 → 3, 11-16 → 4, 17+ → 5); attack bonus = modifier + Tier + 1; damage = Tier × weapon die + modifier; weapon die d6 one-handed, d8 versatile in one hand, d10 versatile in two hands, d12 two-handed. Conditions are the D&D 5.5 conditions; no damage over time. Choose CR, AC and HP like a balanced official D&D monster of that concept.
 Game master's description, between the markers: <<<${q}>>>`;
- try{const v=await SAMPLE.json(prompt,{modelTier:'default'});const m=cleanMon(v);if(!m)throw{code:'bad'};aiCand=m;showCand()}
- catch(e){$('ai_msg').textContent=e&&e.code==='rate_limited'?t('ai_rate'):e&&e.code==='not_granted'?t('ai_denied'):t('ai_fail')}finally{btn.disabled=false}};
+ if(AIC.p==='copy'){aiLast=prompt;try{await navigator.clipboard.writeText(prompt);$('ai_msg').textContent=L2('Prompt copied.','Prompt copié.')}catch(e){$('ai_r').value=prompt;$('ai_r').select();$('ai_msg').textContent=L2('Copy the selected text.','Copie le texte sélectionné.')}btn.disabled=false;return}
+ try{const v=await aiCall(prompt);const m=cleanMon(v);if(!m)throw{code:'bad'};aiCand=m;showCand()}
+ catch(e){$('ai_msg').textContent=e&&e.code==='rate_limited'?t('ai_rate'):e&&e.code==='not_granted'?t('ai_denied'):e&&e.code==='nokey'?L2('Enter your API key first.','Entre d\'abord ta clé API.'):e&&e.code==='nourl'?L2('Enter the server URL.','Entre l\'URL du serveur.'):e&&e.msg?t('ai_fail')+' ('+String(e.msg).slice(0,140)+')':e instanceof TypeError?L2('Network error: the provider could not be reached (key, URL or CORS).','Erreur réseau : le fournisseur est injoignable (clé, URL ou CORS).'):t('ai_fail')}finally{btn.disabled=false}};
+let aiLast='';$('ai_imp').addEventListener('click',()=>{try{const m=cleanMon(aiJSON($('ai_r').value));if(!m)throw 0;aiCand=m;showCand();$('ai_r').value=''}catch(e){$('ai_msg').textContent=L2('This answer is not a valid monster.','Cette réponse n\'est pas un monstre valide.')}});
 $('ai_out').addEventListener('click',e=>{if(e.target.id==='ai_add'&&aiCand){MON.push(aiCand);saveMon();fillSel();renderB();$('ai_out').innerHTML='';$('ai_msg').textContent=t('ai_added');aiCand=null}});
 
 Object.assign(T.en,{pl_search:'Search',pl_search_ph:'Name of an ally or a monster',pl_none:'No match.',tk_ally:'ally',tk_close:'Close',tk_del:'Remove from map',tk_simple:'Simple token: no stats attached.'});
@@ -1862,7 +1903,7 @@ new ResizeObserver(()=>{if(WS&&!$('v-monde').hidden)wApply()}).observe(wst);
 
 function nm0(m){return tr(m.n)}
 function applyLang(){document.documentElement.lang=lang;document.title='Luparis';
- for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof fillBio==='function')fillBio();
+ for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof aiUI==='function'&&typeof AIC!=='undefined')aiUI();if(typeof fillBio==='function')fillBio();
  for(const e of document.querySelectorAll('[data-i18n-html]'))e.innerHTML=t(e.dataset.i18nHtml);
  for(const e of document.querySelectorAll('[data-i18n-ph]'))e.placeholder=t(e.dataset.i18nPh);
  for(const b of bz.querySelectorAll('button[data-b]'))b.querySelector('.bn').textContent=tr(B[b.dataset.b].n);
