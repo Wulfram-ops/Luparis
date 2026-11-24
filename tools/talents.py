@@ -15,11 +15,6 @@ TAL = [
  dict(k='dodge', g='mar', c=S[:1], n=('Uncanny dodge', 'Esquive instinctive'), req=('Finesse +3', 'Finesse +3'), rq={'st': 'F', 'v': 3},
   r=[('Reaction when a hit you can see lands, 1 Stamina: its damage is halved before the thresholds. Once per round.',
       'Réaction quand un coup que tu vois venir te touche, 1 Souffle : ses dégâts sont divisés par deux avant les seuils. Une fois par round.')]),
- dict(k='stance', g='mar', c=S, n=('Stances', 'Postures'),
-  r=[('Bonus action: take a stance you know. It lasts until you change it or fall unconscious; one at a time. Rank 1: you know one stance.',
-      'Action bonus : tu adoptes une posture que tu connais. Elle dure jusqu\'à ce que tu en changes ou que tu tombes inconscient ; une seule à la fois. Rang 1 : tu connais une posture.'),
-     ('You know two stances.', 'Tu connais deux postures.'),
-     ('You know three stances, and changing stance is free once per turn.', 'Tu connais trois postures, et changer de posture est gratuit une fois par tour.')]),
  dict(k='momentum', g='mar', c=S[:1], n=('Momentum', 'Élan'),
   r=[('When you roll a natural 20 or drop an enemy to 0 boxes, regain 2 Stamina.', 'Quand tu fais un 20 naturel ou fais tomber un ennemi à 0 case, tu regagnes 2 Souffle.')]),
  dict(k='pas', g='mar', c=[40, 40], n=('Fleet-footed', 'Pas rapide'),
@@ -62,14 +57,7 @@ PATRONS = [
    ('1 Favor, action: breath in a 15 ft cone, your rank × d8 damage of your dragon\'s element, Physical Finesse save for half.', '1 Faveur, action : souffle en cône de 15 pieds, ton rang × d8 dégâts de l\'élément de ton dragon, Finesse physique pour moitié.'),
    ('2 Favors, bonus action: wings for 1 minute (flight at your speed).', '2 Faveurs, action bonus : des ailes pour 1 minute (vol à ta vitesse).')]),
 ]
-STANCES = [
- ('Rock', 'Roc', 'Major and Severe thresholds +2; −2 tiles of movement; you cannot be moved against your will.', 'Seuils Majeur et Sévère +2 ; −2 cases de déplacement ; on ne peut pas te déplacer contre ton gré.'),
- ('Blade', 'Lame', '+1 Mastery on melee attacks; −2 Evasion.', '+1 Maîtrise aux attaques au contact ; −2 Esquive.'),
- ('Wind', 'Vent', '+2 tiles of movement; leaving melee never provokes; −1 Mastery on attacks.', '+2 cases de déplacement ; quitter le contact ne provoque jamais d\'attaque ; −1 Maîtrise aux attaques.'),
- ('Guardian', 'Gardien', 'Interception without a shield; adjacent allies get +1 Evasion; −2 tiles of movement.', 'Interception sans bouclier ; les alliés adjacents ont +1 Esquive ; −2 cases de déplacement.'),
- ('Serpent', 'Serpent', 'When an enemy misses you in melee, 1 Stamina: a free basic attack against it, once per round.', 'Quand un ennemi te rate au contact, 1 Souffle : une attaque de base gratuite contre lui, une fois par round.'),
- ('Hawk', 'Faucon', 'If you have not moved this turn: +1 Mastery on ranged attacks and you ignore half cover.', 'Si tu n\'as pas bougé ce tour : +1 Maîtrise aux attaques à distance et tu ignores le couvert partiel.'),
-]
+STANCES = []
 G = {'mar': ('Martial', 'Martiaux'), 'pac': ('Bonds and pacts', 'Liens et pactes')}
 
 def js():
@@ -93,7 +81,7 @@ def html(L):
             rq = f'<br><i>{T("Requires", "Prérequis")}{" :" if L == "fr" else ":"} {esc(t["req"][i])}</i>' if t.get('req') else ''
             h.append(f'<tr><td><b>{t["n"][i]}</b></td><td>{rk}{rq}</td><td>{", ".join(map(str, t["c"]))}</td></tr>')
         h.append('</tbody></table>')
-        if g == 'mar':
+        if g == 'mar' and STANCES:
             h.append(f'<p><b>{T("Stances", "Postures")}</b></p><table><thead><tr><th>{T("Stance", "Posture")}</th><th>{T("Effect", "Effet")}</th></tr></thead><tbody>' +
                      ''.join(f'<tr><td>{s[i]}</td><td>{esc(s[2+i])}</td></tr>' for s in STANCES) + '</tbody></table>')
     h.append(T('<p><b>Debt.</b> Each Favor spent adds 1 Debt. The GM may spend 1 Debt at any time for a complication: a vision, an order, a visible mark, a rival who smells the pact. When Debt reaches 3 × your rank (+2 at rank 3), the entity calls it in: a service to perform. Until it is done, you have no Favors; once it is done, Debt goes back to 0. Refusing breaks the pact: the talent is lost, the XP with it, and the entity remembers.</p>',
