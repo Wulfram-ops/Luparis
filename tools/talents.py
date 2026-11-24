@@ -4,12 +4,6 @@ import json
 S = [40, 80, 160]
 TAL = [
  # ---- martial
- dict(k='rage', g='mar', c=S, n=('Rage', 'Rage'),
-  r=[('Bonus action, 2 Stamina, lasts 1 minute (ends early if you neither strike nor take a hit for a whole turn). +1 Mastery on Physical Power attacks; resistance to physical damage (halved before the thresholds). No spells and no school infusion while raging.',
-      'Action bonus, 2 Souffle, dure 1 minute (s\'arrête si tu ne frappes ni ne subis de coup pendant un tour entier). +1 Maîtrise aux attaques de Puissance physique ; résistance aux dégâts physiques (divisés par deux avant les seuils). Ni sort ni infusion d\'école pendant la Rage.'),
-     ('Wear costs you nothing while raging.', 'L\'usure ne te coûte rien pendant la Rage.'),
-     ('Relentless: when you drop to 0 boxes while raging, Physical Resilience DC 10 (+5 each further time before a rest) to stay at 1 box.',
-      'Rage implacable : quand tu tombes à 0 case en Rage, Résistance physique DD 10 (+5 à chaque nouvelle fois avant un repos) pour rester à 1 case.')]),
  dict(k='sneak', g='mar', c=S, n=('Sneak strike', 'Coup en traître'),
   r=[('Once per turn, when you hit with Physical Finesse a target you have advantage against, or that an ally threatens in melee: +1 Mastery die.',
       'Une fois par tour, quand tu touches en Finesse physique une cible contre qui tu as l\'avantage, ou qu\'un allié menace au contact : +1 dé de Maîtrise.'),
