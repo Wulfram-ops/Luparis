@@ -45,6 +45,9 @@ button.pfb.pfini{cursor:pointer;min-height:0;border-color:var(--acc);gap:0;font:
 .favs{display:flex;gap:6px;margin:4px 0 8px}.fav{width:16px;height:16px;transform:rotate(45deg);border:2px solid #d9b2ff;border-radius:3px;background:transparent}.fav.on{background:radial-gradient(circle at 35% 35%,#fff,#c58cff 45%,#7a3fb0);box-shadow:0 0 8px #b77cff}
 .debt{display:flex;gap:3px;margin-top:4px}.debt i{flex:1;height:10px;border-radius:3px;background:rgba(255,255,255,.12)}.debt i.on{background:linear-gradient(#e0566f,#8e1f3a)}.debt.due i.on{box-shadow:0 0 6px #ff4d6d}.pacm .ko{color:#ff9aa9;margin-top:6px}
 .hc{position:relative}.hgr{position:absolute;z-index:2;top:4px;right:4px;display:flex;align-items:center;gap:0;opacity:.35;transition:opacity .15s}.hc:hover .hgr,.hgr:focus-within{opacity:1}.hgrip{cursor:grab;padding:0 3px;font-size:15px;color:var(--muted);user-select:none}.hmv{min-height:22px;min-width:18px;padding:0 3px;font-size:15px;color:var(--muted)}.hc.dragging{opacity:.4}
+.hc.fold>:not(.ht):not(.hn):not(.hgr){display:none}.hc.fold{min-height:0}.hc.fold .hfo{transform:rotate(-90deg)}
+section.card h3.foldh{cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none}section.card h3.foldh::after{content:"▾";margin-left:auto;font:14px/1 system-ui,sans-serif;color:var(--muted);transition:transform .15s}section.card.fold h3.foldh::after{transform:rotate(-90deg)}
+section.card.fold>:not(h3):not(.grip):not(.foldwrap),section.card.fold .foldwrap>:not(h3){display:none!important}section.card.fold h3.foldh{margin-bottom:0}.rmod>h3.foldh,.rmod .foldwrap>h3.foldh{padding-right:24px}
 .hc.k-sf{border-top-color:#3f7f8a}.sfl{display:flex;flex-direction:column;gap:4px}.sfl button{justify-content:space-between;border:1px solid var(--line);min-height:36px;width:100%}.sfl button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .hc.k-eq{border-top-color:#7a6a58}.hc.k-inv{border-top-color:#b08a2a}.eql,.ipl{list-style:none;margin:0;padding:0;font-size:14px}.eql li{padding:3px 0;border-bottom:1px solid var(--line)}.eql li span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .igold{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}.igr,.ipl li{display:flex;align-items:center;gap:4px}.igr span,.ipl li span{flex:1;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis}.igr button,.ipl button{min-height:28px;min-width:28px;padding:0 6px;border:1px solid var(--line)}.igr b,.ipl b{min-width:22px;text-align:center}.ipl li{padding:2px 0;border-top:1px dashed var(--line)}
@@ -400,7 +403,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
           <div class="row"><button class="go" type="submit" data-i18n="sk_add"></button></div></form></details>
       </section>
   <section class="card mod" data-mod="inv"><div id="c_inv"></div></section>
-  <section class="card mod" data-mod="notes"><label><span data-i18n="sk_notes"></span><textarea id="c_notes" rows="3"></textarea></label></section>
+  <section class="card mod" data-mod="notes"><h3 data-i18n="sk_notes"></h3><label><span class="vh" data-i18n="sk_notes"></span><textarea id="c_notes" rows="3"></textarea></label></section>
   </div>
   <details><summary data-i18n="sk_io"></summary>
     <p class="small" data-i18n="sk_costs"></p>
@@ -1760,7 +1763,7 @@ function talCards(c){const ti=lang==='fr'?1:0,out=[];for(const k in TAL){const v
  out.push(`<div class="hc k-tal"><div class="ht">${L2('Talent','Talent')}${T.c.length>1?' · '+L2('rank','rang')+' '+v:''}</div><div class="hn">${esc(T.n[ti])}</div><div class="hb">${T.r.slice(0,v).map(x=>esc(x[ti])).join('<br>')}</div></div>`)}return out}
 function hKey(h){const m=/class="hc (k-[a-z]+)/.exec(h),cl=m?m[1]:'k';if(['k-def','k-man','k-inv','k-eq','k-sf','k-add'].includes(cl))return cl;const n=/<div class="hn">([\s\S]*?)<\/div>/.exec(h);return cl+':'+(n?n[1].replace(/<[^>]*>/g,'').trim():'')}
 function hOrder(c,cards){const L=cards.map(h=>({k:hKey(h),h})),o=Array.isArray(c.corder)?c.corder:[],ix=k=>{const i=o.indexOf(k);return i<0?1e3:i};L.forEach((x,i)=>x.i=i);L.sort((a,b)=>ix(a.k)-ix(b.k)||a.i-b.i);
- return L.map(x=>x.h.replace(/^<div class="hc /,`<div data-ck="${esc(x.k)}" class="hc `).replace('>',`><div class="hgr"><button type="button" class="hmv" data-hmv="-1" aria-label="${L2('Move left','Déplacer à gauche')}">‹</button><span class="hgrip" title="${L2('Drag to reorder','Glisser pour ranger')}" aria-hidden="true">⠿</span><button type="button" class="hmv" data-hmv="1" aria-label="${L2('Move right','Déplacer à droite')}">›</button></div>`))}
+ return L.map(x=>x.h.replace(/^<div class="hc /,`<div data-ck="${esc(x.k)}" class="hc ${FOLD['c:'+x.k]?'fold ':''}`).replace('>',`><div class="hgr"><button type="button" class="hmv hfo" data-hfold="1" aria-label="${L2('Fold','Replier')}" aria-expanded="${!FOLD['c:'+x.k]}">▾</button><button type="button" class="hmv" data-hmv="-1" aria-label="${L2('Move left','Déplacer à gauche')}">‹</button><span class="hgrip" title="${L2('Drag to reorder','Glisser pour ranger')}" aria-hidden="true">⠿</span><button type="button" class="hmv" data-hmv="1" aria-label="${L2('Move right','Déplacer à droite')}">›</button></div>`))}
 function hSaveOrder(c){const box=document.querySelector('#hand .hcards');if(!box)return;c.corder=[...box.children].map(x=>x.dataset.ck).filter(Boolean);saveC()}
 function renderHand(){const P=document.getElementById('hand');if(!P)return;const c=handChar();
  const sel=`<label class="hsel"><span>${L2('Character','Personnage')}</span><select id="h_ch"><option value="">—</option>${CH.list.map(x=>`<option value="${esc(x.id)}"${c&&c.id===x.id?' selected':''}>${esc(x.name||'?')}${x.camp?' · '+esc(x.camp):''}</option>`).join('')}</select></label>`;
@@ -1801,6 +1804,7 @@ document.getElementById('hand').addEventListener('click',e=>{const b=e.target.cl
  if(ds.pfa!=null){const Q=handSel[c.id+'_pf'];Q.adv=Q.adv===+ds.pfa?0:+ds.pfa;renderHand();return}
  if(ds.pfr){const Q=handSel[c.id+'_pf']||{sf:-1,adv:0},k=ds.pfr,cv=c.cells[k]||0,f=Q.sf>=0&&c.sf[Q.sf]&&c.sf[Q.sf].r?c.sf[Q.sf]:null,b=cv+(f?2*f.r:0),r1=dRoll(20),r2=Q.adv?dRoll(20):null,r=Q.adv===1?Math.max(r1,r2):Q.adv===-1?Math.min(r1,r2):r1;
   hRoll(`${esc(cellName(k))}${f?' + '+esc(f.n):''} · d20 (${r2!=null?r1+', '+r2+' → '+r:r}) ${sgn(b)} = <b>${r+b}</b>${r===20?` <span class="cr">${t('sk_crit')}</span>`:r===1?` <span class="ko">${t('sk_miss')}</span>`:''}`);Q.sf=-1;Q.adv=0;return}
+ if(ds.hfold){const card=b.closest('[data-ck]');if(!card)return;const k='c:'+card.dataset.ck;FOLD[k]=!FOLD[k];if(!FOLD[k])delete FOLD[k];foldSave();card.classList.toggle('fold',!!FOLD[k]);b.setAttribute('aria-expanded',String(!FOLD[k]));return}
  if(ds.hmv){const card=b.closest('[data-ck]'),box=card&&card.parentNode;if(!card)return;if(+ds.hmv<0&&card.previousElementSibling)box.insertBefore(card,card.previousElementSibling);else if(+ds.hmv>0&&card.nextElementSibling)box.insertBefore(card.nextElementSibling,card);hSaveOrder(c);return}
  if(ds.hinv){invAct(c,ds);renderHand();return}
  if(ds.hpar){hRoll(hAtk(L2('Parry','Parade')+' · '+cellName('R_phy'),c.cells.R_phy||0));return}
@@ -2026,6 +2030,18 @@ document.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return
   if(el.tagName==='INPUT'&&el.type==='checkbox'){el.checked=!el.checked;el.dispatchEvent(new Event('change',{bubbles:true}))}else if(el.tagName==='INPUT'||el.tagName==='SELECT')el.focus();else el.click();return}},true);
 window.addEventListener('hashchange',()=>setTimeout(kbHints));setTimeout(kbHints,50);
 
+
+// ---- foldable panels and cards
+let FOLD={};try{FOLD=JSON.parse(localStorage.getItem('luparis-fold'))||{}}catch(e){}
+function foldSave(){try{localStorage.setItem('luparis-fold',JSON.stringify(FOLD))}catch(e){}}
+function foldKey(sec){const h=sec.querySelector('h3');return'p:'+(sec.dataset.mod||sec.id||(h&&(h.dataset.i18n||h.textContent.trim().slice(0,30)))||'')}
+function foldApply(root){(root||document).querySelectorAll('section.card').forEach(sec=>{const h=sec.querySelector('h3');if(!h)return;let w=h;while(w.parentNode&&w.parentNode!==sec)w=w.parentNode;if(w!==h)w.classList.add('foldwrap');
+ const k=foldKey(sec),on=!!FOLD[k];sec.classList.toggle('fold',on);h.classList.add('foldh');h.setAttribute('role','button');h.tabIndex=0;h.setAttribute('aria-expanded',String(!on))})}
+function foldToggle(sec){const k=foldKey(sec);FOLD[k]=!FOLD[k];if(!FOLD[k])delete FOLD[k];foldSave();foldApply(sec.parentNode)}
+document.addEventListener('click',e=>{const h=e.target.closest('h3.foldh');if(!h||e.target.closest('button,a,input,select,textarea,label'))return;const sec=h.closest('section.card');if(sec)foldToggle(sec)});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('h3.foldh')){e.preventDefault();const sec=e.target.closest('section.card');if(sec)foldToggle(sec)}});
+new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&(n.matches('section.card,h3')||n.querySelector&&n.querySelector('section.card'))){foldApply();return}}).observe(document.body,{childList:true,subtree:true});
+setTimeout(foldApply,0);
 legend();layout();
 }
 </script>
