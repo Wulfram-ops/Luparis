@@ -17,7 +17,7 @@ def fr(n):
     return n
 SZ={'Tiny':'T','Small':'S','Medium':'M','Large':'L','Huge':'H','Gargantuan':'G'}
 def fpstr(c): return {0.125:'1/8',0.25:'1/4',0.5:'1/2'}.get(c,str(int(c)))
-def tier(c): return 1 if c<=2 else 2 if c<=4 else 3 if c<=10 else 4 if c<=16 else 5
+def tier(c): return max(1,min(5,int(1+c/4.5+.5)))
 def prof(c): return 2 if c<5 else 3 if c<9 else 4 if c<13 else 5 if c<17 else 6 if c<21 else 7 if c<25 else 8 if c<29 else 9
 AW={'Bite':'Morsure','Claw':'Griffe','Claws':'Griffes','Tail':'Queue','Horn':'Corne','Gore':'Encorner','Hooves':'Sabots','Slam':'Coup','Fist':'Poing','Talons':'Serres','Sting':'Dard','Tentacle':'Tentacule','Tentacles':'Tentacules','Longsword':'Épée longue','Shortsword':'Épée courte','Greatsword':'Épée à deux mains','Scimitar':'Cimeterre','Dagger':'Dague','Club':'Gourdin','Greatclub':'Massue','Spear':'Lance','Javelin':'Javeline','Shortbow':'Arc court','Longbow':'Arc long','Light Crossbow':'Arbalète légère','Heavy Crossbow':'Arbalète lourde','Mace':'Masse','Morningstar':'Morgenstern','Greataxe':'Grande hache','Battleaxe':'Hache','Handaxe':'Hachette','Warhammer':'Marteau de guerre','Maul':'Maillet','Rapier':'Rapière','Quarterstaff':'Bâton','Sling':'Fronde','Trident':'Trident','Pike':'Pique','Glaive':'Coutille','Halberd':'Hallebarde','Rock':'Rocher','Beak':'Bec','Pseudopod':'Pseudopode','Touch':'Toucher','Ram':'Charge','Tusk':'Défense','Wing':'Aile','Bites':'Morsures','Lance':'Lance d\'arçon','Whip':'Fouet','Net':'Filet','Trunk':'Trompe','Stomp':'Piétinement','Constrict':'Constriction','Hand Crossbow':'Arbalète de poing','Life Drain':'Absorption de vie','Withering Touch':'Toucher flétrissant'}
 def hab(n,t,sub):
