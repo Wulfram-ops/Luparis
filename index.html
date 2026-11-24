@@ -111,8 +111,11 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 .sum{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .pill{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:15px;white-space:nowrap}
 .pill b{font-variant-numeric:tabular-nums}.pill.bad{border-color:#c0392b;color:#c0392b}
-.sgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:8px}
-@media(min-width:900px){.sgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.sgrid{display:block;column-width:340px;column-gap:14px;margin-top:8px}.sgrid.c1{columns:1}.sgrid.c2{columns:2}.sgrid.c3{columns:3}.sgrid.c4{columns:4}
+.sgrid>.mod{break-inside:avoid;margin:0 0 14px;display:block}.sgrid>.mod.dragging{opacity:.45;outline:2px dashed var(--acc)}.sgrid>.mod{position:relative}.grip{position:absolute;top:8px;right:12px;cursor:grab;opacity:.55;user-select:none;touch-action:none;font-size:18px;line-height:1;padding:4px}.prof{margin-top:10px;display:flex;flex-direction:column;gap:6px}.prof .warn{color:#b0453a;font-size:14px;margin:0}.prof label.ck{display:flex;flex-direction:row;gap:8px;align-items:center;text-align:left}.prof label.ck input{width:20px;height:20px;min-height:0;margin:0;flex:none}
+[data-kb]{position:relative}[data-kb]::after{content:attr(data-kb);position:absolute;top:-6px;right:-5px;font:700 10px/1 "Alegreya Sans",sans-serif;padding:2px 4px;border-radius:5px;background:var(--ink);color:var(--panel);opacity:.72;pointer-events:none}
+.slay{align-items:center;gap:10px;margin-top:6px}.slay select{min-height:36px}
+@media(max-width:700px){.sgrid.c2,.sgrid.c3,.sgrid.c4{columns:1}}
 .scol{display:flex;flex-direction:column;gap:14px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .card h3{font:600 18px/1.2 Cinzel,serif;margin:0 0 10px}
@@ -325,21 +328,19 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
     <div class="sum" id="c_sum" aria-live="polite"></div>
   </div>
   <p class="small" id="c_demo"></p>
-  <div class="sgrid">
-    <div class="scol">
-      <section class="card"><h3 data-i18n="sk_matrix"></h3><div id="c_mx"></div></section>
-      <section class="card"><h3 data-i18n="sk_dv"></h3><div class="seg" id="c_dv"></div></section>
-      <section class="card"><h3 data-i18n="sk_schools"></h3><div id="c_sch" class="tiers"></div></section>
-      <section class="card"><h3 data-i18n="sk_fams"></h3><div id="c_fam" class="tiers"></div></section>
-      <section class="card"><h3>Apex</h3><p class="small" id="c_apxn"></p><div id="c_apx" class="tiers"></div></section>
-    </div>
-    <div class="scol">
-      <section class="card"><h3 data-i18n="sk_def"></h3>
+  <div class="row slay"><span class="small" data-i18n="sk_lay"></span><label><span class="vh" data-i18n="sk_cols"></span><select id="c_cols"></select></label><button type="button" id="c_layreset" data-i18n="sk_layreset"></button></div>
+  <div class="sgrid" id="c_mods">
+      <section class="card mod" data-mod="mx"><h3 data-i18n="sk_matrix"></h3><div id="c_mx"></div></section>
+      <section class="card mod" data-mod="dv"><h3 data-i18n="sk_dv"></h3><div class="seg" id="c_dv"></div></section>
+      <section class="card mod" data-mod="sch"><h3 data-i18n="sk_schools"></h3><div id="c_sch" class="tiers"></div></section>
+      <section class="card mod" data-mod="fam"><h3 data-i18n="sk_fams"></h3><div id="c_fam" class="tiers"></div></section>
+      <section class="card mod" data-mod="apx"><h3>Apex</h3><p class="small" id="c_apxn"></p><div id="c_apx" class="tiers"></div></section>
+      <section class="card mod" data-mod="def"><h3 data-i18n="sk_def"></h3>
         <div class="two"><label><span data-i18n="sk_armor"></span><select id="c_armor"></select></label><label><span data-i18n="sk_shield"></span><select id="c_shield"></select></label></div>
-        <div class="stats" id="c_def"></div></section>
-      <section class="card"><h3 data-i18n="sk_res"></h3><div id="c_trk"></div>
+        <div class="stats" id="c_def"></div><div id="c_prof"></div></section>
+      <section class="card mod" data-mod="res"><h3 data-i18n="sk_res"></h3><div id="c_trk"></div>
         <div class="row"><button type="button" id="c_short" data-i18n="sk_short"></button><button type="button" id="c_long" data-i18n="sk_long"></button></div></section>
-      <section class="card"><h3 data-i18n="sk_atk"></h3>
+      <section class="card mod" data-mod="atk"><h3 data-i18n="sk_atk"></h3>
         <label class="tgt"><span data-i18n="sk_target"></span><input id="c_tgt" type="number" min="0" max="40" placeholder="—"></label>
         <div id="c_atk"></div>
         <details><summary data-i18n="sk_addw"></summary><form id="c_wf" class="two">
@@ -348,11 +349,10 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
           <label><span data-i18n="sk_size"></span><select id="c_wsz"></select></label>
           <div class="row"><button class="go" type="submit" data-i18n="sk_add"></button></div></form></details>
       </section>
-      <section class="card"><h3 data-i18n="sk_log"></h3><ol id="c_log" class="log" aria-live="polite"></ol></section>
-    </div>
+      <section class="card mod" data-mod="log"><h3 data-i18n="sk_log"></h3><ol id="c_log" class="log" aria-live="polite"></ol></section>
+  <section class="card mod" data-mod="inv" id="c_inv"></section>
+  <section class="card mod" data-mod="notes"><label><span data-i18n="sk_notes"></span><textarea id="c_notes" rows="3"></textarea></label></section>
   </div>
-  <section class="card" id="c_inv"></section>
-  <section class="card"><label><span data-i18n="sk_notes"></span><textarea id="c_notes" rows="3"></textarea></label></section>
   <details><summary data-i18n="sk_io"></summary>
     <p class="small" data-i18n="sk_costs"></p>
     <div class="row"><button type="button" id="c_copy" data-i18n="sk_copy"></button><button type="button" id="c_imp" data-i18n="sk_import"></button><button type="button" id="c_del" data-i18n="sk_del"></button><span class="small" id="c_msg"></span></div>
@@ -390,12 +390,13 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 <h2 id="r-perso">2. The character</h2>
 <p>There are no classes. Each character spends XP on the schools of magic, weapon masteries and matrix cells they want. Their stats tell their life story, whatever their people: no race gives a bonus.</p>
 <p>Everyone starts with a d6 hit die, then buys d8, d10 and d12 with XP.</p>
-<h3>XP costs (v0.2)</h3>
+<h3>XP costs (v0.3)</h3>
 <p>Level equals XP earned divided by 100: 150 XP to create a level 1 character, 2,000 at level 20. The Character tab does all the math.</p>
 <table><thead><tr><th>Purchase</th><th>Cost of each step</th><th>Total</th></tr></thead><tbody>
-<tr><td>Matrix cell, +1 to +5</td><td>5, 10, 15, 20, 25</td><td>75</td></tr>
+<tr><td>Matrix cell, +1 to +5</td><td>5, 10, 20, 40, 80</td><td>155</td></tr><tr><td>Armor training: light, medium, heavy</td><td>20, 40, 80</td><td>140</td></tr><tr><td>Shield training</td><td>40</td><td>40</td></tr>
 <tr><td>Tier in a discipline (school, weapon family or Apex), 1 to 5</td><td>40, 80, 160, 240, 320</td><td>840</td></tr>
 <tr><td>Hit die d8, d10, d12</td><td>80, 160, 240</td><td>480</td></tr></tbody></table>
+<p><b>Armor and shield training:</b> like proficiencies in D&D. Wearing armor you are not trained for gives no armor value (your thresholds are those of an unarmored body) and −2 Evasion. A shield without training gives no bonus and no Parry. Medium armor needs light training first, heavy armor needs medium.</p>
 <p><b>Specialization:</b> your disciplines are ranked by Tier. The highest costs normal price, the 2nd ×1.5, the 3rd ×2, every further one ×3. At level 20 (2,000 XP), that buys one discipline at Tier 5 and a second at Tier 4, with the matrix and a d8; a tank who takes the d12 settles for Tier 5 and Tier 3.</p>
 <p><b>Tier gates:</b> Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17, like D&D's major tiers.</p>
 <h2 id="r-defense">3. Defense: Evasion and armor</h2>
@@ -553,12 +554,13 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 <h2 id="r-perso">2. Le personnage</h2>
 <p>Il n'y a pas de classes. Chaque personnage achète en XP les écoles de magie, les maîtrises d'armes et les cases de la matrice qu'il veut. Ses statistiques racontent son vécu, quel que soit son peuple : aucune race ne donne de bonus.</p>
 <p>Tout le monde commence avec un dé de vie d6. On achète ensuite d8, d10 puis d12 avec de l'XP.</p>
-<h3>Barème d'XP (v0.2)</h3>
+<h3>Barème d'XP (v0.3)</h3>
 <p>Le niveau vaut l'XP gagnée divisée par 100 : 150 XP pour créer un personnage de niveau 1, 2 000 au niveau 20. L'onglet Personnage fait tous les calculs.</p>
 <table><thead><tr><th>Achat</th><th>Coût de chaque palier</th><th>Total</th></tr></thead><tbody>
-<tr><td>Case de la matrice, de +1 à +5</td><td>5, 10, 15, 20, 25</td><td>75</td></tr>
+<tr><td>Case de la matrice, de +1 à +5</td><td>5, 10, 20, 40, 80</td><td>155</td></tr><tr><td>Entraînement aux armures : légères, intermédiaires, lourdes</td><td>20, 40, 80</td><td>140</td></tr><tr><td>Entraînement aux boucliers</td><td>40</td><td>40</td></tr>
 <tr><td>Tier d'une discipline (école, famille d'armes ou Apex), de 1 à 5</td><td>40, 80, 160, 240, 320</td><td>840</td></tr>
 <tr><td>Dé de vie d8, d10, d12</td><td>80, 160, 240</td><td>480</td></tr></tbody></table>
+<p><b>Entraînement aux armures et aux boucliers :</b> comme les maîtrises de D&D. Porter une armure sans l'entraînement correspondant ne donne aucune valeur d'armure (les seuils sont ceux d'un corps sans armure) et −2 à l'Esquive. Un bouclier sans entraînement ne donne ni bonus ni Parade. Les armures intermédiaires demandent d'abord l'entraînement léger, les lourdes l'intermédiaire.</p>
 <p><b>Spécialisation :</b> les disciplines sont classées par Tier. La plus haute coûte le prix normal, la 2e ×1,5, la 3e ×2, toutes les suivantes ×3. Au niveau 20 (2 000 XP), cela permet une discipline au Tier 5 et une deuxième au Tier 4, avec la matrice et un d8 ; un tank qui prend le d12 se contente d'un Tier 5 et d'un Tier 3.</p>
 <p><b>Paliers de Tier :</b> Tier 2 dès le niveau 3, Tier 3 dès le 5, Tier 4 dès le 11, Tier 5 dès le 17, comme les grands paliers de D&D.</p>
 <h2 id="r-defense">3. Défense : Esquive et armure</h2>
@@ -719,7 +721,7 @@ const LI=()=>lang==='fr'?1:0,tr=v=>Array.isArray(v)?v[LI()]:v;
 const T={en:{title:'Luparis Tactical Table',sub:'Prototype: sculpt a battle map in a few clicks.',u_ft:'feet',u_m:'meters',tab_map:'Map',tab_best:'Bestiary',tab_rules:'Rules',toc:'Contents',ver:'Draft v0.7, filled in as we go',
 t_up:'Raise',t_down:'Dig',t_flat:'Flatten',t_pj:'Ally token',t_foe:'Enemy token',t_move:'Move',t_measure:'Measure',rot:'Rotate',undo:'Undo',gen:'Generate',clear:'Clear all',size:'Size',decor:'Setting',
 h_click:'<b>Left click</b> applies the tool; drag to paint. You can aim at the top or the sides of a tile. <b>Right click and drag</b> moves the view; the mouse wheel zooms. On mobile, pick a tool, then tap.',
-h_keys:'<b>Keyboard</b> (on the hovered tile; hold the key and drag to paint): <b>1 2 3</b> height, <b>4</b> ditch, <b>5</b> chasm, <b>0</b> ground. Tools: <b>M</b> raise, <b>C</b> dig, <b>D</b> move, <b>P</b> landmark, <b>T</b> measure; pressing the active tool\'s key again goes back to Move. <b>Esc</b> back to Move, <b>R</b> rotate, <b>G</b> generate the scene again, <b>Ctrl+Z</b> undo.',
+h_keys:'<b>Keyboard, row by row</b> (keys follow the physical rows, whatever your layout; each button shows its key): number row <b>1–5</b> the tabs; top row (Q W E R T Y on QWERTY, A Z E R T Y on AZERTY) the tools; middle row the settings; bottom row generate, rotate, fit, zoom out, zoom in, undo. Heights on the hovered tile: <b>Shift + 1 2 3</b> height, <b>Shift + 4</b> ditch, <b>Shift + 5</b> chasm, <b>Shift + 0</b> ground (hold and drag to paint). <b>Esc</b> back to Move, <b>Ctrl+Z</b> undo.',
 h_meas:'<b>Measure:</b> click and drag from one tile to another. D&D rule: every tile counts 5 ft (1.5 m), diagonals included. <b>Monsters:</b> hover a token and press <b>−</b> or <b>+</b> to remove or restore a Vitality box.',
 h_heights:'<b>Heights:</b> +1 half cover, +2 cover, +3 wall or impassable obstacle. −1 difficult terrain, −2 impassable. The map is kept in your browser.',
 hover:'Hover a tile',ground:'Ground',tile:'tile',placing:'Placing',stop:'Esc to stop',click_tile:'Click a tile, Esc to stop.',meas_hint:'Measure: click and drag between two tiles.',
@@ -735,7 +737,7 @@ imp_ph:'Paste a copied bestiary here',copied:'Bestiary copied.',copy_no:'Copy re
 fr:{title:'Table tactique de Luparis',sub:'Prototype : sculpte une battle map en quelques clics.',u_ft:'pieds',u_m:'mètres',tab_map:'Carte',tab_best:'Bestiaire',tab_rules:'Règles',toc:'Sommaire',ver:'Brouillon v0.7, complété au fur et à mesure',
 t_up:'Monter',t_down:'Creuser',t_flat:'Aplanir',t_pj:'Pion allié',t_foe:'Pion ennemi',t_move:'Déplacer',t_measure:'Mesurer',rot:'Pivoter',undo:'Annuler',gen:'Générer',clear:'Tout effacer',size:'Taille',decor:'Décor',
 h_click:'<b>Clic gauche</b> applique l\'outil, en glissant pour peindre ; on peut viser le sommet ou les flancs d\'une case. <b>Clic droit maintenu</b> déplace la vue ; la molette zoome. Sur mobile, choisis l\'outil puis touche.',
-h_keys:'<b>Clavier</b> (sur la case survolée, garder la touche et glisser pour peindre) : <b>1 2 3</b> hauteur, <b>4</b> fossé, <b>5</b> gouffre, <b>0</b> sol. Outils : <b>M</b> monter, <b>C</b> creuser, <b>A</b> allié, <b>E</b> ennemi, <b>D</b> déplacer, <b>P</b> repère, <b>T</b> mesurer ; rappuyer sur la touche de l\'outil actif revient à Déplacer. <b>Échap</b> revenir à Déplacer, <b>R</b> pivoter, <b>G</b> terrain aléatoire, <b>Ctrl+Z</b> annuler.',
+h_keys:'<b>Clavier, ligne par ligne</b> (les touches suivent les rangées physiques, quel que soit ton clavier ; chaque bouton affiche sa touche) : rangée des chiffres <b>1–5</b> les onglets ; rangée du haut (A Z E R T Y en AZERTY) les outils ; rangée du milieu les décors ; rangée du bas générer, pivoter, ajuster, dézoomer, zoomer, annuler. Hauteurs sur la case survolée : <b>Maj + 1 2 3</b> hauteur, <b>Maj + 4</b> fossé, <b>Maj + 5</b> gouffre, <b>Maj + 0</b> sol (garder et glisser pour peindre). <b>Échap</b> revenir à Déplacer, <b>Ctrl+Z</b> annuler.',
 h_meas:'<b>Mesurer :</b> clique et glisse d\'une case à l\'autre. Règle D&D : chaque case compte 5 pieds (1,5 m), diagonales comprises. <b>Monstres :</b> survole un pion et appuie sur <b>−</b> ou <b>+</b> pour retirer ou rendre une case de Vitalité.',
 h_heights:'<b>Hauteurs :</b> +1 couvert partiel, +2 couvert, +3 mur ou obstacle infranchissable. −1 terrain difficile, −2 infranchissable. La carte est gardée dans ton navigateur.',
 hover:'Survole une case',ground:'Sol',tile:'case',placing:'Placement',stop:'Échap pour arrêter',click_tile:'Clique sur une case, Échap pour arrêter.',meas_hint:'Mesure : clique et glisse entre deux cases.',
@@ -811,13 +813,13 @@ function pit(c,h){const{vx,vy,x,y}=c,b=B[bio],g=dia(vx,vy,0),t=(performance.now(
  const cols={chasm:['#2b2622','#4a423b','#3a332e'],water:['#3f7fb0','#5a7e64','#4b6c55'],lava:['#ff6a1a','#2a1d1a','#1f1513'],sand:['#c79a5a','#a77e48','#8f6b3c'],ice:['#9ccbe6','#b7c7d3','#9fb2c0'],swamp:['#4b5a32','#3f3a29','#353123']}[b.pit];
  let floor=cols[0];if(b.pit==='water'&&h===-2)floor='#2c5f8c';if(b.pit==='ice'&&h===-2)floor='#3d6f93';if(b.pit==='swamp'&&h===-2)floor='#364425';
  if(b.pit==='lava'){const k=.85+.15*Math.sin(t*2+x*.7+y*.5);floor=h===-2?`rgb(${Math.round(255*k)},${Math.round(80*k)},20)`:`rgb(${Math.round(240*k)},${Math.round(120*k)},40)`}
- const nb=[gv(vx-1,vy),gv(vx,vy-1),gv(vx+1,vy),gv(vx,vy+1)].map(v=>liquid&&v!==null&&v<0);
- poly(liquid?g:g.map(p=>[p[0],p[1]+d]),floor);
+ const nb=[gv(vx-1,vy),gv(vx,vy-1),gv(vx+1,vy),gv(vx,vy+1)].map(v=>v!==null&&(liquid?v<0:v===h));
+ poly(liquid||nb.some(Boolean)?g:g.map(p=>[p[0],p[1]+d]),floor);
  if(liquid&&b.pit!=='sand'){ctx.strokeStyle=b.pit==='lava'?'rgba(255,230,120,.7)':'rgba(255,255,255,.45)';ctx.lineWidth=Math.max(1,TW/60);ctx.beginPath();const o=(t*.15+rnd(x,y,5))%1;
   const[a1,b1]=inD(g[0][0],g[0][1]+d,.25+o*.3,.35),[a2,b2]=inD(g[0][0],g[0][1]+d,.45+o*.3,.35);ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke()}
  if(b.pit==='sand'){ctx.strokeStyle='rgba(120,80,40,.5)';ctx.lineWidth=1;const[cx2,cy2]=[g[0][0],g[0][1]+d+TW/4];ctx.beginPath();ctx.ellipse(cx2,cy2,TW*.22,TW*.09,0,0,7);ctx.ellipse(cx2,cy2,TW*.11,TW*.045,0,0,7);ctx.stroke()}
- if(!nb[0])poly([g[3],g[0],[g[0][0],g[0][1]+d],[g[3][0],g[3][1]+d]],cols[1]);if(!nb[1])poly([g[0],g[1],[g[1][0],g[1][1]+d],[g[0][0],g[0][1]+d]],cols[2]);
- ctx.restore();if(!liquid)poly(g,null,'rgba(0,0,0,.4)');else{ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=1;ctx.beginPath();for(const[i,a,b2]of[[0,3,0],[1,0,1],[2,1,2],[3,2,3]])if(!nb[i]){ctx.moveTo(...g[a]);ctx.lineTo(...g[b2])}ctx.stroke()}
+ if(!nb[0])poly([g[3],g[0],[g[0][0],g[0][1]+d],[g[3][0],g[3][1]+d]],cols[1]);if(!nb[1])poly([g[0],g[1],[g[1][0],g[1][1]+d],[g[0][0],g[0][1]+d]],cols[2]);{const dv=gv(vx-1,vy-1),dOk=dv!==null&&(liquid?dv<0:dv===h);if(!dOk){if(nb[1]){const A=dia(vx,vy-1,0);poly([A[3],A[0],[A[0][0],A[0][1]+d],[A[3][0],A[3][1]+d]],cols[1])}if(nb[0]){const A=dia(vx-1,vy,0);poly([A[0],A[1],[A[1][0],A[1][1]+d],[A[0][0],A[0][1]+d]],cols[2])}}}
+ ctx.restore();if(!nb.some(Boolean))poly(g,null,'rgba(0,0,0,.4)');else{ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=1;ctx.beginPath();for(const[i,a,b2]of[[0,3,0],[1,0,1],[2,1,2],[3,2,3]])if(!nb[i]){ctx.moveTo(...g[a]);ctx.lineTo(...g[b2])}ctx.stroke()}
  if(b.pit==='lava'){ctx.save();ctx.globalCompositeOperation='lighter';const[cx,cy]=scr(vx,vy,0);const gr=ctx.createRadialGradient(cx,cy+TW/4,0,cx,cy+TW/4,TW*.7);gr.addColorStop(0,'rgba(255,110,30,.28)');gr.addColorStop(1,'rgba(255,110,30,0)');ctx.fillStyle=gr;ctx.fillRect(cx-TW*.7,cy-TW*.5,TW*1.4,TW*1.4);ctx.restore()}}
 const FC={1:['#b49c74','#ab936b'],2:['#9d978c','#958f84'],3:['#a87c50','#a0754a'],4:['#7c6a56','#7c6a56'],5:['#7a5434','#7a5434']},FW={side:['#a8957c','#9a876e','#8c7960']};
 const FL={1:['Path','Chemin'],2:['Cobblestones','Pavés'],3:['Wooden floor','Plancher'],4:['Wall','Mur'],5:['Furniture, crates','Mobilier, caisses']};
@@ -947,12 +949,11 @@ function pickTool(t){const b=document.querySelector(`#tools button[data-t="${t}"
 document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select'))return;if(document.getElementById('v-carte').hidden)return;const k=e.key.toLowerCase();
  if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();document.getElementById('undo').click();return}
  if(e.ctrlKey||e.metaKey||e.altKey)return;
- if(k in KH){e.preventDefault();if(!held.has(k)){held.add(k);snap()}setH(hover,KH[k]);save();draw();return}
+ const dg=/^Digit([0-5])$/.exec(e.code);if(dg&&e.shiftKey){const kk=dg[1];e.preventDefault();if(!held.has(kk)){held.add(kk);snap()}setH(hover,KH[kk]);save();draw();return}
  if(k==='escape'){setTool('move');return}
  if(hover&&(k==='-'||k==='+'||k==='=')){const i=tokAt(hover);if(i>=0&&tokens[i].hpMax){tokHp(tokens[i],k==='-'?-1:1)}return}
- const map={m:'up',c:'down',d:'move',t:'measure',p:'mark'};if(map[k]){pickTool(tool===map[k]&&k!=='d'?'move':map[k]);return}
- if(k==='r'){document.getElementById('rot').click()}else if(k==='g'){document.getElementById('gen').click()}});
-document.addEventListener('keyup',e=>held.delete(e.key.toLowerCase()));
+ });
+document.addEventListener('keyup',e=>{const dg=/^Digit([0-5])$/.exec(e.code);if(dg)held.delete(dg[1])});
 window.addEventListener('blur',()=>held.clear());
 document.getElementById('clear').onclick=()=>{snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];save();draw()};
 let RNG=Math.random;const R=n=>Math.floor(RNG()*n),ok=(x,y)=>x>=0&&y>=0&&x<N&&y<N;
@@ -1205,7 +1206,7 @@ sk_short:'Short rest',sk_long:'Long rest',sk_atk:'Attacks and spells',sk_target:
 sk_fam:'Family',sk_size:'Size',sk_add:'Add',sk_remove:'Remove',sk_spell:'basic spell',sk_dc:'DC',sk_nospell:'Buy a Tier in a school to get its spells.',sk_log:'Rolls',sk_nolog:'Your rolls will show up here.',
 sk_hit:'Hit',sk_miss:'Miss',sk_crit:'Critical!',sk_notes:'Notes',sk_io:'Save or share the sheet',sk_copy:'Copy the sheet',sk_import:'Import pasted sheet',sk_new:'New character',
 sk_copied:'Sheet copied.',sk_bad:'This text is not a valid sheet.',sk_done:'Sheet imported.',sk_demo:'Example character: change anything, the sheet recalculates.',
-sk_costs:'XP costs, v0.2: matrix +1 to +5 costs 5, 10, 15, 20, 25; Tiers 1 to 5 cost 40, 80, 160, 240, 320 (840 in total); schools, weapon families and the Apex are disciplines: the highest costs ×1, the 2nd ×1.5, the 3rd ×2, the next ones ×3; hit die d8, d10, d12 cost 80, 240, 480 in total. Level = XP earned ÷ 100. Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17.',
+sk_costs:'XP costs, v0.3: matrix +1 to +5 costs 5, 10, 20, 40, 80 (155 in total); armor training light 20, medium 60, heavy 140 in total; shield training 40; Tiers 1 to 5 cost 40, 80, 160, 240, 320 (840 in total); schools, weapon families and the Apex are disciplines: the highest costs ×1, the 2nd ×1.5, the 3rd ×2, the next ones ×3; hit die d8, d10, d12 cost 80, 240, 480 in total. Level = XP earned ÷ 100. Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17.',
 sk_mb:b=>`Mastery +${b}`,sk_next:n=>`next +${n} XP`,sk_lock:(tt,l)=>`Tier ${tt} from level ${l}`,sk_fx:n=>`effects up to ${n}`,sk_unm:'not mastered',
 sz:{one:'One-handed (d6)',poly1:'Versatile, one hand (d8)',poly2:'Versatile, two hands (d10)',two:'Two-handed (d12)'},
 it:['Power','Finesse','Resilience'],dm:['Physical','Mental','Social'],hint:{P_phy:'Strength',F_phy:'Evasion',R_phy:'Thresholds, Stamina',P_men:'Offensive spells',F_men:'Perception',R_men:'Mana',P_soc:'Authority',F_soc:'Persuasion',R_soc:'Composure'}});
@@ -1216,11 +1217,11 @@ sk_short:'Repos court',sk_long:'Repos long',sk_atk:'Attaques et sorts',sk_target
 sk_fam:'Famille',sk_size:'Gabarit',sk_add:'Ajouter',sk_remove:'Retirer',sk_spell:'sort de base',sk_dc:'DD',sk_nospell:'Achète un Tier dans une école pour obtenir ses sorts.',sk_log:'Jets',sk_nolog:'Tes jets s\'afficheront ici.',
 sk_hit:'Touché',sk_miss:'Raté',sk_crit:'Critique !',sk_notes:'Notes',sk_io:'Sauvegarder ou partager la fiche',sk_copy:'Copier la fiche',sk_import:'Importer la fiche collée',sk_new:'Nouveau personnage',
 sk_copied:'Fiche copiée.',sk_bad:"Ce texte n'est pas une fiche valide.",sk_done:'Fiche importée.',sk_demo:'Personnage d\'exemple : change ce que tu veux, la fiche recalcule tout.',
-sk_costs:"Coûts en XP, v0.2 : une case de la matrice de +1 à +5 coûte 5, 10, 15, 20, 25 ; les Tiers 1 à 5 coûtent 40, 80, 160, 240, 320 (840 au total) ; écoles, familles d'armes et Apex sont des disciplines : la plus haute coûte ×1, la 2e ×1,5, la 3e ×2, les suivantes ×3 ; dé de vie d8, d10, d12 : 80, 240, 480 au total. Niveau = XP gagnée ÷ 100. Tier 2 dès le niveau 3, Tier 3 dès le 5, Tier 4 dès le 11, Tier 5 dès le 17.",
+sk_costs:"Coûts en XP, v0.3 : une case de la matrice de +1 à +5 coûte 5, 10, 20, 40, 80 (155 au total) ; entraînement aux armures légères 20, intermédiaires 60, lourdes 140 au total ; aux boucliers 40 ; les Tiers 1 à 5 coûtent 40, 80, 160, 240, 320 (840 au total) ; écoles, familles d'armes et Apex sont des disciplines : la plus haute coûte ×1, la 2e ×1,5, la 3e ×2, les suivantes ×3 ; dé de vie d8, d10, d12 : 80, 240, 480 au total. Niveau = XP gagnée ÷ 100. Tier 2 dès le niveau 3, Tier 3 dès le 5, Tier 4 dès le 11, Tier 5 dès le 17.",
 sk_mb:b=>`Maîtrise +${b}`,sk_next:n=>`suivant +${n} XP`,sk_lock:(tt,l)=>`Tier ${tt} dès le niveau ${l}`,sk_fx:n=>`effets jusqu'à ${n}`,sk_unm:'non maîtrisée',
 sz:{one:'À une main (d6)',poly1:'Polyvalente, une main (d8)',poly2:'Polyvalente, deux mains (d10)',two:'À deux mains (d12)'},
 it:['Puissance','Finesse','Résistance'],dm:['physique','mentale','sociale'],dmH:['Physique','Mental','Social'],hint:{P_phy:'Force',F_phy:'Esquive',R_phy:'Seuils, Souffle',P_men:'Sorts offensifs',F_men:'Perception',R_men:'Mana',P_soc:'Autorité',F_soc:'Persuasion',R_soc:'Sang-froid'}});
-const COST={cell:[0,5,15,30,50,75],tier:[0,40,120,280,520,840],dv:{6:0,8:80,10:240,12:480},mult:[1,1.5,2,3]},GATE=[1,1,3,5,11,17],MANA=[0,2,6,14,24,36],STAM=[0,1,3,7,12,18];
+const COST={cell:[0,5,15,35,75,155],prof:{arm:[0,20,60,140],shd:40},tier:[0,40,120,280,520,840],dv:{6:0,8:80,10:240,12:480},mult:[1,1.5,2,3]},GATE=[1,1,3,5,11,17],MANA=[0,2,6,14,24,36],STAM=[0,1,3,7,12,18];
 const INT=['P','F','R'],DOM=['phy','men','soc'];
 const SDIE={afflux:12,creuset:8,mirage:8,horizon:6,eidolon:8,egide:8,harmonie:6};const SCH={afflux:['Surge','Afflux'],creuset:['Crucible','Creuset'],mirage:['Mirage','Mirage'],horizon:['Horizon','Horizon'],eidolon:['Eidolon','Eidolon'],egide:['Aegis','Égide'],harmonie:['Harmony','Harmonie']};
 const FAM={taille:{n:['Cutting','Taille'],c:'P_phy'},estoc:{n:['Thrusting','Estoc'],c:'F_phy'},cont:{n:['Blunt','Contondantes'],c:'P_phy'},hast:{n:['Polearms','Hast'],c:'P_phy'},tir:{n:['Ranged and thrown','Tir et jet'],c:'F_phy'},martial:{n:['Martial arts','Arts martiaux'],c:'F_phy',sz:{one:['One hand busy','Une main occupée'],poly1:['Both hands free','Mains libres']}},nat:{n:['Natural weapons','Armes naturelles'],c:'P_phy',sz:{one:['Small (claws, beak)','Petite (griffes, bec)'],poly1:['Medium (fangs, horns)','Moyenne (crocs, cornes)'],poly2:['Large (tail, tusks)','Grande (queue, défenses)'],two:['Huge (crushing jaws)','Énorme (mâchoire broyante)']}}};
@@ -1228,21 +1229,22 @@ function szLabel(f,k){const o=FAM[f]&&FAM[f].sz;return o?(o[k]?tr(o[k]):''):T[la
 const SZ={one:6,poly1:8,poly2:10,two:12};
 const ARM={none:[['None','Aucune'],0,'l'],cuir:[['Leather','Cuir'],1,'l'],clou:[['Studded leather','Cuir clouté'],2,'l'],chem:[['Chain shirt','Chemise de mailles'],3,'m'],cuira:[['Breastplate, scale','Cuirasse, écailles'],4,'m'],demi:[['Half plate','Demi-plate'],5,'m'],cotte:[['Chain mail','Cotte de mailles'],6,'h'],clib:[['Splint','Clibanion'],7,'h'],harn:[['Plate','Harnois'],8,'h']};
 const SHD={none:[['None','Aucun'],0],bocle:[['Buckler','Bocle'],0],rond:[['Small shield','Rondache'],1],ecu:[['Heater shield','Écu'],1],grand:[['Large shield','Grand bouclier'],2],pavois:[['Tower shield','Pavois'],2]};
-const blankC=()=>({id:tid(),camp:'',name:'',people:'',xp:150,cells:Object.fromEntries(INT.flatMap(i=>DOM.map(d=>[i+'_'+d,0]))),dv:6,sch:Object.fromEntries(Object.keys(SCH).map(k=>[k,0])),apex:0,fam:Object.fromEntries(Object.keys(FAM).map(k=>[k,0])),armor:'none',shield:'none',weapons:[],used:{hp:0,mana:0,st:0},notes:'',demo:false});
-function demoC(){const c=blankC();Object.assign(c,{camp:lang==='fr'?'Exemple':'Example',name:'Kael',people:lang==='fr'?'Humain':'Human',xp:300,dv:8,armor:'chem',shield:'none',demo:true});c.cells.P_phy=3;c.cells.R_phy=2;c.cells.F_phy=1;c.fam.taille=1;
+const blankC=()=>({id:tid(),camp:'',name:'',people:'',xp:150,cells:Object.fromEntries(INT.flatMap(i=>DOM.map(d=>[i+'_'+d,0]))),dv:6,sch:Object.fromEntries(Object.keys(SCH).map(k=>[k,0])),apex:0,prof:{arm:0,shd:0},fam:Object.fromEntries(Object.keys(FAM).map(k=>[k,0])),armor:'none',shield:'none',weapons:[],used:{hp:0,mana:0,st:0},notes:'',demo:false});
+function demoC(){const c=blankC();Object.assign(c,{camp:lang==='fr'?'Exemple':'Example',name:'Kael',people:lang==='fr'?'Humain':'Human',xp:300,dv:8,prof:{arm:2,shd:0},armor:'chem',shield:'none',demo:true});c.cells.P_phy=3;c.cells.R_phy=2;c.cells.F_phy=1;c.fam.taille=1;
  c.weapons=[{n:lang==='fr'?'Épée longue':'Longsword',f:'taille',s:'poly2'},{n:lang==='fr'?'Dague':'Dagger',f:'estoc',s:'one'}];return c}
 let CH;try{CH=JSON.parse(localStorage.getItem('luparis-chars'))}catch(e){}
 if(!CH||!Array.isArray(CH.list)||!CH.list.length){let old;try{old=JSON.parse(localStorage.getItem('luparis-sheet'))}catch(e){}CH={list:[old&&old.cells?old:demoC()],active:null}}
-for(const c of CH.list){if(c.sch&&c.sch.apex!=null){if(c.sch.apex>0&&!c.apex)c.apex=c.sch.apex;delete c.sch.apex}if(c.apex==null)c.apex=0;for(const k of Object.keys(FAM))if(c.fam&&c.fam[k]==null)c.fam[k]=0;if(!c.id)c.id=tid();if(c.camp==null)c.camp=c.demo?(lang==='fr'?'Exemple':'Example'):'';if(!c.used)c.used={hp:0,mana:0,st:0}}
+for(const c of CH.list){if(!c.prof)c.prof={arm:armNeed(c.armor||'none'),shd:c.shield&&c.shield!=='none'?1:0};if(c.sch&&c.sch.apex!=null){if(c.sch.apex>0&&!c.apex)c.apex=c.sch.apex;delete c.sch.apex}if(c.apex==null)c.apex=0;for(const k of Object.keys(FAM))if(c.fam&&c.fam[k]==null)c.fam[k]=0;if(!c.id)c.id=tid();if(c.camp==null)c.camp=c.demo?(lang==='fr'?'Exemple':'Example'):'';if(!c.used)c.used={hp:0,mana:0,st:0}}
 let C=CH.list.find(c=>c.id===CH.active)||CH.list[0];if(!CH.list.some(c=>c.id===CH.active))CH.active=null;
 function saveC(){try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}if(typeof renderPlace==='function')renderPlace();if(typeof renderHand==='function')renderHand()}
 const lvl=(c=C)=>Math.max(1,Math.floor((+c.xp||0)/100)),mb=tier=>tier>0?tier+1:0,sgn=v=>(v>=0?'+':'')+v;
 function discs(c=C){return[...Object.keys(c.sch).map(k=>['sch',k,c.sch[k]]),...Object.keys(c.fam).map(k=>['fam',k,c.fam[k]]),['apx','apex',c.apex||0]].filter(d=>d[2]>0).sort((a,b)=>b[2]-a[2])}
 function discCost(c=C){return discs(c).reduce((s,d,i)=>s+Math.round(COST.tier[d[2]]*COST.mult[Math.min(i,3)]),0)}
-function spent(){let s=discCost();for(const k in C.cells)s+=COST.cell[C.cells[k]];return s+COST.dv[C.dv]}
-function derived(c=C){const L=lvl(c),a=ARM[c.armor]||ARM.none,cap=a[2]==='l'?99:a[2]==='m'?2:0,cl=c.cells,nat=2*(c.apex||0),av=Math.max(a[1],nat);
- const eva=10+Math.min(cl.F_phy,cap)+(SHD[c.shield]||SHD.none)[1],base=c.dv+L+cl.R_phy,ts=Object.values(c.sch),maxT=Math.max(0,...ts);
- return{L,eva,av,minor:av,major:base+av,severe:2*base+av,hp:1+Math.ceil(L*c.dv/12),mana:ts.reduce((s,x)=>s+MANA[x],0)+cl.R_men*Math.floor(maxT/2),nat,st:Math.max(0,Object.values(c.fam).reduce((s,x)=>s+STAM[x],0)+STAM[c.apex||0]+cl.R_phy),init:cl.F_phy}}
+function spent(){const pr=C.prof||{};let s=discCost()+COST.prof.arm[pr.arm||0]+(pr.shd?COST.prof.shd:0);for(const k in C.cells)s+=COST.cell[C.cells[k]];return s+COST.dv[C.dv]}
+function armNeed(k){return k==='none'?0:({l:1,m:2,h:3})[(ARM[k]||ARM.none)[2]]}
+function derived(c=C){const L=lvl(c),a=ARM[c.armor]||ARM.none,cl=c.cells,pr=c.prof||{arm:0,shd:0},armOk=armNeed(c.armor)<=(pr.arm||0),shdOk=c.shield==='none'||!!pr.shd,cap=a[2]==='l'?99:a[2]==='m'?2:0,nat=2*(c.apex||0),av=Math.max(armOk?a[1]:0,nat);
+ const eva=10+Math.min(cl.F_phy,cap)+(shdOk?(SHD[c.shield]||SHD.none)[1]:0)-(armOk?0:2),base=c.dv+L+cl.R_phy,ts=Object.values(c.sch),maxT=Math.max(0,...ts);
+ return{L,eva,av,armOk,shdOk,minor:av,major:base+av,severe:2*base+av,hp:1+Math.ceil(L*c.dv/12),mana:ts.reduce((s,x)=>s+MANA[x],0)+cl.R_men*Math.floor(maxT/2),nat,st:Math.max(0,Object.values(c.fam).reduce((s,x)=>s+STAM[x],0)+STAM[c.apex||0]+cl.R_phy),init:cl.F_phy}}
 function cellName(k){const[i,d]=k.split('_');const ii=INT.indexOf(i),di=DOM.indexOf(d);return lang==='fr'?`${T.fr.it[ii]} ${T.fr.dm[di]}`:`${T.en.dm[di]} ${T.en.it[ii]}`}
 function camps(){return[...new Set(CH.list.map(c=>c.camp||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,lang))}
 function renderList(){const groups=[...camps(),''].filter(g=>CH.list.some(c=>(c.camp||'')===g)),nn=$('c_nn')?$('c_nn').value:'',nc=$('c_nc')?$('c_nc').value:'';
@@ -1271,6 +1273,7 @@ function renderSheet(){$('c_camps').innerHTML=camps().map(x=>opt(x,x)).join('');
  $('c_armor').innerHTML=Object.keys(ARM).map(k=>opt(k,`${tr(ARM[k][0])} (${ARM[k][1]})`,k===C.armor)).join('');
  $('c_shield').innerHTML=Object.keys(SHD).map(k=>opt(k,`${tr(SHD[k][0])}${SHD[k][1]?' (+'+SHD[k][1]+')':''}`,k===C.shield)).join('');
  const st=(k,v)=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+ {const pr=C.prof||(C.prof={arm:0,shd:0}),lv=[L2('None','Aucun'),L2('Light','Légères'),L2('Medium','Intermédiaires'),L2('Heavy','Lourdes')];$('c_prof').innerHTML=`<div class="prof"><span class="small">${L2('Armor training','Entraînement aux armures')}</span><div class="seg">${lv.map((n,i)=>`<button type="button" data-prof="arm" data-v="${i}" aria-pressed="${(pr.arm||0)===i}">${n}<small>${COST.prof.arm[i]} XP</small></button>`).join('')}</div><label class="ck"><input type="checkbox" data-prof="shd"${pr.shd?' checked':''}> ${L2('Shield training','Entraînement aux boucliers')} (${COST.prof.shd} XP)</label>${D.armOk?'':`<p class="warn">${L2('Not trained for this armor: no armor value and −2 Evasion.','Pas d\'entraînement pour cette armure : aucune valeur d\'armure et −2 à l\'Esquive.')}</p>`}${D.shdOk?'':`<p class="warn">${L2('Not trained for shields: no bonus, no Parry.','Pas d\'entraînement aux boucliers : ni bonus ni Parade.')}</p>`}</div>`}
  $('c_def').innerHTML=st(t('sk_eva'),D.eva)+st(t('sk_armv'),D.av)+st(t('sk_minor'),D.minor)+st(t('sk_major'),D.major)+st(t('sk_severe'),D.severe)+st(t('sk_init'),sgn(D.init));
  if(!C.used)C.used={hp:0,mana:0,st:0};const U=C.used,cur={};for(const[k,m]of[['hp',D.hp],['mana',D.mana],['st',D.st]]){U[k]=Math.max(0,Math.min(m,+U[k]||0));cur[k]=m-U[k]}
  const trk=(k,lab,m,cls)=>`<div class="trk"><div><b>${lab}</b><div class="bar2 ${cls}"><i style="width:${m?Math.round(100*cur[k]/m):0}%"></i></div></div><div class="ctl"><button type="button" data-trk="${k}" data-d="-1" aria-label="${lab} −">−</button><span class="num">${cur[k]} / ${m}</span><button type="button" data-trk="${k}" data-d="1" aria-label="${lab} +">+</button></div></div>`;
@@ -1337,16 +1340,34 @@ $('c_inv').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
 $('c_inv').addEventListener('input',e=>{const t2=e.target;if(t2.dataset.it==null||!C)return;const it=invOf(C).items[+t2.dataset.it];if(!it)return;it[t2.dataset.f]=t2.dataset.f==='q'?Math.max(0,+t2.value||0):t2.value.slice(0,200);clearTimeout(window._invT);window._invT=setTimeout(saveC,300)});
 
 $('c_wfam').addEventListener('change',renderSheet);
+const MODS0=['mx','dv','sch','fam','apx','def','res','atk','log','inv','notes'];
+function layGet(){try{return JSON.parse(localStorage.getItem('luparis-sheet-layout'))||{}}catch(e){return{}}}
+function laySave(o){try{localStorage.setItem('luparis-sheet-layout',JSON.stringify(o))}catch(e){}}
+function layApply(){const o=layGet(),box=$('c_mods'),order=Array.isArray(o.order)?o.order:MODS0;const seen=new Set();
+ for(const m of[...order,...MODS0]){if(seen.has(m))continue;seen.add(m);const el=box.querySelector(`[data-mod="${m}"]`);if(el)box.append(el)}
+ const c=o.cols||'auto';box.className='sgrid'+(c==='auto'?'':' c'+c);$('c_cols').innerHTML=['auto','1','2','3','4'].map(v=>opt(v,v==='auto'?L2('Columns: auto','Colonnes : auto'):L2(`${v} column${v>1?'s':''}`,`${v} colonne${v>1?'s':''}`),v===c)).join('')}
+$('c_cols').addEventListener('change',e=>{const o=layGet();o.cols=e.target.value;laySave(o);layApply()});
+$('c_layreset').addEventListener('click',()=>{laySave({});layApply()});
+{const box=$('c_mods');let dragEl=null;
+ for(const sec of box.querySelectorAll('.mod')){const g=document.createElement('span');g.className='grip';g.textContent='⠿';g.title=L2('Drag to move this module','Glisser pour déplacer ce module');g.setAttribute('aria-hidden','true');sec.prepend(g)}
+ box.addEventListener('pointerdown',e=>{const g=e.target.closest('.grip');if(g){const sec=g.closest('.mod');sec.draggable=true}});
+ box.addEventListener('dragstart',e=>{dragEl=e.target.closest('.mod');if(!dragEl)return;dragEl.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',dragEl.dataset.mod)}catch(x){}});
+ box.addEventListener('dragover',e=>{if(!dragEl)return;e.preventDefault();const tgt=e.target.closest('.mod');if(!tgt||tgt===dragEl)return;const r=tgt.getBoundingClientRect();tgt.parentNode.insertBefore(dragEl,e.clientY<r.top+r.height/2?tgt:tgt.nextSibling)});
+ box.addEventListener('dragend',()=>{if(!dragEl)return;dragEl.classList.remove('dragging');dragEl.draggable=false;dragEl=null;const o=layGet();o.order=[...box.querySelectorAll('.mod')].map(x=>x.dataset.mod);laySave(o)});}
+layApply();
+
 fiche.addEventListener('submit',e=>{if(e.target.id!=='c_nf')return;e.preventDefault();const n=$('c_nn').value.trim();if(!n)return;const c=blankC();c.name=n;c.camp=$('c_nc').value.trim();CH.list.push(c);CH.active=c.id;C=c;saveC();renderSheet();window.scrollTo(0,0)});
 $('c_xp').addEventListener('input',e=>{C.xp=Math.max(0,+e.target.value||0);saveC();renderSheet()});
+$('c_prof').addEventListener('click',e=>{const b=e.target.closest('button[data-prof]');if(!b||!C)return;C.prof=C.prof||{arm:0,shd:0};C.prof.arm=+b.dataset.v;C.demo=false;saveC();renderSheet()});
+$('c_prof').addEventListener('change',e=>{if(e.target.dataset.prof!=='shd'||!C)return;C.prof=C.prof||{arm:0,shd:0};C.prof.shd=e.target.checked?1:0;C.demo=false;saveC();renderSheet()});
 $('c_armor').addEventListener('change',e=>{C.armor=e.target.value;C.demo=false;saveC();renderSheet()});
 $('c_shield').addEventListener('change',e=>{C.shield=e.target.value;C.demo=false;saveC();renderSheet()});
 $('c_tgt').addEventListener('input',()=>{});
 $('c_wf').addEventListener('submit',e=>{e.preventDefault();const n=$('c_wn').value.trim();if(!n)return;C.weapons.push({n,f:$('c_wfam').value,s:$('c_wsz').value});$('c_wn').value='';saveC();renderSheet()});
 T.en.sk_confirm2='Confirm: erase the sheet?';T.fr.sk_confirm2='Confirmer : effacer la fiche ?';
 
-Object.assign(T.en,{t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Remove one with its ✕ in this list.',ctx_town:'Town map',ctx_regen:'Reset to the original town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},z_fit:'Fit',z_out:'Zoom out',scn:{forest_clearing:'Forest clearing',bandit_camp:'Bandit camp',snow_forest:'Snowy forest',mtn_pass:'Mountain pass',cave:'Cave',dungeon:'Dungeon rooms',ruins:'Ruins',graveyard:'Graveyard',river_ford:'River ford',marsh_walk:'Swamp boardwalk',oasis:'Desert oasis',lava_field:'Lava field',crossroads:'Crossroads',farmland:'Farmland',village_square:'Village square',docks:'Docks',forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain'}});
-Object.assign(T.fr,{t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Retire-le avec sa croix ✕ dans cette liste.',ctx_town:'Carte de ville',ctx_regen:'Revenir à la ville d\'origine',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},z_fit:'Ajuster',z_out:'Dézoomer',scn:{forest_clearing:'Clairière',bandit_camp:'Camp de bandits',snow_forest:'Forêt enneigée',mtn_pass:'Col de montagne',cave:'Grotte',dungeon:'Salles de donjon',ruins:'Ruines',graveyard:'Cimetière',river_ford:'Gué',marsh_walk:'Passerelles du marais',oasis:'Oasis',lava_field:'Champ de lave',crossroads:'Carrefour',farmland:'Champs et ferme',village_square:'Place de village',docks:'Quais',forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre'}});
+Object.assign(T.en,{sk_lay:'Drag a module by its ⠿ handle to reorder.',sk_cols:'Columns',sk_layreset:'Reset layout',t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Remove one with its ✕ in this list.',ctx_town:'Town map',ctx_regen:'Reset to the original town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},z_fit:'Fit',z_out:'Zoom out',scn:{forest_clearing:'Forest clearing',bandit_camp:'Bandit camp',snow_forest:'Snowy forest',mtn_pass:'Mountain pass',cave:'Cave',dungeon:'Dungeon rooms',ruins:'Ruins',graveyard:'Graveyard',river_ford:'River ford',marsh_walk:'Swamp boardwalk',oasis:'Desert oasis',lava_field:'Lava field',crossroads:'Crossroads',farmland:'Farmland',village_square:'Village square',docks:'Docks',forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain'}});
+Object.assign(T.fr,{sk_lay:'Glisse un module par sa poignée ⠿ pour le déplacer.',sk_cols:'Colonnes',sk_layreset:'Réinitialiser l\'agencement',t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Retire-le avec sa croix ✕ dans cette liste.',ctx_town:'Carte de ville',ctx_regen:'Revenir à la ville d\'origine',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},z_fit:'Ajuster',z_out:'Dézoomer',scn:{forest_clearing:'Clairière',bandit_camp:'Camp de bandits',snow_forest:'Forêt enneigée',mtn_pass:'Col de montagne',cave:'Grotte',dungeon:'Salles de donjon',ruins:'Ruines',graveyard:'Cimetière',river_ford:'Gué',marsh_walk:'Passerelles du marais',oasis:'Oasis',lava_field:'Champ de lave',crossroads:'Carrefour',farmland:'Champs et ferme',village_square:'Place de village',docks:'Quais',forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre'}});
 setTimeout(()=>{fillScenes();fillSz()});
 Object.assign(T.en,{pl_title:'Quick place',pl_ally:'Ally (characters)',pl_foe:'Enemy (bestiary)',pl_hint:'Pick a name, then click tiles on the map. Esc to stop.',pl_choose:'— choose —',
 in_title:'Initiative',in_roll:'Roll',in_next:'Next turn',in_end:'End',in_rnd:n=>`Round ${n}`,in_empty:'Place tokens, then roll. Allies use Physical Finesse, monsters their initiative bonus.',
@@ -1425,7 +1446,7 @@ function renderHand(){const P=document.getElementById('hand');if(!P)return;const
  if(!c){P.innerHTML=`<div class="hhead"><h3>${L2('Ability cards','Cartes de capacités')}</h3>${sel}</div><p class="small">${L2('Pick a character, or select a character token on the map.','Choisis un personnage, ou sélectionne le pion d\'un personnage sur la carte.')}</p>`;return}
  const D=derived(c),u=c.used||(c.used={hp:0,mana:0,st:0}),manaL=D.mana-u.mana,stL=D.st-u.st;const cards=[];
  const shd=(SHD[c.shield]||SHD.none);
- cards.push(`<div class="hc k-def"><div class="ht">${L2('Defense','Défense')}</div><div class="hn">${L2('Evasion','Esquive')} ${D.eva}</div><div class="hb">${L2('Thresholds','Seuils')} ${D.minor} / ${D.major} / ${D.severe}${c.shield!=='none'?`<br>${esc(tr(shd[0]))} : ${L2('Parry (reaction): the hit costs one box less','Parade (réaction) : le coup coûte une case de moins')}`:''}</div></div>`);
+ cards.push(`<div class="hc k-def"><div class="ht">${L2('Defense','Défense')}</div><div class="hn">${L2('Evasion','Esquive')} ${D.eva}</div><div class="hb">${L2('Thresholds','Seuils')} ${D.minor} / ${D.major} / ${D.severe}${c.shield!=='none'&&D.shdOk?`<br>${esc(tr(shd[0]))} : ${L2('Parry (reaction): the hit costs one box less','Parade (réaction) : le coup coûte une case de moins')}`:''}</div></div>`);
  (c.weapons||[]).forEach((w,i)=>{const tier=c.fam[w.f]||0,mod=c.cells[FAM[w.f]?FAM[w.f].c:'P_phy']||0,ab=mod+mb(tier),nd=Math.max(1,tier),dd=SZ[w.s]||6;
   const srcs=[...Object.keys(SCH).filter(k=>c.sch[k]>0),...((c.apex||0)>0?['apex']:[])],infK=handSel[c.id+'_inf'+i]||'',infOn=srcs.includes(infK)?infK:'',srcN=k=>k==='apex'?'Apex':tr(SCH[k]),infT=infOn==='apex'?(c.apex||0):infOn?c.sch[infOn]:0,infV=Math.min(infT,handSel[c.id+'_iv'+i]||1),infD=infOn==='apex'?dd:(SDIE[infOn]||8),infP=infOn==='apex'?L2('Breath','Souffle'):'Mana';
   const infH=srcs.length?`<div class="inf"><label><span>${L2('Infusion','Infusion')}</span><select data-hinf="${i}"><option value="">—</option>${srcs.map(k=>`<option value="${k}"${infOn===k?' selected':''}>${esc(srcN(k))}</option>`).join('')}</select></label>${infOn?`<div class="fx">${Array.from({length:infT},(_,n)=>`<button type="button" class="chip${infV===n+1?' on':''}" data-hiv="${i}" data-v="${n+1}">${n+1}</button>`).join('')}</div>`:''}</div>`:'';
@@ -1623,6 +1644,26 @@ function savePrefs(){try{localStorage.setItem('luparis-prefs',JSON.stringify({la
 $('langs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;lang=b.dataset.lang;savePrefs();applyLang()});
 $('units').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;unit=b.dataset.u;savePrefs();applyLang()});
 applyLang();route();
+const KROW1=['KeyQ','KeyW','KeyE','KeyR','KeyT','KeyY','KeyU','KeyI','KeyO','KeyP'],KROW2=['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL'],KROW3=['KeyZ','KeyX','KeyC','KeyV','KeyB','KeyN','KeyM'];
+let KLAB=null;try{if(navigator.keyboard&&navigator.keyboard.getLayoutMap)navigator.keyboard.getLayoutMap().then(m=>{KLAB=m;kbHints()}).catch(()=>{})}catch(e){}
+const klab=code=>{const v=KLAB&&KLAB.get(code);return(v||code.replace(/^Key|^Digit/,'')).toUpperCase()};
+function kbRows(){const v=({'#bestiaire':'bestiaire','#regles':'regles','#fiche':'fiche','#monde':'monde'})[location.hash]||'carte',r={1:[],2:[],3:[]};
+ if(v==='carte'){r[1]=[...document.querySelectorAll('#tools button')];r[2]=[...document.querySelectorAll('#biomes button[data-b]')];r[3]=['gen','rot','zfit','zout','zin','undo'].map(id=>$(id))}
+ else if(v==='monde'){r[1]=[...document.querySelectorAll('#w_layers input')];r[2]=['w_fit','w_zout','w_zin','w_goparty'].map(id=>$(id)).filter(Boolean)}
+ else if(v==='regles'){const b=[...document.querySelectorAll('#toc button')];r[1]=b.slice(0,10);r[2]=b.slice(10,19)}
+ else if(v==='bestiaire'){r[1]=['q','ft','fh','fmin','fma'].map(id=>$(id)).filter(Boolean)}
+ else if(v==='fiche'){r[1]=['c_back','c_short','c_long','c_xp'].map(id=>$(id)).filter(Boolean)}
+ return r}
+function kbHints(){for(const e of document.querySelectorAll('[data-kb]'))e.removeAttribute('data-kb');
+ document.querySelectorAll('.tabs a').forEach((a,i)=>a.setAttribute('data-kb',klab('Digit'+(i+1))));
+ const r=kbRows();[[1,KROW1],[2,KROW2],[3,KROW3]].forEach(([n,codes])=>r[n].forEach((el,i)=>{if(el&&codes[i]){const tgt=el.tagName==='INPUT'&&el.type==='checkbox'?el.closest('label')||el:el;tgt.setAttribute('data-kb',klab(codes[i]))}}))}
+document.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;if(e.target.closest&&e.target.closest('input,textarea,select,[contenteditable]'))return;
+ const c=e.code,dm=/^Digit([1-5])$/.exec(c);
+ if(dm&&!e.shiftKey){const a=document.querySelectorAll('.tabs a')[+dm[1]-1];if(a){e.preventDefault();location.hash=a.getAttribute('href')}return}
+ const r=kbRows();for(const[n,codes]of[[1,KROW1],[2,KROW2],[3,KROW3]]){const i=codes.indexOf(c);if(i<0)continue;const el=r[n][i];if(!el)return;e.preventDefault();e.stopImmediatePropagation();
+  if(el.tagName==='INPUT'&&el.type==='checkbox'){el.checked=!el.checked;el.dispatchEvent(new Event('change',{bubbles:true}))}else if(el.tagName==='INPUT'||el.tagName==='SELECT')el.focus();else el.click();return}},true);
+window.addEventListener('hashchange',()=>setTimeout(kbHints));setTimeout(kbHints,50);
+
 legend();layout();
 }
 </script>
