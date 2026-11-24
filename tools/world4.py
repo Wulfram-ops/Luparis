@@ -15,8 +15,11 @@ BC={1:'#ead7a0',2:'#d9d3a6',3:'#dcdaa0',4:'#d3dea6',5:'#b4d095',6:'#b2cc95',7:'#
 FOREST={5,6,7,8};CONIF={9}
 SKY=bxy('Skyhills')
 def dist(c,q): return math.hypot(c['p'][0]-q[0],c['p'][1]-q[1])
+SNOWX={22};SNOWF={3}
+BURG_MOVE={'Ende':22}
 def snowy(c):
     s=c['state'];x,y=c['p']
+    if c['i'] in SNOWX or c['f'] in SNOWF: return 'snow'
     if s==S_KES: return 'nw' if (x-424)/203+(y-231)/172<0.85 else 'tundra'
     if s==S_NIV or (s==S_KET and y<179): return 'snow'
     return None
@@ -124,8 +127,8 @@ v=max(cand,key=lambda c:c['h']);VOL=(v['p'][0]+4,v['p'][1]-4)
 PYR={}
 for st in (S_ITZ,S_XAL):
     cb=p['burgs'][p['states'][st]['capital']];PYR[cb['name']]=(cb['x']+9,cb['y']+3)
-des=[c for c in cells if land(c) and c['state']==S_DES];pc=max(des,key=lambda c:c['p'][1]+c['p'][0]);POR=tuple(pc['p'])
-burgcells={b['cell'] for b in p['burgs'][1:] if b and 'cell' in b}
+POR=(890.0,758.0)
+burgcells={b['cell'] for b in p['burgs'][1:] if b and 'cell' in b}|set(BURG_MOVE.values())
 avoid=[(TREE,30),(VOL,34),(POR,12)]+[(q,14) for q in PYR.values()]
 # stamps
 rng=random.Random(SEED)
@@ -242,6 +245,8 @@ for b in p['burgs'][1:]:
     cap=b.get('capital',0);city=b.get('group')=='cities' or cap;nm=RENAME.get(b['name'],b['name'])
     e={'i':b['i'],'n':nm,'x':round(b['x'],1),'y':round(b['y'],1),'c':'cap' if cap else ('city' if city else 'town'),'s':STATE_RENAME.get(st.get(b.get('state',0),{}).get('name',''),st.get(b.get('state',0),{}).get('name','')),
        'pop':round(b.get('population',0)*1000),'ft':''.join(k[0] for k in ('citadel','walls','plaza','temple','shanty') if b.get(k)),'port':1 if b.get('port') else 0,'river':1 if cells[b['cell']].get('r') else 0,'seed':SEED+b['i']}
+    if b['name'] in BURG_MOVE:
+        mc=cells[BURG_MOVE[b['name']]];sn=st.get(mc['state'],{}).get('name','');e.update(x=round(mc['p'][0],1),y=round(mc['p'][1],1)+2,s=STATE_RENAME.get(sn,sn))
     if b['name']=='Vardrassil': e.update(lm='tree',x=round(TREE[0],1),y=round(TREE[1],1),lh=40)
     if b['name'] in PYR: e.update(lm='pyr',x=round(PYR[b['name']][0],1),y=round(PYR[b['name']][1],1),lh=19)
     B.append(e)
