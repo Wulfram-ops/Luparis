@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Luparis — Tactical Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Cinzel:wght@600&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+/* VOICE: atelier de MJ, calme et pratique, on improvise en pleine partie
+   IDEA: un plateau qu'on sculpte du doigt, comme le mode tactique de Dofus, habillé par biome
+   PICTURE: le plateau isométrique lui-même, en grand, dès l'ouverture
+   COLOUR and TYPE: le biome colore le plateau ; l'interface reste sobre, accent cuivre ; Cinzel + Alegreya Sans
+   LAYOUT: titre discret, barres d'outils et de décor, plateau plein cadre, aide en bas */
+:root{color-scheme:light dark;
+--bg:light-dark(#eef0e6,#15181a);--ink:light-dark(#22261f,#e6e8e0);--muted:light-dark(#5c6355,#9aa194);
+--panel:light-dark(#ffffff,#1f2427);--line:light-dark(#cfd4c4,#343b3f);--acc:#c0703a;--acc2:light-dark(#8a4a22,#e09a64)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Alegreya Sans",system-ui,sans-serif;overflow-x:clip}
+header{padding:18px max(4vw,16px) 6px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+h1{font:600 clamp(22px,3vw,32px)/1.05 Cinzel,serif;margin:0}
+header p{margin:0;color:var(--muted);font-size:15px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;padding:6px max(4vw,16px);align-items:center}
+.grp{display:flex;flex-wrap:wrap;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px}
+.grp>span{font-size:14px;color:var(--muted);align-self:center;padding:0 6px 0 8px}
+button{font:500 15px "Alegreya Sans",sans-serif;min-height:40px;padding:0 12px;border-radius:9px;border:0;background:transparent;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+button:hover{background:color-mix(in oklab,var(--acc) 14%,transparent)}
+button[aria-pressed=true]{background:var(--acc);color:#fff}
+button:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+.dot{width:14px;height:14px;border-radius:4px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+label{font-size:15px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:0 8px}
+input[type=range]{width:96px;accent-color:var(--acc)}
+.ctxbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px max(2vw,8px) 0;padding:8px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}.ctxbar b{margin-right:auto}.ctxbar[hidden]{display:none}
+.mks{list-style:none;margin:6px 0 0;padding:0}.mks li{display:grid;grid-template-columns:28px 1fr 36px;gap:6px;align-items:center;margin-bottom:6px}.mks .n{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#7a3fb0;color:#fff;font-weight:700;font-size:13px}.mks input{min-height:36px}.mks li.sel input{outline:2px solid #7a3fb0}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.scn select{min-height:40px}
+.stage{user-select:none;-webkit-user-select:none;position:relative;margin:6px max(2vw,8px) 0;height:min(72vh,760px);min-height:380px;border-radius:16px;overflow:hidden;transition:background .4s}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+#info{position:absolute;left:12px;bottom:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:14px;pointer-events:none}
+.help{padding:14px max(4vw,16px) 28px;color:var(--muted);font-size:15px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:6px 24px}
+.help b{color:var(--ink)}
+#legend{display:flex;flex-wrap:wrap;gap:4px 12px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+.prefs{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}.prefs button{min-height:36px}
+.tabs{display:flex;gap:6px;padding:4px max(4vw,16px) 6px}
+.tabs a{font:600 15px "Alegreya Sans",sans-serif;color:var(--ink);text-decoration:none;padding:8px 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel);min-height:40px;display:inline-flex;align-items:center}
+.tabs a[aria-current=page]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabs a:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
+.view[hidden]{display:none}
+.scroll{overflow-x:auto;max-width:100%}
+.band{padding:8px max(4vw,16px) 32px}
+.bhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+h2{font:600 clamp(20px,2.4vw,28px)/1.1 Cinzel,serif;margin:6px 0}
+.small{color:var(--muted);font-size:14px}
+.bfil{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:10px 0 14px}
+.bfil label,.mf label{flex-direction:column;align-items:stretch;gap:3px;padding:0;font-size:14px}
+input,select,textarea{font:16px "Alegreya Sans",sans-serif;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-height:42px;width:100%}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+table{border-collapse:collapse;width:100%;font-size:15px;background:var(--panel);border-radius:12px;overflow:hidden}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td .acts{display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap}
+td button{min-height:36px;padding:0 10px;border:1px solid var(--line)}
+td button.go{background:var(--acc);color:#fff;border-color:var(--acc)}
+.tag{display:inline-block;font-size:13px;padding:1px 8px;border-radius:20px;background:color-mix(in oklab,var(--acc) 14%,transparent);margin:1px 2px 1px 0;white-space:nowrap}
+details{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:center}
+.mf{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:10px}
+.mf .wide{grid-column:1/-1}
+.habs{display:flex;flex-wrap:wrap;gap:4px 12px}.habs label{flex-direction:row;align-items:center;gap:6px;font-size:15px}
+.habs input{width:auto;min-height:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row button{border:1px solid var(--line)}
+.row button.go{background:var(--acc);color:#fff;border-color:var(--acc)}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+.book{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;padding:8px max(4vw,16px) 40px;max-width:1240px}
+@media(min-width:900px){.book{grid-template-columns:230px minmax(0,1fr)}.toc{position:sticky;top:12px;align-self:start}}
+.toc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px}
+.toc button{display:flex;width:100%;text-align:left;justify-content:flex-start;min-height:36px;font-size:15px}
+.toc .vtag{font-size:13px;color:var(--muted);padding:4px 12px 8px}
+.page{background:light-dark(#fbf8f0,#1d2124);border:1px solid var(--line);border-radius:16px;padding:clamp(20px,4vw,48px);max-width:820px;box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.page h2{font:600 clamp(22px,2.6vw,30px)/1.15 Cinzel,serif;margin:36px 0 10px;padding-bottom:8px;border-bottom:2px solid var(--acc);scroll-margin-top:16px}
+.page h2:first-of-type{margin-top:10px}
+.page h3{font:600 19px/1.2 Cinzel,serif;margin:22px 0 6px}
+.page p,.page li{max-width:68ch}
+.page .lead{font-size:18px}
+.page table{margin:10px 0 14px;font-size:15px}
+.page .ex{border-left:3px solid var(--acc);padding:6px 12px;background:color-mix(in oklab,var(--acc) 8%,transparent);border-radius:0 8px 8px 0}
+.page .note{color:var(--muted);font-size:15px}
+.page .todo{color:var(--muted);font-style:italic}
+.sheet{max-width:1240px}
+.shead{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}
+.shead label{display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:0;font-size:14px}
+.shead .nm input{font:600 20px Cinzel,serif}
+.sum{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pill{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:15px;white-space:nowrap}
+.pill b{font-variant-numeric:tabular-nums}.pill.bad{border-color:#c0392b;color:#c0392b}
+.sgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-top:8px}
+@media(min-width:900px){.sgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.scol{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card h3{font:600 18px/1.2 Cinzel,serif;margin:0 0 10px}
+.card label{display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:0;font-size:14px}
+.lockn{font-size:13px;color:var(--muted);margin:-4px 0 6px}
+.mx{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr));gap:6px;align-items:center}
+.mx .hd{font-size:13px;color:var(--muted);text-align:center}
+.mx .rh{font-size:14px;font-weight:600;padding-right:4px}
+.cell{border:1px solid var(--line);border-radius:10px;padding:6px 4px;text-align:center}
+.cell .v{font:700 20px/1.1 "Alegreya Sans",sans-serif;font-variant-numeric:tabular-nums}
+.cell .c{font-size:12px;color:var(--muted);min-height:16px}
+.step{display:flex;justify-content:center;gap:4px}
+.step button{min-height:32px;min-width:32px;padding:0;border:1px solid var(--line);font-size:18px}
+.step button:disabled{opacity:.35;cursor:default}
+.step button,.pips button,.trk .ctl button,.atk .ab button{justify-content:center}
+.seg{display:flex;flex-wrap:wrap;gap:6px}.seg button{border:1px solid var(--line)}
+.seg button small{color:inherit;opacity:.8;margin-left:4px}
+.tiers .tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.tiers .tr:last-child{border-bottom:0}
+.tiers .tn{font-weight:600}.tiers .ti{font-size:13px;color:var(--muted)}
+.pips{display:flex;gap:3px;align-items:center}
+.pips button{min-height:30px;min-width:30px;padding:0;border:1px solid var(--line);font-size:14px;font-weight:700}
+.pips button[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
+.pips button:disabled{opacity:.3;cursor:not-allowed}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin-top:10px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.stat .k{font-size:12px;color:var(--muted)}.stat .v{font:700 22px/1.1 "Alegreya Sans",sans-serif;font-variant-numeric:tabular-nums}
+.trk{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:6px 0}
+.trk .bar2{height:10px;border-radius:6px;background:color-mix(in oklab,var(--ink) 12%,transparent);overflow:hidden;margin-top:4px}
+.trk .bar2 i{display:block;height:100%;background:var(--acc)}
+.trk .bar2.hp i{background:#c0392b}.trk .bar2.mn i{background:#3d6fb0}
+.trk .ctl{display:flex;gap:4px;align-items:center}.trk .ctl button{min-height:34px;min-width:34px;padding:0;border:1px solid var(--line);font-size:18px}
+.trk .num{font-variant-numeric:tabular-nums;min-width:52px;text-align:center;font-weight:700}
+.atk{border-top:1px solid var(--line);padding:10px 0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center}
+.atk:first-child{border-top:0}
+.atk .an{font-weight:700}.atk .ad{font-size:14px;color:var(--muted)}
+.atk .ab{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.atk .ab button{border:1px solid var(--line);min-height:36px}
+.atk .ab button.go{background:var(--acc);color:#fff;border-color:var(--acc)}
+.tgt{max-width:200px;margin-bottom:6px}
+.log{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto}
+.log li{padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
+.log li:first-child{font-weight:600}
+.log .ok{color:#2e7d32}.log .ko{color:#c0392b}.log .cr{color:var(--acc2)}
+.mapwrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:6px max(2vw,8px) 0}
+.mapwrap .stage{margin:0}
+@media(min-width:1000px){.mapwrap{grid-template-columns:minmax(0,1fr) 290px}}
+.side{display:flex;flex-direction:column;gap:12px}
+.side .card{padding:12px 14px}.side label{margin-bottom:8px}
+.ini{list-style:none;margin:8px 0 0;padding:0}
+.ini li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:6px;align-items:center;padding:6px 8px;border-radius:9px;border:1px solid transparent}
+.ini li.cur{border-color:var(--acc);background:color-mix(in oklab,var(--acc) 12%,transparent)}
+.ini .iv{width:44px;min-height:34px;padding:4px;text-align:center}
+.ini .inm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ini .ally{color:#2b5c9c}.ini .foe{color:#9c2f25}
+.ini button{min-height:32px;min-width:32px;padding:0;justify-content:center;border:1px solid var(--line)}
+.sbar{margin-bottom:8px}.sbar button{border:1px solid var(--line)}
+.camp{margin:18px 0 8px;font:600 20px/1.2 Cinzel,serif}
+.ccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.cc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.cc .cn{font:600 19px/1.2 Cinzel,serif}.cc .cs{font-size:14px;color:var(--muted)}
+.cc button{align-self:flex-start;border:1px solid var(--line)}
+.newc{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.newc label{display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:0;font-size:14px}
+.aiprev{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.cheat{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px;margin:8px 0 10px}
+.ch{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--panel)}.ch.wide{grid-column:1/-1}
+.ch h4{margin:0 0 6px;font:600 16px/1.2 Cinzel,serif;color:var(--acc2)}.ch p{margin:0 0 6px;font-size:15px}
+.cond{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 14px;margin:0;align-items:baseline}
+.cond dt{font-weight:700;font-size:15px}.cond dd{margin:0;font-size:14px;color:var(--muted)}
+.pres{display:flex;flex-direction:column;gap:4px;margin:-2px 0 8px}.pres button{justify-content:space-between;border:1px solid var(--line);min-height:36px;text-align:left}
+.pres button small{color:var(--muted)}
+#tk_panel .stats{margin-top:6px}#tk_panel .tline{font-size:14px;margin:4px 0}#tk_panel .tno{font-size:14px;color:var(--muted);white-space:pre-wrap;margin:6px 0}
+.wstage{position:relative;height:min(74vh,800px);min-height:380px;border-radius:16px;overflow:hidden;background:#6aa0bf;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.wstage.tool{cursor:crosshair}#w_svg svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.winfo{position:absolute;left:22px;bottom:22px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:14px;pointer-events:none;max-width:calc(100% - 24px)}
+#w_svg text{font-family:"IM Fell English",Georgia,serif;fill:#2a211a;paint-order:stroke;stroke:rgba(246,239,220,.9);stroke-width:2.6px;stroke-linejoin:round}
+.wframe{position:absolute;inset:0;pointer-events:none;border-radius:16px;box-shadow:inset 0 0 0 7px #efe3c4,inset 0 0 0 8.5px #2a211a,inset 0 0 0 11px #efe3c4,inset 0 0 0 12px #2a211a,inset 0 0 40px rgba(60,40,10,.25)}
+.compass{position:absolute;right:22px;top:22px;width:70px;height:70px;pointer-events:none;font-family:"IM Fell English",Georgia,serif}
+.wscale{position:absolute;right:22px;bottom:22px;background:rgba(239,227,196,.92);border:1px solid #2a211a;border-radius:4px;padding:4px 8px;font:14px "IM Fell English",Georgia,serif;color:#2a211a;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.wscale .sb{height:6px;border:1px solid #2a211a;background:repeating-linear-gradient(90deg,#2a211a 0 25%,#efe3c4 25% 50%)}
+#w_svg .bg text{font-size:12px;text-anchor:middle}#w_svg .bg.cap text{font-weight:700;font-size:13px}
+#w_svg .sl{font-family:"IM Fell English SC","IM Fell English",Georgia,serif;text-anchor:middle;fill:#5a3a24;letter-spacing:.14em;opacity:.8;pointer-events:none;stroke-width:3px}
+#w_svg .bg,#w_svg .mk{cursor:pointer}#w_svg svg.hide-towns .bg.town text{display:none}#w_svg svg.hide-cities .bg.city text{display:none}#w_svg svg.hide-caps .bg.cap text{display:none}#w_svg svg.hide-townicons .bg.town{display:none}#w_svg svg.hide-cityicons .bg.city{display:none}
+#w_svg svg.ly-off-states .ly-states,#w_svg svg.ly-off-routes .ly-routes,#w_svg svg.ly-off-rivers .ly-rivers,#w_svg svg.ly-off-burgs .ly-burgs,#w_svg svg.ly-off-markers .ly-markers{display:none}
+.chk{flex-direction:row!important;align-items:center;gap:6px;font-size:15px;color:var(--ink);padding:0 8px;min-height:40px}.chk input{width:auto;min-height:0}
+.btn{display:inline-flex;align-items:center;min-height:40px;padding:0 12px;border-radius:9px;border:1px solid var(--line);color:var(--ink);text-decoration:none;font:500 15px "Alegreya Sans",sans-serif}.btn.go{background:var(--acc);color:#fff;border-color:var(--acc)}
+#w_sel textarea{font-size:15px}
+.pins{list-style:none;margin:0;padding:0}.pins li{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1fr) auto auto;gap:4px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.pins li:last-child{border-bottom:0}.pins input{min-height:36px;padding:4px 8px}.pins button{min-height:36px;min-width:36px;padding:0 8px;border:1px solid var(--line);justify-content:center}
+@media(max-width:600px){.stage{height:62vh}#info{font-size:13px}table{font-size:14px}}
+@media(prefers-reduced-motion:reduce){.stage{transition:none}}
+</style>
+</head>
+<body>
+<header><h1 data-i18n="title"></h1><p data-i18n="sub"></p>
+ <div class="prefs"><div class="grp" id="langs"><button data-lang="en">English</button><button data-lang="fr">Français</button></div><div class="grp" id="units"><button data-u="ft" data-i18n="u_ft"></button><button data-u="m" data-i18n="u_m"></button></div></div></header>
+<nav class="tabs"><a href="#monde" data-v="monde" data-i18n="tab_world"></a><a href="#carte" data-v="carte" data-i18n="tab_map"></a><a href="#fiche" data-v="fiche" data-i18n="tab_sheet"></a><a href="#bestiaire" data-v="bestiaire" data-i18n="tab_best"></a><a href="#regles" data-v="regles" data-i18n="tab_rules"></a></nav>
+<section id="v-monde" class="view" hidden>
+<div class="bar">
+  <div class="grp" id="w_tools"><button data-w="pan" aria-pressed="true" data-i18n="w_pan"></button><button data-w="party" data-i18n="w_party"></button><button data-w="pin" data-i18n="w_pin"></button><button data-w="meas" data-i18n="w_meas"></button><button data-w="edit" data-i18n="w_edit"></button></div>
+  <div class="grp"><button id="w_zin" aria-label="Zoom +">+</button><button id="w_zout" aria-label="Zoom −">−</button><button id="w_fit" data-i18n="w_fit"></button><button id="w_goparty" data-i18n="w_goparty"></button></div>
+  <div class="grp" id="w_layers"><span data-i18n="w_layers"></span>
+    <label class="chk"><input type="checkbox" data-ly="states"><span data-i18n="w_l_states"></span></label><label class="chk"><input type="checkbox" data-ly="routes" checked><span data-i18n="w_l_routes"></span></label>
+    <label class="chk"><input type="checkbox" data-ly="rivers" checked><span data-i18n="w_l_rivers"></span></label><label class="chk"><input type="checkbox" data-ly="burgs" checked><span data-i18n="w_l_burgs"></span></label></div>
+</div>
+<div class="mapwrap"><div class="wstage" id="w_stage"><div id="w_svg"></div><div class="wframe" aria-hidden="true"></div>
+<svg class="compass" viewBox="-30 -30 60 60" aria-hidden="true"><circle r="13" fill="none" stroke="#2a211a" stroke-width="1"/><path d="M0,-26 L4,-4 L0,0Z" fill="#2a211a"/><path d="M0,-26 L-4,-4 L0,0Z" fill="#f6efdc" stroke="#2a211a" stroke-width=".6"/><path d="M0,26 L4,4 L0,0Z" fill="#f6efdc" stroke="#2a211a" stroke-width=".6"/><path d="M0,26 L-4,4 L0,0Z" fill="#2a211a"/><path d="M-26,0 L-4,-4 L0,0Z" fill="#2a211a"/><path d="M-26,0 L-4,4 L0,0Z" fill="#f6efdc" stroke="#2a211a" stroke-width=".6"/><path d="M26,0 L4,4 L0,0Z" fill="#2a211a"/><path d="M26,0 L4,-4 L0,0Z" fill="#f6efdc" stroke="#2a211a" stroke-width=".6"/><text y="-27" text-anchor="middle" font-size="9" fill="#2a211a">N</text></svg>
+<div class="wscale" id="w_scale"></div><div id="w_info" class="winfo"></div></div>
+<aside class="side">
+  <section class="card"><h3 data-i18n="w_find"></h3><label><span class="small" data-i18n="w_find_hint"></span><input id="w_q" type="search" autocomplete="off" data-i18n-ph="w_find_ph"></label><div class="pres" id="w_res"></div></section>
+  <section class="card" id="w_sel" hidden></section>
+  <section class="card"><h3 data-i18n="w_pins"></h3><ul class="pins" id="w_pins"></ul><p class="small" data-i18n="w_pins_hint"></p></section>
+</aside></div>
+<p class="small band" style="padding-top:8px" data-i18n="w_note"></p>
+</section>
+<section id="v-carte" class="view">
+<div class="bar">
+  <div class="grp" id="tools">
+    <button data-t="up" aria-pressed="false" data-i18n="t_up"></button>
+    <button data-t="down" data-i18n="t_down"></button>
+    <button data-t="flat" data-i18n="t_flat"></button>
+    <button data-t="move" aria-pressed="true" data-i18n="t_move"></button>
+    <button data-t="measure" data-i18n="t_measure"></button>
+    <button data-t="mark" data-i18n="t_mark"></button>
+  </div>
+  <div class="grp">
+    <button id="rot" data-i18n="rot"></button>
+    <button id="undo" data-i18n="undo"></button>
+    <label class="scn"><span class="vh" data-i18n="scene"></span><select id="scene"></select></label><button id="gen" data-i18n="gen"></button>
+    <button id="clear" data-i18n="clear"></button>
+  </div>
+  <div class="grp"><label for="size"><span data-i18n="size"></span> <input id="size" type="range" min="8" max="24" value="14"> <span id="sv">14</span></label></div>
+</div>
+<div class="ctxbar" id="ctxbar" hidden></div>
+<div class="bar"><div class="grp" id="biomes"><span data-i18n="decor"></span></div></div>
+<div class="mapwrap"><div class="stage" id="stage"><canvas id="cv"></canvas><div id="info"></div></div>
+<aside class="side">
+  <section class="card" id="tk_panel" hidden></section>
+  <section class="card"><h3 data-i18n="pl_title"></h3>
+    <label><span data-i18n="pl_search"></span><input id="pl_q" type="search" autocomplete="off" data-i18n-ph="pl_search_ph"></label><div class="pres" id="pl_res"></div>
+    <label><span data-i18n="pl_ally"></span><select id="pl_ally"></select></label>
+    <label><span data-i18n="pl_foe"></span><select id="pl_foe"></select></label>
+    <p class="small" data-i18n="pl_hint"></p></section>
+  <section class="card" id="mk_card"><h3 data-i18n="mk_title"></h3><ol class="mks" id="mk_list"></ol><p class="small" data-i18n="mk_hint"></p></section>
+  <section class="card"><h3 data-i18n="in_title"></h3>
+    <div class="row"><button type="button" class="go" id="in_roll" data-i18n="in_roll"></button><button type="button" id="in_next" data-i18n="in_next"></button><button type="button" id="in_end" data-i18n="in_end"></button></div>
+    <p class="small" id="in_round"></p><ol class="ini" id="in_list"></ol></section>
+</aside></div>
+<div class="help">
+  <div data-i18n-html="h_click"></div>
+  <div data-i18n-html="h_keys"></div>
+  <div data-i18n-html="h_meas"></div>
+  <div id="legend"></div>
+  <div data-i18n-html="h_heights"></div>
+</div>
+</section>
+<section id="v-bestiaire" class="view" hidden>
+<div class="band">
+  <div class="bhead"><h2 data-i18n="tab_best"></h2><span class="small" id="bcount"></span></div>
+  <div class="bfil">
+    <label><span data-i18n="f_search"></span> <input id="q" type="search" data-i18n-ph="f_search_ph"></label>
+    <label><span data-i18n="f_type"></span> <select id="ft"></select></label>
+    <label><span data-i18n="f_hab"></span> <select id="fh"></select></label>
+    <label><span data-i18n="f_min"></span> <select id="fmin"></select></label>
+    <label><span data-i18n="f_max"></span> <select id="fmax"></select></label>
+    <label><span data-i18n="f_sort"></span> <select id="fs"></select></label>
+  </div>
+  <div class="scroll"><table id="bt"><thead><tr><th data-i18n="c_name"></th><th data-i18n="f_type"></th><th class="r" data-i18n="c_cr"></th><th data-i18n="f_hab"></th><th class="r" data-i18n="c_esq"></th><th class="r" data-i18n="c_thr"></th><th class="r" data-i18n="c_box"></th><th class="r" data-i18n="c_act"></th></tr></thead><tbody></tbody></table></div>
+  <p class="small" data-i18n="b_note"></p>
+  <details id="aibox" hidden><summary data-i18n="ai_sum"></summary>
+    <p class="small" data-i18n="ai_note"></p>
+    <textarea id="ai_q" rows="3" data-i18n-ph="ai_ph"></textarea>
+    <div class="row" style="margin-top:8px"><button class="go" type="button" id="ai_go" data-i18n="ai_go"></button><span class="small" id="ai_msg" aria-live="polite"></span></div>
+    <div id="ai_out"></div>
+  </details>
+  <details id="addbox"><summary id="addsum"></summary>
+    <form class="mf" id="mf">
+      <input type="hidden" id="mid">
+      <label><span data-i18n="c_name"></span> <input id="mn" required></label>
+      <label><span data-i18n="f_type"></span> <input id="mty" list="types" required></label>
+      <label><span data-i18n="c_cr"></span> <select id="mfp"></select></label>
+      <label><span data-i18n="m_sz"></span> <select id="msz"></select></label>
+      <label><span data-i18n="m_ac"></span> <input id="mca" type="number" min="1" max="30" value="12" required></label>
+      <label><span data-i18n="m_hp"></span> <input id="mpv" type="number" min="1" max="999" value="10" required></label>
+      <label><span data-i18n="m_init"></span> <input id="min" type="number" min="-5" max="15" value="0"></label>
+      <div class="wide"><span class="small" data-i18n="m_habs"></span><div class="habs" id="mhab"></div></div>
+      <label class="wide"><span data-i18n="m_notes"></span> <textarea id="mno" rows="2" data-i18n-ph="m_notes_ph"></textarea></label>
+      <div class="row wide"><button class="go" type="submit" data-i18n="save"></button><button type="button" id="mcancel" data-i18n="cancel"></button><span class="small" id="mprev"></span></div>
+    </form>
+    <datalist id="types"></datalist>
+  </details>
+  <details><summary data-i18n="io_sum"></summary>
+    <p class="small" data-i18n="io_note"></p>
+    <div class="row"><button id="exp" type="button" data-i18n="exp"></button><button id="impb" type="button" data-i18n="impb"></button><button id="reset" type="button" data-i18n="reset"></button><span class="small" id="impmsg"></span></div>
+    <textarea id="imp" rows="4" style="margin-top:8px" data-i18n-ph="imp_ph"></textarea>
+  </details>
+</div>
+</section>
+<section id="v-fiche" class="view" hidden>
+<div class="band sheet"><div id="c_listv"></div><div id="c_sheetv">
+  <div class="row sbar"><button type="button" id="c_back" data-i18n="sk_back"></button></div>
+  <div class="shead">
+    <label class="nm"><span data-i18n="sk_name"></span><input id="c_name" autocomplete="off"></label>
+    <label><span data-i18n="sk_people"></span><input id="c_people" autocomplete="off"></label>
+    <label><span data-i18n="sk_camp"></span><input id="c_camp" list="c_camps" autocomplete="off"></label>
+    <label class="xpin"><span data-i18n="sk_xp"></span><input id="c_xp" type="number" min="0" step="10"></label>
+    <div class="sum" id="c_sum" aria-live="polite"></div>
+  </div>
+  <p class="small" id="c_demo"></p>
+  <div class="sgrid">
+    <div class="scol">
+      <section class="card"><h3 data-i18n="sk_matrix"></h3><div id="c_mx"></div></section>
+      <section class="card"><h3 data-i18n="sk_dv"></h3><div class="seg" id="c_dv"></div></section>
+      <section class="card"><h3 data-i18n="sk_schools"></h3><div id="c_sch" class="tiers"></div></section>
+      <section class="card"><h3 data-i18n="sk_fams"></h3><div id="c_fam" class="tiers"></div></section>
+    </div>
+    <div class="scol">
+      <section class="card"><h3 data-i18n="sk_def"></h3>
+        <div class="two"><label><span data-i18n="sk_armor"></span><select id="c_armor"></select></label><label><span data-i18n="sk_shield"></span><select id="c_shield"></select></label></div>
+        <div class="stats" id="c_def"></div></section>
+      <section class="card"><h3 data-i18n="sk_res"></h3><div id="c_trk"></div>
+        <div class="row"><button type="button" id="c_short" data-i18n="sk_short"></button><button type="button" id="c_long" data-i18n="sk_long"></button></div></section>
+      <section class="card"><h3 data-i18n="sk_atk"></h3>
+        <label class="tgt"><span data-i18n="sk_target"></span><input id="c_tgt" type="number" min="0" max="40" placeholder="—"></label>
+        <div id="c_atk"></div>
+        <details><summary data-i18n="sk_addw"></summary><form id="c_wf" class="two">
+          <label><span data-i18n="sk_wname"></span><input id="c_wn" required></label>
+          <label><span data-i18n="sk_fam"></span><select id="c_wfam"></select></label>
+          <label><span data-i18n="sk_size"></span><select id="c_wsz"></select></label>
+          <div class="row"><button class="go" type="submit" data-i18n="sk_add"></button></div></form></details>
+      </section>
+      <section class="card"><h3 data-i18n="sk_log"></h3><ol id="c_log" class="log" aria-live="polite"></ol></section>
+    </div>
+  </div>
+  <section class="card"><label><span data-i18n="sk_notes"></span><textarea id="c_notes" rows="3"></textarea></label></section>
+  <details><summary data-i18n="sk_io"></summary>
+    <p class="small" data-i18n="sk_costs"></p>
+    <div class="row"><button type="button" id="c_copy" data-i18n="sk_copy"></button><button type="button" id="c_imp" data-i18n="sk_import"></button><button type="button" id="c_del" data-i18n="sk_del"></button><span class="small" id="c_msg"></span></div>
+    <textarea id="c_paste" rows="3" style="margin-top:8px"></textarea>
+  </details>
+</div></div><datalist id="c_camps"></datalist>
+</section>
+<section id="v-regles" class="view" hidden>
+<div class="book"><nav class="toc" id="toc"></nav><article class="page" id="rbody"></article></div>
+</section>
+<template id="rules-en">
+<h2 id="r-aide">Cheat sheet</h2>
+<div class="cheat">
+<div class="ch"><h4>Attacks and DCs</h4><p><b>Attack</b>: d20 + mod + Mastery (Tier + 1) against Evasion. Natural 20: double the Mastery dice.</p><p><b>DC</b>: 8 + mod + Mastery. 10 easy, 15 medium, 20 hard, 25 very hard, 30 nearly impossible.</p><p><b>Save</b>: the threat sets the domain, the story sets the intent (Resilience by default).</p></div>
+<div class="ch"><h4>Damage and boxes</h4><p>Below Minor: 0 boxes, but 1 Stamina (wear). Minor to Major: 1. Major: 2. Severe: 3.</p><p>At 0 boxes: unconscious, death saves. Resistance and vulnerability apply before thresholds.</p></div>
+<div class="ch"><h4>Defense</h4><p><b>Evasion</b> = 10 + Physical Finesse (armor cap) + shield.</p><p><b>Parry</b> (reaction): the blow costs 1 box less. Each extra Parry in the round: 1 Stamina.</p></div>
+<div class="ch"><h4>Effects and maneuvers</h4><p>Total value ≤ Tier. Paid in Mana (spell) or Stamina (weapon).</p><p>1: heavy blow, offset, movement, light control, heal (per box). 2: heavy control, persistence, extra target (each). 3: major control, area or whirlwind (successful save = half), extra action.</p></div>
+<div class="ch"><h4>Rest</h4><p><b>Short (1 h)</b>: half the missing boxes and Mana, all Stamina.</p><p><b>Long (8 h)</b>: everything, and one less level of exhaustion.</p></div>
+<div class="ch"><h4>Distance and terrain</h4><p>1 tile = 5 ft (1.5 m), diagonals included; +5 ft per height level.</p><p>+1 half cover, +2 cover, +3 impassable; −1 difficult, −2 impassable.</p></div>
+<div class="ch wide"><h4>Conditions</h4><dl class="cond">
+<dt>Blinded</dt><dd>Disadvantage on its attacks, advantage against it.</dd><dt>Charmed</dt><dd>Can't attack the charmer.</dd><dt>Deafened</dt><dd>Can't hear.</dd>
+<dt>Exhaustion</dt><dd>−2 to d20s and −5 ft per level; death at 6.</dd><dt>Frightened</dt><dd>Disadvantage while it sees the source; can't approach it.</dd><dt>Grappled</dt><dd>Speed 0.</dd>
+<dt>Incapacitated</dt><dd>No actions or reactions, so no Parry.</dd><dt>Invisible</dt><dd>Advantage on its attacks, disadvantage against it.</dd><dt>Paralyzed</dt><dd>Incapacitated; a melee hit is a critical.</dd>
+<dt>Petrified</dt><dd>Incapacitated, resistance to all damage.</dd><dt>Poisoned</dt><dd>Disadvantage on attacks and checks.</dd><dt>Prone</dt><dd>Crawls; disadvantage on its attacks; advantage on melee against it.</dd>
+<dt>Restrained</dt><dd>Speed 0; disadvantage on attacks and Physical saves; advantage against it.</dd><dt>Stunned</dt><dd>Incapacitated, fails Physical saves; advantage against it.</dd><dt>Unconscious</dt><dd>Incapacitated, prone; a melee hit is a critical.</dd></dl></div>
+</div>
+<p class="lead">Luparis plays with the D&D 5.5 rules. This book only describes what changes. Anything not written here stays the D&D rule.</p>
+<h2 id="r-matrice">1. The Matrix of Intents</h2>
+<p>The six D&D ability scores are replaced by nine cells: an intent (Power, Finesse, Resilience) applied to a domain (Physical, Mental, Social). Always name the intent with its domain: Physical Finesse, Mental Resilience. Each cell has a modifier, like a D&D ability. The context of the action picks the cell, never the school of magic.</p>
+<table><thead><tr><th></th><th>Physical</th><th>Mental</th><th>Social</th></tr></thead><tbody>
+<tr><th>Power</th><td>Strength</td><td>Intellect, offensive spells</td><td>Authority, intimidation</td></tr>
+<tr><th>Finesse</th><td>Dexterity, Evasion</td><td>Perception, subtle spells</td><td>Persuasion, deception</td></tr>
+<tr><th>Resilience</th><td>Constitution: thresholds, Stamina</td><td>Willpower: Mana, resisting magic</td><td>Composure: resisting influence</td></tr></tbody></table>
+<p class="ex">Example: an Aegis mage who projects an imposing aura during a negotiation uses Social Power. If they forge a hammer of light to strike, they use Mental Power.</p>
+<h2 id="r-perso">2. The character</h2>
+<p>There are no classes. Each character spends XP on the schools of magic, weapon masteries and matrix cells they want. Their stats tell their life story, whatever their people: no race gives a bonus.</p>
+<p>Everyone starts with a d6 hit die, then buys d8, d10 and d12 with XP.</p>
+<h3>XP costs (draft v0.1)</h3>
+<p>Level equals XP earned divided by 100: 150 XP to create a level 1 character, 600 for level 6. The Character tab does all the math.</p>
+<table><thead><tr><th>Purchase</th><th>Cost of each step</th><th>Total</th></tr></thead><tbody>
+<tr><td>Matrix cell, +1 to +5</td><td>5, 10, 15, 20, 25</td><td>75</td></tr>
+<tr><td>Tier in a school or weapon family, 1 to 5</td><td>20, 40, 80, 120, 160</td><td>420</td></tr>
+<tr><td>Hit die d8, d10, d12</td><td>30, 40, 50</td><td>120</td></tr></tbody></table>
+<p><b>Tier gates:</b> Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17, like D&D's major tiers.</p>
+<h2 id="r-defense">3. Defense: Evasion and armor</h2>
+<p>Armor Class is gone. The attacker rolls d20 + bonus against the target's <b>Evasion</b>. On a hit, <b>armor</b> decides how much the blow costs.</p>
+<p><b>Evasion = 10 + Physical Finesse (capped by armor) + shield + other bonuses.</b></p>
+<p><b>Armor value = the armor's base AC in D&D − 10.</b> It sets the Minor threshold and adds to the Major and Severe thresholds.</p>
+<table><thead><tr><th>Armor</th><th>Category</th><th>Finesse in Evasion</th><th class="r">Value</th></tr></thead><tbody>
+<tr><td>None</td><td>—</td><td>full</td><td class="r">0</td></tr><tr><td>Leather</td><td>Light</td><td>full</td><td class="r">1</td></tr><tr><td>Studded leather</td><td>Light</td><td>full</td><td class="r">2</td></tr>
+<tr><td>Chain shirt</td><td>Medium</td><td>max +2</td><td class="r">3</td></tr><tr><td>Breastplate, scale mail</td><td>Medium</td><td>max +2</td><td class="r">4</td></tr><tr><td>Half plate</td><td>Medium</td><td>max +2</td><td class="r">5</td></tr>
+<tr><td>Chain mail</td><td>Heavy</td><td>none</td><td class="r">6</td></tr><tr><td>Splint</td><td>Heavy</td><td>none</td><td class="r">7</td></tr><tr><td>Plate</td><td>Heavy</td><td>none</td><td class="r">8</td></tr></tbody></table>
+<h3>Shields</h3>
+<p><b>Parry (reaction):</b> when you are hit, the blow costs one box less (2 becomes 1, 1 becomes 0). Once per round; each extra Parry costs 1 Stamina.</p>
+<table><thead><tr><th>Shield</th><th class="r">Evasion</th><th>Parry</th><th>Special</th></tr></thead><tbody>
+<tr><td>Buckler</td><td class="r">+0</td><td>Melee only</td><td>Hand almost free: you can cast or hold an item</td></tr>
+<tr><td>Small shield</td><td class="r">+1</td><td>Yes</td><td>Light, no drawback</td></tr>
+<tr><td>Heater shield</td><td class="r">+1</td><td>Yes, also against missiles</td><td>The standard shield</td></tr>
+<tr><td>Large shield</td><td class="r">+2</td><td>Yes + Intercept</td><td>Disadvantage on Stealth</td></tr>
+<tr><td>Tower shield</td><td class="r">+2</td><td>Yes + Intercept</td><td>Plant it (bonus action): cover for you and one ally behind; speed −10 ft (3 m) while carried</td></tr></tbody></table>
+<p><b>Intercept:</b> you can use your Parry to protect an adjacent ally instead.</p>
+<h2 id="r-vitalite">4. Damage and Vitality</h2>
+<p>There are no more hit points to subtract. Compare a blow's damage to the target's thresholds:</p>
+<table><thead><tr><th>Damage of the blow</th><th class="r">Boxes lost</th></tr></thead><tbody>
+<tr><td>Below the Minor threshold</td><td class="r">0 (but wear applies)</td></tr><tr><td>From Minor to Major</td><td class="r">1</td></tr><tr><td>Major or more</td><td class="r">2</td></tr><tr><td>Severe or more</td><td class="r">3</td></tr></tbody></table>
+<ul><li><b>Minor threshold</b> = armor value</li><li><b>Base</b> = maximum hit die value + level + Physical Resilience modifier</li><li><b>Major threshold</b> = Base + armor value</li><li><b>Severe threshold</b> = 2 × Base + armor value</li><li><b>Vitality boxes</b> = 1 + (level × hit die ÷ 12), rounded up</li></ul>
+<table><thead><tr><th>Level</th><th class="r">d6</th><th class="r">d8</th><th class="r">d10</th><th class="r">d12</th></tr></thead><tbody>
+<tr><td>1</td><td class="r">2</td><td class="r">2</td><td class="r">2</td><td class="r">2</td></tr><tr><td>5</td><td class="r">4</td><td class="r">5</td><td class="r">6</td><td class="r">6</td></tr><tr><td>10</td><td class="r">6</td><td class="r">8</td><td class="r">10</td><td class="r">11</td></tr><tr><td>20</td><td class="r">11</td><td class="r">15</td><td class="r">18</td><td class="r">21</td></tr></tbody></table>
+<p><b>Wear:</b> a blow stopped by armor costs no box, but it costs 1 Stamina. When Stamina is empty, each stopped blow costs a box. Nobody is invincible against numbers.</p>
+<p><b>At 0 boxes:</b> the character falls unconscious and makes death saving throws, as in D&D.</p>
+<p class="note">Calibration: at every level tested (1, 5 and 10), a character drops after as many attacks as in D&D, within 10%.</p>
+<h2 id="r-maitrise">5. Mastery and magic</h2>
+<p>Spells and weapons follow the same rule. Your <b>Mastery</b> in a school or a weapon is your Tier, from 1 to 5. It sets how many dice you roll; what you use sets the die type.</p>
+<ol><li><b>Basic attack, free.</b> Weapon: Mastery × weapon die + modifier. School's basic spell: Mastery × d8, no modifier.</li>
+<li><b>Effects.</b> Each effect is worth 1 to 5. The total costs that much Mana and cannot exceed your Tier in the school.</li>
+<li><b>Circumstances.</b> A bonus or a penalty changes Mastery by ±1: an inspiring ally, Rage, a weakened or blinded target.</li></ol>
+<h3>Weapon masteries</h3><p>You buy one mastery per weapon family; it covers every weapon of that family. The weapon's size sets the die. Each school's basic spell uses a d8.</p>
+<table><thead><tr><th>Family</th><th>Examples</th><th>Special</th></tr></thead><tbody><tr><td>Cutting weapons</td><td>Sword, axe, sabre, scimitar</td><td>To be defined</td></tr><tr><td>Thrusting weapons</td><td>Rapier, dagger, shortsword, estoc</td><td>To be defined</td></tr><tr><td>Blunt weapons</td><td>Mace, hammer, flail, staff</td><td>Proposal: ignores 2 points of armor value</td></tr><tr><td>Polearms</td><td>Spear, halberd, glaive, pike</td><td>Proposal: reach, strikes at 10 ft (3 m)</td></tr><tr><td>Ranged and thrown weapons</td><td>Bow, crossbow, javelin, sling</td><td>Ranged attacks</td></tr></tbody></table>
+<table><thead><tr><th>Size</th><th>Die</th></tr></thead><tbody><tr><td>One-handed weapon</td><td>d6</td></tr><tr><td>Versatile weapon held in one hand</td><td>d8</td></tr><tr><td>Versatile weapon held in two hands</td><td>d10</td></tr><tr><td>Two-handed weapon</td><td>d12</td></tr></tbody></table>
+<h3>Spell effects</h3>
+<table><thead><tr><th>Effect</th><th class="r">Value</th></tr></thead><tbody>
+<tr><td>Heavy blow: if the spell hits, +1 box (once per spell)</td><td class="r">1</td></tr><tr><td>Offset: cast from another point</td><td class="r">1</td></tr><tr><td>Movement: move yourself or the target</td><td class="r">1</td></tr>
+<tr><td>Split: one more target</td><td class="r">2 per target</td></tr><tr><td>Light control: push, slow</td><td class="r">1</td></tr><tr><td>Heavy control: pin, restrain, blind</td><td class="r">2</td></tr><tr><td>Major control: stun, paralyze</td><td class="r">3</td></tr>
+<tr><td>Persistence or wall: the effect lasts 1 minute</td><td class="r">2</td></tr><tr><td>Area: every creature within 20 ft (6 m); as in D&D, a successful save takes half damage</td><td class="r">3</td></tr></tbody></table>
+<p class="ex">Example: a Tier 2 Crucible mage casts their earth spike for free (2d8). Pinning the target under rock is a value 2 effect: it costs 2 Mana. Pin + Area (2 + 3 = 5) needs Tier 5.</p>
+<h3>Mana</h3>
+<p>Mana comes from the Tiers bought in schools: each school adds Mana by its Tier, and schools add up. A martial character who dabbles in one school only gets 2 to 6 points. Recovery is covered in the Healing and rest chapter.</p>
+<table><thead><tr><th>Tier in the school</th><th class="r">1</th><th class="r">2</th><th class="r">3</th><th class="r">4</th><th class="r">5</th></tr></thead><tbody><tr><td>Mana gained (total)</td><td class="r">2</td><td class="r">6</td><td class="r">14</td><td class="r">24</td><td class="r">36</td></tr></tbody></table>
+<p><b>Mental Resilience bonus:</b> + modifier × half your highest Tier in magic, rounded down.</p>
+<p class="note">Benchmarks for a pure mage: level 1, 2 Mana; level 5 (Tiers 3 and 1), 16; level 10 (Tiers 3, 3 and 2), 34; level 20 (Tiers 5, 4 and 3), 74. That is a D&D wizard's day, within 15%.</p>
+<h2 id="r-souffle">6. Stamina</h2>
+<p>Stamina is the body's exhaustion, as Mana is the mind's. It refills completely on a short rest.</p>
+<p><b>Pool = the Stamina gained from each weapon family you master + Physical Resilience modifier.</b> A pure mage only has their modifier.</p>
+<table><thead><tr><th>Tier in the family</th><th class="r">1</th><th class="r">2</th><th class="r">3</th><th class="r">4</th><th class="r">5</th></tr></thead><tbody><tr><td>Stamina gained (total)</td><td class="r">1</td><td class="r">3</td><td class="r">7</td><td class="r">12</td><td class="r">18</td></tr></tbody></table>
+<p><b>Stamina pays for:</b> martial maneuvers, Parries beyond the first, wear, and an extra action on your turn (3 Stamina, for everyone). <b>It never pays</b> for spell effects.</p>
+<table><thead><tr><th>Maneuver</th><th class="r">Value</th></tr></thead><tbody>
+<tr><td>Heavy blow: if the attack hits, +1 box</td><td class="r">1</td></tr><tr><td>Cleave: one more adjacent enemy</td><td class="r">2 per target</td></tr><tr><td>Charge or leap: move before striking</td><td class="r">1</td></tr>
+<tr><td>Throw or reach: strike farther</td><td class="r">1</td></tr><tr><td>Shove, guard break</td><td class="r">1</td></tr><tr><td>Disarm, trip, grapple</td><td class="r">2</td></tr>
+<tr><td>Held stance: an effect kept for 1 minute</td><td class="r">2</td></tr><tr><td>Whirlwind: every adjacent enemy</td><td class="r">3</td></tr><tr><td>Extra Parry this round</td><td class="r">1</td></tr><tr><td>Extra action this turn</td><td class="r">3</td></tr></tbody></table>
+<p class="ex">At level 5, a fighter at Tier 3 in cutting weapons and Tier 1 in ranged weapons, with +3 Physical Resilience, has 11 Stamina per fight, 33 over a day with two short rests. A mage has 19 Mana for the whole day: the mage hits hard once, the fighter goes the distance.</p>
+<h2 id="r-jets">7. Rolls, DCs and conditions</h2>
+<p>Rolls follow D&D, with Mastery replacing the proficiency bonus.</p>
+<ul><li><b>Mastery bonus = Tier + 1</b> (+2 to +6).</li><li><b>Attack roll</b> = d20 + cell modifier + Mastery bonus, against Evasion. On a natural 20, double the Mastery dice.</li><li><b>Spell or maneuver DC</b> = 8 + modifier of the cell used + Mastery bonus.</li><li><b>Resistance and vulnerability</b> halve or double damage before comparing it to thresholds.</li></ul>
+<h3>Saving throws</h3>
+<table><thead><tr><th>D&D save</th><th>Luparis domain</th></tr></thead><tbody>
+<tr><td>Strength, Dexterity, Constitution</td><td>Physical</td></tr><tr><td>Intelligence, Wisdom</td><td>Mental</td></tr><tr><td>Charisma</td><td>Social</td></tr></tbody></table>
+<p><b>The intent comes from the story.</b> The threat sets the domain; how the player describes their reaction sets the intent. Resilience is the default. Diving away from an explosion: Physical Finesse. Holding firm against a shove: Physical Power. Enduring a poison: Physical Resilience. Seeing through an illusion: Mental Finesse. The GM confirms the description fits the situation.</p>
+<h3>Difficulty</h3>
+<table><thead><tr><th class="r">DC</th><th>Difficulty</th></tr></thead><tbody><tr><td class="r">10</td><td>Easy</td></tr><tr><td class="r">15</td><td>Medium</td></tr><tr><td class="r">20</td><td>Hard</td></tr><tr><td class="r">25</td><td>Very hard</td></tr><tr><td class="r">30</td><td>Nearly impossible</td></tr></tbody></table>
+<h3>Control effects</h3>
+<p>A condition lasts until the end of the target's next turn. With Persistence, the target repeats its save at the end of each of its turns.</p>
+<table><thead><tr><th>Effect</th><th class="r">Value</th><th>Possible conditions</th></tr></thead><tbody>
+<tr><td>Light control</td><td class="r">1</td><td>Pushed 10 ft (3 m), or slowed (−10 ft speed)</td></tr><tr><td>Heavy control</td><td class="r">2</td><td>Prone, grappled, restrained, blinded, deafened, frightened, charmed</td></tr><tr><td>Major control</td><td class="r">3</td><td>Stunned, paralyzed</td></tr></tbody></table>
+<p><b>No damage over time:</b> burning, bleeding or gnawing poison become a single hit, or the poisoned condition.</p>
+<h3>Conditions</h3>
+<table><thead><tr><th>Condition</th><th>Effect</th></tr></thead><tbody>
+<tr><td>Blinded</td><td>Fails anything that needs sight. Disadvantage on its attacks, advantage on attacks against it.</td></tr>
+<tr><td>Charmed</td><td>Can't attack the charmer, who has advantage on social checks against it.</td></tr>
+<tr><td>Deafened</td><td>Can't hear; fails anything that needs hearing.</td></tr>
+<tr><td>Exhaustion</td><td>Levels 1 to 6: each level gives −2 to every d20 and −5 ft speed. Level 6 is death. A long rest removes one level.</td></tr>
+<tr><td>Frightened</td><td>Disadvantage on its rolls while it sees the source; can't willingly move closer to it.</td></tr>
+<tr><td>Grappled</td><td>Speed 0. Disadvantage on attacks against anyone but the grappler. Escape: action, Physical check against the DC.</td></tr>
+<tr><td>Incapacitated</td><td>No action, bonus action or reaction, so it can't Parry.</td></tr>
+<tr><td>Invisible</td><td>Advantage on its attacks, disadvantage on attacks against it, as long as it isn't located.</td></tr>
+<tr><td>Paralyzed</td><td>Incapacitated, speed 0. Fails Physical saves; advantage against it, and a melee hit is a critical.</td></tr>
+<tr><td>Petrified</td><td>Turned to stone and incapacitated; resistance to all damage.</td></tr>
+<tr><td>Poisoned</td><td>Disadvantage on attack rolls and checks.</td></tr>
+<tr><td>Prone</td><td>Crawls; standing up costs half its movement. Disadvantage on its attacks. Advantage on melee attacks against it, disadvantage at range.</td></tr>
+<tr><td>Restrained</td><td>Speed 0. Disadvantage on its attacks and Physical saves; advantage on attacks against it.</td></tr>
+<tr><td>Stunned</td><td>Incapacitated. Fails Physical saves; advantage on attacks against it.</td></tr>
+<tr><td>Unconscious</td><td>Incapacitated and prone, drops what it holds. Fails Physical saves; advantage against it, and a melee hit is a critical.</td></tr></tbody></table>
+<h2 id="r-soins">8. Healing and rest</h2>
+<p>You recover in three ways: rest, consumables and magic. D&D hit dice are no longer spent to heal; they only set thresholds and boxes.</p>
+<h3>Rest</h3>
+<table><thead><tr><th>Rest</th><th>Duration</th><th>Vitality boxes</th><th>Mana</th><th>Stamina</th></tr></thead><tbody>
+<tr><td>Short</td><td>1 hour</td><td>Half the missing boxes (rounded up)</td><td>Half the missing Mana</td><td>All</td></tr>
+<tr><td>Long</td><td>8 hours</td><td>All</td><td>All</td><td>All, and one less level of exhaustion</td></tr></tbody></table>
+<h3>Consumables</h3>
+<table><thead><tr><th>Consumable</th><th>Effect</th></tr></thead><tbody>
+<tr><td>Potion of healing</td><td>1 box</td></tr><tr><td>Potion of greater healing</td><td>2 boxes</td></tr><tr><td>Potion of superior healing</td><td>3 boxes</td></tr><tr><td>Potion of supreme healing</td><td>5 boxes</td></tr>
+<tr><td>Hot meal (during a short rest)</td><td>1 more box than the rest gives</td></tr><tr><td>Vigor tonic</td><td>3 Stamina (proposal)</td></tr><tr><td>Mana elixir</td><td>2, 6 or 14 Mana by quality (to be confirmed)</td></tr></tbody></table>
+<h3>Healing magic</h3>
+<p>The Crucible heals by closing the flesh; Harmony makes natural regeneration resonate. Healing is an effect like any other, paid in Mana and capped by Tier.</p>
+<table><thead><tr><th>Effect</th><th class="r">Value</th><th>Schools</th></tr></thead><tbody>
+<tr><td>Stabilize a creature at 0 boxes</td><td class="r">0</td><td>Crucible, Harmony (basic spell)</td></tr>
+<tr><td>Heal: the target regains 1 box</td><td class="r">1 per box</td><td>Crucible, Harmony</td></tr>
+<tr><td>Resting song: during a short rest, the party regains 1 more box</td><td class="r">1</td><td>Harmony, out of combat</td></tr></tbody></table>
+<p>Healing combines with other effects: Heal + Offset to heal at range, Heal + Area to heal the whole party (value 4). A creature at 0 boxes that regains a box wakes up.</p>
+<p class="ex">Proposal for the Aegis, which protects rather than heals. Aegis shield, value 2: an ally cancels the next box they would lose before your next turn.</p>
+<h2 id="r-mj">9. Game Master's chapter</h2>
+<h3>Converting a D&D monster</h3>
+<p>Evasion = the monster's AC. Thresholds and boxes depend on its CR. The Bestiary on this site does the math automatically.</p>
+<table><thead><tr><th>CR</th><th class="r">Major</th><th class="r">Severe</th><th class="r">Boxes</th></tr></thead><tbody>
+<tr><td>0 to 1</td><td class="r">8</td><td class="r">16</td><td class="r">HP ÷ 6 (min. 1)</td></tr><tr><td>2 to 4</td><td class="r">12</td><td class="r">24</td><td class="r">HP ÷ 6</td></tr><tr><td>5 to 10</td><td class="r">18</td><td class="r">36</td><td class="r">HP ÷ 12</td></tr><tr><td>11 to 16</td><td class="r">23</td><td class="r">46</td><td class="r">HP ÷ 18</td></tr><tr><td>17 and up</td><td class="r">28</td><td class="r">56</td><td class="r">HP ÷ 24</td></tr></tbody></table>
+<h3>Ruling an unexpected effect</h3>
+<p>Find the D&D spell closest to the player's idea. Its level gives the value: levels 1 to 3, same value; 4 and 5, value 4; 6 and up, value 5.</p>
+<h3>Terrain</h3>
+<p>On the tactical map: +1 half cover, +2 cover, +3 impassable obstacle; −1 difficult terrain, −2 impassable.</p>
+<h2 id="r-avenir">10. Coming next</h2>
+<ul class="todo"><li>Balancing the XP costs after the first tests</li><li>Out-of-combat utility magic (Tier 0)</li><li>Feats: Rage, Shapeshifting, Metamagic…</li><li>Simulating light armor, two-weapon and archer builds</li></ul>
+</template>
+<template id="rules-fr">
+<h2 id="r-aide">Aide-mémoire</h2>
+<div class="cheat">
+<div class="ch"><h4>Attaque et DD</h4><p><b>Attaque</b> : d20 + mod + Maîtrise (Tier + 1) contre l'Esquive. 20 naturel : dés de Maîtrise doublés.</p><p><b>DD</b> : 8 + mod + Maîtrise. 10 facile, 15 moyen, 20 difficile, 25 très difficile, 30 quasi impossible.</p><p><b>Sauvegarde</b> : la menace fixe le domaine, le récit fixe l'intention (Résistance par défaut).</p></div>
+<div class="ch"><h4>Dégâts et cases</h4><p>Sous le Mineur : 0 case, mais 1 Souffle (usure). Du Mineur au Majeur : 1. Majeur : 2. Sévère : 3.</p><p>À 0 case : inconscient, jets contre la mort. Résistance et vulnérabilité s'appliquent avant les seuils.</p></div>
+<div class="ch"><h4>Défense</h4><p><b>Esquive</b> = 10 + Finesse physique (plafond de l'armure) + bouclier.</p><p><b>Parade</b> (réaction) : le coup coûte 1 case de moins. Chaque Parade de plus dans le round : 1 Souffle.</p></div>
+<div class="ch"><h4>Effets et manœuvres</h4><p>Total des valeurs ≤ Tier. Payé en Mana (sort) ou en Souffle (arme).</p><p>1 : coup appuyé, déport, déplacement, contrôle léger, soin (par case). 2 : contrôle lourd, persistance, cible en plus (par cible). 3 : contrôle majeur, zone ou tourbillon (sauvegarde réussie = moitié), action en plus.</p></div>
+<div class="ch"><h4>Repos</h4><p><b>Court (1 h)</b> : moitié des cases et du Mana manquants, tout le Souffle.</p><p><b>Long (8 h)</b> : tout, et un niveau d'épuisement en moins.</p></div>
+<div class="ch"><h4>Distances et terrain</h4><p>1 case = 5 pieds (1,5 m), diagonales comprises ; +5 pieds par niveau de hauteur.</p><p>+1 couvert partiel, +2 couvert, +3 infranchissable ; −1 difficile, −2 infranchissable.</p></div>
+<div class="ch wide"><h4>États</h4><dl class="cond">
+<dt>À terre</dt><dd>Rampe ; désavantage à ses attaques ; avantage au contact contre lui.</dd><dt>Agrippé</dt><dd>Vitesse 0.</dd><dt>Assourdi</dt><dd>N'entend plus.</dd>
+<dt>Aveuglé</dt><dd>Désavantage à ses attaques, avantage contre lui.</dd><dt>Charmé</dt><dd>N'attaque pas le charmeur.</dd><dt>Effrayé</dt><dd>Désavantage tant qu'il voit la source ; ne s'en approche pas.</dd>
+<dt>Empoisonné</dt><dd>Désavantage aux attaques et aux tests.</dd><dt>Entravé</dt><dd>Vitesse 0 ; désavantage aux attaques et sauvegardes physiques ; avantage contre lui.</dd><dt>Épuisement</dt><dd>−2 aux d20 et −5 pieds par niveau ; mort au 6.</dd>
+<dt>Étourdi</dt><dd>Neutralisé, rate ses sauvegardes physiques ; avantage contre lui.</dd><dt>Inconscient</dt><dd>Neutralisé, à terre ; un coup au contact est critique.</dd><dt>Invisible</dt><dd>Avantage à ses attaques, désavantage contre lui.</dd>
+<dt>Neutralisé</dt><dd>Aucune action ni réaction, donc pas de Parade.</dd><dt>Paralysé</dt><dd>Neutralisé ; un coup au contact est critique.</dd><dt>Pétrifié</dt><dd>Neutralisé, résistance à tous les dégâts.</dd></dl></div>
+</div>
+<p class="lead">Luparis se joue avec les règles de D&D 5.5. Ce livre ne décrit que ce qui change. Tout ce qui n'y figure pas reste la règle de D&D.</p>
+<h2 id="r-matrice">1. La Matrice des intentions</h2>
+<p>Les six caractéristiques de D&D sont remplacées par neuf cases : une intention (Puissance, Finesse, Résistance) appliquée à un domaine (Physique, Mental, Social). On annonce toujours l'intention d'abord : « Finesse physique », « Résistance mentale ». Chaque case a un modificateur, comme une caractéristique de D&D. C'est le contexte de l'action qui choisit la case, jamais l'école de magie.</p>
+<table><thead><tr><th></th><th>Physique</th><th>Mental</th><th>Social</th></tr></thead><tbody>
+<tr><th>Puissance</th><td>Force</td><td>Intelligence, sorts offensifs</td><td>Autorité, intimidation</td></tr>
+<tr><th>Finesse</th><td>Dextérité, Esquive</td><td>Perception, sorts subtils</td><td>Persuasion, tromperie</td></tr>
+<tr><th>Résistance</th><td>Constitution : seuils, Souffle</td><td>Volonté : Mana, résister à la magie</td><td>Sang-froid : résister à l'influence</td></tr></tbody></table>
+<p class="ex">Exemple : un mage de l'Égide qui projette une aura imposante pendant une négociation utilise la Puissance sociale. S'il forge un marteau de lumière pour frapper, il utilise la Puissance mentale.</p>
+<h2 id="r-perso">2. Le personnage</h2>
+<p>Il n'y a pas de classes. Chaque personnage achète en XP les écoles de magie, les maîtrises d'armes et les cases de la matrice qu'il veut. Ses statistiques racontent son vécu, quel que soit son peuple : aucune race ne donne de bonus.</p>
+<p>Tout le monde commence avec un dé de vie d6. On achète ensuite d8, d10 puis d12 avec de l'XP.</p>
+<h3>Barème d'XP (brouillon v0.1)</h3>
+<p>Le niveau vaut l'XP gagnée divisée par 100 : 150 XP pour créer un personnage de niveau 1, 600 pour un niveau 6. L'onglet Personnage fait tous les calculs.</p>
+<table><thead><tr><th>Achat</th><th>Coût de chaque palier</th><th>Total</th></tr></thead><tbody>
+<tr><td>Case de la matrice, de +1 à +5</td><td>5, 10, 15, 20, 25</td><td>75</td></tr>
+<tr><td>Tier d'une école ou d'une famille d'armes, de 1 à 5</td><td>20, 40, 80, 120, 160</td><td>420</td></tr>
+<tr><td>Dé de vie d8, d10, d12</td><td>30, 40, 50</td><td>120</td></tr></tbody></table>
+<p><b>Paliers de Tier :</b> Tier 2 dès le niveau 3, Tier 3 dès le 5, Tier 4 dès le 11, Tier 5 dès le 17, comme les grands paliers de D&D.</p>
+<h2 id="r-defense">3. Défense : Esquive et armure</h2>
+<p>La classe d'armure disparaît. L'attaquant lance d20 + bonus contre l'<b>Esquive</b> de la cible. S'il touche, l'<b>armure</b> détermine combien le coup coûte.</p>
+<p><b>Esquive = 10 + Finesse physique (plafonnée par l'armure) + bouclier + bonus divers.</b></p>
+<p><b>Valeur d'armure = CA de base de l'armure dans D&D − 10.</b> Elle fixe le seuil Mineur et s'ajoute aux seuils Majeur et Sévère.</p>
+<table><thead><tr><th>Armure</th><th>Catégorie</th><th>Finesse dans l'Esquive</th><th class="r">Valeur</th></tr></thead><tbody>
+<tr><td>Aucune</td><td>—</td><td>totale</td><td class="r">0</td></tr><tr><td>Cuir</td><td>Légère</td><td>totale</td><td class="r">1</td></tr><tr><td>Cuir clouté</td><td>Légère</td><td>totale</td><td class="r">2</td></tr>
+<tr><td>Chemise de mailles</td><td>Intermédiaire</td><td>max +2</td><td class="r">3</td></tr><tr><td>Cuirasse, écailles</td><td>Intermédiaire</td><td>max +2</td><td class="r">4</td></tr><tr><td>Demi-plate</td><td>Intermédiaire</td><td>max +2</td><td class="r">5</td></tr>
+<tr><td>Cotte de mailles</td><td>Lourde</td><td>aucune</td><td class="r">6</td></tr><tr><td>Clibanion</td><td>Lourde</td><td>aucune</td><td class="r">7</td></tr><tr><td>Harnois</td><td>Lourde</td><td>aucune</td><td class="r">8</td></tr></tbody></table>
+<h3>Boucliers</h3>
+<p><b>Parade (réaction) :</b> quand tu es touché, le coup coûte une case de moins (2 devient 1, 1 devient 0). Une fois par round ; chaque Parade supplémentaire coûte 1 Souffle.</p>
+<table><thead><tr><th>Bouclier</th><th class="r">Esquive</th><th>Parade</th><th>Particularité</th></tr></thead><tbody>
+<tr><td>Bocle</td><td class="r">+0</td><td>Corps à corps uniquement</td><td>Main presque libre : on peut lancer un sort ou tenir un objet</td></tr>
+<tr><td>Rondache</td><td class="r">+1</td><td>Oui</td><td>Léger, aucun malus</td></tr>
+<tr><td>Écu</td><td class="r">+1</td><td>Oui, y compris contre les projectiles</td><td>Le bouclier standard</td></tr>
+<tr><td>Grand bouclier</td><td class="r">+2</td><td>Oui + Interception</td><td>Désavantage en Discrétion</td></tr>
+<tr><td>Pavois</td><td class="r">+2</td><td>Oui + Interception</td><td>Planter (action bonus) : abri pour soi et un allié derrière ; déplacement −10 pieds (3 m) tant qu'on le porte</td></tr></tbody></table>
+<p><b>Interception :</b> la Parade peut protéger un allié adjacent à ta place.</p>
+<h2 id="r-vitalite">4. Dégâts et Vitalité</h2>
+<p>Il n'y a plus de points de vie à soustraire. On compare les dégâts d'un coup aux seuils de la cible :</p>
+<table><thead><tr><th>Dégâts du coup</th><th class="r">Cases perdues</th></tr></thead><tbody>
+<tr><td>Sous le seuil Mineur</td><td class="r">0 (mais l'usure s'applique)</td></tr><tr><td>Du Mineur au Majeur</td><td class="r">1</td></tr><tr><td>Majeur ou plus</td><td class="r">2</td></tr><tr><td>Sévère ou plus</td><td class="r">3</td></tr></tbody></table>
+<ul><li><b>Seuil Mineur</b> = valeur d'armure</li><li><b>Base</b> = valeur maximale du dé de vie + niveau + mod. de Résistance physique</li><li><b>Seuil Majeur</b> = Base + valeur d'armure</li><li><b>Seuil Sévère</b> = 2 × Base + valeur d'armure</li><li><b>Cases de Vitalité</b> = 1 + (niveau × dé de vie ÷ 12), arrondi au supérieur</li></ul>
+<table><thead><tr><th>Niveau</th><th class="r">d6</th><th class="r">d8</th><th class="r">d10</th><th class="r">d12</th></tr></thead><tbody>
+<tr><td>1</td><td class="r">2</td><td class="r">2</td><td class="r">2</td><td class="r">2</td></tr><tr><td>5</td><td class="r">4</td><td class="r">5</td><td class="r">6</td><td class="r">6</td></tr><tr><td>10</td><td class="r">6</td><td class="r">8</td><td class="r">10</td><td class="r">11</td></tr><tr><td>20</td><td class="r">11</td><td class="r">15</td><td class="r">18</td><td class="r">21</td></tr></tbody></table>
+<p><b>Usure :</b> un coup arrêté par l'armure ne coûte pas de case, mais il coûte 1 Souffle. Quand le Souffle est vide, chaque coup arrêté coûte une case. Personne n'est invincible face au nombre.</p>
+<p><b>À 0 case :</b> le personnage tombe inconscient et fait des jets de sauvegarde contre la mort, comme dans D&D.</p>
+<p class="note">Calibrage : à tous les niveaux testés (1, 5 et 10), un personnage tombe après autant d'attaques que dans D&D, à 10 % près.</p>
+<h2 id="r-maitrise">5. Maîtrise et magie</h2>
+<p>Sorts et armes suivent la même règle. Ta <b>Maîtrise</b> dans une école ou une arme est ton Tier, de 1 à 5. Elle donne le nombre de dés lancés ; ce que tu utilises donne le type de dé.</p>
+<ol><li><b>Attaque de base, gratuite.</b> Arme : Maîtrise × dé de l'arme + modificateur. Sort de base de l'école : Maîtrise × d8, sans modificateur.</li>
+<li><b>Effets.</b> Chaque effet vaut de 1 à 5. La somme des valeurs coûte autant de Mana et ne peut pas dépasser ton Tier dans l'école.</li>
+<li><b>Circonstances.</b> Un bonus ou un malus modifie la Maîtrise de ±1 : allié qui inspire, Rage, cible affaiblie ou aveuglée.</li></ol>
+<h3>Maîtrises d'armes</h3><p>On achète une maîtrise par famille d'armes ; elle vaut pour toutes les armes de la famille. Le gabarit de l'arme donne le dé. Le sort de base de chaque école utilise un d8.</p>
+<table><thead><tr><th>Famille</th><th>Exemples</th><th>Particularité</th></tr></thead><tbody><tr><td>Armes de taille</td><td>Épée, hache, sabre, cimeterre</td><td>À définir</td></tr><tr><td>Armes d'estoc</td><td>Rapière, dague, épée courte, estoc</td><td>À définir</td></tr><tr><td>Armes contondantes</td><td>Masse, marteau, fléau, bâton</td><td>Proposition : ignore 2 points de valeur d'armure</td></tr><tr><td>Armes d'hast</td><td>Lance, hallebarde, glaive, pique</td><td>Proposition : allonge, frappe à 10 pieds (3 m)</td></tr><tr><td>Armes de tir et de jet</td><td>Arc, arbalète, javelot, fronde</td><td>Frappe à distance</td></tr></tbody></table>
+<table><thead><tr><th>Gabarit</th><th>Dé</th></tr></thead><tbody><tr><td>Arme à une main</td><td>d6</td></tr><tr><td>Arme polyvalente tenue à une main</td><td>d8</td></tr><tr><td>Arme polyvalente tenue à deux mains</td><td>d10</td></tr><tr><td>Arme à deux mains</td><td>d12</td></tr></tbody></table>
+<h3>Effets de sorts</h3>
+<table><thead><tr><th>Effet</th><th class="r">Valeur</th></tr></thead><tbody>
+<tr><td>Coup appuyé : si le sort touche, +1 case (une fois par sort)</td><td class="r">1</td></tr><tr><td>Déport : lancer depuis un autre point</td><td class="r">1</td></tr><tr><td>Déplacement : bouger soi-même ou la cible</td><td class="r">1</td></tr>
+<tr><td>Multiplication : une cible de plus</td><td class="r">2 par cible</td></tr><tr><td>Contrôle léger : repousser, ralentir</td><td class="r">1</td></tr><tr><td>Contrôle lourd : plaquer, entraver, aveugler</td><td class="r">2</td></tr><tr><td>Contrôle majeur : étourdir, paralyser</td><td class="r">3</td></tr>
+<tr><td>Persistance ou mur : l'effet dure 1 minute</td><td class="r">2</td></tr><tr><td>Zone : toutes les créatures dans 20 pieds (6 m) ; comme dans D&D, une sauvegarde réussie fait subir la moitié des dégâts</td><td class="r">3</td></tr></tbody></table>
+<p class="ex">Exemple : un mage du Creuset de Tier 2 lance son pic de terre gratuitement (2d8). Le plaquer sous la roche est un effet de valeur 2 : il coûte 2 Mana. Plaquer + Zone (2 + 3 = 5) demande le Tier 5.</p>
+<h3>Mana</h3>
+<p>Le Mana vient des Tiers achetés dans les écoles : chaque école en apporte selon son Tier, et on additionne les écoles. Un martial qui touche à une école n'en tire que 2 à 6 points. Sa récupération est décrite au chapitre Soins et repos.</p>
+<table><thead><tr><th>Tier dans l'école</th><th class="r">1</th><th class="r">2</th><th class="r">3</th><th class="r">4</th><th class="r">5</th></tr></thead><tbody><tr><td>Mana apporté (cumulé)</td><td class="r">2</td><td class="r">6</td><td class="r">14</td><td class="r">24</td><td class="r">36</td></tr></tbody></table>
+<p><b>Bonus de Résistance mentale :</b> + modificateur × la moitié du plus haut Tier en magie, arrondie à l'inférieur.</p>
+<p class="note">Repères pour un mage pur : niveau 1, 2 Mana ; niveau 5 (Tiers 3 et 1), 16 ; niveau 10 (Tiers 3, 3 et 2), 34 ; niveau 20 (Tiers 5, 4 et 3), 74. C'est la journée d'un magicien de D&D à 15 % près.</p>
+<h2 id="r-souffle">6. Le Souffle</h2>
+<p>Le Souffle est l'épuisement du corps, comme le Mana est celui de l'esprit. Il se recharge entièrement au repos court.</p>
+<p><b>Réserve = la somme du Souffle apporté par chaque famille d'armes maîtrisée + modificateur de Résistance physique.</b> Un mage pur n'a que son modificateur.</p>
+<table><thead><tr><th>Tier dans la famille</th><th class="r">1</th><th class="r">2</th><th class="r">3</th><th class="r">4</th><th class="r">5</th></tr></thead><tbody><tr><td>Souffle apporté (cumulé)</td><td class="r">1</td><td class="r">3</td><td class="r">7</td><td class="r">12</td><td class="r">18</td></tr></tbody></table>
+<p><b>Le Souffle paie :</b> les manœuvres martiales, les Parades au-delà de la première, l'usure, et l'action supplémentaire dans le tour (3 Souffle, pour tout le monde). <b>Il ne paie jamais</b> les effets de sorts.</p>
+<table><thead><tr><th>Manœuvre</th><th class="r">Valeur</th></tr></thead><tbody>
+<tr><td>Coup appuyé : si le coup touche, +1 case</td><td class="r">1</td></tr><tr><td>Clive : un ennemi adjacent de plus</td><td class="r">2 par cible</td></tr><tr><td>Charge ou bond : se déplacer avant de frapper</td><td class="r">1</td></tr>
+<tr><td>Lancer ou allonge : frapper plus loin</td><td class="r">1</td></tr><tr><td>Bousculer, brise-garde</td><td class="r">1</td></tr><tr><td>Désarmer, renverser, immobiliser</td><td class="r">2</td></tr>
+<tr><td>Posture tenue : un effet maintenu 1 minute</td><td class="r">2</td></tr><tr><td>Tourbillon : tous les ennemis adjacents</td><td class="r">3</td></tr><tr><td>Parade supplémentaire dans le round</td><td class="r">1</td></tr><tr><td>Action supplémentaire dans le tour</td><td class="r">3</td></tr></tbody></table>
+<p class="ex">Au niveau 5, un guerrier au Tier 3 en armes de taille et au Tier 1 en armes de tir, avec +3 de Résistance physique, a 11 Souffle par combat, soit 33 sur une journée avec deux repos courts. Un mage a 19 Mana pour toute la journée : il frappe fort une fois, le guerrier tient la distance.</p>
+<h2 id="r-jets">7. Jets, DD et états</h2>
+<p>Les jets reprennent D&D, avec la Maîtrise à la place du bonus de maîtrise.</p>
+<ul><li><b>Bonus de Maîtrise = Tier + 1</b> (de +2 à +6).</li><li><b>Jet d'attaque</b> = d20 + modificateur de la case + bonus de Maîtrise, contre l'Esquive. Sur un 20 naturel, on double les dés de Maîtrise.</li><li><b>DD d'un sort ou d'une manœuvre</b> = 8 + modificateur de la case utilisée + bonus de Maîtrise.</li><li><b>Résistance et vulnérabilité</b> divisent ou doublent les dégâts avant la comparaison aux seuils.</li></ul>
+<h3>Sauvegardes</h3>
+<table><thead><tr><th>Sauvegarde D&D</th><th>Domaine Luparis</th></tr></thead><tbody>
+<tr><td>Force, Dextérité, Constitution</td><td>Physique</td></tr><tr><td>Intelligence, Sagesse</td><td>Mental</td></tr><tr><td>Charisme</td><td>Social</td></tr></tbody></table>
+<p><b>L'intention dépend du récit.</b> La menace fixe le domaine ; la façon dont le joueur décrit sa réaction fixe l'intention. Par défaut, c'est la Résistance. Plonger hors d'une explosion : Finesse physique. Tenir face à une poussée : Puissance physique. Encaisser un poison : Résistance physique. Démasquer une illusion : Finesse mentale. Le MJ valide si la description colle à la situation.</p>
+<h3>Difficultés</h3>
+<table><thead><tr><th class="r">DD</th><th>Difficulté</th></tr></thead><tbody><tr><td class="r">10</td><td>Facile</td></tr><tr><td class="r">15</td><td>Moyen</td></tr><tr><td class="r">20</td><td>Difficile</td></tr><tr><td class="r">25</td><td>Très difficile</td></tr><tr><td class="r">30</td><td>Quasi impossible</td></tr></tbody></table>
+<h3>Effets de contrôle</h3>
+<p>Un état dure jusqu'à la fin du prochain tour de la cible. Avec Persistance, elle refait sa sauvegarde à la fin de chacun de ses tours.</p>
+<table><thead><tr><th>Effet</th><th class="r">Valeur</th><th>États possibles</th></tr></thead><tbody>
+<tr><td>Contrôle léger</td><td class="r">1</td><td>Repoussé de 10 pieds (3 m), ou ralenti (−10 pieds de vitesse)</td></tr><tr><td>Contrôle lourd</td><td class="r">2</td><td>À terre, agrippé, entravé, aveuglé, assourdi, effrayé, charmé</td></tr><tr><td>Contrôle majeur</td><td class="r">3</td><td>Étourdi, paralysé</td></tr></tbody></table>
+<p><b>Pas de dégâts sur la durée :</b> brûlure, saignement ou poison qui ronge se traduisent par un seul coup, ou par l'état empoisonné.</p>
+<h3>Les états</h3>
+<table><thead><tr><th>État</th><th>Effet</th></tr></thead><tbody>
+<tr><td>Agrippé</td><td>Vitesse 0. Désavantage aux attaques contre d'autres cibles que celle qui l'agrippe. Se libérer : action, jet Physique contre le DD.</td></tr>
+<tr><td>À terre</td><td>Se déplace en rampant ; se relever coûte la moitié du déplacement. Désavantage à ses attaques. Avantage aux attaques au contact contre lui, désavantage à distance.</td></tr>
+<tr><td>Assourdi</td><td>N'entend plus ; échoue à ce qui demande l'ouïe.</td></tr>
+<tr><td>Aveuglé</td><td>Échoue à ce qui demande la vue. Désavantage à ses attaques, avantage aux attaques contre lui.</td></tr>
+<tr><td>Charmé</td><td>Ne peut pas attaquer celui qui l'a charmé, qui a l'avantage sur ses jets sociaux contre lui.</td></tr>
+<tr><td>Effrayé</td><td>Désavantage à ses jets tant qu'il voit la source ; ne peut pas s'en approcher volontairement.</td></tr>
+<tr><td>Empoisonné</td><td>Désavantage aux jets d'attaque et aux tests.</td></tr>
+<tr><td>Entravé</td><td>Vitesse 0. Désavantage à ses attaques et à ses sauvegardes physiques ; avantage aux attaques contre lui.</td></tr>
+<tr><td>Épuisement</td><td>Niveaux 1 à 6 : chaque niveau donne −2 à tous les d20 et −5 pieds de vitesse. Au niveau 6, la mort. Un repos long retire un niveau.</td></tr>
+<tr><td>Étourdi</td><td>Neutralisé. Échoue à ses sauvegardes physiques ; avantage aux attaques contre lui.</td></tr>
+<tr><td>Inconscient</td><td>Neutralisé et à terre, lâche ce qu'il tient. Échoue à ses sauvegardes physiques ; avantage contre lui, et un coup au contact est critique.</td></tr>
+<tr><td>Invisible</td><td>Avantage à ses attaques, désavantage aux attaques contre lui, tant qu'on ne le localise pas.</td></tr>
+<tr><td>Neutralisé</td><td>Aucune action, action bonus ni réaction : il ne peut donc pas parer.</td></tr>
+<tr><td>Paralysé</td><td>Neutralisé, vitesse 0. Échoue à ses sauvegardes physiques ; avantage contre lui, et un coup au contact est critique.</td></tr>
+<tr><td>Pétrifié</td><td>Changé en pierre et neutralisé ; résistance à tous les dégâts.</td></tr></tbody></table>
+<h2 id="r-soins">8. Soins et repos</h2>
+<p>On récupère de trois façons : le repos, les consommables et la magie. Les dés de vie de D&D ne servent plus à se soigner ; ils ne définissent que les seuils et les cases.</p>
+<h3>Repos</h3>
+<table><thead><tr><th>Repos</th><th>Durée</th><th>Cases de Vitalité</th><th>Mana</th><th>Souffle</th></tr></thead><tbody>
+<tr><td>Court</td><td>1 heure</td><td>La moitié des cases manquantes (arrondie au supérieur)</td><td>La moitié du Mana manquant</td><td>Tout</td></tr>
+<tr><td>Long</td><td>8 heures</td><td>Tout</td><td>Tout</td><td>Tout, et un niveau d'épuisement en moins</td></tr></tbody></table>
+<h3>Consommables</h3>
+<table><thead><tr><th>Consommable</th><th>Effet</th></tr></thead><tbody>
+<tr><td>Potion de soins</td><td>1 case</td></tr><tr><td>Potion de soins supérieure</td><td>2 cases</td></tr><tr><td>Potion de soins majeure</td><td>3 cases</td></tr><tr><td>Potion de soins suprême</td><td>5 cases</td></tr>
+<tr><td>Repas chaud (pendant un repos court)</td><td>1 case de plus que le repos</td></tr><tr><td>Tonique de vigueur</td><td>3 Souffle (proposition)</td></tr><tr><td>Élixir de Mana</td><td>2, 6 ou 14 Mana selon sa qualité (à confirmer)</td></tr></tbody></table>
+<h3>Magie de soin</h3>
+<p>Le Creuset soigne en refermant la chair ; l'Harmonie fait résonner la régénération naturelle. Le soin est un effet comme les autres, payé en Mana et plafonné par le Tier.</p>
+<table><thead><tr><th>Effet</th><th class="r">Valeur</th><th>Écoles</th></tr></thead><tbody>
+<tr><td>Stabiliser une créature à 0 case</td><td class="r">0</td><td>Creuset, Harmonie (sort de base)</td></tr>
+<tr><td>Soin : la cible regagne 1 case</td><td class="r">1 par case</td><td>Creuset, Harmonie</td></tr>
+<tr><td>Chant de repos : pendant un repos court, le groupe regagne 1 case de plus</td><td class="r">1</td><td>Harmonie, hors combat</td></tr></tbody></table>
+<p>Un soin se combine avec les autres effets : Soin + Déport pour soigner à distance, Soin + Zone pour soigner tout le groupe (valeur 4). Une créature à 0 case qui regagne une case reprend conscience.</p>
+<p class="ex">Proposition pour l'Égide, qui protège plutôt qu'elle ne soigne. Bouclier d'Égide, valeur 2 : un allié annule la prochaine case qu'il devrait perdre avant ton prochain tour.</p>
+<h2 id="r-mj">9. Chapitre du MJ</h2>
+<h3>Convertir un monstre de D&D</h3>
+<p>Esquive = CA du monstre. Seuils et cases selon son FP. Le Bestiaire de ce site fait le calcul automatiquement.</p>
+<table><thead><tr><th>FP</th><th class="r">Majeur</th><th class="r">Sévère</th><th class="r">Cases</th></tr></thead><tbody>
+<tr><td>0 à 1</td><td class="r">8</td><td class="r">16</td><td class="r">PV ÷ 6 (min. 1)</td></tr><tr><td>2 à 4</td><td class="r">12</td><td class="r">24</td><td class="r">PV ÷ 6</td></tr><tr><td>5 à 10</td><td class="r">18</td><td class="r">36</td><td class="r">PV ÷ 12</td></tr><tr><td>11 à 16</td><td class="r">23</td><td class="r">46</td><td class="r">PV ÷ 18</td></tr><tr><td>17 et plus</td><td class="r">28</td><td class="r">56</td><td class="r">PV ÷ 24</td></tr></tbody></table>
+<h3>Arbitrer un effet imprévu</h3>
+<p>Cherche le sort de D&D qui ressemble le plus à l'idée du joueur. Son niveau donne la valeur : niveaux 1 à 3, même valeur ; 4 et 5, valeur 4 ; 6 et plus, valeur 5.</p>
+<h3>Terrain</h3>
+<p>Sur la carte tactique : +1 couvert partiel, +2 couvert, +3 obstacle infranchissable ; −1 terrain difficile, −2 infranchissable.</p>
+<h2 id="r-avenir">10. À venir</h2>
+<ul class="todo"><li>Équilibrage du barème d'XP après les premiers tests</li><li>Magie utilitaire hors combat (Tier 0)</li><li>Les Dons : Rage, Changeforme, Métamagie…</li><li>Simulation des profils armure légère, deux armes et archer</li></ul>
+</template>
+<script>
+{
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),stage=document.getElementById('stage'),info=document.getElementById('info');
+const B={
+ gen:{n:['Generic','Générique'],g:['#a9b28f','#a2ab88'],top:['#b9b4a8','#9a958a','#7d786f'],side:['#b9b4a8','#9a958a','#7d786f'],pit:'chasm',sp:{c:['#8d9775','#b7bf9c'],k:'tuft',d:.5},deco:[0,0,'rock'],bg:['#f3f4ec','#d7dccb'],
+  L:{1:['Low wall','Muret'],2:['Boulder','Rocher'],3:['Wall','Mur'],m1:['Ditch','Fossé'],m2:['Chasm','Gouffre']},gen:{walls:1,scatter:.02,pits:1}},
+ prairie:{n:['Plains','Prairie'],g:['#93c26a','#8bbb62'],top:['#9a7b4f','#8a8f86','#6f9f55'],side:['#7a5f3b','#7b7f77','#7a6a4f'],pit:'water',sp:{c:['#f4e36b','#ffffff','#e78bb0','#74a84e'],k:'flower',d:.55},deco:['hay','rock','bush'],bg:['#eef8e2','#c6e3a8'],
+  L:{1:['Hay bale','Botte de foin'],2:['Boulder','Rocher'],3:['Thick hedge','Haie épaisse'],m1:['Pond','Mare'],m2:['Deep pond','Étang profond']},gen:{walls:.6,scatter:.05,pits:1,water:true}},
+ foret:{n:['Forest','Forêt'],g:['#5f8a4a','#588343'],top:['#4f7a3c','#4a6f37','#3f6531'],side:['#5b4630','#54412c','#4c3a27'],pit:'water',sp:{c:['#3f6531','#7b5a3a','#a7c36b'],k:'leaf',d:.6},deco:['bush','tree','pine'],bg:['#e3eedb','#9fbd8c'],
+  L:{1:['Bushes','Buissons'],2:['Thicket','Bosquet'],3:['Tall trees','Grands arbres'],m1:['Stream','Ruisseau'],m2:['Ravine','Ravin']},gen:{walls:.3,scatter:.16,pits:0,river:true}},
+ montagne:{n:['Mountain','Montagne'],g:['#9aa08f','#939986'],top:['#8c8a84','#77756f','#eef1f4'],side:['#7c7a74','#66645e','#57554f'],pit:'chasm',sp:{c:['#6f706a','#b9bbb2','#7d8a5f'],k:'pebble',d:.6},deco:['rock','rock',0],bg:['#eef1f3','#b9c0c6'],
+  L:{1:['Scree','Éboulis'],2:['Boulder','Rocher'],3:['Snowy peak','Pic enneigé'],m1:['Crevasse','Crevasse'],m2:['Sheer drop','Précipice']},gen:{walls:1.6,scatter:.05,pits:1.4,ridge:true}},
+ volcan:{n:['Volcano','Volcan'],g:['#3b3533','#35302e'],top:['#4a3f3a','#3a302c','#2b2321'],side:['#2e2624','#251e1c','#1c1615'],pit:'lava',sp:{c:['#ff7a2a','#5a514c','#ffb15a'],k:'ember',d:.35},deco:['rock','dead','rock'],bg:['#3a2622','#120c0b'],
+  L:{1:['Slag','Scories'],2:['Basalt block','Bloc de basalte'],3:['Cooled flow','Coulée figée'],m1:['Surface lava','Lave affleurante'],m2:['Lava lake','Lac de lave']},gen:{walls:1,scatter:.05,pits:1.8}},
+ desert:{n:['Desert','Désert'],g:['#e3c68c','#dcbf84'],top:['#d8b779','#c99e62','#b9824f'],side:['#c9a56a','#b08453','#9a6d43'],pit:'sand',sp:{c:['#c9a66b','#f2dca6','#b79058'],k:'ripple',d:.5},deco:[0,'cactus','rock'],bg:['#fbf1dc','#e8cf9c'],
+  L:{1:['Dune','Dune'],2:['Sandstone rock','Rocher de grès'],3:['Cliff','Falaise'],m1:['Quicksand','Sable mouvant'],m2:['Sand sinkhole','Gouffre de sable']},gen:{walls:.7,scatter:.06,pits:.8}},
+ neige:{n:['Snow','Neige'],g:['#eef3f7','#e7eef3'],top:['#dfe8ee','#c9d6df','#f7fafc'],side:['#b7c7d3','#9fb2c0','#8aa0b0'],pit:'ice',sp:{c:['#c9d6df','#ffffff','#9fb2c0'],k:'pebble',d:.3},deco:['bush','pinesnow','rock'],bg:['#f7fafc','#c9d8e3'],
+  L:{1:['Snowdrift','Congère'],2:['Fir trees','Sapins'],3:['Ice block','Bloc de glace'],m1:['Thin ice','Glace fine'],m2:['Icy water','Eau glacée']},gen:{walls:.6,scatter:.1,pits:1}},
+ marais:{n:['Swamp','Marais'],g:['#6f7d4f','#687648'],top:['#5d6b3f','#4f5d36','#465230'],side:['#4a4430','#3f3a29','#353123'],pit:'swamp',sp:{c:['#8fa05e','#4f5d36','#a7b46d'],k:'tuft',d:.6},deco:['reed','dead','tree'],bg:['#e5e8d6','#9aa37a'],
+  L:{1:['Reeds','Roseaux'],2:['Stump','Souche'],3:['Willow','Saule'],m1:['Mud','Vase'],m2:['Stagnant water','Eau stagnante']},gen:{walls:.2,scatter:.12,pits:2.4}},
+ donjon:{n:['Dungeon','Donjon'],g:['#8b8680','#837e78'],top:['#77726b','#6a655f','#5d5953'],side:['#6a655f','#5b5751','#4d4944'],pit:'chasm',sp:{c:['#6f6a64','#9a958e'],k:'crack',d:.35},deco:['crate','pillar',0],bg:['#3a3633','#1b1918'],brick:true,
+  L:{1:['Crates','Caisses'],2:['Pillar','Pilier'],3:['Stone wall','Mur de pierre'],m1:['Pit','Fosse'],m2:['Abyss','Abîme']},gen:{rooms:true,pits:.6}}
+};
+const ORDER=['gen','prairie','foret','montagne','volcan','desert','neige','marais','donjon'];
+let placing=null,meas=null,selTok=null;
+let lang='en',unit='ft';try{const p=JSON.parse(localStorage.getItem('luparis-prefs'));if(p){if(p.lang==='fr')lang='fr';if(p.unit==='m')unit='m'}}catch(e){}
+const LI=()=>lang==='fr'?1:0,tr=v=>Array.isArray(v)?v[LI()]:v;
+const T={en:{title:'Luparis Tactical Table',sub:'Prototype: sculpt a battle map in a few clicks.',u_ft:'feet',u_m:'meters',tab_map:'Map',tab_best:'Bestiary',tab_rules:'Rules',toc:'Contents',ver:'Draft v0.7, filled in as we go',
+t_up:'Raise',t_down:'Dig',t_flat:'Flatten',t_pj:'Ally token',t_foe:'Enemy token',t_move:'Move',t_measure:'Measure',rot:'Rotate',undo:'Undo',gen:'Generate',clear:'Clear all',size:'Size',decor:'Setting',
+h_click:'<b>Left click</b> applies the tool; drag to paint. You can aim at the top or the sides of a tile. <b>Right click</b> does the opposite (dig instead of raise, remove a token). On mobile, pick a tool, then tap.',
+h_keys:'<b>Keyboard</b> (on the hovered tile; hold the key and drag to paint): <b>1 2 3</b> height, <b>4</b> ditch, <b>5</b> chasm, <b>0</b> ground. Tools: <b>M</b> raise, <b>C</b> dig, <b>D</b> move, <b>P</b> landmark, <b>T</b> measure; pressing the active tool\'s key again goes back to Move. <b>Esc</b> back to Move, <b>R</b> rotate, <b>G</b> generate the scene again, <b>Ctrl+Z</b> undo.',
+h_meas:'<b>Measure:</b> click and drag from one tile to another. D&D rule: every tile counts 5 ft (1.5 m), diagonals included. <b>Monsters:</b> hover a token and press <b>−</b> or <b>+</b> to remove or restore a Vitality box.',
+h_heights:'<b>Heights:</b> +1 half cover, +2 cover, +3 wall or impassable obstacle. −1 difficult terrain, −2 impassable. The map is kept in your browser.',
+hover:'Hover a tile',ground:'Ground',tile:'tile',placing:'Placing',stop:'Esc to stop',click_tile:'Click a tile, Esc to stop.',meas_hint:'Measure: click and drag between two tiles.',
+esq:'Evasion',thr:'Thresholds',box:'Vitality',sq:'tile',sqs:'tiles',height:'height',
+f_search:'Search',f_search_ph:'Name, type, note',f_type:'Type',f_hab:'Habitat',f_min:'Minimum CR',f_max:'Maximum CR',f_sort:'Sort by',all:'All',
+s_fp:'Challenge rating',s_n:'Name',s_type:'Type',s_pv:'Hit points',c_name:'Name',c_cr:'CR',c_esq:'Evasion',c_thr:'Thresholds',c_box:'Vitality',c_act:'Actions',hp:'HP',
+place:'Place',edit:'Edit',del:'Delete',confirm:'Confirm?',none:'No monster matches these filters.',count:(a,b)=>`${a} monster${a>1?'s':''} of ${b}`,
+b_note:'Evasion, thresholds and Vitality boxes are computed automatically from the D&D AC, HP and CR, using the Luparis rules. Includes the creatures of the System Reference Document 5.1 by Wizards of the Coast LLC (CC-BY-4.0 license), converted to Luparis attacks, plus generic NPCs; add your own monsters below. The bestiary is kept in your browser.',
+add:'Add a monster',editing:'Edit: ',m_ac:'AC (D&D)',m_hp:'HP (D&D)',m_habs:'Habitats',m_notes:'Notes',m_notes_ph:'Abilities, tactics, lore',save:'Save',cancel:'Cancel',
+prev:(v)=>`Luparis: Evasion ${v.esq} · Thresholds ${v.maj}/${v.sev} · ${v.cases} Vitality box${v.cases>1?'es':''}`,
+io_sum:'Export or import the bestiary',io_note:'Copy the bestiary to back it up or move it to another browser, then paste it here to import it.',exp:'Copy the bestiary',impb:'Import pasted text',reset:'Restore the base bestiary',reset_c:'Confirm: erase your monsters?',
+imp_ph:'Paste a copied bestiary here',copied:'Bestiary copied.',copy_no:'Copy refused: the text is in the box below, copy it by hand.',imported:n=>`${n} monsters imported.`,bad:'This text is not a valid bestiary.',restored:'Examples restored.'},
+fr:{title:'Table tactique de Luparis',sub:'Prototype : sculpte une battle map en quelques clics.',u_ft:'pieds',u_m:'mètres',tab_map:'Carte',tab_best:'Bestiaire',tab_rules:'Règles',toc:'Sommaire',ver:'Brouillon v0.7, complété au fur et à mesure',
+t_up:'Monter',t_down:'Creuser',t_flat:'Aplanir',t_pj:'Pion allié',t_foe:'Pion ennemi',t_move:'Déplacer',t_measure:'Mesurer',rot:'Pivoter',undo:'Annuler',gen:'Générer',clear:'Tout effacer',size:'Taille',decor:'Décor',
+h_click:'<b>Clic gauche</b> applique l\'outil, en glissant pour peindre ; on peut viser le sommet ou les flancs d\'une case. <b>Clic droit</b> fait l\'inverse (creuser au lieu de monter, retirer un pion). Sur mobile, choisis l\'outil puis touche.',
+h_keys:'<b>Clavier</b> (sur la case survolée, garder la touche et glisser pour peindre) : <b>1 2 3</b> hauteur, <b>4</b> fossé, <b>5</b> gouffre, <b>0</b> sol. Outils : <b>M</b> monter, <b>C</b> creuser, <b>A</b> allié, <b>E</b> ennemi, <b>D</b> déplacer, <b>P</b> repère, <b>T</b> mesurer ; rappuyer sur la touche de l\'outil actif revient à Déplacer. <b>Échap</b> revenir à Déplacer, <b>R</b> pivoter, <b>G</b> terrain aléatoire, <b>Ctrl+Z</b> annuler.',
+h_meas:'<b>Mesurer :</b> clique et glisse d\'une case à l\'autre. Règle D&D : chaque case compte 5 pieds (1,5 m), diagonales comprises. <b>Monstres :</b> survole un pion et appuie sur <b>−</b> ou <b>+</b> pour retirer ou rendre une case de Vitalité.',
+h_heights:'<b>Hauteurs :</b> +1 couvert partiel, +2 couvert, +3 mur ou obstacle infranchissable. −1 terrain difficile, −2 infranchissable. La carte est gardée dans ton navigateur.',
+hover:'Survole une case',ground:'Sol',tile:'case',placing:'Placement',stop:'Échap pour arrêter',click_tile:'Clique sur une case, Échap pour arrêter.',meas_hint:'Mesure : clique et glisse entre deux cases.',
+esq:'Esquive',thr:'Seuils',box:'Cases',sq:'case',sqs:'cases',height:'hauteur',
+f_search:'Recherche',f_search_ph:'Nom, type, note',f_type:'Type',f_hab:'Habitat',f_min:'FP minimum',f_max:'FP maximum',f_sort:'Trier par',all:'Tous',
+s_fp:'Facteur de puissance',s_n:'Nom',s_type:'Type',s_pv:'Points de vie',c_name:'Nom',c_cr:'FP',c_esq:'Esquive',c_thr:'Seuils',c_box:'Cases',c_act:'Actions',hp:'PV',
+place:'Placer',edit:'Modifier',del:'Supprimer',confirm:'Confirmer ?',none:'Aucun monstre ne correspond à ces filtres.',count:(a,b)=>`${a} monstre${a>1?'s':''} sur ${b}`,
+b_note:'Esquive, seuils et cases sont calculés automatiquement depuis la CA, les PV et le FP de D&D, selon les règles de Luparis. Comprend les créatures du System Reference Document 5.1 de Wizards of the Coast LLC (licence CC-BY-4.0), converties en attaques Luparis, et des PNJ génériques ; ajoute tes propres monstres ci-dessous. Le bestiaire est gardé dans ton navigateur.',
+add:'Ajouter un monstre',editing:'Modifier : ',m_ac:'CA (D&D)',m_hp:'PV (D&D)',m_habs:'Habitats',m_notes:'Notes',m_notes_ph:'Capacités, tactique, lore',save:'Enregistrer',cancel:'Annuler',
+prev:(v)=>`Luparis : Esquive ${v.esq} · Seuils ${v.maj}/${v.sev} · ${v.cases} case${v.cases>1?'s':''}`,
+io_sum:'Exporter ou importer le bestiaire',io_note:'Copie le bestiaire pour le sauvegarder ou le passer à un autre navigateur, puis colle-le ici pour l\'importer.',exp:'Copier le bestiaire',impb:'Importer le texte collé',reset:'Revenir au bestiaire de base',reset_c:'Confirmer : effacer tes monstres ?',
+imp_ph:'Colle ici un bestiaire copié',copied:'Bestiaire copié.',copy_no:'Copie refusée : le texte est dans la zone ci-dessous, copie-le à la main.',imported:n=>`${n} monstres importés.`,bad:"Ce texte n'est pas un bestiaire valide.",restored:'Exemples restaurés.'}};
+const t=k=>T[lang][k];
+const TY={humanoid:['Humanoid','Humanoïde'],undead:['Undead','Mort-vivant'],beast:['Beast','Bête'],fiend:['Fiend','Fiélon'],fey:['Fey','Fée'],giant:['Giant','Géant'],ooze:['Ooze','Vase'],monstrosity:['Monstrosity','Monstruosité'],elemental:['Elemental','Élémentaire'],celestial:['Celestial','Céleste'],plant:['Plant','Plante'],dragon:['Dragon','Dragon'],construct:['Construct','Créature artificielle'],aberration:['Aberration','Aberration']};
+const tyName=k=>TY[k]?tr(TY[k]):k;
+const num=v=>lang==='fr'?String(v).replace('.',','):String(v);
+let N=14,H=[],F=[],scene='forest_road',MARKS=[],CTX=null,CTXN='',selMark=null,tokens=[],rot=0,tool='move',hist=[],drag=null,painting=null,hover=null,lastPainted='',bio='gen',t0=performance.now();
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function blank(n){return Array.from({length:n},()=>Array(n).fill(0))}
+let INI={o:[],cur:0,round:0};
+function towns(){try{return JSON.parse(localStorage.getItem('luparis-towns'))||{}}catch(e){return{}}}
+function save(){const st={N,H,F,scene,tokens,rot,bio,ini:INI,marks:MARKS};try{if(CTX){const o=towns();o[CTX]={...st,name:CTXN};localStorage.setItem('luparis-towns',JSON.stringify(o))}else localStorage.setItem('luparis-tac',JSON.stringify(st));localStorage.setItem('luparis-ctx',JSON.stringify(CTX?{id:CTX,n:CTXN}:null))}catch(e){}if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks()}
+function applyState(d){if(!(d&&d.H&&d.N))return false;N=d.N;H=d.H;F=Array.isArray(d.F)&&d.F.length===d.N?d.F:blank(d.N);if(d.scene)scene=d.scene;tokens=d.tokens||[];rot=d.rot||0;bio=B[d.bio]?d.bio:'gen';INI=d.ini&&Array.isArray(d.ini.o)?d.ini:{o:[],cur:0,round:0};MARKS=Array.isArray(d.marks)?d.marks:[];return true}
+function load(){try{const c=JSON.parse(localStorage.getItem('luparis-ctx'));if(c&&c.id){const o=towns()[c.id];if(o&&applyState(o)){CTX=c.id;CTXN=c.n||o.name||'';return true}}}catch(e){}try{return applyState(JSON.parse(localStorage.getItem('luparis-tac')))}catch(e){}return false}
+function tid(){return 't'+Math.random().toString(36).slice(2,9)}
+function snap(){hist.push(JSON.stringify({H,F,tokens,marks:MARKS}));if(hist.length>60)hist.shift()}
+if(!load()){H=blank(N);F=blank(N)}
+document.getElementById('size').value=N;document.getElementById('sv').textContent=N;
+function rnd(x,y,k){let h=Math.imul(x+1,374761393)^Math.imul(y+7,668265263)^Math.imul(k+3,2246822519);h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
+function mul(hex,f){const n=parseInt(hex.slice(1),16);const c=[n>>16,(n>>8)&255,n&255].map(v=>Math.max(0,Math.min(255,Math.round(v*f))));return`rgb(${c})`}
+let TW,LH,ox,oy,W,Hc;
+function layout(){const r=stage.getBoundingClientRect(),dpr=window.devicePixelRatio||1;W=r.width;Hc=r.height;cv.width=W*dpr;cv.height=Hc*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+TW=Math.min((W*0.94)/N,(Hc*0.78)/(N/2+2));LH=TW*0.28;ox=W/2;oy=(Hc-(N*TW/2))/2+LH*2.6;draw()}
+function view(x,y){switch(rot){case 1:return[N-1-y,x];case 2:return[N-1-x,N-1-y];case 3:return[y,N-1-x];default:return[x,y]}}
+function scr(vx,vy,h){return[ox+(vx-vy)*TW/2,oy+(vx+vy)*TW/4-h*LH]}
+function dia(vx,vy,h){const[cx,cy]=scr(vx,vy,h);return[[cx,cy],[cx+TW/2,cy+TW/4],[cx,cy+TW/2],[cx-TW/2,cy+TW/4]]}
+function poly(p,fill,stroke,lw){ctx.beginPath();p.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw||1;ctx.stroke()}}
+function inD(cx,cy,u,v){return[cx+(u-v)*TW/2,cy+(u+v)*TW/4]}
+function cells(){const a=[];for(let x=0;x<N;x++)for(let y=0;y<N;y++){const[vx,vy]=view(x,y);a.push({x,y,vx,vy})}return a.sort((a,b)=>(a.vx+a.vy)-(b.vx+b.vy)||a.vx-b.vx)}
+function gv(vx,vy){let x,y;switch(rot){case 1:x=vy;y=N-1-vx;break;case 2:x=N-1-vx;y=N-1-vy;break;case 3:x=N-1-vy;y=vx;break;default:x=vx;y=vy}return x>=0&&y>=0&&x<N&&y<N?H[x][y]:null}
+function hasAnim(){if(reduce)return false;const p=B[bio].pit;if(p!=='lava'&&p!=='water'&&p!=='swamp')return false;for(const r of H)for(const v of r)if(v<0)return true;return false}
+function specks(cx,cy,x,y){const s=B[bio].sp;for(let i=0;i<4;i++){if(rnd(x,y,i)>s.d)continue;const[px,py]=inD(cx,cy,.18+rnd(x,y,i+10)*.64,.18+rnd(x,y,i+20)*.64);const c=s.c[Math.floor(rnd(x,y,i+30)*s.c.length)];const z=TW/40;
+ ctx.fillStyle=c;ctx.strokeStyle=c;ctx.lineWidth=Math.max(1,z*.8);ctx.beginPath();
+ if(s.k==='tuft'||s.k==='leaf'){ctx.moveTo(px-z*1.5,py);ctx.lineTo(px-z*.5,py-z*3);ctx.moveTo(px,py);ctx.lineTo(px,py-z*3.6);ctx.moveTo(px+z*1.5,py);ctx.lineTo(px+z*.6,py-z*3);ctx.stroke()}
+ else if(s.k==='flower'){ctx.arc(px,py,z*1.3,0,7);ctx.fill()}
+ else if(s.k==='ember'){ctx.globalAlpha=.6+.4*Math.sin((performance.now()-t0)/400+i+x);ctx.arc(px,py,z*1.1,0,7);ctx.fill();ctx.globalAlpha=1}
+ else if(s.k==='ripple'){ctx.ellipse(px,py,z*4,z*1.2,0,Math.PI*1.1,Math.PI*1.9);ctx.stroke()}
+ else if(s.k==='crack'){ctx.moveTo(px-z*3,py);ctx.lineTo(px,py+z);ctx.lineTo(px+z*3,py-z);ctx.stroke()}
+ else{ctx.ellipse(px,py,z*1.6,z,0,0,7);ctx.fill()}}}
+function deco(kind,cx,cy,h,x,y){if(!kind)return;const s=TW/64,bx=cx,by=cy+TW/4;ctx.lineWidth=Math.max(1,s*1.5);
+ if(kind==='bush'){for(const[dx,dy,r]of[[-9,0,10],[8,1,9],[0,-6,11]]){ctx.fillStyle=bio==='neige'?'#e9f0f4':'#3f6b34';ctx.beginPath();ctx.arc(bx+dx*s,by+dy*s-6*s,r*s,0,7);ctx.fill()}ctx.fillStyle='rgba(255,255,255,.18)';ctx.beginPath();ctx.arc(bx-3*s,by-16*s,5*s,0,7);ctx.fill()}
+ else if(kind==='tree'){ctx.fillStyle='#5b4630';ctx.fillRect(bx-3*s,by-22*s,6*s,22*s);const g=bio==='marais'?['#5d6e3a','#4c5c2f']:['#4d8a3c','#3b6f2e'];
+  for(const[dx,dy,r,c]of[[-10,-30,13,1],[10,-30,13,1],[0,-42,16,0]]){ctx.fillStyle=g[c];ctx.beginPath();ctx.arc(bx+dx*s,by+dy*s,r*s,0,7);ctx.fill()}}
+ else if(kind==='pine'||kind==='pinesnow'){ctx.fillStyle='#4a3a28';ctx.fillRect(bx-2.5*s,by-10*s,5*s,10*s);for(let i=0;i<3;i++){const w=(18-i*4)*s,yb=by-(8+i*13)*s;
+  poly([[bx-w,yb],[bx+w,yb],[bx,yb-22*s]],i%2?'#2f5a2c':'#356530');if(kind==='pinesnow')poly([[bx-w*.45,yb-12*s],[bx+w*.45,yb-12*s],[bx,yb-22*s]],'#f4f8fb')}}
+ else if(kind==='rock'){const k=rnd(x,y,77);const c=bio==='volcan'?['#3d3431','#2a2321']:bio==='desert'?['#b98a58','#9a6d43']:['#9b9890','#7d7a73'];
+  poly([[bx-14*s,by-2*s],[bx-10*s,by-14*s-k*4*s],[bx+2*s,by-18*s],[bx+13*s,by-9*s],[bx+12*s,by]],c[0]);poly([[bx+2*s,by-18*s],[bx+13*s,by-9*s],[bx+12*s,by],[bx+1*s,by-4*s]],c[1])}
+ else if(kind==='dead'){ctx.strokeStyle=bio==='volcan'?'#1a1312':'#4a3f2c';ctx.lineWidth=Math.max(1.5,3*s);ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx,by-30*s);ctx.moveTo(bx,by-18*s);ctx.lineTo(bx-10*s,by-28*s);ctx.moveTo(bx,by-24*s);ctx.lineTo(bx+9*s,by-34*s);ctx.stroke()}
+ else if(kind==='cactus'){ctx.fillStyle='#5e8f4a';const r=(x0,y0,w,hh)=>{ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,y0,w,hh,w/2);else ctx.rect(x0,y0,w,hh);ctx.fill()};r(bx-4*s,by-30*s,8*s,30*s);r(bx-13*s,by-22*s,6*s,12*s);r(bx+7*s,by-26*s,6*s,12*s)}
+ else if(kind==='hay'){ctx.fillStyle='#e2c46a';ctx.beginPath();ctx.ellipse(bx,by-8*s,14*s,9*s,0,0,7);ctx.fill();ctx.strokeStyle='#b8973f';ctx.beginPath();ctx.ellipse(bx,by-8*s,8*s,5*s,0,0,7);ctx.stroke()}
+ else if(kind==='reed'){ctx.strokeStyle='#7f8f4a';ctx.lineWidth=Math.max(1,2*s);ctx.beginPath();for(const dx of[-8,-3,2,7]){ctx.moveTo(bx+dx*s,by);ctx.lineTo(bx+dx*s*1.3,by-24*s)}ctx.stroke();ctx.fillStyle='#6b4a2f';for(const dx of[-3,7]){ctx.beginPath();ctx.ellipse(bx+dx*s*1.3,by-22*s,2*s,5*s,0,0,7);ctx.fill()}}
+ else if(kind==='crate'){const w=11*s;poly([[bx-w,by-4*s],[bx,by+1*s],[bx,by-14*s],[bx-w,by-19*s]],'#8a6238','rgba(0,0,0,.3)');poly([[bx,by+1*s],[bx+w,by-4*s],[bx+w,by-19*s],[bx,by-14*s]],'#6f4e2c','rgba(0,0,0,.3)');poly([[bx-w,by-19*s],[bx,by-14*s],[bx+w,by-19*s],[bx,by-24*s]],'#a3784a','rgba(0,0,0,.3)')}
+ else if(kind==='pillar'){ctx.fillStyle='#8f8a83';ctx.fillRect(bx-7*s,by-36*s,14*s,36*s);ctx.fillStyle='#a6a19a';ctx.fillRect(bx-7*s,by-36*s,5*s,36*s);ctx.fillStyle='#b3aea6';ctx.beginPath();ctx.ellipse(bx,by-36*s,9*s,4*s,0,0,7);ctx.fill()}}
+function pit(c,h){const{vx,vy,x,y}=c,b=B[bio],g=dia(vx,vy,0),t=(performance.now()-t0)/1000;ctx.save();poly(g);ctx.clip();
+ const liquid=b.pit!=='chasm';const d=liquid?LH*(h===-1?.35:.6):-h*LH*1.1;
+ const cols={chasm:['#2b2622','#4a423b','#3a332e'],water:['#3f7fb0','#5a7e64','#4b6c55'],lava:['#ff6a1a','#2a1d1a','#1f1513'],sand:['#c79a5a','#a77e48','#8f6b3c'],ice:['#9ccbe6','#b7c7d3','#9fb2c0'],swamp:['#4b5a32','#3f3a29','#353123']}[b.pit];
+ let floor=cols[0];if(b.pit==='water'&&h===-2)floor='#2c5f8c';if(b.pit==='ice'&&h===-2)floor='#3d6f93';if(b.pit==='swamp'&&h===-2)floor='#364425';
+ if(b.pit==='lava'){const k=.85+.15*Math.sin(t*2+x*.7+y*.5);floor=h===-2?`rgb(${Math.round(255*k)},${Math.round(80*k)},20)`:`rgb(${Math.round(240*k)},${Math.round(120*k)},40)`}
+ const nb=[gv(vx-1,vy),gv(vx,vy-1),gv(vx+1,vy),gv(vx,vy+1)].map(v=>liquid&&v!==null&&v<0);
+ poly(liquid?g:g.map(p=>[p[0],p[1]+d]),floor);
+ if(liquid&&b.pit!=='sand'){ctx.strokeStyle=b.pit==='lava'?'rgba(255,230,120,.7)':'rgba(255,255,255,.45)';ctx.lineWidth=Math.max(1,TW/60);ctx.beginPath();const o=(t*.15+rnd(x,y,5))%1;
+  const[a1,b1]=inD(g[0][0],g[0][1]+d,.25+o*.3,.35),[a2,b2]=inD(g[0][0],g[0][1]+d,.45+o*.3,.35);ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke()}
+ if(b.pit==='sand'){ctx.strokeStyle='rgba(120,80,40,.5)';ctx.lineWidth=1;const[cx2,cy2]=[g[0][0],g[0][1]+d+TW/4];ctx.beginPath();ctx.ellipse(cx2,cy2,TW*.22,TW*.09,0,0,7);ctx.ellipse(cx2,cy2,TW*.11,TW*.045,0,0,7);ctx.stroke()}
+ if(!nb[0])poly([g[3],g[0],[g[0][0],g[0][1]+d],[g[3][0],g[3][1]+d]],cols[1]);if(!nb[1])poly([g[0],g[1],[g[1][0],g[1][1]+d],[g[0][0],g[0][1]+d]],cols[2]);
+ ctx.restore();if(!liquid)poly(g,null,'rgba(0,0,0,.4)');else{ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=1;ctx.beginPath();for(const[i,a,b2]of[[0,3,0],[1,0,1],[2,1,2],[3,2,3]])if(!nb[i]){ctx.moveTo(...g[a]);ctx.lineTo(...g[b2])}ctx.stroke()}
+ if(b.pit==='lava'){ctx.save();ctx.globalCompositeOperation='lighter';const[cx,cy]=scr(vx,vy,0);const gr=ctx.createRadialGradient(cx,cy+TW/4,0,cx,cy+TW/4,TW*.7);gr.addColorStop(0,'rgba(255,110,30,.28)');gr.addColorStop(1,'rgba(255,110,30,0)');ctx.fillStyle=gr;ctx.fillRect(cx-TW*.7,cy-TW*.5,TW*1.4,TW*1.4);ctx.restore()}}
+const FC={1:['#b49c74','#ab936b'],2:['#9d978c','#958f84'],3:['#a87c50','#a0754a'],4:['#7c6a56','#7c6a56'],5:['#7a5434','#7a5434']},FW={side:['#a8957c','#9a876e','#8c7960']};
+const FL={1:['Path','Chemin'],2:['Cobblestones','Pavés'],3:['Wooden floor','Plancher'],4:['Wall','Mur'],5:['Furniture, crates','Mobilier, caisses']};
+function ftex(f,t,x,y){const[cx,cy]=t[0];ctx.save();poly(t);ctx.clip();ctx.lineWidth=1;
+ if(f===3){ctx.strokeStyle='rgba(60,35,15,.35)';for(let i=1;i<4;i++){const[a1,b1]=inD(cx,cy,i/4,0),[a2,b2]=inD(cx,cy,i/4,1);ctx.beginPath();ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke()}}
+ else if(f===2){ctx.strokeStyle='rgba(50,45,40,.35)';for(let i=0;i<5;i++){const[px,py]=inD(cx,cy,.15+rnd(x,y,i)*.7,.15+rnd(x,y,i+9)*.7);ctx.beginPath();ctx.ellipse(px,py,TW/16,TW/30,0,0,7);ctx.stroke()}}
+ else if(f===1){ctx.fillStyle='rgba(90,70,45,.35)';for(let i=0;i<3;i++){if(rnd(x,y,i)>.6)continue;const[px,py]=inD(cx,cy,.2+rnd(x,y,i+3)*.6,.2+rnd(x,y,i+6)*.6);ctx.beginPath();ctx.ellipse(px,py,TW/40,TW/70,0,0,7);ctx.fill()}}
+ else if(f===4){ctx.strokeStyle='rgba(255,255,255,.18)';const[a1,b1]=inD(cx,cy,.5,0),[a2,b2]=inD(cx,cy,.5,1);ctx.beginPath();ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke()}
+ else if(f===5){ctx.strokeStyle='rgba(30,15,5,.45)';const[a1,b1]=inD(cx,cy,.2,.2),[a2,b2]=inD(cx,cy,.8,.8);ctx.strokeRect(Math.min(a1,a2)-TW*.18,Math.min(b1,b2),TW*.36,Math.abs(b2-b1))}
+ ctx.restore()}
+function draw(){const b=B[bio];if(hover){const ti=tokAt(hover),tk=ti>=0?tokens[ti]:null;
+  const mk=MARKS.findIndex(m=>m.x===hover.x&&m.y===hover.y);if(mk>=0&&!(tokAt(hover)>=0)){info.textContent=`${t("t_mark")} ${mk+1} · ${MARKS[mk].l||t('mk_ph')}`}else
+  info.textContent=(tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)} (${t('stop')}) · `:'')+(tk&&tk.nm?`${tr(tk.nm)} ${tk.num||''} · ${t('esq')} ${tk.esq} · ${t('thr')} ${tk.maj}/${tk.sev} · ${t('box')} ${tk.hp}/${tk.hpMax}`:`${tr(b.n)} · ${t('tile')} ${hover.x+1}, ${hover.y+1} — ${label(H[hover.x][hover.y],F[hover.x][hover.y])}`)}
+ else info.textContent=tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)}. ${t('click_tile')}`:tool==='measure'?t('meas_hint'):t('hover');stage.style.background=`radial-gradient(ellipse at 50% 40%,${mul(b.bg[0],.36)},${mul(b.bg[1],.24)})`;ctx.clearRect(0,0,W,Hc);
+ for(const c of cells()){const h=H[c.x][c.y],{vx,vy}=c;
+  if(h<0)pit(c,h);
+  else{const f=F[c.x][c.y],t=dia(vx,vy,h);if(h>0){const g=dia(vx,vy,0),sc=f===4?FW.side[h-1]:f===5?'#6a4a2e':b.side[h-1];
+    poly([t[3],t[2],g[2],g[3]],mul(sc,.9),'rgba(0,0,0,.25)');poly([t[2],t[1],g[1],g[2]],mul(sc,.72),'rgba(0,0,0,.25)');
+    if(b.brick){ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=1;for(let i=1;i<=h*2;i++){const f=i/(h*2+1);ctx.beginPath();ctx.moveTo(t[3][0],t[3][1]+(g[3][1]-t[3][1])*f);ctx.lineTo(t[2][0],t[2][1]+(g[2][1]-t[2][1])*f);ctx.lineTo(t[1][0],t[1][1]+(g[1][1]-t[1][1])*f);ctx.stroke()}}}
+   const chk=(c.x+c.y)%2;poly(t,f?FC[f][chk]:h>0?b.top[h-1]:b.g[chk],'rgba(0,0,0,.14)');
+   if(f)ftex(f,t,c.x,c.y);else if(h===0)specks(t[0][0],t[0][1],c.x,c.y);
+   if(h>0){ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(...t[3]);ctx.lineTo(...t[0]);ctx.lineTo(...t[1]);ctx.stroke()}}
+  if(hover&&hover.x===c.x&&hover.y===c.y)poly(dia(vx,vy,Math.max(h,0)),'rgba(192,112,58,.32)','#c0703a',2);
+  if(h>0&&!F[c.x][c.y]){const[cx,cy]=scr(vx,vy,h);deco(b.deco[h-1],cx,cy,h,c.x,c.y)}
+  for(const k of tokens)if(tokCell(k,c))drawTokAt(k)}
+ drawMarks();if(meas)drawMeas();
+ if(hasAnim()||(bio==='volcan'&&!reduce))requestAnimationFrame(tick)}
+function ctr(c){const[vx,vy]=view(c.x,c.y),h=Math.max(H[c.x][c.y],0);const[cx,cy]=scr(vx,vy,h);return[cx,cy+TW/4]}
+function drawMarks(){MARKS.forEach((m,i)=>{if(m.x<0||m.y<0||m.x>=N||m.y>=N)return;const[x,y]=ctr(m),s=Math.max(10,TW*.2);ctx.save();ctx.strokeStyle='#2a1a33';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-s*2.6);ctx.stroke();
+ ctx.fillStyle=m.id===selMark?'#f2c14e':'#7a3fb0';ctx.beginPath();ctx.moveTo(x,y-s*2.6);ctx.lineTo(x+s*1.7,y-s*2.1);ctx.lineTo(x,y-s*1.6);ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
+ ctx.fillStyle='#fff';ctx.font=`700 ${Math.max(10,s*.8)}px "Alegreya Sans",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=m.id===selMark?'#2a1a33':'#fff';ctx.fillText(i+1,x+s*.65,y-s*2.1);ctx.restore()})}
+function renderMarks(){const L=document.getElementById('mk_list');if(!L)return;if(L.contains(document.activeElement)&&L.querySelectorAll('input').length===MARKS.length){L.querySelectorAll('li').forEach((li,i)=>li.classList.toggle('sel',MARKS[i]&&MARKS[i].id===selMark));return}L.innerHTML=MARKS.map((m,i)=>`<li class="${m.id===selMark?'sel':''}"><span class="n">${i+1}</span><input data-id="${m.id}" value="${esc(m.l)}" placeholder="${esc(t('mk_ph'))}" aria-label="${esc(t('mk_title'))} ${i+1}"><button type="button" data-mkdel="${m.id}" aria-label="${esc(t('del'))}">✕</button></li>`).join('')||`<li class="small">${esc(t('mk_none'))}</li>`}
+document.getElementById('mk_list').addEventListener('input',e=>{const m=MARKS.find(x=>x.id===e.target.dataset.id);if(m){m.l=e.target.value.slice(0,200);clearTimeout(window._mkT);window._mkT=setTimeout(save,300)}});
+document.getElementById('mk_list').addEventListener('focusin',e=>{if(e.target.dataset.id){selMark=e.target.dataset.id;draw()}});
+document.getElementById('mk_list').addEventListener('click',e=>{const b=e.target.closest('[data-mkdel]');if(!b)return;snap();MARKS=MARKS.filter(m=>m.id!==b.dataset.mkdel);save();draw()});
+function drawMeas(){const{a,b}=meas,[x1,y1]=ctr(a),[x2,y2]=ctr(b),dh=H[b.x][b.y]-H[a.x][a.y],d=Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y))+Math.abs(dh);
+ ctx.save();ctx.strokeStyle='#c0703a';ctx.lineWidth=3;ctx.setLineDash([8,6]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.setLineDash([]);
+ for(const[x,y]of[[x1,y1],[x2,y2]]){ctx.fillStyle='#c0703a';ctx.beginPath();ctx.arc(x,y,5,0,7);ctx.fill()}
+ const dist=unit==='ft'?`${d*5} ${lang==='fr'?'pieds':'ft'}`:`${num(d*1.5)} m`;const hd=unit==='ft'?`${Math.abs(dh)*5} ${lang==='fr'?'pieds':'ft'}`:`${num(Math.abs(dh)*1.5)} m`;const t=`${d} ${d>1?T[lang].sqs:T[lang].sq} · ${dist}`+(dh?` (${T[lang].incl} ${hd} ${dh>0?T[lang].up:T[lang].down})`:'');ctx.font='600 15px "Alegreya Sans",sans-serif';const w=ctx.measureText(t).width+18;
+ if(meas.drag&&d===0&&!dh){ctx.restore();return}const lx=Math.min(W-w-6,Math.max(6,(x1+x2)/2-w/2)),ly=Math.max(6,Math.min(y1,y2)-40);ctx.fillStyle='rgba(30,26,22,.88)';ctx.beginPath();if(ctx.roundRect)ctx.roundRect(lx,ly,w,28,8);else ctx.rect(lx,ly,w,28);ctx.fill();
+ ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(t,lx+9,ly+14);ctx.restore()}
+let ticking=false;function tick(){if(ticking)return;ticking=true;setTimeout(()=>{ticking=false;draw()},90)}
+function drawTok(k,vx,vy,h,sc=1){const[cx,cy]=scr(vx,vy,h);const y=cy+TW/4,r=TW*.24*(sc>1?sc*.82:sc);
+ ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(cx,y+r*.35,r,r*.45,0,0,7);ctx.fill();
+ const g=ctx.createRadialGradient(cx-r*.3,y-r*1.2,r*.1,cx,y-r*.8,r*1.1);const c=k.t==='pj'?['#7fb0e6','#2b5c9c']:k.hp===0?['#9a9590','#4d4944']:['#ec8a7a','#9c2f25'];
+ g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,y-r*.8,r,0,7);ctx.fill();
+ ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=1.5;ctx.stroke();
+ const cy0=y-r*.8;if(INI.o.length&&INI.o[INI.cur]&&INI.o[INI.cur].id===k.id){ctx.strokeStyle='#f2c14e';ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy0,r+4,0,7);ctx.stroke()}
+ ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
+ if(k.ty&&icon(k.ty,cx,cy0,r)){if(k.num){ctx.font=`700 ${Math.max(9,r*.55)}px "Alegreya Sans",sans-serif`;ctx.fillStyle='#1b1816';ctx.beginPath();ctx.arc(cx+r*.75,cy0+r*.7,r*.42,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(k.num,cx+r*.75,cy0+r*.72)}}
+ else{ctx.font=`700 ${Math.max(9,r*(k.n.length>2?.7:.95))}px "Alegreya Sans",sans-serif`;ctx.fillText(k.n,cx,cy0)}
+ if(k.hpMax){const n=k.hpMax,w=Math.min(TW*.9*Math.max(1,sc*.8),Math.max(r*2,n*5)),x0=cx-w/2,yb=y-r*2.2,bh=Math.max(4,TW*.06);ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(x0-1,yb-1,w+2,bh+2);
+  if(n<=16){const sw=w/n;for(let i=0;i<n;i++){ctx.fillStyle=i<k.hp?'#e0503c':'#3a3330';ctx.fillRect(x0+i*sw+.5,yb,sw-1,bh)}}else{ctx.fillStyle='#3a3330';ctx.fillRect(x0,yb,w,bh);ctx.fillStyle='#e0503c';ctx.fillRect(x0,yb,w*k.hp/n,bh)}}}
+function icon(ty,cx,cy,r){const s=r/10;ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);ctx.fillStyle='#fff';ctx.strokeStyle='#fff';ctx.lineWidth=1.6;ctx.lineCap='round';ctx.lineJoin='round';const P=(pts,f=true)=>{ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();f?ctx.fill():ctx.stroke()};const C=(x,y,rr,f=true)=>{ctx.beginPath();ctx.arc(x,y,rr,0,7);f?ctx.fill():ctx.stroke()};let ok=true;
+ const cut=f=>{ctx.save();ctx.globalCompositeOperation='destination-out';f();ctx.restore()};
+ switch(ty){
+ case'humanoid':ctx.beginPath();ctx.arc(0,1,6,Math.PI,0);ctx.lineTo(6,4);ctx.lineTo(-6,4);ctx.closePath();ctx.fill();ctx.fillRect(-1,-1,2,7);cut(()=>{ctx.fillRect(-5,0,3.2,1.8);ctx.fillRect(1.8,0,3.2,1.8)});break;
+ case'undead':C(0,-1,5.6);ctx.fillRect(-3.2,3,6.4,3.4);cut(()=>{C(-2.2,-1,1.6);C(2.2,-1,1.6);ctx.fillRect(-.4,4,.8,2.4);ctx.fillRect(-2.2,4,.8,2.4);ctx.fillRect(1.4,4,.8,2.4)});break;
+ case'beast':P([[-6,-6],[-3,-2],[3,-2],[6,-6],[5.5,1],[0,7],[-5.5,1]]);cut(()=>{C(-2.4,0,1.1);C(2.4,0,1.1)});break;
+ case'dragon':P([[-6,-5],[-3,-2],[4,-3],[7,1],[3,2],[3,5],[-2,5],[-5,2]]);P([[-4,-3],[-7,-7],[-2,-3]]);cut(()=>C(1,-1,1.1));break;
+ case'fiend':C(0,1,4.6);P([[-4,-1],[-7,-7],[-2,-3]]);P([[4,-1],[7,-7],[2,-3]]);cut(()=>{C(-1.8,1,1);C(1.8,1,1)});break;
+ case'giant':C(0,-2,4.4);P([[-4.4,0],[4.4,0],[3,7],[-3,7]]);cut(()=>{ctx.fillRect(-3,-3,2,1.2);ctx.fillRect(1,-3,2,1.2)});break;
+ case'ooze':ctx.beginPath();ctx.moveTo(-7,5);ctx.quadraticCurveTo(-7,-6,0,-6);ctx.quadraticCurveTo(7,-6,7,5);ctx.closePath();ctx.fill();cut(()=>{C(-2.4,-1,1.3);C(2.4,0,1)});break;
+ case'monstrosity':ctx.beginPath();ctx.ellipse(0,0,7,4.5,0,0,7);ctx.fill();cut(()=>C(0,0,2.6));C(0,0,1.2);break;
+ case'elemental':ctx.beginPath();ctx.moveTo(0,-7);ctx.quadraticCurveTo(6,0,4,4);ctx.quadraticCurveTo(2,7,0,7);ctx.quadraticCurveTo(-5,7,-5,2);ctx.quadraticCurveTo(-4,-2,-1,-3);ctx.quadraticCurveTo(-1,1,1,2);ctx.quadraticCurveTo(2,-2,0,-7);ctx.fill();break;
+ case'celestial':ctx.beginPath();ctx.ellipse(0,-5.5,5,1.6,0,0,7);ctx.stroke();C(0,1.5,4.2);break;
+ case'plant':ctx.beginPath();ctx.moveTo(-5,6);ctx.quadraticCurveTo(-7,-6,6,-6);ctx.quadraticCurveTo(6,6,-5,6);ctx.fill();cut(()=>{ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-4,5);ctx.lineTo(4,-4);ctx.stroke()});break;
+ case'fey':ctx.beginPath();ctx.ellipse(-3.4,-2,3.4,4.4,-.5,0,7);ctx.ellipse(3.4,-2,3.4,4.4,.5,0,7);ctx.fill();ctx.beginPath();ctx.ellipse(-2.6,3.6,2.2,2.8,.4,0,7);ctx.ellipse(2.6,3.6,2.2,2.8,-.4,0,7);ctx.fill();break;
+ case'construct':for(let i=0;i<8;i++){ctx.save();ctx.rotate(i*Math.PI/4);ctx.fillRect(-1.3,-7,2.6,3);ctx.restore()}C(0,0,5);cut(()=>C(0,0,2));break;
+ default:ok=false}
+ ctx.restore();return ok}
+function inPoly(p,x,y){let s=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const[a,b]=p[i],[c,d]=p[j];if((b>y)!==(d>y)&&x<(c-a)*(y-b)/(d-b)+a)s=!s}return s}
+function shape(c){const h=H[c.x][c.y];if(h<=0)return dia(c.vx,c.vy,0);const t=dia(c.vx,c.vy,h),g=dia(c.vx,c.vy,0);return[t[0],t[1],g[1],g[2],g[3],t[3]]}
+function pick(mx,my){for(const c of cells().reverse())if(inPoly(shape(c),mx,my))return c;return null}
+function pos(e){const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]}
+const SZN={T:.5,S:1,M:1,L:2,H:3,G:4};function tfp(k){return Math.max(1,Math.floor(SZN[k.sz]||1))}
+function covers(k,x,y){const n=tfp(k);return x>=k.x&&y>=k.y&&x<k.x+n&&y<k.y+n}
+function tokAt(c){return tokens.findIndex(k=>covers(k,c.x,c.y))}
+function fits(x,y,n,id){if(x<0||y<0||x+n>N||y+n>N)return false;for(let i=x;i<x+n;i++)for(let j=y;j<y+n;j++){if(H[i][j]<=-2)return false;if(tokens.some(k=>k.id!==id&&covers(k,i,j)))return false}return true}
+function anchor(c,n){return{x:Math.max(0,Math.min(N-n,c.x-Math.floor((n-1)/2))),y:Math.max(0,Math.min(N-n,c.y-Math.floor((n-1)/2)))}}
+function tokCell(k,c){const n=tfp(k);if(n===1)return k.x===c.x&&k.y===c.y;let bx=-1,by=-1,bs=-1;for(let i=k.x;i<k.x+n;i++)for(let j=k.y;j<k.y+n;j++){const[vx,vy]=view(i,j),sc=(vx+vy)*1000+vx;if(sc>bs){bs=sc;bx=i;by=j}}return bx===c.x&&by===c.y}
+function drawTokAt(k){const n=tfp(k);let sx=0,sy=0,hm=0;for(let i=k.x;i<k.x+n;i++)for(let j=k.y;j<k.y+n;j++){const[vx,vy]=view(i,j);sx+=vx;sy+=vy;hm=Math.max(hm,H[i][j])}
+ const hh=n===1&&H[k.x][k.y]<0?-.5:Math.max(hm,0);drawTok(k,sx/(n*n),sy/(n*n),hh,n===1&&k.sz==='T'?.62:n)}
+function nextName(t){const n=tokens.filter(k=>k.t===t).length+1;return t==='pj'?String(n):String.fromCharCode(64+((n-1)%26)+1)}
+function label(h,f){if(f&&h>=0)return tr(FL[f])+(h>0?` (+${h})`:'');const L=B[bio].L;return h===0?t('ground'):h>0?`${tr(L[h])} (+${h})`:`${tr(L['m'+(-h)])} (${h})`}
+function apply(c,inv){const key=c.x+','+c.y;if(painting&&lastPainted===key)return;lastPainted=key;const h=H[c.x][c.y];let t=tool;
+ if(inv&&t!=='mark'){if(t==='up')t='down';else if(t==='down')t='up';else if(t==='pj'||t==='foe'||t==='move'||t==='place'){const i=tokAt(c);if(i>=0){const id=tokens[i].id;tokens.splice(i,1);INI.o=INI.o.filter(o=>o.id!==id)}return}}
+ if(t==='up')H[c.x][c.y]=Math.min(3,h+1);else if(t==='down'){H[c.x][c.y]=Math.max(-2,h-1);if(H[c.x][c.y]<0)F[c.x][c.y]=0}else if(t==='flat'){H[c.x][c.y]=0;F[c.x][c.y]=0}
+ else if(t==='mark'){const i=MARKS.findIndex(m=>m.x===c.x&&m.y===c.y);if(inv){if(i>=0){MARKS.splice(i,1);save()}}else if(i>=0){selMark=MARKS[i].id;const e=document.querySelector(`#mk_list input[data-id="${selMark}"]`);if(e)setTimeout(()=>e.focus(),30)}else{const m={id:tid(),x:c.x,y:c.y,l:''};MARKS.push(m);selMark=m.id;save();setTimeout(()=>{const e=document.querySelector(`#mk_list input[data-id="${m.id}"]`);if(e)e.focus()},30)}painting=null;return}
+ else if((t==='pj'||t==='foe')&&tokAt(c)<0&&h>-2)tokens.push({id:tid(),x:c.x,y:c.y,t,n:nextName(t),init:0});
+ else if(t==='place'&&placing&&tokAt(c)<0&&h>-2){if(placing.ally){const ch=CH.list.find(x=>x.id===placing.ally);if(!ch)return;if(tokens.some(k=>k.cid===ch.id)){const k=tokens.find(k=>k.cid===ch.id);k.x=c.x;k.y=c.y;return}const D=derived(ch);
+  tokens.push({id:tid(),x:c.x,y:c.y,t:'pj',cid:ch.id,n:abbr(ch.name||'?'),nm:ch.name||'?',esq:D.eva,maj:D.major,sev:D.severe,hp:D.hp-(ch.used?ch.used.hp||0:0),hpMax:D.hp,init:D.init});return}
+  const m=placing,v=conv(m),ab=abbr(tr(m.n)),nb=tokens.filter(k=>k.ab===ab).length+1;
+  const sz=monSz(m),nn=Math.max(1,Math.floor(SZN[sz]||1)),a=anchor(c,nn);if(!fits(a.x,a.y,nn))return;
+  tokens.push({id:tid(),mid:m.id,no:noT(m),x:a.x,y:a.y,sz,t:'foe',ab,n:ab+nb,ty:m.type,nm:m.n,num:nb,esq:v.esq,maj:v.maj,sev:v.sev,hp:v.cases,hpMax:v.cases,init:+m.init||0})}}
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('pointerdown',e=>{const[mx,my]=pos(e),c=pick(mx,my);if(!c)return;cv.setPointerCapture(e.pointerId);snap();const inv=e.button===2;
+ if(tool==='move'&&!inv){const i=tokAt(c);if(i>=0){drag=i;meas={a:{x:c.x,y:c.y},b:{x:c.x,y:c.y},live:false,drag:true};draw()}return}
+ if(tool==='measure'){meas={a:c,b:c,live:true};draw();return}
+ painting={inv};lastPainted='';apply(c,inv);draw()});
+cv.addEventListener('pointermove',e=>{const[mx,my]=pos(e),c=pick(mx,my);hover=c;
+ if(c&&held.size){const k=[...held].pop();setH(c,KH[k]);save()}
+ if(meas&&meas.live&&c)meas.b=c;
+ if(drag!==null&&c&&tokens[drag]){const k=tokens[drag],n=tfp(k),a=anchor(c,n);if((a.x!==k.x||a.y!==k.y)&&fits(a.x,a.y,n,k.id)){k.x=a.x;k.y=a.y;if(meas&&meas.drag)meas.b={x:c.x,y:c.y}}}
+ else if(painting&&c&&(tool==='up'||tool==='down'||tool==='flat'))apply(c,painting.inv);draw()});
+const end=()=>{if(drag!==null&&meas&&meas.drag&&meas.a.x===meas.b.x&&meas.a.y===meas.b.y&&tokens[drag]){selTok=tokens[drag].id;renderTok()}if(painting||drag!==null)save();painting=null;drag=null;if(meas){meas.live=false;if(meas.drag){meas=null;draw()}}};
+cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+cv.addEventListener('pointerleave',()=>{hover=null;draw()});
+document.getElementById('tools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setTool(b.dataset.t)});
+function setTool(t){tool=t;if(t!=='place'){placing=null;const a=document.getElementById('pl_ally'),f=document.getElementById('pl_foe');if(a)a.value='';if(f)f.value=''}if(t!=='measure')meas=null;
+ for(const x of document.querySelectorAll('#tools button'))x.setAttribute('aria-pressed',x.dataset.t===t);cv.style.cursor=t==='move'?'grab':'crosshair';draw()}
+const bz=document.getElementById('biomes');
+bz.insertAdjacentHTML('beforeend',ORDER.map(k=>`<button data-b="${k}" aria-pressed="${k===bio}"><span class="dot" style="background:${B[k].g[0]}"></span><span class="bn"></span></button>`).join(''));
+function legend(){const b=B[bio];const it=[[b.g[0],t('ground')],[b.top[0],label(1)],[b.top[1],label(2)],[b.top[2],label(3)],[b.pit==='lava'?'#ff6a1a':b.pit==='water'?'#3f7fb0':b.pit==='ice'?'#9ccbe6':b.pit==='sand'?'#c79a5a':b.pit==='swamp'?'#4b5a32':'#2b2622',`${tr(b.L.m1)} / ${tr(b.L.m2)}`]];
+ document.getElementById('legend').innerHTML=it.map(([c,t])=>`<span><span class="sw" style="background:${c}"></span>${t}</span>`).join('')}
+bz.addEventListener('click',e=>{const b=e.target.closest('button[data-b]');if(!b)return;bio=b.dataset.b;for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x===b);legend();save();draw()});
+document.getElementById('rot').onclick=()=>{rot=(rot+1)%4;save();draw()};
+document.getElementById('undo').onclick=()=>{const s=hist.pop();if(!s)return;const d=JSON.parse(s);H=d.H;F=d.F||blank(N);tokens=d.tokens;MARKS=d.marks||MARKS;save();draw()};
+const KH={'0':0,'1':1,'2':2,'3':3,'4':-1,'5':-2},held=new Set();
+function setH(c,v){if(!c||H[c.x][c.y]===v)return;H[c.x][c.y]=v;if(v<0)F[c.x][c.y]=0;if(v===-2)tokens=tokens.filter(k=>!covers(k,c.x,c.y))}
+function pickTool(t){const b=document.querySelector(`#tools button[data-t="${t}"]`);if(b)b.click()}
+document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select'))return;if(document.getElementById('v-carte').hidden)return;const k=e.key.toLowerCase();
+ if((e.ctrlKey||e.metaKey)&&k==='z'){e.preventDefault();document.getElementById('undo').click();return}
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ if(k in KH){e.preventDefault();if(!held.has(k)){held.add(k);snap()}setH(hover,KH[k]);save();draw();return}
+ if(k==='escape'){setTool('move');return}
+ if(hover&&(k==='-'||k==='+'||k==='=')){const i=tokAt(hover);if(i>=0&&tokens[i].hpMax){tokHp(tokens[i],k==='-'?-1:1)}return}
+ const map={m:'up',c:'down',d:'move',t:'measure',p:'mark'};if(map[k]){pickTool(tool===map[k]&&k!=='d'?'move':map[k]);return}
+ if(k==='r'){document.getElementById('rot').click()}else if(k==='g'){document.getElementById('gen').click()}});
+document.addEventListener('keyup',e=>held.delete(e.key.toLowerCase()));
+window.addEventListener('blur',()=>held.clear());
+document.getElementById('clear').onclick=()=>{snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];save();draw()};
+const R=n=>Math.floor(Math.random()*n),ok=(x,y)=>x>=0&&y>=0&&x<N&&y<N;
+function genFree(){const p=B[bio].gen;
+ if(p.rooms){for(let x=0;x<N;x++){H[x][0]=3;H[x][N-1]=3}for(let y=0;y<N;y++){H[0][y]=3;H[N-1][y]=3}
+  const cx=3+R(N-6),cy=3+R(N-6);for(let x=1;x<N-1;x++)if(Math.abs(x-cy)>1)H[x][cy]=3;for(let y=1;y<N-1;y++)if(Math.abs(y-cx)>1&&H[cx][y]!==3)H[cx][y]=3;
+  for(let i=0;i<N/3;i++){const x=1+R(N-2),y=1+R(N-2);if(!H[x][y])H[x][y]=R(2)+1}}
+ const walls=Math.round((2+N/5)*(p.walls||0));for(let i=0;i<walls;i++){let x=R(N),y=R(N);const dx=Math.random()<.5?1:0,dy=1-dx,len=2+R(Math.ceil(N/3)),h=1+R(3);
+  for(let j=0;j<len;j++){if(ok(x,y))H[x][y]=p.ridge?Math.min(3,h+(j%3===1?1:0)):h;x+=dx;y+=dy}}
+ for(let x=0;x<N;x++)for(let y=0;y<N;y++)if(!H[x][y]&&Math.random()<(p.scatter||0))H[x][y]=1+R(3);
+ if(p.river){let y=R(N);for(let x=0;x<N;x++){if(ok(x,y))H[x][y]=-1;if(Math.random()<.35){y=Math.max(0,Math.min(N-1,y+(Math.random()<.5?-1:1)));if(ok(x,y))H[x][y]=-1}}}
+ const pits=Math.round((1+N/8)*(p.pits||0));for(let i=0;i<pits;i++){const cx=R(N),cy=R(N);
+  for(let x=cx-1;x<=cx+1;x++)for(let y=cy-1;y<=cy+1;y++)if(ok(x,y)&&H[x][y]<3&&Math.random()<.75)H[x][y]=(x===cx&&y===cy)?-2:-1}
+}
+const rr=()=>Math.random(),pickw=a=>{let t=rr()*a.reduce((s,x)=>s+x[1],0);for(const[v,w]of a){if((t-=w)<=0)return v}return a[0][0]};
+function wander(len,lo,hi,w){const out=[];let y=lo+R(hi-lo+1);for(let x=0;x<len;x++){for(let k=0;k<w;k++)out.push([x,y+k]);if(rr()<.32){const ny=Math.max(lo,Math.min(hi,y+(rr()<.5?-1:1)));if(ny!==y){for(let k=0;k<w;k++)out.push([x,ny+k]);y=ny}}}return out}
+function distMap(src){const D=blank(N).map(r=>r.map(()=>99)),q=[];for(const[x,y]of src)if(ok(x,y)&&D[x][y]){D[x][y]=0;q.push([x,y])}
+ while(q.length){const[x,y]=q.shift();for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){const a=x+dx,b=y+dy;if(ok(a,b)&&D[a][b]>D[x][y]+1){D[a][b]=D[x][y]+1;q.push([a,b])}}}return D}
+function orient(pts){const fx=rr()<.5,sw=rr()<.5;return pts.map(([x,y])=>{let a=fx?N-1-x:x,b=y;return sw?[b,a]:[a,b]})}
+function house(x0,y0,w,h,lv){for(let x=x0;x<x0+w;x++)for(let y=y0;y<y0+h;y++)if(ok(x,y)){H[x][y]=lv;F[x][y]=4}}
+function freeRect(x0,y0,w,h,m){for(let x=x0-m;x<x0+w+m;x++)for(let y=y0-m;y<y0+h+m;y++){const inn=x>=x0&&y>=y0&&x<x0+w&&y<y0+h;if(!ok(x,y)){if(inn)return false;continue}if(inn?(H[x][y]||F[x][y]):(H[x][y]>0||F[x][y]===4))return false}return true}
+const SCN={
+ forest_road:{bio:'foret',run(){const road=orient(wander(N,2,N-4,2));for(const[x,y]of road)if(ok(x,y))F[x][y]=1;const D=distMap(road);
+  const cl={x:R(N),y:R(N)};for(let x=0;x<N;x++)for(let y=0;y<N;y++){if(F[x][y])continue;const d=D[x][y];if(Math.hypot(x-cl.x,y-cl.y)<2.2&&d>2)continue;
+   H[x][y]=d===1?pickw([[0,8],[1,1]]):d===2?pickw([[0,4],[1,2],[2,2],[3,1.5]]):pickw([[0,2],[1,1],[2,2],[3,5]])}
+  if(rr()<.6){const[x,y]=road[R(road.length)];if(ok(x,y)){H[x][y]=1;F[x][y]=0}}}},
+ mtn_bend:{bio:'montagne',run(){const cx=Math.floor(N*.4)+R(Math.max(1,Math.floor(N*.25))),cy=Math.floor(N*.3)+R(Math.max(1,Math.floor(N*.25)));const pts=[];
+  for(let x=0;x<=cx+1;x++)pts.push([x,cy],[x,cy+1]);for(let y=cy;y<N;y++)pts.push([cx,y],[cx+1,y]);
+  const inner=(x,y)=>x<cx&&y>cy+1,fx=rr()<.5,sw=rr()<.5,tf=(x,y)=>{let a=fx?N-1-x:x,b=y;return sw?[b,a]:[a,b]};
+  const road=pts.map(p=>tf(...p));for(const[x,y]of road)if(ok(x,y))F[x][y]=1;const D=distMap(road);
+  for(let x=0;x<N;x++)for(let y=0;y<N;y++){let lx,ly;{let a=sw?y:x,b=sw?x:y;lx=fx?N-1-a:a;ly=b}if(F[x][y])continue;const d=D[x][y];
+   H[x][y]=inner(lx,ly)?(d===1?pickw([[0,5],[-1,3]]):pickw([[-1,1],[-2,4]])):(d===1?pickw([[0,4],[1,3],[2,1]]):d===2?pickw([[1,1],[2,4],[3,2]]):pickw([[2,1],[3,6]]))}
+  for(const[x,y]of road)if(ok(x,y)&&rr()<.05){H[x][y]=2;F[x][y]=0}}},
+ outskirts:{bio:'prairie',run(){const main=orient(wander(N,3,N-5,2));for(const[x,y]of main)if(ok(x,y))F[x][y]=2;
+  const sx=2+R(N-4),side=[];for(let y=0;y<N;y++){if(F[sx][y])break;side.push([sx,y])}if(side.length<3)side.length=0;for(const[x,y]of side)F[x][y]=2;
+  let tries=0,n=0;while(tries++<600&&n<Math.round(N*N/20)){const w=2+R(2),h=2+R(2),x0=R(N),y0=R(N);if(!freeRect(x0,y0,w,h,1))continue;
+   const D=distMap([...main,...side]);let near=false;for(let x=x0;x<x0+w;x++)for(let y=y0;y<y0+h;y++)if(D[x][y]<=2)near=true;if(!near&&rr()<.8)continue;house(x0,y0,w,h,rr()<.7?3:2);n++;
+   if(rr()<.5){const cx=x0+w,cy=y0+R(h);if(ok(cx,cy)&&!H[cx][cy]&&!F[cx][cy]){H[cx][cy]=1;F[cx][cy]=5}}}
+  for(let i=0;i<50;i++){const x=R(N),y=R(N);if(!F[x][y]&&!H[x][y]){H[x][y]=-1;break}}
+  for(let x=0;x<N;x++)for(let y=0;y<N;y++)if(!F[x][y]&&!H[x][y]&&rr()<.06)H[x][y]=pickw([[1,1],[3,1]])}},
+ tavern:{bio:'prairie',run(){const w=Math.min(N-4,6+R(3)),h=Math.min(N-4,5+R(2)),x0=2+R(Math.max(1,N-w-3)),y0=2+R(Math.max(1,N-h-3));
+  for(let x=x0;x<x0+w;x++)for(let y=y0;y<y0+h;y++){const edge=x===x0||y===y0||x===x0+w-1||y===y0+h-1;H[x][y]=edge?2:0;F[x][y]=edge?4:3}
+  const dx=x0+1+R(w-2),dy=y0+h-1;H[dx][dy]=0;F[dx][dy]=3;const bx=x0+1+R(w-2);H[bx][y0]=0;F[bx][y0]=3;
+  for(let x=x0+1;x<x0+w-1;x++)if(x!==bx&&rr()<.85){H[x][y0+1]=1;F[x][y0+1]=5}
+  for(let i=0;i<4;i++){const x=x0+1+R(w-2),y=y0+3+R(Math.max(1,h-5));if(ok(x,y)&&F[x][y]===3&&H[x][y]===0&&!(x===dx)){H[x][y]=1;F[x][y]=5}}
+  const path=[];let x=dx,y=dy+1;while(ok(x,y)){path.push([x,y]);if(rr()<.3)x=Math.max(0,Math.min(N-1,x+(rr()<.5?-1:1)));path.push([x,y]);y++}for(const[a,b]of path)if(ok(a,b)&&!F[a][b])F[a][b]=1;
+  const sw=rr()<.5,sx=sw?x0+w+1:x0-4,sy=y0+R(Math.max(1,h-2));if(freeRect(sx,sy,3,2,0))house(sx,sy,3,2,2);
+  for(let x=0;x<N;x++)for(let y=0;y<N;y++)if(!F[x][y]&&!H[x][y]){const r=rr();if(r<.05)H[x][y]=1;else if(r<.1)H[x][y]=3;else if(r<.12){H[x][y]=1;F[x][y]=5}}}},
+ bridge:{bio:'prairie',run(){const riv=orient(wander(N,2,N-4,2)),road=[];const vert=riv.length&&false;for(const[x,y]of riv)if(ok(x,y))H[x][y]=-1;
+  const D=distMap(riv);for(let x=0;x<N;x++)for(let y=0;y<N;y++)if(H[x][y]===-1){let c=0;for(const[a,b]of[[1,0],[-1,0],[0,1],[0,-1]])if(ok(x+a,y+b)&&H[x+a][y+b]===-1)c++;if(c>=3&&rr()<.6)H[x][y]=-2}
+  const horiz=riv.filter(([x])=>x===riv[0][0]).length>=1&&Math.abs(riv[0][0]-riv[riv.length-1][0])>Math.abs(riv[0][1]-riv[riv.length-1][1]);
+  const k=2+R(N-4);for(let t=0;t<N;t++){const[x,y]=horiz?[k,t]:[t,k];if(H[x][y]<0){H[x][y]=0;F[x][y]=3}else F[x][y]=1}
+  for(let x=0;x<N;x++)for(let y=0;y<N;y++)if(!F[x][y]&&H[x][y]===0){const d=D[x][y];if(d===1&&rr()<.25)H[x][y]=1;else if(d>2&&rr()<.12)H[x][y]=pickw([[2,1],[3,2]])}}},
+ free:{bio:null,run(){genFree()}}};
+function genTown(d){d=d||{};const ft=d.ft||'',pop=+d.pop||1500;bio='prairie';const L=(x,y)=>x>=0&&y>=0&&x<N&&y<N;
+ const port=!!d.port,river=!!d.river&&!port,cap=d.c==='cap';let shore=N;
+ if(port){shore=N-3-R(2);for(let x=0;x<N;x++)for(let y=shore;y<N;y++)H[x][y]=y>=shore+1?-2:-1;for(let x=2;x<N-2;x+=4+R(3))for(let y=shore;y<Math.min(N,shore+2+R(2));y++){H[x][y]=0;F[x][y]=3}}
+ if(river){let x=2+R(N-5);for(let y=0;y<shore;y++){H[x][y]=-1;H[x+1][y]=-1;if(rr()<.3){const nx=Math.max(1,Math.min(N-3,x+(rr()<.5?-1:1)));if(nx!==x){H[nx][y]=-1;H[nx+1][y]=-1;x=nx}}}}
+ const ry=2+R(Math.max(1,shore-6)),rx=3+R(N-7);const roads=[];
+ for(let x=0;x<N;x++)for(const y of[ry,ry+1])roads.push([x,y]);for(let y=0;y<shore;y++)for(const x of[rx,rx+1])roads.push([x,y]);
+ for(const[x,y]of roads)if(L(x,y)){if(H[x][y]<0){H[x][y]=0;F[x][y]=3}else F[x][y]=2}
+ if(ft.includes('p')){for(let x=rx-2;x<=rx+3;x++)for(let y=ry-2;y<=ry+3;y++)if(L(x,y)&&H[x][y]>=0)F[x][y]=2;if(L(rx-2,ry-2)&&H[rx-2][ry-2]>=0){H[rx-2][ry-2]=-1;F[rx-2][ry-2]=0}}
+ if(ft.includes('t')){const x0=rx+4,y0=Math.max(0,ry-5);if(freeRect(x0,y0,3,4,0))house(x0,y0,3,4,3)}
+ if(ft.includes('c')){const x0=rx>N/2?0:N-5,y0=0;for(let x=x0;x<x0+5;x++)for(let y=y0;y<y0+5;y++)if(L(x,y)&&!F[x][y]&&H[x][y]>=0){H[x][y]=3;F[x][y]=4}}
+ if(ft.includes('w')){for(let i=0;i<N;i++)for(const[x,y]of[[i,0],[0,i],[N-1,i],[i,N-1]]){if(!L(x,y)||y>=shore||F[x][y]===2||F[x][y]===3||H[x][y]<0)continue;H[x][y]=3;F[x][y]=4}}
+ const dens=Math.min(.42,.16+Math.log10(Math.max(100,pop))/14);let tries=0,n=0;const goal=Math.round(N*N*dens/6);const D=distMap(roads);
+ while(tries++<1500&&n<goal){const w=2+R(2),h=2+R(2),x0=R(N),y0=R(shore);if(!freeRect(x0,y0,w,h,1))continue;let near=99;for(let x=x0;x<x0+w;x++)for(let y=y0;y<y0+h;y++)if(L(x,y))near=Math.min(near,D[x][y]);if(near>3&&rr()<.85)continue;house(x0,y0,w,h,rr()<.65?3:2);n++}
+ if(ft.includes('s'))for(let i=0;i<N;i++){const x=R(N),y=R(shore);if(L(x,y)&&!H[x][y]&&!F[x][y]){H[x][y]=1;F[x][y]=5}}
+ for(const[x,y]of roads)if(L(x,y)&&rr()<.05&&F[x][y]===2){const nx=x+(rr()<.5?-1:1);if(L(nx,y)&&!H[nx][y]&&!F[nx][y]){H[nx][y]=1;F[nx][y]=5}}
+ for(let x=0;x<N;x++)for(let y=0;y<shore;y++)if(!H[x][y]&&!F[x][y]&&rr()<.05)H[x][y]=3;
+ const k=R(4);if(k){const h2=blank(N),f2=blank(N);for(let x=0;x<N;x++)for(let y=0;y<N;y++){const[a,b]=k===1?[N-1-y,x]:k===2?[N-1-x,N-1-y]:[y,N-1-x];h2[a][b]=H[x][y];f2[a][b]=F[x][y]}H=h2;F=f2}}
+function ctxBar(){const el=document.getElementById('ctxbar');if(!el)return;el.hidden=!CTX;if(!CTX)return;el.innerHTML=`<b>${esc(t('ctx_town'))} : ${esc(CTXN)}</b><button type="button" id="ctx_regen">${esc(t('ctx_regen'))}</button><button type="button" class="go" id="ctx_back">${esc(t('ctx_back'))}</button>`}
+document.getElementById('ctxbar').addEventListener('click',e=>{if(e.target.id==='ctx_back')leaveTown();else if(e.target.id==='ctx_regen'&&CTX){const o=towns();const d=o[CTX]&&o[CTX].src;regenTown(d)}});
+function regenTown(d){snap();N=d&&d.c==='cap'?24:d&&d.c==='city'?20:16;H=blank(N);F=blank(N);tokens=[];MARKS=[];INI={o:[],cur:0,round:0};rot=0;genTown(d);finishCtx(d)}
+function finishCtx(d){for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x.dataset.b===bio);legend();document.getElementById('size').value=N;document.getElementById('sv').textContent=N;save();if(d&&CTX){const o=towns();if(o[CTX]){o[CTX].src=d;try{localStorage.setItem('luparis-towns',JSON.stringify(o))}catch(e){}}}ctxBar();layout()}
+function openTown(id,name,d){if(!CTX)save();CTX='town:'+id;CTXN=name;const o=towns()[CTX];if(o&&applyState(o)){finishCtx(o.src)}else regenTown(d);location.hash='#carte'}
+function leaveTown(){CTX=null;CTXN='';try{localStorage.setItem('luparis-ctx','null')}catch(e){}if(!load()){H=blank(N);F=blank(N)}finishCtx(null)}
+window.lupOpenTown=openTown;
+const SCN_ORDER=['forest_road','mtn_bend','outskirts','tavern','bridge','free'];
+function runScene(){snap();H=blank(N);F=blank(N);tokens=[];const sc=SCN[scene]||SCN.free;if(sc.bio&&bio!==sc.bio){bio=sc.bio;for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x.dataset.b===bio);legend()}sc.run();save();draw()}
+function fillScenes(){const el=document.getElementById('scene'),L=t('scn');if(!L)return;el.innerHTML=SCN_ORDER.map(k=>`<option value="${k}"${k===scene?' selected':''}>${esc(t('scn')[k])}</option>`).join('')}
+document.getElementById('scene').addEventListener('change',e=>{scene=e.target.value;runScene()});
+document.getElementById('gen').onclick=runScene;
+setTimeout(()=>{ctxBar();renderMarks()});
+document.getElementById('size').addEventListener('input',e=>{const n=+e.target.value;document.getElementById('sv').textContent=n;snap();
+ const nh=blank(n),nf=blank(n);for(let x=0;x<Math.min(n,N);x++)for(let y=0;y<Math.min(n,N);y++){nh[x][y]=H[x][y];nf[x][y]=F[x][y]}N=n;H=nh;F=nf;tokens=tokens.filter(k=>k.x+tfp(k)<=n&&k.y+tfp(k)<=n);MARKS=MARKS.filter(m=>m.x<n&&m.y<n);save();layout()});
+cv.style.cursor='grab';const ro=new ResizeObserver(layout);ro.observe(stage);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const FPS=['0','1/8','1/4','1/2',...Array.from({length:30},(_,i)=>String(i+1))];
+const DEFSZ={Kobold:'S',Goblin:'S',Imp:'T','Giant Spider':'L','Dire Wolf':'L',Ogre:'L','Ochre Jelly':'L','Gelatinous Cube':'L',Owlbear:'L',Manticore:'L',Troll:'L','Fire Elemental':'L','Earth Elemental':'L','Hill Giant':'H',Unicorn:'L','Shambling Mound':'L',Chimera:'L',Wyvern:'L','Frost Giant':'H',Hydra:'H',Treant:'H','Stone Golem':'L','Young Red Dragon':'L','Adult Red Dragon':'H',Balor:'H',Tarrasque:'G'};
+const SZK=['T','S','M','L','H','G'];function noT(m){return lang==='en'&&m.noen?m.noen:(m.no||'')}
+function monSz(m){return SZK.includes(m.sz)?m.sz:DEFSZ[Array.isArray(m.n)?m.n[0]:m.n]||'M'}
+const fpNum=f=>f.includes('/')?1/+f.split('/')[1]:+f;
+function conv(m){const f=fpNum(m.fp),b=f<=1?[8,16,6]:f<=4?[12,24,6]:f<=10?[18,36,12]:f<=16?[23,46,18]:[28,56,24];return{esq:+m.ca,maj:b[0],sev:b[1],cases:Math.max(1,Math.round(m.pv/b[2]))}}
+function abbr(n){n=String(n);const w=n.replace(/[^A-Za-zÀ-ÿ ]/g,'').split(' ').filter(Boolean);return(w.length>1?w[0][0]+w[1][0]:w[0].slice(0,2)).toUpperCase()}
+const DEF=[[['Kobold','Kobold'],'humanoid','1/8',12,5,'montagne donjon'],[['Bandit','Bandit'],'humanoid','1/8',12,11,'prairie foret desert'],[['Goblin','Gobelin'],'humanoid','1/4',15,7,'foret montagne donjon'],
+[['Skeleton','Squelette'],'undead','1/4',13,13,'donjon'],[['Zombie','Zombi'],'undead','1/4',8,22,'donjon marais'],[['Wolf','Loup'],'beast','1/4',13,11,'foret neige prairie'],[['Hobgoblin','Hobgobelin'],'humanoid','1/2',18,11,'prairie foret'],
+[['Orc','Orc'],'humanoid','1/2',13,15,'montagne prairie'],[['Gnoll','Gnoll'],'humanoid','1/2',15,22,'prairie desert'],[['Imp','Diablotin'],'fiend','1',13,10,'volcan donjon'],[['Ghoul','Goule'],'undead','1',12,22,'donjon marais'],
+[['Giant Spider','Araignée géante'],'beast','1',14,26,'foret donjon'],[['Dire Wolf','Loup sanguinaire'],'beast','1',14,37,'foret neige'],[['Bugbear','Gobelours'],'humanoid','1',16,27,'foret donjon'],[['Dryad','Dryade'],'fey','1',11,22,'foret'],
+[['Ogre','Ogre'],'giant','2',11,59,'montagne foret marais'],[['Ochre Jelly','Gelée ocre'],'ooze','2',8,45,'donjon'],[['Gelatinous Cube','Cube gélatineux'],'ooze','2',6,84,'donjon'],[['Owlbear','Ours-hibou'],'monstrosity','3',13,59,'foret'],
+[['Wight','Nécrophage'],'undead','3',14,45,'donjon marais'],[['Manticore','Manticore'],'monstrosity','3',14,68,'montagne desert'],[['Hell Hound','Molosse infernal'],'fiend','3',15,45,'volcan'],[['Banshee','Banshee'],'undead','4',12,58,'marais donjon'],
+[['Troll','Troll'],'giant','5',15,84,'marais montagne foret'],[['Fire Elemental','Élémentaire de feu'],'elemental','5',13,102,'volcan'],[['Earth Elemental','Élémentaire de terre'],'elemental','5',17,126,'montagne donjon'],[['Hill Giant','Géant des collines'],'giant','5',13,105,'prairie montagne'],
+[['Unicorn','Licorne'],'celestial','5',12,67,'foret'],[['Shambling Mound','Tertre errant'],'plant','5',15,136,'marais foret'],[['Chimera','Chimère'],'monstrosity','6',14,114,'montagne volcan'],[['Wyvern','Wyverne'],'dragon','6',13,110,'montagne'],
+[['Frost Giant','Géant du givre'],'giant','8',15,138,'neige'],[['Hydra','Hydre'],'monstrosity','8',15,172,'marais'],[['Treant','Sylvanien'],'plant','9',16,138,'foret'],[['Stone Golem','Golem de pierre'],'construct','10',17,178,'donjon'],
+[['Young Red Dragon','Jeune dragon rouge'],'dragon','10',18,178,'volcan montagne'],[['Vampire','Vampire'],'undead','13',16,144,'donjon'],[['Adult Red Dragon','Dragon rouge adulte'],'dragon','17',19,256,'volcan montagne'],[['Balor','Balor'],'fiend','19',19,262,'volcan'],
+[['Lich','Liche'],'undead','21',17,135,'donjon'],[['Tarrasque','Tarasque'],'monstrosity','30',25,676,'prairie montagne']].map((r,i)=>({id:'d'+i,n:r[0],type:r[1],fp:r[2],ca:r[3],pv:r[4],hab:r[5].split(' '),no:'',init:[2,1,2,2,-2,2,1,1,1,3,2,3,2,2,1,-1,-2,-4,1,2,3,1,2,1,3,-1,-1,2,-1,0,0,-1,1,-1,-1,0,4,0,2,3,0][i]}));
+let MON;function loadMon(){try{const d=JSON.parse(localStorage.getItem('luparis-bestiary-v2'));if(Array.isArray(d))return d}catch(e){}return DEF.map(m=>({...m,hab:[...m.hab]}))}
+MON=loadMon();let SRD=[];
+function mergeSrd(force){if(!SRD.length)return 0;let n=0;for(const x of SRD){const en=x.n[0],d=MON.find(m=>m.id===x.id||(Array.isArray(m.n)?m.n[0]:m.n)===en);
+  if(d){if(String(d.id).startsWith('d')&&!d.noen){d.sz=x.sz;d.noen=x.noen;if(!d.no)d.no=x.no}continue}MON.push({...x,hab:[...x.hab]});n++}return n}
+fetch('srd-monsters.json').then(r=>r.ok?r.json():[]).then(d=>{if(!Array.isArray(d))return;SRD=d;let done=null;try{done=localStorage.getItem('luparis-srd')}catch(e){}
+ if(done!=='1'){mergeSrd();try{localStorage.setItem('luparis-srd','1')}catch(e){}saveMon()}if(typeof fillSel==='function'){fillSel();renderB()}}).catch(()=>{});
+function saveMon(){try{localStorage.setItem('luparis-bestiary-v2',JSON.stringify(MON))}catch(e){}if(typeof renderPlace==='function')renderPlace()}
+const $=id=>document.getElementById(id);
+const opt=(v,t,sel)=>`<option value="${esc(v)}"${sel?' selected':''}>${esc(t)}</option>`;
+function fillSel(){const types=[...new Set(MON.map(m=>m.type))].sort((a,b)=>tyName(a).localeCompare(tyName(b),lang));const ft=$('ft').value,fh=$('fh').value,fs=$('fs').value||'fp';
+ $('ft').innerHTML=opt('',t('all'))+types.map(x=>opt(x,tyName(x),x===ft)).join('');$('types').innerHTML=types.map(x=>opt(tyName(x),tyName(x))).join('');
+ $('fh').innerHTML=opt('',t('all'))+ORDER.filter(k=>k!=='gen').map(k=>opt(k,tr(B[k].n),k===fh)).join('');
+ $('fs').innerHTML=['fp','n','type','pv'].map(k=>opt(k,t('s_'+k),k===fs)).join('');
+ const hc=[...$('mhab').querySelectorAll('input:checked')].map(c=>c.value);$('mhab').innerHTML=ORDER.filter(k=>k!=='gen').map(k=>`<label><input type="checkbox" value="${k}"${hc.includes(k)?' checked':''}>${esc(tr(B[k].n))}</label>`).join('')}
+$('fmin').innerHTML=FPS.map(f=>opt(f,f,f==='0')).join('');$('fmax').innerHTML=FPS.map(f=>opt(f,f,f==='30')).join('');
+$('mfp').innerHTML=FPS.map(f=>opt(f,f,f==='1')).join('');
+function fillSz(){const v=$('msz').value||'M';if(!t('szn'))return;$('msz').innerHTML=SZK.map(k=>opt(k,t('szn')[k],k===v)).join('')}fillSz();
+
+function renderB(){const q=$('q').value.trim().toLowerCase(),ft=$('ft').value,fh=$('fh').value,lo=fpNum($('fmin').value),hi=fpNum($('fmax').value),s=$('fs').value;
+ let L=MON.filter(m=>(!ft||m.type===ft)&&(!fh||m.hab.includes(fh))&&fpNum(m.fp)>=lo&&fpNum(m.fp)<=hi&&(!q||([].concat(m.n).join(' ')+' '+tyName(m.type)+' '+noT(m)).toLowerCase().includes(q)));
+ const nm=m=>tr(m.n);L.sort(s==='n'?(a,b)=>nm(a).localeCompare(nm(b),lang):s==='type'?(a,b)=>tyName(a.type).localeCompare(tyName(b.type),lang)||fpNum(a.fp)-fpNum(b.fp):s==='pv'?(a,b)=>a.pv-b.pv:(a,b)=>fpNum(a.fp)-fpNum(b.fp)||nm(a).localeCompare(nm(b),lang));
+ $('bcount').textContent=t('count')(L.length,MON.length);
+ $('bt').tBodies[0].innerHTML=L.length?L.map(m=>{const v=conv(m);return`<tr><td><b>${esc(nm(m))}</b>${noT(m)?`<div class="small">${esc(noT(m))}</div>`:''}</td><td>${esc(tyName(m.type))}<div class="small">${esc(t('szn')[monSz(m)]||'')}</div></td><td class="r">${esc(m.fp)}</td><td>${m.hab.map(h=>B[h]?`<span class="tag">${esc(tr(B[h].n))}</span>`:'').join('')}</td><td class="r">${v.esq}</td><td class="r">${v.maj} / ${v.sev}</td><td class="r">${v.cases} <span class="small">(${esc(m.pv)} ${t('hp')})</span></td><td class="r"><div class="acts"><button class="go" data-place="${esc(m.id)}">${t('place')}</button><button data-edit="${esc(m.id)}">${t('edit')}</button><button data-del="${esc(m.id)}">${t('del')}</button></div></td></tr>`}).join(''):`<tr><td colspan="8" class="empty">${t('none')}</td></tr>`}
+for(const id of['q','ft','fh','fmin','fmax','fs'])$(id).addEventListener('input',renderB);
+$('bt').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.place||b.dataset.edit||b.dataset.del,m=MON.find(x=>x.id===id);if(!m)return;
+ if(b.dataset.place){placing=m;location.hash='#carte';setTool('place')}
+ else if(b.dataset.edit){$('mid').value=m.id;$('mn').value=nm0(m);$('mty').value=tyName(m.type);$('mfp').value=m.fp;$('msz').value=monSz(m);$('mca').value=m.ca;$('mpv').value=m.pv;$('min').value=m.init||0;$('mno').value=noT(m);
+  for(const c of $('mhab').querySelectorAll('input'))c.checked=m.hab.includes(c.value);$('addsum').textContent=t('editing')+tr(m.n);$('addbox').open=true;prev();$('mn').focus()}
+ else if(b.dataset.del){if(b.dataset.armed){MON=MON.filter(x=>x.id!==id);saveMon();fillSel();renderB()}else{b.dataset.armed='1';b.textContent=t('confirm');setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent=t('del')}},3000)}}});
+function prev(){const v=conv({fp:$('mfp').value,ca:+$('mca').value||0,pv:+$('mpv').value||1});$('mprev').textContent=t('prev')(v)}
+for(const id of['mfp','mca','mpv'])$(id).addEventListener('input',prev);
+function resetForm(){$('mf').reset();fillSz();$('mid').value='';$('addsum').textContent=t('add');prev()}
+$('mcancel').onclick=resetForm;
+$('mf').addEventListener('submit',e=>{e.preventDefault();const tyIn=$('mty').value.trim(),tyKey=Object.keys(TY).find(k=>TY[k].some(x=>x.toLowerCase()===tyIn.toLowerCase()))||tyIn;
+ const old=MON.find(x=>x.id===$('mid').value),nIn=$('mn').value.trim(),nVal=old&&Array.isArray(old.n)&&nIn===tr(old.n)?old.n:nIn;
+ const m={id:$('mid').value||'u'+Date.now().toString(36),n:nVal,type:tyKey,fp:$('mfp').value,sz:$('msz').value||'M',ca:+$('mca').value,pv:+$('mpv').value,init:Math.max(-5,Math.min(15,+$('min').value||0)),
+ hab:[...$('mhab').querySelectorAll('input:checked')].map(c=>c.value),no:$('mno').value.trim()};if(!m.n||!m.type)return;
+ const i=MON.findIndex(x=>x.id===m.id);if(i>=0)MON[i]=m;else MON.push(m);saveMon();fillSel();renderB();resetForm();$('impmsg').textContent=''});
+$('exp').onclick=()=>{const txt=JSON.stringify(MON);navigator.clipboard.writeText(txt).then(()=>{$('impmsg').textContent=T[lang].copied},()=>{$('imp').value=txt;$('imp').select();$('impmsg').textContent=T[lang].copy_no})};
+$('impb').onclick=()=>{try{const d=JSON.parse($('imp').value);if(!Array.isArray(d))throw 0;const L=d.filter(m=>m&&m.n&&m.type).map((m,i)=>({id:String(m.id||'i'+i+Date.now().toString(36)),n:Array.isArray(m.n)?m.n.map(String).slice(0,2):String(m.n),type:String(m.type),fp:FPS.includes(String(m.fp))?String(m.fp):'1',ca:+m.ca||10,pv:+m.pv||1,init:Math.max(-5,Math.min(15,+m.init||0)),hab:Array.isArray(m.hab)?m.hab.filter(h=>B[h]):[],no:String(m.no||'')}));
+ if(!L.length)throw 0;MON=L;saveMon();fillSel();renderB();$('impmsg').textContent=T[lang].imported(L.length)}catch(e){$('impmsg').textContent=T[lang].bad}};
+$('reset').onclick=e=>{const b=e.currentTarget;if(b.dataset.armed){MON=DEF.map(m=>({...m,hab:[...m.hab]}));mergeSrd();saveMon();fillSel();renderB();b.textContent=t('reset');delete b.dataset.armed;$('impmsg').textContent=T[lang].restored}else{b.dataset.armed='1';b.textContent=t('reset_c')}};
+function route(){const v=({'#bestiaire':'bestiaire','#regles':'regles','#fiche':'fiche','#monde':'monde'})[location.hash]||'carte';if(v==='monde')initWorld();for(const x of['monde','carte','fiche','bestiaire','regles'])$('v-'+x).hidden=v!==x;
+ for(const a of document.querySelectorAll('.tabs a'))a.toggleAttribute('aria-current',a.dataset.v===v),a.dataset.v===v&&a.setAttribute('aria-current','page');if(v==='carte'){requestAnimationFrame(layout);if(placing)requestAnimationFrame(()=>stage.scrollIntoView({block:'center'}));else window.scrollTo(0,0)}else window.scrollTo(0,0)}
+window.addEventListener('hashchange',route);
+Object.assign(T.en,{tab_sheet:'Character',sk_name:'Name',sk_people:'People',sk_xp:'XP earned',sk_level:'Level',sk_spent:'XP spent',sk_left:'XP left',sk_over:'Over budget by',
+sk_matrix:'Matrix of Intents',sk_dv:'Hit die',sk_schools:'Schools of magic',sk_fams:'Weapon families',sk_def:'Defense',sk_armor:'Armor',sk_shield:'Shield',
+sk_eva:'Evasion',sk_armv:'Armor value',sk_minor:'Minor',sk_major:'Major',sk_severe:'Severe',sk_init:'Initiative',sk_res:'Vitality and resources',sk_vit:'Vitality',sk_st:'Stamina',
+sk_short:'Short rest',sk_long:'Long rest',sk_atk:'Attacks and spells',sk_target:'Target Evasion',sk_attack:'Attack',sk_damage:'Damage',sk_addw:'Add a weapon',sk_wname:'Weapon name',
+sk_fam:'Family',sk_size:'Size',sk_add:'Add',sk_remove:'Remove',sk_spell:'basic spell',sk_dc:'DC',sk_nospell:'Buy a Tier in a school to get its spells.',sk_log:'Rolls',sk_nolog:'Your rolls will show up here.',
+sk_hit:'Hit',sk_miss:'Miss',sk_crit:'Critical!',sk_notes:'Notes',sk_io:'Save or share the sheet',sk_copy:'Copy the sheet',sk_import:'Import pasted sheet',sk_new:'New character',
+sk_copied:'Sheet copied.',sk_bad:'This text is not a valid sheet.',sk_done:'Sheet imported.',sk_demo:'Example character: change anything, the sheet recalculates.',
+sk_costs:'XP costs, draft v0.1: matrix +1 to +5 costs 5, 10, 15, 20, 25; Tiers 1 to 5 cost 20, 40, 80, 120, 160; hit die d8, d10, d12 cost 30, 70, 120 in total. Level = XP earned ÷ 100. Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17.',
+sk_mb:b=>`Mastery +${b}`,sk_next:n=>`next +${n} XP`,sk_lock:(tt,l)=>`Tier ${tt} from level ${l}`,sk_fx:n=>`effects up to ${n}`,sk_unm:'not mastered',
+sz:{one:'One-handed (d6)',poly1:'Versatile, one hand (d8)',poly2:'Versatile, two hands (d10)',two:'Two-handed (d12)'},
+it:['Power','Finesse','Resilience'],dm:['Physical','Mental','Social'],hint:{P_phy:'Strength',F_phy:'Evasion',R_phy:'Thresholds, Stamina',P_men:'Offensive spells',F_men:'Perception',R_men:'Mana',P_soc:'Authority',F_soc:'Persuasion',R_soc:'Composure'}});
+Object.assign(T.fr,{tab_sheet:'Personnage',sk_name:'Nom',sk_people:'Peuple',sk_xp:'XP gagnée',sk_level:'Niveau',sk_spent:'XP dépensée',sk_left:'XP restante',sk_over:'Budget dépassé de',
+sk_matrix:'Matrice des intentions',sk_dv:'Dé de vie',sk_schools:'Écoles de magie',sk_fams:"Familles d'armes",sk_def:'Défense',sk_armor:'Armure',sk_shield:'Bouclier',
+sk_eva:'Esquive',sk_armv:"Valeur d'armure",sk_minor:'Mineur',sk_major:'Majeur',sk_severe:'Sévère',sk_init:'Initiative',sk_res:'Vitalité et ressources',sk_vit:'Vitalité',sk_st:'Souffle',
+sk_short:'Repos court',sk_long:'Repos long',sk_atk:'Attaques et sorts',sk_target:'Esquive de la cible',sk_attack:'Attaque',sk_damage:'Dégâts',sk_addw:'Ajouter une arme',sk_wname:"Nom de l'arme",
+sk_fam:'Famille',sk_size:'Gabarit',sk_add:'Ajouter',sk_remove:'Retirer',sk_spell:'sort de base',sk_dc:'DD',sk_nospell:'Achète un Tier dans une école pour obtenir ses sorts.',sk_log:'Jets',sk_nolog:'Tes jets s\'afficheront ici.',
+sk_hit:'Touché',sk_miss:'Raté',sk_crit:'Critique !',sk_notes:'Notes',sk_io:'Sauvegarder ou partager la fiche',sk_copy:'Copier la fiche',sk_import:'Importer la fiche collée',sk_new:'Nouveau personnage',
+sk_copied:'Fiche copiée.',sk_bad:"Ce texte n'est pas une fiche valide.",sk_done:'Fiche importée.',sk_demo:'Personnage d\'exemple : change ce que tu veux, la fiche recalcule tout.',
+sk_costs:"Coûts en XP, brouillon v0.1 : matrice de +1 à +5 = 5, 10, 15, 20, 25 ; Tiers 1 à 5 = 20, 40, 80, 120, 160 ; dé de vie d8, d10, d12 = 30, 70, 120 au total. Niveau = XP gagnée ÷ 100. Tier 2 dès le niveau 3, Tier 3 dès le 5, Tier 4 dès le 11, Tier 5 dès le 17.",
+sk_mb:b=>`Maîtrise +${b}`,sk_next:n=>`suivant +${n} XP`,sk_lock:(tt,l)=>`Tier ${tt} dès le niveau ${l}`,sk_fx:n=>`effets jusqu'à ${n}`,sk_unm:'non maîtrisée',
+sz:{one:'À une main (d6)',poly1:'Polyvalente, une main (d8)',poly2:'Polyvalente, deux mains (d10)',two:'À deux mains (d12)'},
+it:['Puissance','Finesse','Résistance'],dm:['physique','mentale','sociale'],dmH:['Physique','Mental','Social'],hint:{P_phy:'Force',F_phy:'Esquive',R_phy:'Seuils, Souffle',P_men:'Sorts offensifs',F_men:'Perception',R_men:'Mana',P_soc:'Autorité',F_soc:'Persuasion',R_soc:'Sang-froid'}});
+const COST={cell:[0,5,15,30,50,75],tier:[0,20,60,140,260,420],dv:{6:0,8:30,10:70,12:120}},GATE=[1,1,3,5,11,17],MANA=[0,2,6,14,24,36],STAM=[0,1,3,7,12,18];
+const INT=['P','F','R'],DOM=['phy','men','soc'];
+const SCH={afflux:['Surge','Afflux'],creuset:['Crucible','Creuset'],mirage:['Mirage','Mirage'],horizon:['Horizon','Horizon'],eidolon:['Eidolon','Eidolon'],egide:['Aegis','Égide'],harmonie:['Harmony','Harmonie'],apex:['Apex','Apex']};
+const FAM={taille:{n:['Cutting','Taille'],c:'P_phy'},estoc:{n:['Thrusting','Estoc'],c:'F_phy'},cont:{n:['Blunt','Contondantes'],c:'P_phy'},hast:{n:['Polearms','Hast'],c:'P_phy'},tir:{n:['Ranged and thrown','Tir et jet'],c:'F_phy'}};
+const SZ={one:6,poly1:8,poly2:10,two:12};
+const ARM={none:[['None','Aucune'],0,'l'],cuir:[['Leather','Cuir'],1,'l'],clou:[['Studded leather','Cuir clouté'],2,'l'],chem:[['Chain shirt','Chemise de mailles'],3,'m'],cuira:[['Breastplate, scale','Cuirasse, écailles'],4,'m'],demi:[['Half plate','Demi-plate'],5,'m'],cotte:[['Chain mail','Cotte de mailles'],6,'h'],clib:[['Splint','Clibanion'],7,'h'],harn:[['Plate','Harnois'],8,'h']};
+const SHD={none:[['None','Aucun'],0],bocle:[['Buckler','Bocle'],0],rond:[['Small shield','Rondache'],1],ecu:[['Heater shield','Écu'],1],grand:[['Large shield','Grand bouclier'],2],pavois:[['Tower shield','Pavois'],2]};
+const blankC=()=>({id:tid(),camp:'',name:'',people:'',xp:150,cells:Object.fromEntries(INT.flatMap(i=>DOM.map(d=>[i+'_'+d,0]))),dv:6,sch:Object.fromEntries(Object.keys(SCH).map(k=>[k,0])),fam:Object.fromEntries(Object.keys(FAM).map(k=>[k,0])),armor:'none',shield:'none',weapons:[],used:{hp:0,mana:0,st:0},notes:'',demo:false});
+function demoC(){const c=blankC();Object.assign(c,{camp:lang==='fr'?'Exemple':'Example',name:'Kael',people:lang==='fr'?'Humain':'Human',dv:10,armor:'chem',shield:'none',demo:true});c.cells.P_phy=3;c.cells.R_phy=2;c.cells.F_phy=1;c.fam.taille=1;
+ c.weapons=[{n:lang==='fr'?'Épée longue':'Longsword',f:'taille',s:'poly2'},{n:lang==='fr'?'Dague':'Dagger',f:'estoc',s:'one'}];return c}
+let CH;try{CH=JSON.parse(localStorage.getItem('luparis-chars'))}catch(e){}
+if(!CH||!Array.isArray(CH.list)||!CH.list.length){let old;try{old=JSON.parse(localStorage.getItem('luparis-sheet'))}catch(e){}CH={list:[old&&old.cells?old:demoC()],active:null}}
+for(const c of CH.list){if(!c.id)c.id=tid();if(c.camp==null)c.camp=c.demo?(lang==='fr'?'Exemple':'Example'):'';if(!c.used)c.used={hp:0,mana:0,st:0}}
+let C=CH.list.find(c=>c.id===CH.active)||CH.list[0];if(!CH.list.some(c=>c.id===CH.active))CH.active=null;
+function saveC(){try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}if(typeof renderPlace==='function')renderPlace()}
+const lvl=(c=C)=>Math.max(1,Math.floor((+c.xp||0)/100)),mb=tier=>tier>0?tier+1:0,sgn=v=>(v>=0?'+':'')+v;
+function spent(){let s=0;for(const k in C.cells)s+=COST.cell[C.cells[k]];for(const k in C.sch)s+=COST.tier[C.sch[k]];for(const k in C.fam)s+=COST.tier[C.fam[k]];return s+COST.dv[C.dv]}
+function derived(c=C){const L=lvl(c),a=ARM[c.armor]||ARM.none,cap=a[2]==='l'?99:a[2]==='m'?2:0,cl=c.cells,av=a[1];
+ const eva=10+Math.min(cl.F_phy,cap)+(SHD[c.shield]||SHD.none)[1],base=c.dv+L+cl.R_phy,ts=Object.values(c.sch),maxT=Math.max(0,...ts);
+ return{L,eva,av,minor:av,major:base+av,severe:2*base+av,hp:1+Math.ceil(L*c.dv/12),mana:ts.reduce((s,x)=>s+MANA[x],0)+cl.R_men*Math.floor(maxT/2),st:Math.max(0,Object.values(c.fam).reduce((s,x)=>s+STAM[x],0)+cl.R_phy),init:cl.F_phy}}
+function cellName(k){const[i,d]=k.split('_');const ii=INT.indexOf(i),di=DOM.indexOf(d);return lang==='fr'?`${T.fr.it[ii]} ${T.fr.dm[di]}`:`${T.en.dm[di]} ${T.en.it[ii]}`}
+function camps(){return[...new Set(CH.list.map(c=>c.camp||''))].filter(Boolean).sort((a,b)=>a.localeCompare(b,lang))}
+function renderList(){const groups=[...camps(),''].filter(g=>CH.list.some(c=>(c.camp||'')===g)),nn=$('c_nn')?$('c_nn').value:'',nc=$('c_nc')?$('c_nc').value:'';
+ $('c_listv').innerHTML=`<div class="bhead"><h2>${t('sk_chars')}</h2><span class="small">${t('sk_nchars')(CH.list.length)}</span></div>
+ <form class="newc" id="c_nf"><label>${t('sk_name')}<input id="c_nn" required></label><label>${t('sk_camp')}<input id="c_nc" list="c_camps"></label><div class="row"><button class="go" type="submit">${t('sk_create')}</button></div></form>`+
+ groups.map(g=>`<h3 class="camp">${esc(g||t('sk_nocamp'))}</h3><div class="ccards">`+CH.list.filter(c=>(c.camp||'')===g).map(c=>{const D=derived(c);
+  return`<div class="cc"><div class="cn">${esc(c.name||'?')}</div><div class="cs">${esc(c.people||'')}${c.people?' · ':''}${t('sk_level')} ${D.L} · ${t('sk_eva')} ${D.eva} · ${t('sk_vit')} ${D.hp}</div><button type="button" data-open="${esc(c.id)}">${t('sk_open')}</button></div>`}).join('')+'</div>').join('')+(CH.list.length?'':`<p class="small">${t('sk_empty')}</p>`);
+ $('c_nn').value=nn;$('c_nc').value=nc}
+function renderSheet(){$('c_camps').innerHTML=camps().map(x=>opt(x,x)).join('');
+ if(!CH.active||!C){$('c_sheetv').hidden=true;$('c_listv').hidden=false;renderList();return}
+ $('c_sheetv').hidden=false;$('c_listv').hidden=true;
+ const D=derived(),sp=spent(),left=(+C.xp||0)-sp;
+ for(const[id,v]of[['c_name',C.name],['c_people',C.people],['c_camp',C.camp||''],['c_xp',C.xp],['c_notes',C.notes]]){const e=$(id);if(document.activeElement!==e)e.value=v}
+ $('c_demo').textContent=C.demo?t('sk_demo'):'';
+ $('c_sum').innerHTML=`<span class="pill">${t('sk_level')} <b>${D.L}</b></span><span class="pill">${t('sk_spent')} <b>${sp}</b></span>`+(left>=0?`<span class="pill">${t('sk_left')} <b>${left}</b></span>`:`<span class="pill bad">${t('sk_over')} <b>${-left}</b></span>`);
+ const hd=lang==='fr'?T.fr.dmH:T.en.dm;
+ $('c_mx').innerHTML=`<div class="mx"><span></span>${hd.map(d=>`<span class="hd">${d}</span>`).join('')}`+INT.map((i,ii)=>`<span class="rh">${T[lang].it[ii]}</span>`+DOM.map(d=>{const k=i+'_'+d,v=C.cells[k];
+  return`<div class="cell" title="${esc(cellName(k))}"><div class="v">${sgn(v)}</div><div class="c">${esc(T[lang].hint[k])}</div><div class="step"><button type="button" data-cell="${k}" data-d="-1" aria-label="${esc(cellName(k))} −"${v<=0?' disabled':''}>−</button><button type="button" data-cell="${k}" data-d="1" aria-label="${esc(cellName(k))} +"${v>=5?' disabled':''}>+</button></div><div class="c">${v<5?t('sk_next')(COST.cell[v+1]-COST.cell[v]):''}</div></div>`}).join('')).join('')+'</div>';
+ $('c_dv').innerHTML=[6,8,10,12].map(d=>`<button type="button" data-dv="${d}" aria-pressed="${C.dv===d}">d${d}<small>${COST.dv[d]} XP</small></button>`).join('');
+ const tierRow=(grp,k,name,v)=>{const lock=GATE.findIndex((l,ti)=>ti>0&&D.L<l);return`<div class="tr"><div><div class="tn">${esc(name)}</div><div class="ti">${v?t('sk_mb')(mb(v))+(grp==='sch'?' · '+esc(t('sk_fx')(v))+' · Mana '+MANA[v]:` · ${t('sk_st')} ${STAM[v]}`):'—'}</div></div>
+  <div class="pips">${[1,2,3,4,5].map(n=>`<button type="button" data-${grp}="${k}" data-t="${n}" aria-pressed="${n<=v}" aria-label="${esc(name)} Tier ${n}"${D.L<GATE[n]?' disabled':''}>${n}</button>`).join('')}</div></div>`};
+ const nl=GATE.findIndex((l,ti)=>ti>0&&D.L<l),ln=nl>0?`<p class="lockn">${esc(t('sk_lock')(nl,GATE[nl]))}</p>`:'';
+ $('c_sch').innerHTML=ln+Object.keys(SCH).map(k=>tierRow('sch',k,tr(SCH[k]),C.sch[k])).join('');
+ $('c_fam').innerHTML=ln+Object.keys(FAM).map(k=>tierRow('fam',k,tr(FAM[k].n),C.fam[k])).join('');
+ $('c_armor').innerHTML=Object.keys(ARM).map(k=>opt(k,`${tr(ARM[k][0])} (${ARM[k][1]})`,k===C.armor)).join('');
+ $('c_shield').innerHTML=Object.keys(SHD).map(k=>opt(k,`${tr(SHD[k][0])}${SHD[k][1]?' (+'+SHD[k][1]+')':''}`,k===C.shield)).join('');
+ const st=(k,v)=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+ $('c_def').innerHTML=st(t('sk_eva'),D.eva)+st(t('sk_armv'),D.av)+st(t('sk_minor'),D.minor)+st(t('sk_major'),D.major)+st(t('sk_severe'),D.severe)+st(t('sk_init'),sgn(D.init));
+ if(!C.used)C.used={hp:0,mana:0,st:0};const U=C.used,cur={};for(const[k,m]of[['hp',D.hp],['mana',D.mana],['st',D.st]]){U[k]=Math.max(0,Math.min(m,+U[k]||0));cur[k]=m-U[k]}
+ const trk=(k,lab,m,cls)=>`<div class="trk"><div><b>${lab}</b><div class="bar2 ${cls}"><i style="width:${m?Math.round(100*cur[k]/m):0}%"></i></div></div><div class="ctl"><button type="button" data-trk="${k}" data-d="-1" aria-label="${lab} −">−</button><span class="num">${cur[k]} / ${m}</span><button type="button" data-trk="${k}" data-d="1" aria-label="${lab} +">+</button></div></div>`;
+ $('c_trk').innerHTML=trk('hp',t('sk_vit'),D.hp,'hp')+trk('mana','Mana',D.mana,'mn')+trk('st',t('sk_st'),D.st,'');
+ $('c_wfam').innerHTML=Object.keys(FAM).map(k=>opt(k,tr(FAM[k].n),k===$('c_wfam').value)).join('');
+ $('c_wsz').innerHTML=Object.keys(SZ).map(k=>opt(k,T[lang].sz[k],k===($('c_wsz').value||'poly1'))).join('');
+ const w=C.weapons.map((x,i)=>{const tier=C.fam[x.f]||0,mod=C.cells[FAM[x.f].c],ab=mod+mb(tier),nd=Math.max(1,tier),dd=SZ[x.s];
+  return`<div class="atk"><div><div class="an">${esc(x.n)}</div><div class="ad">${esc(tr(FAM[x.f].n))} · ${esc(T[lang].sz[x.s])} · ${tier?'Tier '+tier:esc(t('sk_unm'))}<br>${t('sk_attack')} ${sgn(ab)} · ${t('sk_damage')} ${nd}d${dd}${mod?sgn(mod):''}</div></div>
+  <div class="ab"><button type="button" class="go" data-roll="atk" data-i="${i}">${t('sk_attack')}</button><button type="button" data-roll="dmg" data-i="${i}">${t('sk_damage')}</button><button type="button" data-wdel="${i}" aria-label="${t('sk_remove')} ${esc(x.n)}">×</button></div></div>`}).join('');
+ const sMod=C.cells.P_men,s=Object.keys(SCH).filter(k=>C.sch[k]>0).map(k=>{const tier=C.sch[k],ab=sMod+mb(tier);
+  return`<div class="atk"><div><div class="an">${esc(tr(SCH[k]))} — ${t('sk_spell')}</div><div class="ad">Tier ${tier} · ${esc(t('sk_fx')(tier))} · ${t('sk_dc')} ${8+ab}<br>${t('sk_attack')} ${sgn(ab)} · ${t('sk_damage')} ${tier}d8</div></div>
+  <div class="ab"><button type="button" class="go" data-roll="satk" data-k="${k}">${t('sk_attack')}</button><button type="button" data-roll="sdmg" data-k="${k}">${t('sk_damage')}</button></div></div>`}).join('');
+ $('c_atk').innerHTML=w+(s||`<p class="small">${t('sk_nospell')}</p>`);
+ $('c_log').innerHTML=LOG.length?LOG.map(x=>`<li>${x}</li>`).join(''):`<li class="small" style="font-weight:400">${t('sk_nolog')}</li>`}
+const LOG=[];let lastCrit={};
+const dRoll=n=>1+Math.floor(Math.random()*n);
+function logIt(h){LOG.unshift(h);if(LOG.length>12)LOG.pop();renderSheet()}
+function rollAtk(name,ab,key){const r=dRoll(20),tot=r+ab,tg=+$('c_tgt').value,crit=r===20;lastCrit[key]=crit;
+ const res=crit?`<span class="cr">${t('sk_crit')}</span>`:r===1?`<span class="ko">${t('sk_miss')}</span>`:$('c_tgt').value!==''?(tot>=tg?`<span class="ok">${t('sk_hit')}</span>`:`<span class="ko">${t('sk_miss')}</span>`):'';
+ logIt(`${esc(name)} · ${t('sk_attack')}${lang==='fr'?' :':':'} d20 (${r}) ${sgn(ab)} = <b>${tot}</b> ${res}`)}
+function rollDmg(name,nd,dd,mod,key){const n=lastCrit[key]?nd*2:nd,rs=Array.from({length:n},()=>dRoll(dd)),tot=rs.reduce((a,b)=>a+b,0)+mod;lastCrit[key]=false;
+ logIt(`${esc(name)} · ${t('sk_damage')}${lang==='fr'?' :':':'} ${n}d${dd}${mod?sgn(mod):''} [${rs.join(', ')}] = <b>${tot}</b>`)}
+const fiche=$('v-fiche');
+fiche.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const ds=b.dataset;
+ if(ds.cell){C.cells[ds.cell]=Math.max(0,Math.min(5,C.cells[ds.cell]+(+ds.d)));C.demo=false}
+ else if(ds.dv){C.dv=+ds.dv;C.demo=false}
+ else if(ds.sch||ds.fam){const g=ds.sch?'sch':'fam',k=ds.sch||ds.fam,n=+ds.t;C[g][k]=C[g][k]===n?n-1:n;C.demo=false}
+ else if(ds.trk){C.used[ds.trk]-=(+ds.d)}
+ else if(ds.wdel){C.weapons.splice(+ds.wdel,1)}
+ else if(ds.roll){if(ds.roll==='atk'||ds.roll==='dmg'){const x=C.weapons[+ds.i],tier=C.fam[x.f]||0,mod=C.cells[FAM[x.f].c];
+   if(ds.roll==='atk')rollAtk(x.n,mod+mb(tier),'w'+ds.i);else rollDmg(x.n,Math.max(1,tier),SZ[x.s],mod,'w'+ds.i)}
+  else{const k=ds.k,tier=C.sch[k],nm=tr(SCH[k]);if(ds.roll==='satk')rollAtk(nm,C.cells.P_men+mb(tier),'s'+k);else rollDmg(nm,tier,8,0,'s'+k)}return}
+ else if(b.id==='c_short'){const U=C.used;U.hp=Math.floor(U.hp/2);U.mana=Math.ceil(U.mana/2);U.st=0}
+ else if(b.id==='c_long'){C.used={hp:0,mana:0,st:0}}
+ else if(b.id==='c_copy'){const txt=JSON.stringify(C);navigator.clipboard.writeText(txt).then(()=>{$('c_msg').textContent=t('sk_copied')},()=>{$('c_paste').value=txt;$('c_paste').select()});return}
+ else if(b.id==='c_imp'){try{const o=JSON.parse($('c_paste').value);if(!o||!o.cells||!o.sch||!o.fam)throw 0;const c=blankC();
+   for(const k in c.cells)c.cells[k]=Math.max(0,Math.min(5,+o.cells[k]||0));for(const k in c.sch)c.sch[k]=Math.max(0,Math.min(5,+o.sch[k]||0));for(const k in c.fam)c.fam[k]=Math.max(0,Math.min(5,+o.fam[k]||0));
+   c.name=String(o.name||'');c.people=String(o.people||'');c.xp=Math.max(0,+o.xp||0);c.dv=[6,8,10,12].includes(+o.dv)?+o.dv:6;c.armor=ARM[o.armor]?o.armor:'none';c.shield=SHD[o.shield]?o.shield:'none';c.notes=String(o.notes||'');
+   c.used={hp:Math.max(0,+(o.used&&o.used.hp)||0),mana:Math.max(0,+(o.used&&o.used.mana)||0),st:Math.max(0,+(o.used&&o.used.st)||0)};c.weapons=(Array.isArray(o.weapons)?o.weapons:[]).filter(w=>w&&FAM[w.f]&&SZ[w.s]).map(w=>({n:String(w.n||'?'),f:w.f,s:w.s}));c.camp=String(o.camp||'');CH.list.push(c);CH.active=c.id;C=c;$('c_msg').textContent=t('sk_done')}catch(err){$('c_msg').textContent=t('sk_bad')}}
+ else if(b.id==='c_del'){if(!b.dataset.armed){b.dataset.armed='1';b.textContent=t('sk_confirm2');setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent=t('sk_del')}},3000);return}delete b.dataset.armed;b.textContent=t('sk_del');
+  CH.list=CH.list.filter(x=>x.id!==C.id);tokens=tokens.filter(k=>k.cid!==C.id);save();CH.active=null;C=CH.list[0]||null}
+ else if(ds.open){CH.active=ds.open;C=CH.list.find(x=>x.id===ds.open);LOG.length=0;window.scrollTo(0,0)}
+ else if(b.id==='c_back'){CH.active=null;window.scrollTo(0,0)}
+ else return;saveC();renderSheet()});
+for(const[id,key]of[['c_name','name'],['c_people','people'],['c_camp','camp'],['c_notes','notes']])$(id).addEventListener('input',e=>{if(C){C[key]=e.target.value;saveC()}});
+fiche.addEventListener('submit',e=>{if(e.target.id!=='c_nf')return;e.preventDefault();const n=$('c_nn').value.trim();if(!n)return;const c=blankC();c.name=n;c.camp=$('c_nc').value.trim();CH.list.push(c);CH.active=c.id;C=c;saveC();renderSheet();window.scrollTo(0,0)});
+$('c_xp').addEventListener('input',e=>{C.xp=Math.max(0,+e.target.value||0);saveC();renderSheet()});
+$('c_armor').addEventListener('change',e=>{C.armor=e.target.value;C.demo=false;saveC();renderSheet()});
+$('c_shield').addEventListener('change',e=>{C.shield=e.target.value;C.demo=false;saveC();renderSheet()});
+$('c_tgt').addEventListener('input',()=>{});
+$('c_wf').addEventListener('submit',e=>{e.preventDefault();const n=$('c_wn').value.trim();if(!n)return;C.weapons.push({n,f:$('c_wfam').value,s:$('c_wsz').value});$('c_wn').value='';saveC();renderSheet()});
+T.en.sk_confirm2='Confirm: erase the sheet?';T.fr.sk_confirm2='Confirmer : effacer la fiche ?';
+
+Object.assign(T.en,{t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Right-click a flag to remove it.',ctx_town:'Town map',ctx_regen:'Rebuild the town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},scn:{forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain (current setting)'}});
+Object.assign(T.fr,{t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Clic droit sur un fanion pour le retirer.',ctx_town:'Carte de ville',ctx_regen:'Reconstruire la ville',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},scn:{forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre (décor actuel)'}});
+setTimeout(()=>{fillScenes();fillSz()});
+Object.assign(T.en,{pl_title:'Quick place',pl_ally:'Ally (characters)',pl_foe:'Enemy (bestiary)',pl_hint:'Pick a name, then click tiles on the map. Esc to stop.',pl_choose:'— choose —',
+in_title:'Initiative',in_roll:'Roll',in_next:'Next turn',in_end:'End',in_rnd:n=>`Round ${n}`,in_empty:'Place tokens, then roll. Allies use Physical Finesse, monsters their initiative bonus.',
+incl:'incl.',up:'up',down:'down',m_init:'Initiative',ai_sum:'Generate a monster with AI',ai_note:'Describe the monster: name, look, weapons, role. Claude turns it into a Luparis stat block that you check before adding it.',
+ai_ph:'Ex: Brann the One-Eyed, a bandit chief with a war axe and a hand crossbow, cunning and cowardly',ai_go:'Generate',ai_wait:'Generating…',ai_fail:'Generation failed. Try again or rephrase.',ai_rate:'Too many requests, wait a moment.',
+ai_denied:'Generation is not allowed here.',ai_add:'Add to the bestiary',ai_added:'Added to the bestiary.',sk_back:'← All characters',sk_camp:'Campaign',sk_del:'Delete this character',sk_confirm2:'Confirm: delete this character?',
+sk_chars:'Characters',sk_nchars:n=>`${n} character${n>1?'s':''}`,sk_create:'Create',sk_nocamp:'No campaign',sk_open:'Open',sk_empty:'No character yet: create one above.'});
+Object.assign(T.fr,{pl_title:'Placement rapide',pl_ally:'Allié (personnages)',pl_foe:'Ennemi (bestiaire)',pl_hint:'Choisis un nom, puis clique sur les cases de la carte. Échap pour arrêter.',pl_choose:'— choisir —',
+in_title:'Initiative',in_roll:'Lancer',in_next:'Tour suivant',in_end:'Fin',in_rnd:n=>`Round ${n}`,in_empty:'Place les pions, puis lance. Les alliés utilisent leur Finesse physique, les monstres leur bonus d\'initiative.',
+incl:'dont',up:'de montée',down:'de descente',m_init:'Initiative',ai_sum:'Générer un monstre avec l\'IA',ai_note:'Décris le monstre : nom, allure, armes, rôle. Claude le convertit en profil Luparis que tu vérifies avant de l\'ajouter.',
+ai_ph:'Ex : Brann le Borgne, chef bandit avec une hache de guerre et une arbalète de poing, rusé et lâche',ai_go:'Générer',ai_wait:'Génération en cours…',ai_fail:'La génération a échoué. Réessaie ou reformule.',ai_rate:'Trop de demandes, patiente un instant.',
+ai_denied:'La génération n\'est pas autorisée ici.',ai_add:'Ajouter au bestiaire',ai_added:'Ajouté au bestiaire.',sk_back:'← Tous les personnages',sk_camp:'Campagne',sk_del:'Supprimer ce personnage',sk_confirm2:'Confirmer : supprimer ce personnage ?',
+sk_chars:'Personnages',sk_nchars:n=>`${n} personnage${n>1?'s':''}`,sk_create:'Créer',sk_nocamp:'Sans campagne',sk_open:'Ouvrir',sk_empty:'Aucun personnage : crée-en un ci-dessus.'});
+function renderPlace(){const a=document.getElementById('pl_ally'),f=document.getElementById('pl_foe');if(!a||!f)return;const av=a.value,fv=f.value;
+ a.innerHTML=opt('',t('pl_choose'))+[...camps(),''].map(g=>{const L=CH.list.filter(c=>(c.camp||'')===g);if(!L.length)return'';return`<optgroup label="${esc(g||t('sk_nocamp'))}">${L.map(c=>opt(c.id,c.name||'?',c.id===av)).join('')}</optgroup>`}).join('');
+ const byT={};for(const m of MON)(byT[m.type]=byT[m.type]||[]).push(m);
+ f.innerHTML=opt('',t('pl_choose'))+Object.keys(byT).sort((x,y)=>tyName(x).localeCompare(tyName(y),lang)).map(k=>`<optgroup label="${esc(tyName(k))}">${byT[k].sort((x,y)=>fpNum(x.fp)-fpNum(y.fp)).map(m=>opt(m.id,`${tr(m.n)} (${lang==='fr'?'FP':'CR'} ${m.fp})`,m.id===fv)).join('')}</optgroup>`).join('')}
+$('pl_ally').addEventListener('change',e=>{const v=e.target.value;if(!v)return setTool('move');$('pl_foe').value='';const ch=CH.list.find(c=>c.id===v);placing={ally:v,n:ch?ch.name||'?':'?'};setTool('place')});
+$('pl_foe').addEventListener('change',e=>{const v=e.target.value;if(!v)return setTool('move');$('pl_ally').value='';const m=MON.find(x=>x.id===v);if(!m)return;placing=m;setTool('place')});
+function renderIni(){const L=document.getElementById('in_list');if(!L)return;INI.o=INI.o.filter(o=>tokens.some(k=>k.id===o.id));if(INI.cur>=INI.o.length)INI.cur=0;
+ document.getElementById('in_round').textContent=INI.o.length?t('in_rnd')(INI.round):t('in_empty');
+ L.innerHTML=INI.o.map((o,i)=>{const k=tokens.find(k=>k.id===o.id),nm=k?(k.nm?tr(k.nm)+(k.num?' '+k.num:''):k.n):'?';
+  return`<li class="${i===INI.cur?'cur':''}"><input class="iv" type="number" value="${o.v}" data-iv="${i}" aria-label="${esc(t('in_title'))} ${esc(nm)}"><span class="inm ${k&&k.t==='pj'?'ally':'foe'}">${esc(nm)}</span><button type="button" data-ix="${i}" aria-label="${esc(t('sk_remove'))} ${esc(nm)}">×</button></li>`}).join('')}
+const iniSort=()=>INI.o.sort((a,b)=>b.v-a.v||b.b-a.b);
+$('in_roll').onclick=()=>{if(!tokens.length)return;INI.o=tokens.map(k=>{const b=+k.init||0;return{id:k.id||(k.id=tid()),v:dRoll(20)+b,b}});iniSort();INI.cur=0;INI.round=1;save();draw()};
+$('in_next').onclick=()=>{if(!INI.o.length)return;INI.cur++;if(INI.cur>=INI.o.length){INI.cur=0;INI.round++}save();draw()};
+$('in_end').onclick=()=>{INI={o:[],cur:0,round:0};save();draw()};
+$('in_list').addEventListener('change',e=>{const i=e.target.dataset.iv;if(i==null)return;INI.o[+i].v=+e.target.value||0;const cur=INI.o[INI.cur];iniSort();INI.cur=Math.max(0,INI.o.indexOf(cur));save();draw()});
+$('in_list').addEventListener('click',e=>{const b=e.target.closest('button[data-ix]');if(!b)return;const i=+b.dataset.ix;INI.o.splice(i,1);if(INI.cur>i)INI.cur--;save();draw()});
+for(const k of tokens)if(!k.id)k.id=tid();
+let SAMPLE=null,aiCand=null;
+(async()=>{try{if(window.claude&&window.claude.use)SAMPLE=await window.claude.use('sample')}catch(e){}$('aibox').hidden=!SAMPLE})();
+function cleanMon(v){if(!v||typeof v!=='object'||!v.n)return null;const cl=(x,a,b,d)=>{x=Math.round(+x);return isFinite(x)?Math.max(a,Math.min(b,x)):d};
+ return{id:'u'+Date.now().toString(36),n:String(v.n).slice(0,60),type:TY[v.type]?v.type:'humanoid',fp:FPS.includes(String(v.fp))?String(v.fp):'1',sz:SZK.includes(v.sz)?v.sz:'M',ca:cl(v.ca,5,30,12),pv:cl(v.pv,1,999,10),init:cl(v.init,-5,15,0),
+  hab:Array.isArray(v.hab)?v.hab.filter(h=>B[h]&&h!=='gen'):[],no:String(v.no||'').slice(0,600)}}
+function showCand(){const m=aiCand,v=conv(m);$('ai_msg').textContent='';
+ $('ai_out').innerHTML=`<div class="aiprev"><b>${esc(m.n)}</b> · ${esc(tyName(m.type))} · ${lang==='fr'?'FP':'CR'} ${esc(m.fp)}<div class="small">${t('esq')} ${v.esq} · ${t('thr')} ${v.maj}/${v.sev} · ${t('box')} ${v.cases} (${m.pv} ${t('hp')}) · Init ${sgn(m.init)}</div><p>${esc(m.no)}</p><div class="row"><button class="go" type="button" id="ai_add">${t('ai_add')}</button></div></div>`}
+$('ai_go').onclick=async()=>{const q=$('ai_q').value.trim();if(!q||!SAMPLE)return;const btn=$('ai_go');btn.disabled=true;$('ai_msg').textContent=t('ai_wait');$('ai_out').innerHTML='';
+ const L=lang==='fr'?'French':'English';
+ const prompt=`You convert a game master's description into one monster for "Luparis", a homebrew built on D&D 5.5. Write all text in ${L}.
+Return ONLY a JSON object with these keys:
+"n": the monster's name (use the name given, if any),
+"type": one of ${JSON.stringify(Object.keys(TY))},
+"fp": challenge rating, one of ${JSON.stringify(FPS)},
+"sz": size, one of "T" (tiny), "S" (small), "M" (medium), "L" (large), "H" (huge), "G" (gargantuan),
+"ca": D&D armor class (integer),
+"pv": D&D hit points (integer),
+"init": initiative bonus (integer, like a D&D Dexterity modifier),
+"hab": array with zero or more of ${JSON.stringify(ORDER.filter(k=>k!=='gen'))},
+"no": notes under 450 characters: a one-line description, then its attacks in Luparis format, then special abilities and tactics.
+Luparis attacks: Mastery Tier 1 to 5 (CR 0-2 → 1, 3-4 → 2, 5-10 → 3, 11-16 → 4, 17+ → 5); attack bonus = modifier + Tier + 1; damage = Tier × weapon die + modifier; weapon die d6 one-handed, d8 versatile in one hand, d10 versatile in two hands, d12 two-handed. Conditions are the D&D 5.5 conditions; no damage over time. Choose CR, AC and HP like a balanced official D&D monster of that concept.
+Game master's description, between the markers: <<<${q}>>>`;
+ try{const v=await SAMPLE.json(prompt,{modelTier:'default'});const m=cleanMon(v);if(!m)throw{code:'bad'};aiCand=m;showCand()}
+ catch(e){$('ai_msg').textContent=e&&e.code==='rate_limited'?t('ai_rate'):e&&e.code==='not_granted'?t('ai_denied'):t('ai_fail')}finally{btn.disabled=false}};
+$('ai_out').addEventListener('click',e=>{if(e.target.id==='ai_add'&&aiCand){MON.push(aiCand);saveMon();fillSel();renderB();$('ai_out').innerHTML='';$('ai_msg').textContent=t('ai_added');aiCand=null}});
+
+Object.assign(T.en,{pl_search:'Search',pl_search_ph:'Name of an ally or a monster',pl_none:'No match.',tk_ally:'ally',tk_close:'Close',tk_del:'Remove from map',tk_simple:'Simple token: no stats attached.'});
+Object.assign(T.fr,{pl_search:'Rechercher',pl_search_ph:"Nom d'un allié ou d'un monstre",pl_none:'Aucun résultat.',tk_ally:'allié',tk_close:'Fermer',tk_del:'Retirer du plateau',tk_simple:'Pion simple : aucune stat associée.'});
+function tokHp(k,dl){if(!k||!k.hpMax)return;k.hp=Math.max(0,Math.min(k.hpMax,k.hp+dl));if(k.cid){const ch=CH.list.find(c=>c.id===k.cid);if(ch){ch.used.hp=k.hpMax-k.hp;saveC();if(ch===C&&CH.active)renderSheet()}}save();draw();renderTok()}
+function renderTok(){const P=document.getElementById('tk_panel');if(!P)return;const k=tokens.find(x=>x.id===selTok);if(!k){P.hidden=true;return}P.hidden=false;
+ const ch=k.cid?CH.list.find(c=>c.id===k.cid):null,m=k.mid?MON.find(x=>x.id===k.mid):null,name=k.nm?tr(k.nm)+(k.num?' '+k.num:''):k.n;
+ const st=(a,b)=>`<div class="stat"><div class="k">${a}</div><div class="v">${b}</div></div>`;let h=`<h3>${esc(name)}</h3>`;
+ if(!k.hpMax&&!ch){h+=`<p class="small">${t('tk_simple')}</p>`}
+ else{h+=`<div class="stats">${st(t('esq'),k.esq)}${st(t('thr'),k.maj+' / '+k.sev)}${st('Init',sgn(+k.init||0))}</div>
+  <div class="trk"><div><b>${t('sk_vit')}</b><div class="bar2 hp"><i style="width:${Math.round(100*k.hp/k.hpMax)}%"></i></div></div><div class="ctl"><button type="button" data-tkhp="-1" aria-label="${t('sk_vit')} −">−</button><span class="num">${k.hp} / ${k.hpMax}</span><button type="button" data-tkhp="1" aria-label="${t('sk_vit')} +">+</button></div></div>`;
+  if(ch){const D=derived(ch);for(const[key,lab,mx]of[['mana','Mana',D.mana],['st',t('sk_st'),D.st]])if(mx)h+=`<div class="trk"><div><b>${lab}</b></div><div class="ctl"><button type="button" data-tkres="${key}" data-d="-1" aria-label="${lab} −">−</button><span class="num">${mx-(ch.used[key]||0)} / ${mx}</span><button type="button" data-tkres="${key}" data-d="1" aria-label="${lab} +">+</button></div></div>`;
+   h+=ch.weapons.map(w=>{const tier=ch.fam[w.f]||0,mod=ch.cells[FAM[w.f].c];return`<p class="tline"><b>${esc(w.n)}</b> · ${t('sk_attack')} ${sgn(mod+mb(tier))} · ${Math.max(1,tier)}d${SZ[w.s]}${mod?sgn(mod):''}</p>`}).join('');
+   h+=Object.keys(SCH).filter(x=>ch.sch[x]).map(x=>{const tier=ch.sch[x],ab=ch.cells.P_men+mb(tier);return`<p class="tline"><b>${esc(tr(SCH[x]))}</b> · Tier ${tier} · ${t('sk_attack')} ${sgn(ab)} · ${tier}d8 · ${t('sk_dc')} ${8+ab}</p>`}).join('')}
+  const no=m?noT(m):k.no;if(no)h+=`<p class="tno">${esc(no)}</p>`;if(m)h+=`<p class="small">${esc(tyName(m.type))} · ${lang==='fr'?'FP':'CR'} ${esc(m.fp)} · ${m.pv} ${t('hp')}</p>`}
+ h+=`<div class="row"><button type="button" data-tkact="del">${t('tk_del')}</button><button type="button" data-tkact="close">${t('tk_close')}</button></div>`;P.innerHTML=h}
+$('tk_panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const k=tokens.find(x=>x.id===selTok);if(!k)return;
+ if(b.dataset.tkhp)tokHp(k,+b.dataset.tkhp);
+ else if(b.dataset.tkres){const ch=CH.list.find(c=>c.id===k.cid);if(ch){ch.used[b.dataset.tkres]=(ch.used[b.dataset.tkres]||0)-(+b.dataset.d);saveC();if(CH.active===ch.id)renderSheet();renderTok()}}
+ else if(b.dataset.tkact==='del'){snap();tokens=tokens.filter(x=>x.id!==k.id);selTok=null;save();draw();renderTok()}
+ else if(b.dataset.tkact==='close'){selTok=null;renderTok()}});
+function renderRes(){const q=$('pl_q').value.trim().toLowerCase(),R=$('pl_res');if(!q){R.innerHTML='';return}
+ const al=CH.list.filter(c=>(c.name||'').toLowerCase().includes(q)).slice(0,4).map(c=>`<button type="button" data-pa="${esc(c.id)}"><span>${esc(c.name||'?')}</span><small>${t('tk_ally')}${c.camp?' · '+esc(c.camp):''}</small></button>`);
+ const mo=MON.filter(m=>[].concat(m.n).join(' ').toLowerCase().includes(q)).sort((a,b)=>fpNum(a.fp)-fpNum(b.fp)).slice(0,8).map(m=>`<button type="button" data-pm="${esc(m.id)}"><span>${esc(tr(m.n))}</span><small>${lang==='fr'?'FP':'CR'} ${esc(m.fp)}</small></button>`);
+ R.innerHTML=al.concat(mo).join('')||`<p class="small">${t('pl_none')}</p>`}
+$('pl_q').addEventListener('input',renderRes);
+$('pl_q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const b=$('pl_res').querySelector('button');if(b)b.click()}});
+$('pl_res').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.pa){const ch=CH.list.find(c=>c.id===b.dataset.pa);placing={ally:ch.id,n:ch.name||'?'}}else{placing=MON.find(m=>m.id===b.dataset.pm)}if(!placing)return;$('pl_q').value='';renderRes();setTool('place')});
+
+Object.assign(T.en,{w_lmtree:'Tree city',w_lmpyr:'Pyramid city',w_pop:'pop.',w_lore:'Lore',w_lore_ph:'History, rulers, rumors, what the party saw here…',w_link:'Link (LegendKeeper, Docs…)',w_citymap:'Watabou plan',w_battle:'Open the playable map',w_openlink:'Open the link',w_citynote:'The playable map opens in the Map tab, built from this town\'s data (size, walls, plaza, temple, port, river); your tokens and landmarks stay saved for this town. The Watabou plan opens the outside generator.',w_pk:{place:'Place',quest:'Quest',dungeon:'Dungeon',inn:'Inn',ruin:'Ruin',portal:'Portal',danger:'Danger',camp:'Camp'},tab_world:'World',w_pan:'Pan',w_party:'Place the party',w_pin:'Add a place',w_meas:'Measure a trip',w_edit:'Edit towns',w_fit:'Whole map',w_goparty:'Go to the party',w_layers:'Show',w_l_states:'Borders',w_l_routes:'Routes',w_l_rivers:'Rivers',w_l_burgs:'Towns',w_l_markers:'Places of interest',
+w_find:'Find',w_find_hint:'A town, a country or a place',w_find_ph:'Ex: Lagooncairn',w_pins:'Places',w_pins_hint:'Add a place on the map, then pick its type and name it as your sessions go.',w_nopins:'No place yet.',w_party_l:'The party',w_pin_l:'Pin',
+w_hover:'Drag to move, wheel or pinch to zoom.',w_trip:(mi,km,d)=>`${mi} miles · ${km} km · about ${d} day${d>1?'s':''} on foot (24 miles a day)`,w_state:'Country',w_note:'Simplified map drawn from the Azgaar export of Luparis (24 Nov 2026): one map pixel = 3 miles. The party position, pins and town edits are kept in your browser.',w_load:'Loading the map…',w_fail:'The map could not be loaded.',w_center:'Center',w_rm:'Remove',
+w_edit_hint:'Click a town to rename or delete it, drag it to move it.',w_new:'New town here',w_newname:'New town',w_name:'Name',w_kind:'Size',w_k:{cap:'Capital',city:'City',town:'Town'},w_del:'Delete this town',w_revert:'Undo my changes to this town',w_resetall:'Undo all town changes',w_click_new:'Click the map where the new town goes.',w_miles:'miles'});
+Object.assign(T.fr,{w_lmtree:'Ville-arbre',w_lmpyr:'Cité-pyramide',w_pop:'pop.',w_lore:'Lore',w_lore_ph:'Histoire, dirigeants, rumeurs, ce que le groupe y a vu…',w_link:'Lien (LegendKeeper, Docs…)',w_citymap:'Plan Watabou',w_battle:'Ouvrir la carte jouable',w_openlink:'Ouvrir le lien',w_citynote:'La carte jouable s\'ouvre dans l\'onglet Carte, construite d\'après les données de la ville (taille, remparts, place, temple, port, rivière) ; tes pions et repères restent enregistrés pour cette ville. Le plan Watabou ouvre le générateur externe.',w_pk:{place:'Lieu',quest:'Quête',dungeon:'Donjon',inn:'Auberge',ruin:'Ruine',portal:'Portail',danger:'Danger',camp:'Camp'},tab_world:'Monde',w_pan:'Déplacer',w_party:'Placer le groupe',w_pin:'Ajouter un lieu',w_meas:'Mesurer un trajet',w_edit:'Éditer les villes',w_fit:'Carte entière',w_goparty:'Aller au groupe',w_layers:'Afficher',w_l_states:'Frontières',w_l_routes:'Routes',w_l_rivers:'Rivières',w_l_burgs:'Villes',w_l_markers:'Lieux',
+w_find:'Rechercher',w_find_hint:'Une ville, un pays ou un lieu',w_find_ph:'Ex : Lagooncairn',w_pins:'Lieux',w_pins_hint:'Ajoute un lieu sur la carte, puis choisis son type et nomme-le au fil des sessions.',w_nopins:'Aucun lieu pour l\'instant.',w_party_l:'Le groupe',w_pin_l:'Épingle',
+w_hover:'Glisse pour déplacer, molette ou pincement pour zoomer.',w_trip:(mi,km,d)=>`${mi} miles · ${km} km · environ ${d} jour${d>1?'s':''} de marche (24 miles par jour)`,w_state:'Pays',w_note:"Carte simplifiée tirée de l'export Azgaar de Luparis (24 nov. 2026) : un pixel de carte = 3 miles. La position du groupe, les épingles et les modifications de villes sont gardées dans ton navigateur.",w_load:'Chargement de la carte…',w_fail:"La carte n'a pas pu être chargée.",w_center:'Centrer',w_rm:'Retirer',
+w_edit_hint:'Clique sur une ville pour la renommer ou la supprimer, fais-la glisser pour la déplacer.',w_new:'Nouvelle ville ici',w_newname:'Nouvelle ville',w_name:'Nom',w_kind:'Taille',w_k:{cap:'Capitale',city:'Cité',town:'Bourg'},w_del:'Supprimer cette ville',w_revert:'Annuler mes modifications sur cette ville',w_resetall:'Annuler toutes les modifications de villes',w_click_new:'Clique sur la carte à l\'endroit de la nouvelle ville.',w_miles:'miles'});
+const MI_PX=3;let WS=null,WV={x:0,y:0,w:1920,h:945},WT='pan',WST={party:null,pins:[],ed:{},add:[],lore:{}},wMeas=null,wSel=null,wNew=false;
+try{const o=JSON.parse(localStorage.getItem('luparis-world'));if(o){WST.party=o.party||null;WST.pins=Array.isArray(o.pins)?o.pins:[];WST.ed=o.ed&&typeof o.ed==='object'?o.ed:{};WST.add=Array.isArray(o.add)?o.add:[];WST.lore=o.lore&&typeof o.lore==='object'?o.lore:{}}}catch(e){}
+const wSave=()=>{try{localStorage.setItem('luparis-world',JSON.stringify(WST))}catch(e){}};
+const SVGNS='http://www.w3.org/2000/svg',wEl=(n,a)=>{const e=document.createElementNS(SVGNS,n);for(const k in a)e.setAttribute(k,a[k]);return e};
+let wPats=[],wHalo=[],BASEB=[],wBurgs=[],wMarks=[],wStates=[],wOv=null,wBG=null,wStarted=false;
+async function initWorld(){if(wStarted)return;wStarted=true;$('w_info').textContent=t('w_load');
+ try{const[r1,r2]=await Promise.all([fetch('world.svg'),fetch('world-burgs.json')]);if(!r1.ok||!r2.ok)throw 0;const doc=new DOMParser().parseFromString(await r1.text(),'image/svg+xml');WS=document.importNode(doc.documentElement,true);if(WS.nodeName!=='svg')throw 0;BASEB=await r2.json();if(!Array.isArray(BASEB))throw 0}
+ catch(e){$('w_info').textContent=t('w_fail');WS=null;wStarted=false;return}
+ WS.removeAttribute('viewBox');$('w_svg').append(WS);wPats=[...WS.querySelectorAll('pattern')];wHalo=[...WS.querySelectorAll('.halo1,.halo2')].map(e=>[e,+e.getAttribute('stroke-width')]);WV={x:0,y:0,w:1920,h:945};
+ for(const g of WS.querySelectorAll('.mk')){const m=/translate\(([-\d.]+),([-\d.]+)\)/.exec(g.getAttribute('transform'));wMarks.push({g,x:+m[1],y:+m[2],n:g.dataset.n,note:g.dataset.note})}
+ for(const e of WS.querySelectorAll('.sl'))wStates.push({e,x:+e.getAttribute('x'),y:+e.getAttribute('y'),n:e.textContent,a:+e.dataset.area});
+ wBG=WS.querySelector('#w-burgs');wOv=wEl('g',{id:'w-ov'});WS.append(wOv);wBuild();wFit();$('w_info').textContent=t('w_hover')}
+function wBuild(){wBG.replaceChildren();wBurgs=[];
+ const all=BASEB.map(b=>({...b,id:'b'+b.i})).concat(WST.add.map(a=>({...a})));
+ for(const b0 of all){const e=WST.ed[b0.id]||{};if(e.del)continue;const b={...b0,...e};const g=wEl('g',{class:'bg '+b.c});g.dataset.id=b.id;
+  if(b.lm){g.append(wEl('circle',{r:16,cy:-12,fill:'transparent'}));const tx=wEl('text',{y:-30});tx.textContent=b.n;g.append(tx);wBG.append(g);wBurgs.push({g,tx,id:b.id,x:b.x,y:b.y,n:b.n,s:b.s||'',c:b.c,lm:b.lm,lh:b.lh,d:b});continue}
+  const P=(d,f)=>g.append(wEl('path',{d,fill:f,stroke:'#2a211a','stroke-width':.8,'stroke-linejoin':'round'}));
+  g.append(wEl('ellipse',{cx:0,cy:.6,rx:b.c==='town'?4:8,ry:b.c==='town'?1.2:1.8,fill:'#2a211a',opacity:.25}));
+  if(b.c==='cap'){P('M-8,0 L-8,-8 L-6.4,-8 L-6.4,-6.6 L-4.8,-6.6 L-4.8,-8 L-3.2,-8 L-3.2,0Z M3.2,0 L3.2,-8 L4.8,-8 L4.8,-6.6 L6.4,-6.6 L6.4,-8 L8,-8 L8,0Z','#efe3c4');P('M-3.2,0 L-3.2,-13 L3.2,-13 L3.2,0Z','#efe3c4');P('M-4.2,-13 L0,-18.5 L4.2,-13Z','#b2523e');P('M-1.3,0 L-1.3,-3.2 Q0,-4.8 1.3,-3.2 L1.3,0Z','#2a211a');P('M0,-18.5 L0,-23 L4,-21.6 L0,-20.2','#b2523e')}
+  else if(b.c==='city'){P('M-7,0 L-7,-5 L-4.2,-8.2 L-1.4,-5 L-1.4,0Z','#efe3c4');P('M-.4,0 L-.4,-10 L4.8,-10 L4.8,0Z','#efe3c4');P('M-1.2,-10 L2.2,-14 L5.6,-10Z','#b2523e');P('M-7.8,-5 L-4.2,-9 L-.6,-5Z','#8a5a44')}
+  else{P('M-3.4,0 L-3.4,-4.2 L0,-7.2 L3.4,-4.2 L3.4,0Z','#efe3c4');P('M-4.2,-4 L0,-7.8 L4.2,-4','none')}
+  const tx=wEl('text',{y:b.c==='cap'?-26:b.c==='city'?-17:-10});tx.textContent=b.n;g.append(tx);wBG.append(g);wBurgs.push({g,id:b.id,x:b.x,y:b.y,n:b.n,s:b.s||'',c:b.c,d:b})}
+ wApply()}
+function wPx(){const r=$('w_stage').getBoundingClientRect();return{r,k:Math.min(r.width/WV.w,r.height/WV.h)}}
+function wApply(){if(!WS)return;const{r,k}=wPx();const vw=r.width/k,vh=r.height/k,cx=WV.x+WV.w/2,cy=WV.y+WV.h/2;WS.setAttribute('viewBox',`${cx-vw/2} ${cy-vh/2} ${vw} ${vh}`);
+ const s=1/k;for(const b of wBurgs){b.g.setAttribute('transform',`translate(${b.x},${b.y}) scale(${s})`);if(b.lm){b.tx.setAttribute('y',-(b.lh*k+6));b.g.firstChild.setAttribute('r',Math.max(10,b.lh*k*.5));b.g.firstChild.setAttribute('cy',-b.lh*k*.5)}}for(const m of wMarks)m.g.setAttribute('transform',`translate(${m.x},${m.y}) scale(${s*1.6})`);
+ 
+ const z=k*1920/r.width;WS.classList.toggle('hide-towns',z<3);WS.classList.toggle('hide-cities',z<1.6);WS.classList.toggle('hide-caps',z<1.4);WS.classList.toggle('hide-townicons',z<1.8);WS.classList.toggle('hide-cityicons',z<1.15);
+ for(const st of wStates){const fs=Math.max(12,Math.min(28,Math.sqrt(st.a)*1.5))*(z>4?0:1);st.e.setAttribute('font-size',fs*s);st.e.style.display=fs?'':'none'}
+ for(const id of['states','routes','rivers','burgs'])WS.classList.toggle('ly-off-'+id,!document.querySelector(`#w_layers input[data-ly="${id}"]`).checked);
+ const mi=Math.max(1,Math.round(120/k*MI_PX)),nice=[5,10,20,25,50,100,150,200,250,300,500,750,1000,1500,2000].reduce((a,b)=>Math.abs(b-mi)<Math.abs(a-mi)?b:a),px=nice/MI_PX*k;
+ $('w_scale').innerHTML=`<div class="sb" style="width:${px}px"></div><span>${nice} ${t('w_miles')}</span>`;wRender()}
+function wFit(){WV={x:0,y:0,w:1920,h:945};wApply()}
+function wZoom(f,px,py){const{r,k}=wPx(),mx=WV.x+WV.w/2+(px-r.width/2)/k,my=WV.y+WV.h/2+(py-r.height/2)/k,nw=Math.max(40,Math.min(1920*1.2,WV.w/f)),nh=nw*WV.h/WV.w,sc=nw/WV.w;
+ const cx=mx-(mx-(WV.x+WV.w/2))*sc,cy=my-(my-(WV.y+WV.h/2))*sc;WV={x:cx-nw/2,y:cy-nh/2,w:nw,h:nh};wApply()}
+function wCenter(x,y,w){const nw=w||Math.min(WV.w,300),nh=nw*945/1920;WV={x:x-nw/2,y:y-nh/2,w:nw,h:nh};wApply()}
+function wToMap(e){const{r,k}=wPx();return[WV.x+WV.w/2+(e.clientX-r.left-r.width/2)/k,WV.y+WV.h/2+(e.clientY-r.top-r.height/2)/k]}
+function wRender(){if(!wOv)return;if(!wMeas)$('w_info').textContent=WT==='edit'?(wNew?t('w_click_new'):t('w_edit_hint')):t('w_hover');const{k}=wPx(),s=1/k;wOv.replaceChildren();
+ const flag=(x,y,col,lab)=>{const g=wEl('g',{transform:`translate(${x},${y}) scale(${s})`});g.append(wEl('path',{d:'M0,0 L0,-26',stroke:'#2a211a','stroke-width':2}),wEl('path',{d:'M0,-26 L16,-21 L0,-15Z',fill:col,stroke:'#f6efdc','stroke-width':1}),wEl('circle',{r:3.5,fill:col,stroke:'#f6efdc','stroke-width':1.2}));
+  if(lab){const tx=wEl('text',{x:20,y:-17,'font-size':14,'font-weight':700});tx.textContent=lab;g.append(tx)}wOv.append(g)};
+ const badge=(p)=>{const k=PIN[p.k]?p.k:'place',g=wEl('g',{transform:`translate(${p.x},${p.y}) scale(${s})`});g.append(wEl('path',{d:'M0,0 L-5,-9 A10,10 0 1 1 5,-9Z',fill:PIN[k].c,stroke:'#f6efdc','stroke-width':1.4}));
+  const gl=wEl('g',{transform:'translate(0,-16)',fill:'#f6efdc',stroke:'#f6efdc','stroke-width':1.2,'stroke-linecap':'round','stroke-linejoin':'round'});for(const d of PIN[k].d){const f=d[0]==='~';gl.append(wEl('path',{d:f?d.slice(1):d,fill:f?'none':'#f6efdc'}))}g.append(gl);
+  const tx=wEl('text',{x:13,y:-12,'font-size':14,'font-weight':700});tx.textContent=p.l||t('w_pk')[k];g.append(tx);wOv.append(g)};
+ WST.pins.forEach(badge);if(WST.party)flag(WST.party.x,WST.party.y,'#b2523e',t('w_party_l'));
+ const sb=wSel&&wBurgs.find(b=>b.id===wSel);if(sb&&WT==='edit')wOv.append(wEl('circle',{cx:sb.x,cy:sb.y,r:9*s,fill:'none',stroke:'#c0703a','stroke-width':2,'vector-effect':'non-scaling-stroke'}));
+ if(wMeas){const a=wMeas.a,b=wMeas.b;wOv.append(wEl('path',{d:`M${a[0]},${a[1]}L${b[0]},${b[1]}`,stroke:'#b2523e','stroke-width':3,'stroke-dasharray':'8 6','vector-effect':'non-scaling-stroke',fill:'none'}));
+  const mi=Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])*MI_PX);$('w_info').textContent=t('w_trip')(mi,Math.round(mi*1.609),Math.max(1,Math.ceil(mi/24)))}
+ const L=$('w_pins');if(L.contains(document.activeElement))return;L.innerHTML=WST.pins.length?WST.pins.map((p,i)=>`<li><select data-pk="${i}" aria-label="${esc(t('w_kind'))}">${Object.keys(PIN).map(k=>opt(k,t('w_pk')[k],k===(p.k||'place'))).join('')}</select><input data-pl="${i}" value="${esc(p.l||'')}" placeholder="${esc(t('w_pk')[p.k||'place'])}" aria-label="${esc(t('w_name'))} ${i+1}"><button type="button" data-pc="${i}">${t('w_center')}</button><button type="button" data-pr="${i}" aria-label="${esc(t('w_rm'))}">×</button></li>`).join(''):`<li class="small">${t('w_nopins')}</li>`}
+const PIN={place:{c:'#2e5f96',d:['M-2.5,0 A2.5,2.5 0 1 1 2.5,0 A2.5,2.5 0 1 1 -2.5,0']},quest:{c:'#c0703a',d:['M-1.2,-5 L1.2,-5 L.7,1.5 L-.7,1.5Z','M-1.2,3.2 A1.2,1.2 0 1 1 1.2,3.2 A1.2,1.2 0 1 1 -1.2,3.2']},
+ dungeon:{c:'#3a3128',d:['M-4,-.5 A4,4 0 1 1 4,-.5 L2.6,1.5 L2.6,3.6 L-2.6,3.6 L-2.6,1.5Z']},inn:{c:'#8a5a2b',d:['M-3.5,-4 L2.5,-4 L2.5,4 L-3.5,4Z','~M2.5,-2 Q5.5,-2 5.5,0.5 Q5.5,2.5 2.5,2.5']},
+ ruin:{c:'#6b6258',d:['M-4,4.5 L4,4.5 L4,3 L-4,3Z','M-2.6,3 L-2.6,-3 L-1,-5 L.6,-3.5 L2.6,-4.5 L2.6,3Z']},portal:{c:'#7b2a7a',d:['~M-3,4 L-3,-1 Q0,-6.5 3,-1 L3,4']},
+ danger:{c:'#9c2f25',d:['~M-4,4 L4,-4 M4,4 L-4,-4','~M-4.5,-1.5 L-1.5,-4.5 M4.5,-1.5 L1.5,-4.5']},camp:{c:'#3f6e45',d:['M-5,4 L0,-4.5 L5,4Z']}};
+let wP=new Map(),wDrag=null,wPinch=null;
+const wst=$('w_stage');
+wst.addEventListener('wheel',e=>{if(!WS)return;e.preventDefault();const r=wst.getBoundingClientRect();wZoom(e.deltaY<0?1.25:0.8,e.clientX-r.left,e.clientY-r.top)},{passive:false});
+wst.addEventListener('pointerdown',e=>{if(!WS)return;wst.setPointerCapture(e.pointerId);wP.set(e.pointerId,[e.clientX,e.clientY]);
+ if(wP.size===2){const[a,b]=[...wP.values()];wPinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])};wDrag=null;return}
+ const m=wToMap(e);if(WT==='meas'){wMeas={a:m,b:m};wDrag={meas:true};return}
+ const g=e.target.closest&&e.target.closest('.bg');if(WT==='edit'&&g){wSel=g.dataset.id;wDrag={burg:g.dataset.id,moved:false,x:e.clientX,y:e.clientY};wEdit();wRender();return}
+ wDrag={x:e.clientX,y:e.clientY,vx:WV.x,vy:WV.y,moved:false,t:e.target}});
+wst.addEventListener('pointermove',e=>{if(!wP.has(e.pointerId))return;wP.set(e.pointerId,[e.clientX,e.clientY]);
+ if(wPinch&&wP.size===2){const[a,b]=[...wP.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]),r=wst.getBoundingClientRect();wZoom(d/wPinch.d,(a[0]+b[0])/2-r.left,(a[1]+b[1])/2-r.top);wPinch.d=d;return}
+ if(!wDrag)return;if(wDrag.meas){wMeas.b=wToMap(e);wRender();return}
+ if(wDrag.burg){if(Math.abs(e.clientX-wDrag.x)+Math.abs(e.clientY-wDrag.y)>4)wDrag.moved=true;if(wDrag.moved){const b=wBurgs.find(x=>x.id===wDrag.burg),m=wToMap(e);b.x=m[0];b.y=m[1];wApply()}return}
+ const{k}=wPx(),dx=e.clientX-wDrag.x,dy=e.clientY-wDrag.y;if(Math.abs(dx)+Math.abs(dy)>4)wDrag.moved=true;if(WT==='pan'||WT==='edit'||wDrag.moved){WV.x=wDrag.vx-dx/k;WV.y=wDrag.vy-dy/k;wApply()}});
+function wPut(id,patch){if(id.startsWith('b')){WST.ed[id]={...(WST.ed[id]||{}),...patch}}else{const a=WST.add.find(x=>x.id===id);if(a){if(patch.del)WST.add=WST.add.filter(x=>x.id!==id);else Object.assign(a,patch)}}wSave()}
+function wUp(e){wP.delete(e.pointerId);if(wP.size<2)wPinch=null;if(!wDrag)return;const d=wDrag;wDrag=null;
+ if(d.burg){if(d.moved){const b=wBurgs.find(x=>x.id===d.burg);wPut(d.burg,{x:Math.round(b.x*10)/10,y:Math.round(b.y*10)/10})}return}
+ if(d.meas||d.moved)return;const m=wToMap(e);
+ if(WT==='edit'&&wNew){const id='a'+Date.now().toString(36);WST.add.push({id,n:t('w_newname'),x:Math.round(m[0]*10)/10,y:Math.round(m[1]*10)/10,c:'town',s:''});wSave();wNew=false;wSel=id;wBuild();wEdit();const i=$('w_ename');if(i){i.focus();i.select()}return}
+ if(WT==='party'){WST.party={x:m[0],y:m[1]};wSave();wRender();return}
+ if(WT==='pin'){WST.pins.push({x:m[0],y:m[1],l:'',k:'place'});wSave();if(document.activeElement)document.activeElement.blur();wRender();const ins=$('w_pins').querySelectorAll('input');if(ins.length)ins[ins.length-1].focus();return}
+ const g=d.t&&d.t.closest&&d.t.closest('.bg,.mk');if(g)wShow(g)}
+wst.addEventListener('pointerup',wUp);wst.addEventListener('pointercancel',e=>{wP.delete(e.pointerId);wDrag=null;wPinch=null});
+function cityUrl(b){const d=b.d||{},pop=Math.max(50,+d.pop||800),ft=d.ft||'',size=Math.max(6,Math.min(40,Math.round(2.5*Math.log(pop/100+1)*2.2)));
+ let seed=+d.seed;if(!seed){seed=0;for(const ch of String(b.id))seed=(seed*31+ch.charCodeAt(0))>>>0}
+ const q=new URLSearchParams({name:b.n,population:pop,size,seed,citadel:+ft.includes('c'),walls:+ft.includes('w'),plaza:+ft.includes('p'),temple:+ft.includes('t'),shantytown:+ft.includes('s'),coast:+(d.port||0),river:+(d.river||0),greens:0,gates:-1});
+ return 'https://watabou.github.io/city-generator/?'+q.toString()}
+function wShow(g){const S=$('w_sel');S.hidden=false;const b=wBurgs.find(x=>x.g===g),m=wMarks.find(x=>x.g===g);
+ if(!b){if(m)S.innerHTML=`<h3>${esc(m.n)}</h3><p class="small">${esc(m.note||'')}</p>`;return}
+ const L=WST.lore[b.id]||{},kind=b.lm==='tree'?t('w_lmtree'):b.lm==='pyr'?t('w_lmpyr'):t('w_k')[b.c]||'',pop=b.d&&b.d.pop?` · ${t('w_pop')} ${(+b.d.pop).toLocaleString(lang)}`:'';
+ const url=(L.u||'').trim(),safe=/^https:\/\//.test(url);
+ S.innerHTML=`<h3>${esc(b.n)}</h3><p class="small">${esc(kind)}${b.s?' · '+esc(b.s):''}${pop}</p>
+ <label><span>${t('w_lore')}</span><textarea id="w_lore" rows="5" data-id="${esc(b.id)}" placeholder="${esc(t('w_lore_ph'))}">${esc(L.t||'')}</textarea></label>
+ <label><span>${t('w_link')}</span><input id="w_link" data-id="${esc(b.id)}" value="${esc(url)}" placeholder="https://…"></label>
+ <div class="row" style="margin-top:8px"><button type="button" class="go" data-town="${esc(b.id)}">${t('w_battle')}</button>${b.lm?'':`<a class="btn" href="${esc(cityUrl(b))}" target="_blank" rel="noopener">${t('w_citymap')}</a>`}${safe?`<a class="btn" href="${esc(url)}" target="_blank" rel="noopener">${t('w_openlink')}</a>`:''}</div>
+ ${b.lm?'':`<p class="small">${t('w_citynote')}</p>`}`}
+$('w_sel').addEventListener('input',e=>{const id=e.target.dataset.id;if(!id)return;if(e.target.id==='w_lore'){WST.lore[id]={...(WST.lore[id]||{}),t:e.target.value.slice(0,4000)};wSave()}else if(e.target.id==='w_link'){WST.lore[id]={...(WST.lore[id]||{}),u:e.target.value.slice(0,500)};wSave()}});
+$('w_sel').addEventListener('click',e=>{const bt=e.target.closest('[data-town]');if(!bt)return;const b=wBurgs.find(x=>String(x.id)===bt.dataset.town);if(b)openTown(b.id,b.n,{...(b.d||{}),c:b.c})});
+$('w_sel').addEventListener('change',e=>{if(e.target.id==='w_link'){const b=wBurgs.find(x=>x.id===e.target.dataset.id);if(b)wShow(b.g)}});
+function wEdit(){const S=$('w_sel');if(WT!=='edit'){return}S.hidden=false;const b=wSel&&wBurgs.find(x=>x.id===wSel);
+ let h=`<h3>${t('w_edit')}</h3><div class="row"><button type="button" class="go" id="w_newb">${t('w_new')}</button></div>`;
+ if(b)h+=`<label style="margin-top:10px"><span>${t('w_name')}</span><input id="w_ename" value="${esc(b.n)}" maxlength="40"></label>
+ <label><span>${t('w_kind')}</span><select id="w_ekind">${['cap','city','town'].map(c=>opt(c,t('w_k')[c],c===b.c)).join('')}</select></label>
+ <div class="row" style="margin-top:8px"><button type="button" id="w_edel">${t('w_del')}</button>${b.id.startsWith('b')&&WST.ed[b.id]?`<button type="button" id="w_erev">${t('w_revert')}</button>`:''}</div>`;
+ if(Object.keys(WST.ed).length||WST.add.length)h+=`<div class="row" style="margin-top:8px"><button type="button" id="w_eall">${t('w_resetall')}</button></div>`;S.innerHTML=h}
+$('w_sel').addEventListener('input',e=>{if(e.target.id==='w_ename'&&wSel){const v=e.target.value.slice(0,40);wPut(wSel,{n:v});const b=wBurgs.find(x=>x.id===wSel);if(b){b.n=v;b.g.querySelector('text').textContent=v}}});
+$('w_sel').addEventListener('change',e=>{if(e.target.id==='w_ekind'&&wSel){wPut(wSel,{c:e.target.value});wBuild();wEdit()}});
+$('w_sel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.id==='w_newb'){wNew=true;wRender()}
+ else if(b.id==='w_edel'&&wSel){if(!b.dataset.armed){b.dataset.armed='1';b.textContent=t('confirm');return}wPut(wSel,{del:true});wSel=null;wBuild();wEdit()}
+ else if(b.id==='w_erev'&&wSel){delete WST.ed[wSel];wSave();wBuild();wEdit()}
+ else if(b.id==='w_eall'){if(!b.dataset.armed){b.dataset.armed='1';b.textContent=t('confirm');return}WST.ed={};WST.add=[];wSel=null;wSave();wBuild();wEdit()}});
+$('w_tools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;WT=b.dataset.w;wMeas=null;wNew=false;for(const x of $('w_tools').querySelectorAll('button'))x.setAttribute('aria-pressed',x===b);wst.classList.toggle('tool',WT!=='pan'&&WT!=='edit');
+ if(WT==='edit')wEdit();else{wSel=null;$('w_sel').hidden=true}wRender()});
+$('w_zin').onclick=()=>{const r=wst.getBoundingClientRect();wZoom(1.4,r.width/2,r.height/2)};$('w_zout').onclick=()=>{const r=wst.getBoundingClientRect();wZoom(1/1.4,r.width/2,r.height/2)};
+$('w_fit').onclick=wFit;$('w_goparty').onclick=()=>{if(WST.party)wCenter(WST.party.x,WST.party.y,260)};
+$('w_layers').addEventListener('change',wApply);
+$('w_pins').addEventListener('input',e=>{const i=e.target.dataset.pl;if(i==null)return;WST.pins[+i].l=e.target.value.slice(0,40);wSave();wRender()});
+$('w_pins').addEventListener('change',e=>{const i=e.target.dataset.pk;if(i==null)return;WST.pins[+i].k=e.target.value;wSave();e.target.blur();wRender()});
+$('w_pins').addEventListener('focusout',()=>setTimeout(()=>{if(!$('w_pins').contains(document.activeElement))wRender()},0));
+$('w_pins').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.pc!=null){const p=WST.pins[+b.dataset.pc];wCenter(p.x,p.y,260)}else if(b.dataset.pr!=null){WST.pins.splice(+b.dataset.pr,1);wSave();wRender()}});
+function wFind(){const q=$('w_q').value.trim().toLowerCase(),R=$('w_res');if(!q||!WS){R.innerHTML='';return}
+ const hits=[...wStates.filter(x=>x.n.toLowerCase().includes(q)).map(x=>({k:'s',x})),...wBurgs.filter(x=>x.n.toLowerCase().includes(q)).map(x=>({k:'b',x})),...wMarks.filter(x=>x.n.toLowerCase().includes(q)).map(x=>({k:'m',x}))].slice(0,10);
+ R.innerHTML=hits.map((h,i)=>`<button type="button" data-wi="${i}"><span>${esc(h.x.n)}</span><small>${h.k==='s'?esc(t('w_state')):h.k==='b'?esc(h.x.s||''):''}</small></button>`).join('')||`<p class="small">${t('pl_none')}</p>`;R._hits=hits}
+$('w_q').addEventListener('input',wFind);$('w_q').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const b=$('w_res').querySelector('button');if(b)b.click()}});
+$('w_res').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const h=$('w_res')._hits[+b.dataset.wi];if(!h)return;wCenter(h.x.x,h.x.y,h.k==='s'?500:200);if(h.k!=='s'){if(WT==='edit'&&h.k==='b'){wSel=h.x.id;wEdit();wRender()}else wShow(h.x.g)}});
+new ResizeObserver(()=>{if(WS&&!$('v-monde').hidden)wApply()}).observe(wst);
+
+function nm0(m){return tr(m.n)}
+function applyLang(){document.documentElement.lang=lang;document.title=lang==='fr'?'Luparis — Table tactique':'Luparis — Tactical Table';
+ for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();
+ for(const e of document.querySelectorAll('[data-i18n-html]'))e.innerHTML=t(e.dataset.i18nHtml);
+ for(const e of document.querySelectorAll('[data-i18n-ph]'))e.placeholder=t(e.dataset.i18nPh);
+ for(const b of bz.querySelectorAll('button[data-b]'))b.querySelector('.bn').textContent=tr(B[b.dataset.b].n);
+ for(const b of document.querySelectorAll('#langs button'))b.setAttribute('aria-pressed',b.dataset.lang===lang);
+ for(const b of document.querySelectorAll('#units button'))b.setAttribute('aria-pressed',b.dataset.u===unit);
+ if(!$('mid').value)$('addsum').textContent=t('add');fillSel();renderB();prev();legend();rules();renderSheet();renderPlace();renderIni();renderTok();renderRes();if(WS)wRender();draw()}
+function rules(){const tp=$('rules-'+lang);$('rbody').replaceChildren(tp.content.cloneNode(true));for(const tb of $('rbody').querySelectorAll('table')){const w=document.createElement('div');w.className='scroll';tb.before(w);w.append(tb)}
+ $('toc').innerHTML=`<div class="vtag">${esc(t('ver'))}</div>`+[...$('rbody').querySelectorAll('h2')].map(h=>`<button data-to="${h.id}">${esc(h.textContent)}</button>`).join('')}
+$('toc').addEventListener('click',e=>{const b=e.target.closest('button[data-to]');if(b)document.getElementById(b.dataset.to).scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'})});
+function savePrefs(){try{localStorage.setItem('luparis-prefs',JSON.stringify({lang,unit}))}catch(e){}}
+$('langs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;lang=b.dataset.lang;savePrefs();applyLang()});
+$('units').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;unit=b.dataset.u;savePrefs();applyLang()});
+applyLang();route();
+legend();layout();
+}
+</script>
+</body>
+</html>
