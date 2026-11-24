@@ -4,6 +4,7 @@ src,out=sys.argv[1],sys.argv[2]
 d=json.load(open(src));p=d['pack'];W,H=d['info']['width'],d['info']['height'];SEED=int(d['info']['seed'])
 V=[v['p'] for v in p['vertices']];cells=p['cells'];feat=p['features']
 RENAME={'Sanctuaria':'Tlanoxa'}
+STATE_RENAME={'Kethei':'Ketheia'}
 land=lambda c:c['h']>=20
 def poly(c): return 'M'+'L'.join(f"{V[v][0]:.1f},{V[v][1]:.1f}" for v in c['v'])+'Z'
 def islake(c): f=c['f']; return 0<f<len(feat) and feat[f] and feat[f].get('type')=='lake'
@@ -143,7 +144,7 @@ o.append(f'<path d="{"".join(coast)}" fill="none" stroke="#d3e9f0" stroke-width=
 for col,ps in base.items(): o.append(f'<path d="{"".join(ps)}" fill="{col}" stroke="{col}" stroke-width="0.8"/>')
 if lakes: o.append(f'<path d="{"".join(lakes)}" fill="#8fc0d6" stroke="#8fc0d6" stroke-width="0.8"/>')
 o.append(f'<path d="{"".join(coast)}" fill="none" stroke="#3d4f57" stroke-width="1.3" stroke-linecap="round" vector-effect="non-scaling-stroke"/>')
-o.append(f'<path id="w-borders" class="ly-states" d="{"".join(border)}" fill="none" stroke="#8a5a44" stroke-opacity=".55" stroke-width="1" stroke-dasharray="1 3" stroke-linecap="round" vector-effect="non-scaling-stroke"/>')
+bd="".join(border)
 def edge_mid(a,b):
     sv=set(cells[b]['v']);sh=[v for v in cells[a]['v'] if v in sv]
     if len(sh)<2: return None
@@ -178,7 +179,9 @@ o.append('</g><g id="w-icons">')
 for y,k,x,s in stamps:
     w,h=DIM[k];vx,vy=VB[k]
     o.append(f'<use href="#i-{k}" x="{x+vx*s:.1f}" y="{y+vy*s:.1f}" width="{w*s:.1f}" height="{h*s:.1f}"/>')
-o.append('</g><g id="w-lm">')
+o.append('</g>')
+o.append(f'<g id="w-borders" class="ly-states" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="{bd}" stroke="#fffaf0" stroke-opacity=".85" stroke-width="6.5" vector-effect="non-scaling-stroke"/><path d="{bd}" stroke="#6e1640" stroke-width="3.2" stroke-dasharray="12 5" vector-effect="non-scaling-stroke"/></g>')
+o.append('<g id="w-lm">')
 if wall:
     w_="".join(wall)
     o.append(f'<path d="{w_}" fill="none" stroke="#3a3128" stroke-width="5.2" stroke-linecap="round"/><path d="{w_}" fill="none" stroke="#9b9285" stroke-width="3.4" stroke-linecap="round"/><path d="{w_}" fill="none" stroke="#3a3128" stroke-width="1.6" stroke-dasharray="1.1 1.3"/>')
@@ -206,7 +209,7 @@ for sid,s in st.items():
     pts=[c['p'] for c in cells if land(c) and c['state']==sid]
     if not pts:continue
     x,y=s['pole'] if s.get('pole') else (statistics.median(q[0] for q in pts),statistics.median(q[1] for q in pts))
-    nm='United Hordes of War' if sid==S_WAR else s['name']
+    nm='United Hordes of War' if sid==S_WAR else STATE_RENAME.get(s['name'],s['name'])
     o.append(f'<text class="sl" x="{x:.1f}" y="{y:.1f}" data-area="{len(pts)}">{escape(nm)}</text>')
 o.append('</g></svg>')
 open(out,'w',encoding='utf-8',errors='replace').write(''.join(o))
@@ -214,7 +217,7 @@ B=[]
 for b in p['burgs'][1:]:
     if not b or b.get('removed') or 'x' not in b:continue
     cap=b.get('capital',0);city=b.get('group')=='cities' or cap;nm=RENAME.get(b['name'],b['name'])
-    e={'i':b['i'],'n':nm,'x':round(b['x'],1),'y':round(b['y'],1),'c':'cap' if cap else ('city' if city else 'town'),'s':st.get(b.get('state',0),{}).get('name',''),
+    e={'i':b['i'],'n':nm,'x':round(b['x'],1),'y':round(b['y'],1),'c':'cap' if cap else ('city' if city else 'town'),'s':STATE_RENAME.get(st.get(b.get('state',0),{}).get('name',''),st.get(b.get('state',0),{}).get('name','')),
        'pop':round(b.get('population',0)*1000),'ft':''.join(k[0] for k in ('citadel','walls','plaza','temple','shanty') if b.get(k)),'port':1 if b.get('port') else 0,'river':1 if cells[b['cell']].get('r') else 0,'seed':SEED+b['i']}
     if b['name']=='Vardrassil': e.update(lm='tree',x=round(TREE[0],1),y=round(TREE[1],1),lh=40)
     if b['name'] in PYR: e.update(lm='pyr',x=round(PYR[b['name']][0],1),y=round(PYR[b['name']][1],1),lh=19)
