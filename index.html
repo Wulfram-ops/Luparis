@@ -40,6 +40,7 @@ input[type=range]{width:96px;accent-color:var(--acc)}
 .hhead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:10px}.hhead h3{margin:0;margin-right:auto}.hsel{display:flex;gap:6px;align-items:center}.hsel select{min-height:38px}
 .htrk{display:flex;gap:6px;align-items:center}.htrk button{width:34px;min-height:34px;padding:0}.htrk b{min-width:44px;text-align:center}
 .wpn{border-top:1px solid var(--line);padding:6px 0;display:flex;flex-direction:column;gap:4px}.wpn:first-of-type{border-top:0}.wpt b{font-size:16px}
+.tkimg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}.btnlike{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:9px;cursor:pointer;font:500 15px "Alegreya Sans",sans-serif}.btnlike:hover{background:color-mix(in oklab,var(--acc) 14%,transparent)}
 .hc.k-note{border-top-color:#8a7a5a}.hnote{width:100%;box-sizing:border-box;resize:vertical;font:15px/1.4 "Alegreya Sans",sans-serif;min-height:120px}
 .hc.k-tal{border-top-color:#6b7a3c}.hc.k-tal ul{margin:4px 0;padding-left:16px}.pfmx td{padding:0!important}.pfmx td button{width:100%;min-height:50px;min-width:76px;font-size:19px;justify-content:center;font-weight:700;font-variant-numeric:tabular-nums;border-radius:0}.pfmx th small{color:var(--ink);font-weight:700}.pfmods{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.pflab{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 4px 0 6px}.pfhint{margin:4px 0}.pflast{font-size:15px;margin:4px 0 8px;padding:4px 8px;border-left:3px solid var(--acc);background:var(--panel)}
 button.pfb.pfini{cursor:pointer;min-height:0;border-color:var(--acc);gap:0;font:inherit}button.pfb.pfini:hover{background:color-mix(in oklab,var(--acc) 14%,var(--panel))}
@@ -879,7 +880,7 @@ function inD(cx,cy,u,v){return[cx+(u-v)*TW/2,cy+(u+v)*TW/4]}
 let CC=null,CCk='';function cells(){const k=N+':'+rot;if(CCk!==k){const a=[];for(let x=0;x<N;x++)for(let y=0;y<N;y++){const[vx,vy]=view(x,y);a.push({x,y,vx,vy})}CC=a.sort((a,b)=>(a.vx+a.vy)-(b.vx+b.vy)||a.vx-b.vx);CCk=k}return CC}
 function unview(vx,vy){switch(rot){case 1:return[vy,N-1-vx];case 2:return[N-1-vx,N-1-vy];case 3:return[N-1-vy,vx];default:return[vx,vy]}}
 function gv(vx,vy){let x,y;switch(rot){case 1:x=vy;y=N-1-vx;break;case 2:x=N-1-vx;y=N-1-vy;break;case 3:x=N-1-vy;y=vx;break;default:x=vx;y=vy}return x>=0&&y>=0&&x<N&&y<N?H[x][y]:null}
-function hasAnim(){if(reduce||N>40)return false;if(Object.values(ENV).some(v=>(v.k||v)==='fire'))return true;const p=B[bio].pit;if(p!=='lava'&&p!=='water'&&p!=='swamp')return false;for(const r of H)for(const v of r)if(v<0)return true;return false}
+function hasAnim(){if(reduce||N>40)return false;if(Object.values(ENV).some(v=>['fire','fog','dark'].includes(v.k||v)))return true;const p=B[bio].pit;if(p!=='lava'&&p!=='water'&&p!=='swamp')return false;for(const r of H)for(const v of r)if(v<0)return true;return false}
 function specks(cx,cy,x,y){const s=B[bio].sp;for(let i=0;i<4;i++){if(rnd(x,y,i)>s.d)continue;const[px,py]=inD(cx,cy,.18+rnd(x,y,i+10)*.64,.18+rnd(x,y,i+20)*.64);const c=s.c[Math.floor(rnd(x,y,i+30)*s.c.length)];const z=TW/40;
  ctx.fillStyle=c;ctx.strokeStyle=c;ctx.lineWidth=Math.max(1,z*.8);ctx.beginPath();
  if(s.k==='tuft'||s.k==='leaf'){ctx.moveTo(px-z*1.5,py);ctx.lineTo(px-z*.5,py-z*3);ctx.moveTo(px,py);ctx.lineTo(px,py-z*3.6);ctx.moveTo(px+z*1.5,py);ctx.lineTo(px+z*.6,py-z*3);ctx.stroke()}
@@ -1011,7 +1012,7 @@ function drawNow(){const b=B[bio];const lod=TW>=9,lodS=TW>=5;if(hover){const ti=
   {const ek=ENV[c.x+','+c.y];if(ek)drawEnv(ek,vx,vy,h,c.x,c.y)}
   {const ob=OM.get(c.x+','+c.y);if(ob&&h>=0&&TW>=4)drawObj(ob,vx,vy,h)}
   for(const k of tokens)if(tokCell(k,c))drawTokAt(k)}
- drawMarks();if(meas)drawMeas();
+ drawFloat();drawMarks();if(meas)drawMeas();
  if(hasAnim()||(bio==='volcan'&&!reduce))requestAnimationFrame(tick)}
 function ctr(c){const[vx,vy]=view(c.x,c.y),h=Math.max(H[c.x][c.y],0);const[cx,cy]=scr(vx,vy,h);return[cx,cy+TW/4]}
 const ENVT={fire:{n:['Flames','Flammes'],c:'rgba(255,110,30,.5)',r:['Entering or starting a turn here: 1 box (Physical Resilience save DC 12 avoids it).','Entrer ou commencer son tour ici : 1 case (sauvegarde de Résistance physique DD 12 pour l\'éviter).']},
@@ -1024,7 +1025,16 @@ const ENVT={fire:{n:['Flames','Flammes'],c:'rgba(255,110,30,.5)',r:['Entering or
  thorns:{n:['Thorns','Ronces'],c:'rgba(70,120,40,.42)',r:['Difficult terrain. Moving through: 1 box per 2 tiles (Physical Finesse DC 12 avoids it).','Terrain difficile. Traverser : 1 case toutes les 2 cases (Finesse physique DD 12 pour l\'éviter).']},
  holy:{n:['Consecrated ground','Sol consacré'],c:'rgba(255,230,120,.42)',r:['Undead and fiends inside have one less Mastery die.','Les morts-vivants et fiélons à l\'intérieur ont un dé de Maîtrise de moins.']}};
 let envSel='fire';function envDC(){const v=+document.getElementById('envdc').value;return v>=5&&v<=30?v:12}function envOf(key){const v=ENV[key];return v?(typeof v==='string'?{k:v,dc:12}:v):null}function envRule(e){return tr(ENVT[e.k].r).replace(/DD \d+|DC \d+/g,(lang==='fr'?'DD ':'DC ')+e.dc)}
-function drawEnv(k,vx,vy,h,x,y){k=k&&k.k||k;const e=ENVT[k];if(!e)return;const t=dia(vx,vy,Math.max(h,0)),tm=(performance.now()-t0)/1000;poly(t,e.c);if(TW<9)return;const[cx,cy]=t[0];ctx.save();poly(t);ctx.clip();
+let FLOATQ=[];
+function drawFloat(){const tm=(performance.now()-t0)/1000;for(const[vx,vy,h,x,y,k]of FLOATQ){const lift=LH*(k==='fog'?1.1:1.5),[cx,cy]=scr(vx,vy,Math.max(h,0));const by=cy+TW/4-lift;
+ for(let i=0;i<4;i++){const dx=(rnd(x,y,i)-.5)*TW*.55+(reduce?0:Math.sin(tm*.6+i+x)*TW*.06),dy=(rnd(x,y,i+9)-.5)*TW*.25+(reduce?0:Math.cos(tm*.5+i+y)*TW*.03),r=TW*(.32+rnd(x,y,i+4)*.18);
+  const g=ctx.createRadialGradient(cx+dx,by+dy,0,cx+dx,by+dy,r);
+  if(k==='fog'){g.addColorStop(0,'rgba(240,243,246,.62)');g.addColorStop(.6,'rgba(225,230,236,.35)');g.addColorStop(1,'rgba(225,230,236,0)')}
+  else{g.addColorStop(0,'rgba(12,8,22,.85)');g.addColorStop(.55,'rgba(30,14,48,.55)');g.addColorStop(1,'rgba(40,20,60,0)')}
+  ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(cx+dx,by+dy,r,r*.62,0,0,7);ctx.fill()}}FLOATQ=[]}
+function drawEnv(k,vx,vy,h,x,y){k=k&&k.k||k;const e=ENVT[k];if(!e)return;const t=dia(vx,vy,Math.max(h,0)),tm=(performance.now()-t0)/1000;
+ if(k==='fog'||k==='dark'){poly(t,k==='fog'?'rgba(220,225,230,.22)':'rgba(10,8,20,.35)');FLOATQ.push([vx,vy,h,x,y,k]);return}
+ poly(t,e.c);if(TW<9)return;const[cx,cy]=t[0];ctx.save();poly(t);ctx.clip();
  if(k==='fire'){for(let i=0;i<3;i++){const[px,py]=inD(cx,cy,.25+rnd(x,y,i)*.5,.25+rnd(x,y,i+5)*.5),f=reduce?1:1+.15*Math.sin(tm*8+i*2+x),s=TW*.12*f;ctx.fillStyle=i%2?'#ffb02e':'#ff5a1f';ctx.beginPath();ctx.moveTo(px,py-s*2.2);ctx.quadraticCurveTo(px+s,py-s*.6,px,py);ctx.quadraticCurveTo(px-s,py-s*.6,px,py-s*2.2);ctx.fill()}}
  else if(k==='acid'||k==='poison'){ctx.fillStyle=k==='acid'?'rgba(200,255,120,.8)':'rgba(220,170,255,.6)';for(let i=0;i<4;i++){const[px,py]=inD(cx,cy,.2+rnd(x,y,i)*.6,.2+rnd(x,y,i+7)*.6);ctx.beginPath();ctx.arc(px,py,TW*(k==='acid'?.03:.09)*(.6+rnd(x,y,i+3)),0,7);ctx.fill()}}
  else if(k==='ice'){ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.2;for(let i=0;i<2;i++){const[a1,b1]=inD(cx,cy,.2+i*.35,.15),[a2,b2]=inD(cx,cy,.45+i*.35,.5);ctx.beginPath();ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke()}}
@@ -1052,14 +1062,20 @@ function drawMeas(){const{a,b}=meas,[x1,y1]=ctr(a),[x2,y2]=ctr(b),dh=H[b.x][b.y]
  if(meas.drag&&d===0&&!dh){ctx.restore();return}const lx=Math.min(W-w-6,Math.max(6,(x1+x2)/2-w/2)),ly=Math.max(6,Math.min(y1,y2)-40);ctx.fillStyle='rgba(30,26,22,.88)';ctx.beginPath();if(ctx.roundRect)ctx.roundRect(lx,ly,w,28,8);else ctx.rect(lx,ly,w,28);ctx.fill();
  ctx.fillStyle='#fff';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(t,lx+9,ly+14);ctx.restore()}
 let ticking=false;function tick(){if(ticking)return;ticking=true;setTimeout(()=>{ticking=false;draw()},90)}
+const IMGC=new Map();
+function tokImg(k){const ch=k.cid?CH.list.find(c=>c.id===k.cid):null,m=k.mid?MON.find(x=>x.id===k.mid):null,src=k.img||(ch&&ch.img)||(m&&m.img)||'';if(!src)return null;
+ let im=IMGC.get(src);if(!im){im=new Image();im.onload=()=>draw();im.src=src;IMGC.set(src,im)}return im.complete&&im.naturalWidth?im:null}
+function imgShrink(file,cb){const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{const S=128,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d'),m=Math.min(im.width,im.height);x.drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,S,S);cb(c.toDataURL('image/webp',.8))};im.src=fr.result};fr.readAsDataURL(file)}
 function drawTok(k,vx,vy,h,sc=1){const[cx,cy]=scr(vx,vy,h);const y=cy+TW/4,r=TW*.24*(sc>1?sc*.82:sc);
  ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(cx,y+r*.35,r,r*.45,0,0,7);ctx.fill();
  const g=ctx.createRadialGradient(cx-r*.3,y-r*1.2,r*.1,cx,y-r*.8,r*1.1);const c=k.t==='pj'?['#7fb0e6','#2b5c9c']:k.hp===0?['#9a9590','#4d4944']:['#ec8a7a','#9c2f25'];
  g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,y-r*.8,r,0,7);ctx.fill();
+ const TI=tokImg(k);if(TI){ctx.save();ctx.beginPath();ctx.arc(cx,y-r*.8,r*.86,0,7);ctx.clip();ctx.drawImage(TI,cx-r*.86,y-r*.8-r*.86,r*1.72,r*1.72);if(k.hp===0&&k.hpMax){ctx.fillStyle='rgba(60,55,50,.6)';ctx.fill()}ctx.restore()}
  ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=1.5;ctx.stroke();
  const cy0=y-r*.8;if(INI.o.length&&INI.o[INI.cur]&&INI.o[INI.cur].id===k.id){ctx.strokeStyle='#f2c14e';ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy0,r+4,0,7);ctx.stroke()}
  ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
- if(k.ty&&icon(k.ty,cx,cy0,r)){if(k.num){ctx.font=`700 ${Math.max(9,r*.55)}px "Alegreya Sans",sans-serif`;ctx.fillStyle='#1b1816';ctx.beginPath();ctx.arc(cx+r*.75,cy0+r*.7,r*.42,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(k.num,cx+r*.75,cy0+r*.72)}}
+ if(TI){if(k.num){ctx.font=`700 ${Math.max(9,r*.55)}px "Alegreya Sans",sans-serif`;ctx.fillStyle='#1b1816';ctx.beginPath();ctx.arc(cx+r*.75,cy0+r*.7,r*.42,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(k.num,cx+r*.75,cy0+r*.72)}}
+ else if(k.ty&&icon(k.ty,cx,cy0,r)){if(k.num){ctx.font=`700 ${Math.max(9,r*.55)}px "Alegreya Sans",sans-serif`;ctx.fillStyle='#1b1816';ctx.beginPath();ctx.arc(cx+r*.75,cy0+r*.7,r*.42,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillText(k.num,cx+r*.75,cy0+r*.72)}}
  else{ctx.font=`700 ${Math.max(9,r*(k.n.length>2?.7:.95))}px "Alegreya Sans",sans-serif`;ctx.fillText(k.n,cx,cy0)}
  if(k.hpMax){const n=k.hpMax,w=Math.min(TW*.9*Math.max(1,sc*.8),Math.max(r*2,n*5)),x0=cx-w/2,yb=y-r*2.2,bh=Math.max(4,TW*.06);ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(x0-1,yb-1,w+2,bh+2);
   if(n<=16){const sw=w/n;for(let i=0;i<n;i++){ctx.fillStyle=i<k.hp?'#e0503c':'#3a3330';ctx.fillRect(x0+i*sw+.5,yb,sw-1,bh)}}else{ctx.fillStyle='#3a3330';ctx.fillRect(x0,yb,w,bh);ctx.fillStyle='#e0503c';ctx.fillRect(x0,yb,w*k.hp/n,bh)}}}
@@ -1842,6 +1858,8 @@ function renderTok(){renderHand();const P=document.getElementById('tk_panel');if
    h+=ch.weapons.map(w=>{const tier=ch.fam[w.f]||0,mod=ch.cells[FAM[w.f].c];return`<p class="tline"><b>${esc(w.n)}</b> · ${t('sk_attack')} ${sgn(mod+mb(tier))} · ${Math.max(1,tier)}d${SZ[w.s]}${mod?sgn(mod):''}</p>`}).join('');
    h+=Object.keys(SCH).filter(x=>ch.sch[x]).map(x=>{const tier=ch.sch[x],ab=ch.cells.P_men+mb(tier);return`<p class="tline"><b>${esc(tr(SCH[x]))}</b> · Tier ${tier} · ${t('sk_attack')} ${sgn(ab)} · ${tier}d${SDIE[x]||8} · ${t('sk_dc')} ${8+ab}</p>`}).join('')}
   const no=m?noT(m):k.no;if(no)h+=`<p class="tno">${esc(no)}</p>`;const MA=m?monAtk(m):parseAtk(no||'');if(MA.length)h+=`<div class="matks">${MA.map((a,i)=>`<div class="matk"><span>${esc(a.n)}${a.k>1?' ×'+a.k:''}</span><button type="button" class="go" data-ma="${i}" data-r="atk" aria-label="${esc(a.n)} : ${t('sk_attack')}">${sgn(a.ab)}</button><button type="button" data-ma="${i}" data-r="dmg" aria-label="${esc(a.n)} : ${t('sk_damage')}">${a.nd}d${a.dd}${a.mod?sgn(a.mod):''}</button></div>`).join('')}</div>`+('');if(m)h+=`<p class="small">${esc(tyName(m.type))} · ${lang==='fr'?'FP':'CR'} ${esc(m.fp)} · ${m.pv} ${t('hp')}</p>`}
+ {const owner=ch?L2('this character','ce personnage'):m?L2('every token of this monster','tous les pions de ce monstre'):L2('this token','ce pion'),has=!!(k.img||(ch&&ch.img)||(m&&m.img));
+ h+=`<div class="tkimg"><label class="btnlike"><input type="file" accept="image/*" data-tkimg="1" hidden>${has?L2('Change the image','Changer l\'image'):L2('Add an image','Ajouter une image')}</label>${has?`<button type="button" data-tkact="noimg">${L2('Remove the image','Retirer l\'image')}</button>`:''}<span class="small">${L2('for','pour')} ${owner}</span></div>`}
  h+=`<div class="row"><button type="button" data-tkact="del">${t('tk_del')}</button><button type="button" data-tkact="close">${t('tk_close')}</button></div>`;P.innerHTML=h}
 $('tk_panel').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const k=tokens.find(x=>x.id===selTok);if(!k)return;
  if(b.dataset.ma!=null){const m=k.mid?MON.find(x=>x.id===k.mid):null,a=(m?monAtk(m):parseAtk(k.no||''))[+b.dataset.ma];if(!a)return;const nm=(k.nm?tr(k.nm)+(k.num?' '+k.num:''):k.n)+' · '+a.n,key=k.id+'_'+b.dataset.ma;
@@ -1851,7 +1869,9 @@ $('tk_panel').addEventListener('click',e=>{const b=e.target.closest('button');if
  if(b.dataset.tkhp)tokHp(k,+b.dataset.tkhp);
  else if(b.dataset.tkres){const ch=CH.list.find(c=>c.id===k.cid);if(ch){ch.used[b.dataset.tkres]=(ch.used[b.dataset.tkres]||0)-(+b.dataset.d);saveC();if(CH.active===ch.id)renderSheet();renderTok()}}
  else if(b.dataset.tkact==='del'){snap();tokens=tokens.filter(x=>x.id!==k.id);selTok=null;save();draw();renderTok()}
- else if(b.dataset.tkact==='close'){selTok=null;renderTok()}});
+ else if(b.dataset.tkact==='close'){selTok=null;renderTok()}
+ else if(b.dataset.tkact==='noimg'){const ch=k.cid&&CH.list.find(c=>c.id===k.cid),m=k.mid&&MON.find(x=>x.id===k.mid);delete k.img;if(ch){delete ch.img;saveC()}if(m){delete m.img;saveMon()}save();draw();renderTok()}});
+$('tk_panel').addEventListener('change',e=>{if(!e.target.dataset||!e.target.dataset.tkimg||!e.target.files[0])return;const k=tokens.find(x=>x.id===selTok);if(!k)return;imgShrink(e.target.files[0],url=>{const ch=k.cid&&CH.list.find(c=>c.id===k.cid),m=k.mid&&MON.find(x=>x.id===k.mid);if(ch){ch.img=url;saveC()}else if(m){m.img=url;saveMon()}else k.img=url;save();draw();renderTok()})});
 function renderRes(){const q=$('pl_q').value.trim().toLowerCase(),R=$('pl_res');if(!q){R.innerHTML='';return}
  const al=CH.list.filter(c=>(c.name||'').toLowerCase().includes(q)).slice(0,4).map(c=>`<button type="button" data-pa="${esc(c.id)}"><span>${esc(c.name||'?')}</span><small>${t('tk_ally')}${c.camp?' · '+esc(c.camp):''}</small></button>`);
  const mo=MON.filter(m=>[].concat(m.n).join(' ').toLowerCase().includes(q)).sort((a,b)=>fpNum(a.fp)-fpNum(b.fp)).slice(0,8).map(m=>`<button type="button" data-pm="${esc(m.id)}"><span>${esc(tr(m.n))}</span><small>${lang==='fr'?'FP':'CR'} ${esc(m.fp)}</small></button>`);
