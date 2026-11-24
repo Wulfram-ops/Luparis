@@ -244,6 +244,8 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
     <button data-t="flat" data-i18n="t_flat"></button>
     <button data-t="measure" data-i18n="t_measure"></button>
     <button data-t="mark" data-i18n="t_mark"></button>
+    <button data-t="surf" data-i18n="t_surf"></button>
+    <label class="scn"><span class="vh" data-i18n="t_surf"></span><select id="surfk"></select></label>
     <button data-t="env" data-i18n="t_env"></button>
     <label class="scn"><span class="vh" data-i18n="t_env"></span><select id="envk"></select></label><label class="scn envdc"><span>DD</span><input id="envdc" type="number" min="5" max="30" value="12"></label>
   </div>
@@ -827,14 +829,22 @@ function pit(c,h){const{vx,vy,x,y}=c,b=B[bio],g=dia(vx,vy,0),t=(performance.now(
  if(!nb[0])poly([g[3],g[0],[g[0][0],g[0][1]+d],[g[3][0],g[3][1]+d]],cols[1]);if(!nb[1])poly([g[0],g[1],[g[1][0],g[1][1]+d],[g[0][0],g[0][1]+d]],cols[2]);{const dv=gv(vx-1,vy-1),dOk=dv!==null&&(liquid?dv<0:dv===h);if(!dOk){if(nb[1]){const A=dia(vx,vy-1,0);poly([A[3],A[0],[A[0][0],A[0][1]+d],[A[3][0],A[3][1]+d]],cols[1])}if(nb[0]){const A=dia(vx-1,vy,0);poly([A[0],A[1],[A[1][0],A[1][1]+d],[A[0][0],A[0][1]+d]],cols[2])}}}
  ctx.restore();if(!nb.some(Boolean))poly(g,null,'rgba(0,0,0,.4)');else{ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=1;ctx.beginPath();for(const[i,a,b2]of[[0,3,0],[1,0,1],[2,1,2],[3,2,3]])if(!nb[i]){ctx.moveTo(...g[a]);ctx.lineTo(...g[b2])}ctx.stroke()}
  if(b.pit==='lava'){ctx.save();ctx.globalCompositeOperation='lighter';const[cx,cy]=scr(vx,vy,0);const gr=ctx.createRadialGradient(cx,cy+TW/4,0,cx,cy+TW/4,TW*.7);gr.addColorStop(0,'rgba(255,110,30,.28)');gr.addColorStop(1,'rgba(255,110,30,0)');ctx.fillStyle=gr;ctx.fillRect(cx-TW*.7,cy-TW*.5,TW*1.4,TW*1.4);ctx.restore()}}
-const FC={1:['#b49c74','#ab936b'],2:['#9d978c','#958f84'],3:['#a87c50','#a0754a'],4:['#7c6a56','#7c6a56'],5:['#7a5434','#7a5434']},FW={side:['#a8957c','#9a876e','#8c7960']};
-const FL={1:['Path','Chemin'],2:['Cobblestones','Pavés'],3:['Wooden floor','Plancher'],4:['Wall','Mur'],5:['Furniture, crates','Mobilier, caisses']};
+const FC={1:['#b49c74','#ab936b'],2:['#9d978c','#958f84'],3:['#a87c50','#a0754a'],4:['#7c6a56','#7c6a56'],5:['#7a5434','#7a5434'],6:['#7fae55','#78a64f'],7:['#9a958c','#928d84'],8:['#eef3f5','#e6eef1'],9:['#e2c88f','#dcc187'],10:['#6e5636','#664f31'],11:['#a58a5f','#9d8358'],12:['#bfe3f2','#b5dcec'],13:['#8d877c','#857f74']},FSIDE={6:'#6b5a3a',7:'#6f6a62',8:'#9aa7ad',9:'#b0935c',10:'#4d3b25',11:'#6e5a3a',12:'#7fa9bd',13:'#625d55'},FW={side:['#a8957c','#9a876e','#8c7960']};
+const FL={1:['Path','Chemin'],2:['Cobblestones','Pavés'],3:['Wooden floor','Plancher'],4:['Wall','Mur'],5:['Furniture, crates','Mobilier, caisses'],6:['Grass','Herbe'],7:['Bare rock','Roche nue'],8:['Snow','Neige'],9:['Sand','Sable'],10:['Mud','Boue'],11:['Dirt','Terre'],12:['Ice','Glace'],13:['Scree','Éboulis']};
+const SURF_ORDER=[0,6,11,7,13,8,12,9,10,1,2,3,4,5];let surfSel=7;
+function fillSurf(){const el=document.getElementById('surfk');if(!el)return;el.innerHTML=SURF_ORDER.map(k=>`<option value="${k}"${k===surfSel?' selected':''}>${esc(k?tr(FL[k]):L2('Setting (no surface)','Décor (aucun sol)'))}</option>`).join('')}
 function ftex(f,t,x,y){const[cx,cy]=t[0];ctx.save();poly(t);ctx.clip();ctx.lineWidth=1;
  if(f===3){ctx.strokeStyle='rgba(60,35,15,.35)';for(let i=1;i<4;i++){const[a1,b1]=inD(cx,cy,i/4,0),[a2,b2]=inD(cx,cy,i/4,1);ctx.beginPath();ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke()}}
  else if(f===2){ctx.strokeStyle='rgba(50,45,40,.35)';for(let i=0;i<5;i++){const[px,py]=inD(cx,cy,.15+rnd(x,y,i)*.7,.15+rnd(x,y,i+9)*.7);ctx.beginPath();ctx.ellipse(px,py,TW/16,TW/30,0,0,7);ctx.stroke()}}
  else if(f===1){ctx.fillStyle='rgba(90,70,45,.35)';for(let i=0;i<3;i++){if(rnd(x,y,i)>.6)continue;const[px,py]=inD(cx,cy,.2+rnd(x,y,i+3)*.6,.2+rnd(x,y,i+6)*.6);ctx.beginPath();ctx.ellipse(px,py,TW/40,TW/70,0,0,7);ctx.fill()}}
  else if(f===4){ctx.strokeStyle='rgba(255,255,255,.18)';const[a1,b1]=inD(cx,cy,.5,0),[a2,b2]=inD(cx,cy,.5,1);ctx.beginPath();ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke()}
  else if(f===5){ctx.strokeStyle='rgba(30,15,5,.45)';const[a1,b1]=inD(cx,cy,.2,.2),[a2,b2]=inD(cx,cy,.8,.8);ctx.strokeRect(Math.min(a1,a2)-TW*.18,Math.min(b1,b2),TW*.36,Math.abs(b2-b1))}
+ else if(f===6){ctx.strokeStyle='rgba(40,90,30,.6)';ctx.lineWidth=1;for(let i=0;i<4;i++){const[px,py]=inD(cx,cy,.15+rnd(x,y,i)*.7,.15+rnd(x,y,i+9)*.7);ctx.beginPath();ctx.moveTo(px-TW*.02,py);ctx.lineTo(px-TW*.03,py-TW*.05);ctx.moveTo(px,py);ctx.lineTo(px,py-TW*.06);ctx.moveTo(px+TW*.02,py);ctx.lineTo(px+TW*.03,py-TW*.05);ctx.stroke()}}
+ else if(f===7||f===13){ctx.strokeStyle='rgba(50,45,40,.45)';ctx.fillStyle='rgba(60,55,50,.35)';if(f===7){const[a1,b1]=inD(cx,cy,.2+rnd(x,y,1)*.2,.3),[a2,b2]=inD(cx,cy,.5,.55),[a3,b3]=inD(cx,cy,.75,.5+rnd(x,y,2)*.3);ctx.beginPath();ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.lineTo(a3,b3);ctx.stroke()}else for(let i=0;i<6;i++){const[px,py]=inD(cx,cy,.1+rnd(x,y,i)*.8,.1+rnd(x,y,i+5)*.8);ctx.beginPath();ctx.ellipse(px,py,TW*.035,TW*.02,0,0,7);ctx.fill();ctx.stroke()}}
+ else if(f===8||f===12){ctx.fillStyle=f===8?'rgba(255,255,255,.9)':'rgba(255,255,255,.7)';if(f===12){ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.2;const[a1,b1]=inD(cx,cy,.25,.2),[a2,b2]=inD(cx,cy,.55,.6);ctx.beginPath();ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke()}else for(let i=0;i<3;i++){const[px,py]=inD(cx,cy,.15+rnd(x,y,i)*.7,.15+rnd(x,y,i+4)*.7);ctx.fillRect(px,py,1.5,1.5)}}
+ else if(f===9){ctx.strokeStyle='rgba(150,115,60,.45)';ctx.lineWidth=1;const[a1,b1]=inD(cx,cy,.1,.4),[a2,b2]=inD(cx,cy,.9,.5);ctx.beginPath();ctx.moveTo(a1,b1);ctx.quadraticCurveTo((a1+a2)/2,(b1+b2)/2-TW*.06,a2,b2);ctx.stroke()}
+ else if(f===10){ctx.fillStyle='rgba(60,80,90,.35)';const[px,py]=inD(cx,cy,.3+rnd(x,y,1)*.4,.3+rnd(x,y,2)*.4);ctx.beginPath();ctx.ellipse(px,py,TW*.13,TW*.05,0,0,7);ctx.fill()}
+ else if(f===11){ctx.fillStyle='rgba(80,60,35,.4)';for(let i=0;i<4;i++){const[px,py]=inD(cx,cy,.15+rnd(x,y,i)*.7,.15+rnd(x,y,i+6)*.7);ctx.fillRect(px,py,2,1.5)}}
  ctx.restore()}
 let drawQ=false;function draw(){if(drawQ)return;drawQ=true;requestAnimationFrame(()=>{drawQ=false;drawNow()})}
 function drawNow(){const b=B[bio];const lod=TW>=9,lodS=TW>=5;if(hover){const ti=tokAt(hover),tk=ti>=0?tokens[ti]:null;
@@ -843,7 +853,7 @@ function drawNow(){const b=B[bio];const lod=TW>=9,lodS=TW>=5;if(hover){const ti=
  else info.textContent=tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)}. ${t('click_tile')}`:tool==='measure'?t('meas_hint'):t('hover');stage.style.background=`radial-gradient(ellipse at 50% 40%,${mul(b.bg[0],.36)},${mul(b.bg[1],.24)})`;ctx.clearRect(0,0,W,Hc);
  for(const c of cells()){const h=H[c.x][c.y],{vx,vy}=c;{const sx=ox+(vx-vy)*TW/2,sy=oy+(vx+vy)*TW/4;if(sx<-TW||sx>W+TW||sy<-TW-LH*4||sy>Hc+TW+LH*3)continue}
   if(h<0)pit(c,h);
-  else{const f=F[c.x][c.y],t=dia(vx,vy,h);if(h>0){const g=dia(vx,vy,0),sc=f===4?FW.side[h-1]:f===5?'#6a4a2e':b.side[h-1];
+  else{const f=F[c.x][c.y],t=dia(vx,vy,h);if(h>0){const g=dia(vx,vy,0),sc=f===4?FW.side[h-1]:f===5?'#6a4a2e':FSIDE[f]?FSIDE[f]:b.side[h-1];
     poly([t[3],t[2],g[2],g[3]],mul(sc,.9),'rgba(0,0,0,.25)');poly([t[2],t[1],g[1],g[2]],mul(sc,.72),'rgba(0,0,0,.25)');
     if(b.brick){ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=1;for(let i=1;i<=h*2;i++){const f=i/(h*2+1);ctx.beginPath();ctx.moveTo(t[3][0],t[3][1]+(g[3][1]-t[3][1])*f);ctx.lineTo(t[2][0],t[2][1]+(g[2][1]-t[2][1])*f);ctx.lineTo(t[1][0],t[1][1]+(g[1][1]-t[1][1])*f);ctx.stroke()}}}
    const chk=(c.x+c.y)%2;poly(t,f?FC[f][chk]:h>0?b.top[h-1]:b.g[chk],lodS?'rgba(0,0,0,.14)':null);
@@ -877,6 +887,7 @@ function drawEnv(k,vx,vy,h,x,y){k=k&&k.k||k;const e=ENVT[k];if(!e)return;const t
  ctx.restore()}
 function fillEnv(){const el=document.getElementById('envk');if(!el)return;el.innerHTML=Object.keys(ENVT).map(k=>`<option value="${k}"${k===envSel?' selected':''} title="${esc(tr(ENVT[k].r))}">${esc(tr(ENVT[k].n))}</option>`).join('')}
 document.getElementById('envk').addEventListener('change',e=>{envSel=e.target.value;setTool('env')});
+document.getElementById('surfk').addEventListener('change',e=>{surfSel=+e.target.value;setTool('surf')});
 
 function drawMarks(){MARKS.forEach((m,i)=>{if(m.x<0||m.y<0||m.x>=N||m.y>=N)return;const[x,y]=ctr(m),s=Math.max(10,TW*.2);ctx.save();ctx.strokeStyle='#2a1a33';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-s*2.6);ctx.stroke();
  ctx.fillStyle=m.id===selMark?'#f2c14e':'#7a3fb0';ctx.beginPath();ctx.moveTo(x,y-s*2.6);ctx.lineTo(x+s*1.7,y-s*2.1);ctx.lineTo(x,y-s*1.6);ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
@@ -949,10 +960,10 @@ function apply(c,inv){const key=c.x+','+c.y;if(painting&&lastPainted===key)retur
   tokens.push({id:tid(),mid:m.id,no:noT(m),x:a.x,y:a.y,sz,t:'foe',ab,n:ab+nb,ty:m.type,nm:m.n,num:nb,esq:v.esq,maj:v.maj,sev:v.sev,hp:v.cases,hpMax:v.cases,init:+m.init||0})}}
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 let pan=null;cv.addEventListener('wheel',e=>{e.preventDefault();const[mx,my]=pos(e);zoomAt(e.deltaY<0?1.2:1/1.2,mx,my)},{passive:false});
-const AREA_T=new Set(['up','down','flat','env']);
+const AREA_T=new Set(['up','down','flat','env','surf']);
 function inArea(c,ar){return ar&&c.x>=Math.min(ar.a.x,ar.b.x)&&c.x<=Math.max(ar.a.x,ar.b.x)&&c.y>=Math.min(ar.a.y,ar.b.y)&&c.y<=Math.max(ar.a.y,ar.b.y)}
 function areaApply(ar){const x0=Math.min(ar.a.x,ar.b.x),x1=Math.max(ar.a.x,ar.b.x),y0=Math.min(ar.a.y,ar.b.y),y1=Math.max(ar.a.y,ar.b.y);let allEnv=true;if(tool==='env')for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const v=ENV[x+','+y];if(!v||(v.k||v)!==envSel)allEnv=false}
- for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const h=H[x][y];if(tool==='up')H[x][y]=Math.min(3,h+1);else if(tool==='down'){const v=Math.max(-2,h-1);setH({x,y},v)}else if(tool==='flat'){H[x][y]=0;F[x][y]=0}else if(tool==='env'){const key=x+','+y;if(allEnv)delete ENV[key];else ENV[key]={k:envSel,dc:envDC()}}}}
+ for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const h=H[x][y];if(tool==='up')H[x][y]=Math.min(3,h+1);else if(tool==='down'){const v=Math.max(-2,h-1);setH({x,y},v)}else if(tool==='flat'){H[x][y]=0;F[x][y]=0}else if(tool==='env'){const key=x+','+y;if(allEnv)delete ENV[key];else ENV[key]={k:envSel,dc:envDC()}}else if(tool==='surf'){if(H[x][y]>=0)F[x][y]=surfSel}}}
 cv.addEventListener('pointerdown',e=>{const[mx,my]=pos(e),c=pick(mx,my);
  if(e.button===1||e.button===2||(!c&&CAM.z>1)||(c&&tool==='move'&&e.button===0&&tokAt(c)<0&&CAM.z>1)){cv.setPointerCapture(e.pointerId);pan={x:e.clientX,y:e.clientY};cv.style.cursor='grabbing';e.preventDefault();return}
  if(!c)return;cv.setPointerCapture(e.pointerId);snap();const inv=e.button===2;
@@ -1169,7 +1180,7 @@ function scenesFor(b){return[...(SCN_BIO[b]||[]),'free']}
 function fillScenes(){const el=document.getElementById('scene'),L=t('scn');if(!L)return;const list=scenesFor(bio);if(!list.includes(scene))scene=list[0];el.innerHTML=list.map(k=>`<option value="${k}"${k===scene?' selected':''}>${esc(t('scn')[k])}</option>`).join('')}
 document.getElementById('scene').addEventListener('change',e=>{scene=e.target.value;runScene()});
 document.getElementById('gen').onclick=runScene;
-setTimeout(()=>{ctxBar();renderMarks();fillEnv()});
+setTimeout(()=>{ctxBar();renderMarks();fillEnv();fillSurf()});
 document.getElementById('size').addEventListener('input',e=>{const n=SIZES[+e.target.value]||16;if(n===N){showSize();return}snap();resizeTo(n);showSize();save();layout()});
 cv.style.cursor='grab';const ro=new ResizeObserver(layout);ro.observe(stage);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1411,8 +1422,8 @@ $('c_tgt').addEventListener('input',()=>{});
 $('c_wf').addEventListener('submit',e=>{e.preventDefault();const n=$('c_wn').value.trim();if(!n)return;C.weapons.push({n,f:$('c_wfam').value,s:$('c_wsz').value});$('c_wn').value='';saveC();renderSheet()});
 T.en.sk_confirm2='Confirm: erase the sheet?';T.fr.sk_confirm2='Confirmer : effacer la fiche ?';
 
-Object.assign(T.en,{t_env:'Effect',sk_lay:'Drag a module by its ⠿ handle to reorder.',sk_cols:'Columns',sk_layreset:'Reset layout',t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Remove one with its ✕ in this list.',ctx_town:'Town map',ctx_regen:'Reset to the original town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},z_fit:'Fit',z_out:'Zoom out',scn:{forest_clearing:'Forest clearing',bandit_camp:'Bandit camp',snow_forest:'Snowy forest',mtn_pass:'Mountain pass',cave:'Cave',dungeon:'Dungeon rooms',ruins:'Ruins',graveyard:'Graveyard',river_ford:'River ford',marsh_walk:'Swamp boardwalk',oasis:'Desert oasis',lava_field:'Lava field',crossroads:'Crossroads',farmland:'Farmland',village_square:'Village square',docks:'Docks',forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain'}});
-Object.assign(T.fr,{t_env:'Effet',sk_lay:'Glisse un module par sa poignée ⠿ pour le déplacer.',sk_cols:'Colonnes',sk_layreset:'Réinitialiser l\'agencement',t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Retire-le avec sa croix ✕ dans cette liste.',ctx_town:'Carte de ville',ctx_regen:'Revenir à la ville d\'origine',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},z_fit:'Ajuster',z_out:'Dézoomer',scn:{forest_clearing:'Clairière',bandit_camp:'Camp de bandits',snow_forest:'Forêt enneigée',mtn_pass:'Col de montagne',cave:'Grotte',dungeon:'Salles de donjon',ruins:'Ruines',graveyard:'Cimetière',river_ford:'Gué',marsh_walk:'Passerelles du marais',oasis:'Oasis',lava_field:'Champ de lave',crossroads:'Carrefour',farmland:'Champs et ferme',village_square:'Place de village',docks:'Quais',forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre'}});
+Object.assign(T.en,{t_surf:'Ground',t_env:'Effect',sk_lay:'Drag a module by its ⠿ handle to reorder.',sk_cols:'Columns',sk_layreset:'Reset layout',t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Remove one with its ✕ in this list.',ctx_town:'Town map',ctx_regen:'Reset to the original town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},z_fit:'Fit',z_out:'Zoom out',scn:{forest_clearing:'Forest clearing',bandit_camp:'Bandit camp',snow_forest:'Snowy forest',mtn_pass:'Mountain pass',cave:'Cave',dungeon:'Dungeon rooms',ruins:'Ruins',graveyard:'Graveyard',river_ford:'River ford',marsh_walk:'Swamp boardwalk',oasis:'Desert oasis',lava_field:'Lava field',crossroads:'Crossroads',farmland:'Farmland',village_square:'Village square',docks:'Docks',forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain'}});
+Object.assign(T.fr,{t_surf:'Sol',t_env:'Effet',sk_lay:'Glisse un module par sa poignée ⠿ pour le déplacer.',sk_cols:'Colonnes',sk_layreset:'Réinitialiser l\'agencement',t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Retire-le avec sa croix ✕ dans cette liste.',ctx_town:'Carte de ville',ctx_regen:'Revenir à la ville d\'origine',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},z_fit:'Ajuster',z_out:'Dézoomer',scn:{forest_clearing:'Clairière',bandit_camp:'Camp de bandits',snow_forest:'Forêt enneigée',mtn_pass:'Col de montagne',cave:'Grotte',dungeon:'Salles de donjon',ruins:'Ruines',graveyard:'Cimetière',river_ford:'Gué',marsh_walk:'Passerelles du marais',oasis:'Oasis',lava_field:'Champ de lave',crossroads:'Carrefour',farmland:'Champs et ferme',village_square:'Place de village',docks:'Quais',forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre'}});
 setTimeout(()=>{fillScenes();fillSz()});
 Object.assign(T.en,{pl_title:'Quick place',pl_ally:'Ally (characters)',pl_foe:'Enemy (bestiary)',pl_hint:'Pick a name, then click tiles on the map. Esc to stop.',pl_choose:'— choose —',
 in_title:'Initiative',in_roll:'Roll',in_next:'Next turn',in_end:'End',in_rnd:n=>`Round ${n}`,in_empty:'Place tokens, then roll. Allies use Physical Finesse, monsters their initiative bonus.',
@@ -1682,7 +1693,7 @@ new ResizeObserver(()=>{if(WS&&!$('v-monde').hidden)wApply()}).observe(wst);
 
 function nm0(m){return tr(m.n)}
 function applyLang(){document.documentElement.lang=lang;document.title=lang==='fr'?'Luparis — Table tactique':'Luparis — Tactical Table';
- for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();
+ for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();
  for(const e of document.querySelectorAll('[data-i18n-html]'))e.innerHTML=t(e.dataset.i18nHtml);
  for(const e of document.querySelectorAll('[data-i18n-ph]'))e.placeholder=t(e.dataset.i18nPh);
  for(const b of bz.querySelectorAll('button[data-b]'))b.querySelector('.bn').textContent=tr(B[b.dataset.b].n);
