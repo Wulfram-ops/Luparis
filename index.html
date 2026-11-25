@@ -49,6 +49,7 @@ input[type=range]{width:96px;accent-color:var(--acc)}
 .sb .matks{margin:4px 0}.sb .matk button{border:1px solid #c9b58e;min-height:32px}.sb .matk button.go{background:#7a1f14;color:#fff;border-color:#7a1f14}.sbsrc{margin-top:12px!important;color:#7a6a58}.sbd{font-style:italic}
 .mpcode{font:700 20px/1 "Alegreya Sans",monospace;letter-spacing:.12em;color:var(--acc2)}#mp_box .row{gap:6px;flex-wrap:wrap;margin-top:6px}#mp_box input{min-width:0}.mpmsg{color:var(--acc2)}
 body.mp-player #tools button:not([data-t=move]):not([data-t=measure]),body.mp-player #tools label,body.mp-player #tools .scn,body.mp-player .bar>.grp:not(#tools),body.mp-player #sn_card,body.mp-player #mk_card .small{display:none!important}
+.tplh{margin:10px 0 4px;font-size:14px}.tpls{list-style:none;margin:0;padding:0}.tpls li{display:grid;grid-template-columns:1fr auto;gap:2px 6px;align-items:center;padding:3px 0;border-top:1px dashed var(--line);font-size:14px}.tpls li .small{grid-column:1}.tpls li button{grid-row:1/span 2;grid-column:2}
 .hc.k-note{border-top-color:#8a7a5a}.hnote{width:100%;box-sizing:border-box;resize:vertical;font:15px/1.4 "Alegreya Sans",sans-serif;min-height:120px}
 .hc.k-tal{border-top-color:#6b7a3c}.hc.k-tal ul{margin:4px 0;padding-left:16px}.pfmx td{padding:0!important}.pfmx td button{width:100%;min-height:50px;min-width:76px;font-size:19px;justify-content:center;font-weight:700;font-variant-numeric:tabular-nums;border-radius:0}.pfmx th small{color:var(--ink);font-weight:700}.pfmods{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.pflab{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 4px 0 6px}.pfhint{margin:4px 0}.pflast{font-size:15px;margin:4px 0 8px;padding:4px 8px;border-left:3px solid var(--acc);background:var(--panel)}
 button.pfb.pfini{cursor:pointer;min-height:0;border-color:var(--acc);gap:0;font:inherit}button.pfb.pfini:hover{background:color-mix(in oklab,var(--acc) 14%,var(--panel))}
@@ -211,7 +212,8 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 .side{display:flex;flex-direction:column;gap:12px}
 .side .card{padding:12px 14px}.side label{margin-bottom:8px}
 .ini{list-style:none;margin:8px 0 0;padding:0}
-.ini li{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:6px;align-items:center;padding:6px 8px;border-radius:9px;border:1px solid transparent}
+.ini li{display:grid;grid-template-columns:44px minmax(0,1fr) auto auto;gap:6px;align-items:center;padding:6px 8px;border-radius:9px;border:1px solid transparent}
+.ini li .isb{padding:2px 6px;min-height:0}
 .ini li.cur{border-color:var(--acc);background:color-mix(in oklab,var(--acc) 12%,transparent)}
 .ini .iv{width:44px;min-height:34px;padding:4px;text-align:center}
 .ini .inm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ini .ally{color:#2b5c9c}.ini .foe{color:#9c2f25}
@@ -294,6 +296,8 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
     <label class="scn"><span class="vh" data-i18n="t_surf"></span><select id="surfk"></select></label>
     <button data-t="env" data-i18n="t_env"></button>
     <label class="scn"><span class="vh" data-i18n="t_env"></span><select id="envk"></select></label><label class="scn envdc"><span>DD</span><input id="envdc" type="number" min="5" max="30" value="12"></label>
+    <button data-t="tpl" data-i18n="t_tpl"></button>
+    <label class="scn"><span class="vh" data-i18n="t_tpl"></span><select id="tplk"></select></label><label class="scn"><input id="tplsz" type="number" min="5" max="300" step="5" value="20" aria-label="Taille (pieds)" style="width:4.5em"> <span class="small">ft</span></label>
     <button data-t="obj" data-i18n="t_obj"></button>
     <label class="scn"><span class="vh" data-i18n="t_obj"></span><select id="objk"></select></label>
     <button data-t="pref" data-i18n="t_pref"></button>
@@ -320,7 +324,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
     <label><span data-i18n="pl_ally"></span><select id="pl_ally"></select></label>
     <label><span data-i18n="pl_foe"></span><select id="pl_foe"></select></label>
     <p class="small" data-i18n="pl_hint"></p></section>
-  <section class="card" id="mk_card"><h3 data-i18n="mk_title"></h3><ol class="mks" id="mk_list"></ol><p class="small" data-i18n="mk_hint"></p></section>
+  <section class="card" id="mk_card"><h3 data-i18n="mk_title"></h3><ol class="mks" id="mk_list"></ol><p class="small" data-i18n="mk_hint"></p><h4 class="tplh" data-i18n="tpl_zones"></h4><ul class="tpls" id="tpl_list"></ul></section>
   <section class="card" id="mp_card"><h3 data-i18n="mp_title"></h3><div id="mp_box"></div></section>
   <section class="card" id="sn_card"><h3 data-i18n="sn_title"></h3><div id="sn_box"></div></section>
   <section class="card"><h3 data-i18n="in_title"></h3>
@@ -796,7 +800,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 </template>
 <aside class="rolls" id="rolls" aria-label="Jets"><div class="rlh"><button type="button" class="rlt" id="rl_tog" aria-expanded="true"><span id="rl_ttl"></span> <span class="rlc" id="rl_cnt"></span></button><button type="button" id="rl_clr" class="rlx"></button></div><ol id="rl_list" aria-live="polite"></ol></aside>
 <script>
-var FOLD={},INIP={},MP={role:null,me:null,conns:[],code:'',n:0};try{FOLD=JSON.parse(localStorage.getItem('luparis-fold'))||{}}catch(e){}
+var TPLK=null,TPLC=null,tplSel='circle',FOLD={},INIP={},MP={role:null,me:null,conns:[],code:'',n:0};try{FOLD=JSON.parse(localStorage.getItem('luparis-fold'))||{}}catch(e){}
 function foldSave(){try{localStorage.setItem('luparis-fold',JSON.stringify(FOLD))}catch(e){}}
 
 {
@@ -861,20 +865,20 @@ const t=k=>T[lang][k];
 const TY={humanoid:['Humanoid','Humanoïde'],undead:['Undead','Mort-vivant'],beast:['Beast','Bête'],fiend:['Fiend','Fiélon'],fey:['Fey','Fée'],giant:['Giant','Géant'],ooze:['Ooze','Vase'],monstrosity:['Monstrosity','Monstruosité'],elemental:['Elemental','Élémentaire'],celestial:['Celestial','Céleste'],plant:['Plant','Plante'],dragon:['Dragon','Dragon'],construct:['Construct','Créature artificielle'],aberration:['Aberration','Aberration']};
 const tyName=k=>TY[k]?tr(TY[k]):k;
 const num=v=>lang==='fr'?String(v).replace('.',','):String(v);
-const CAM={z:1,px:0,py:0};let N=16,H=[],F=[],scene='forest_road',MARKS=[],OBJS=[],ENV={},CTX=null,CTXN='',selMark=null,tokens=[],rot=0,tool='move',hist=[],drag=null,painting=null,hover=null,lastPainted='',bio='gen',t0=performance.now();
+const CAM={z:1,px:0,py:0};let N=16,H=[],F=[],scene='forest_road',MARKS=[],OBJS=[],TPLS=[],TPLA=null,ENV={},CTX=null,CTXN='',selMark=null,tokens=[],rot=0,tool='move',hist=[],drag=null,painting=null,hover=null,lastPainted='',bio='gen',t0=performance.now();
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function blank(n){return Array.from({length:n},()=>Array(n).fill(0))}
 let INI={o:[],cur:0,round:0};
 function encG(G,neg){return G.map(r=>r.map(v=>String.fromCharCode(neg?99+v:48+v)).join(''))}
 function decG(G,neg){return G.map(r=>typeof r==='string'?[...r].map(c=>c.charCodeAt(0)-(neg?99:48)):r)}
 function towns(){try{return JSON.parse(localStorage.getItem('luparis-towns'))||{}}catch(e){return{}}}
-function save(){if(MP.role==='player'){if(typeof mpPlayerSave==='function')mpPlayerSave();if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks();return}if(MP.role==='host'&&typeof mpPush==='function')mpPush();const st={v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV,objs:OBJS};try{if(CTX){const o=towns();o[CTX]={...st,name:CTXN};localStorage.setItem('luparis-towns',JSON.stringify(o))}else localStorage.setItem('luparis-tac',JSON.stringify(st));localStorage.setItem('luparis-ctx',JSON.stringify(CTX?{id:CTX,n:CTXN}:null))}catch(e){}if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks()}
-function applyState(d){if(!(d&&d.H&&d.N))return false;N=d.N;H=decG(d.H,1);F=Array.isArray(d.F)&&d.F.length===d.N?decG(d.F,0):blank(d.N);if(d.scene)scene=d.scene;tokens=d.tokens||[];rot=d.rot||0;bio=B[d.bio]?d.bio:'gen';INI=d.ini&&Array.isArray(d.ini.o)?d.ini:{o:[],cur:0,round:0};MARKS=Array.isArray(d.marks)?d.marks:[];ENV=d.env&&typeof d.env==='object'?d.env:{};OBJS=Array.isArray(d.objs)?d.objs.filter(o=>o&&OBJT[o.k]):[];return true}
+function save(){if(MP.role==='player'){if(typeof mpPlayerSave==='function')mpPlayerSave();if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks();return}if(MP.role==='host'&&typeof mpPush==='function')mpPush();const st={v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV,objs:OBJS,tpls:TPLS};try{if(CTX){const o=towns();o[CTX]={...st,name:CTXN};localStorage.setItem('luparis-towns',JSON.stringify(o))}else localStorage.setItem('luparis-tac',JSON.stringify(st));localStorage.setItem('luparis-ctx',JSON.stringify(CTX?{id:CTX,n:CTXN}:null))}catch(e){}if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks()}
+function applyState(d){if(!(d&&d.H&&d.N))return false;N=d.N;H=decG(d.H,1);F=Array.isArray(d.F)&&d.F.length===d.N?decG(d.F,0):blank(d.N);if(d.scene)scene=d.scene;tokens=d.tokens||[];rot=d.rot||0;bio=B[d.bio]?d.bio:'gen';INI=d.ini&&Array.isArray(d.ini.o)?d.ini:{o:[],cur:0,round:0};MARKS=Array.isArray(d.marks)?d.marks:[];ENV=d.env&&typeof d.env==='object'?d.env:{};OBJS=Array.isArray(d.objs)?d.objs.filter(o=>o&&OBJT[o.k]):[];TPLS=Array.isArray(d.tpls)?d.tpls:[];return true}
 function load(){try{const c=JSON.parse(localStorage.getItem('luparis-ctx'));if(c&&c.id){const o=towns()[c.id];if(o&&applyState(o)){CTX=c.id;CTXN=c.n||o.name||'';return true}}}catch(e){}try{return applyState(JSON.parse(localStorage.getItem('luparis-tac')))}catch(e){}return false}
 function tid(){return 't'+Math.random().toString(36).slice(2,9)}
-function snap(){hist.push(JSON.stringify({H,F,tokens,marks:MARKS,env:ENV,objs:OBJS}));if(hist.length>60)hist.shift()}
+function snap(){hist.push(JSON.stringify({H,F,tokens,marks:MARKS,env:ENV,objs:OBJS,tpls:TPLS}));if(hist.length>60)hist.shift()}
 const SIZES=[8,16,32,64,128];function sizeIdx(n){let i=SIZES.findIndex(s=>s>=n);return i<0?SIZES.length-1:i}function showSize(){document.getElementById('size').value=sizeIdx(N);document.getElementById('sv').textContent=N+'×'+N}
-function resizeTo(n){const nh=blank(n),nf=blank(n);for(let x=0;x<Math.min(n,N);x++)for(let y=0;y<Math.min(n,N);y++){nh[x][y]=H[x][y];nf[x][y]=F[x][y]}N=n;H=nh;F=nf;CAM.z=1;CAM.px=0;CAM.py=0;tokens=tokens.filter(k=>k.x<n&&k.y<n);MARKS=MARKS.filter(m=>m.x<n&&m.y<n);OBJS=OBJS.filter(o=>o.x<n&&o.y<n);for(const key of Object.keys(ENV)){const[a,b]=key.split(',').map(Number);if(a>=n||b>=n)delete ENV[key]}}
+function resizeTo(n){const nh=blank(n),nf=blank(n);for(let x=0;x<Math.min(n,N);x++)for(let y=0;y<Math.min(n,N);y++){nh[x][y]=H[x][y];nf[x][y]=F[x][y]}N=n;H=nh;F=nf;CAM.z=1;CAM.px=0;CAM.py=0;tokens=tokens.filter(k=>k.x<n&&k.y<n);MARKS=MARKS.filter(m=>m.x<n&&m.y<n);OBJS=OBJS.filter(o=>o.x<n&&o.y<n);TPLS=TPLS.filter(o=>o.x<n&&o.y<n);for(const key of Object.keys(ENV)){const[a,b]=key.split(',').map(Number);if(a>=n||b>=n)delete ENV[key]}}
 if(!load()){H=blank(N);F=blank(N)}else if(!SIZES.includes(N))resizeTo(SIZES[sizeIdx(N)]);
 showSize();
 function rnd(x,y,k){let h=Math.imul(x+1,374761393)^Math.imul(y+7,668265263)^Math.imul(k+3,2246822519);h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
@@ -1024,7 +1028,7 @@ function drawNow(){const b=B[bio];const lod=TW>=9,lodS=TW>=5;if(hover){const ti=
   {const ek=ENV[c.x+','+c.y];if(ek)drawEnv(ek,vx,vy,h,c.x,c.y)}
   {const ob=OM.get(c.x+','+c.y);if(ob&&h>=0&&TW>=4)drawObj(ob,vx,vy,h)}
   for(const k of tokens)if(tokCell(k,c))drawTokAt(k)}
- drawFloat();drawMarks();if(meas)drawMeas();
+ drawFloat();if(typeof drawTpls==='function')drawTpls();drawMarks();if(meas)drawMeas();
  if(hasAnim()||(bio==='volcan'&&!reduce))requestAnimationFrame(tick)}
 function ctr(c){const[vx,vy]=view(c.x,c.y),h=Math.max(H[c.x][c.y],0);const[cx,cy]=scr(vx,vy,h);return[cx,cy+TW/4]}
 const ENVT={fire:{n:['Flames','Flammes'],c:'rgba(255,110,30,.5)',r:['Entering or starting a turn here: 1 box (Physical Resilience save DC 12 avoids it).','Entrer ou commencer son tour ici : 1 case (sauvegarde de Résistance physique DD 12 pour l\'éviter).']},
@@ -1063,7 +1067,7 @@ document.getElementById('surfk').addEventListener('change',e=>{surfSel=+e.target
 function drawMarks(){MARKS.forEach((m,i)=>{if(m.x<0||m.y<0||m.x>=N||m.y>=N)return;const[x,y]=ctr(m),s=Math.max(10,TW*.2);ctx.save();ctx.strokeStyle='#2a1a33';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-s*2.6);ctx.stroke();
  ctx.fillStyle=m.id===selMark?'#f2c14e':'#7a3fb0';ctx.beginPath();ctx.moveTo(x,y-s*2.6);ctx.lineTo(x+s*1.7,y-s*2.1);ctx.lineTo(x,y-s*1.6);ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
  ctx.fillStyle='#fff';ctx.font=`700 ${Math.max(10,s*.8)}px "Alegreya Sans",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=m.id===selMark?'#2a1a33':'#fff';ctx.fillText(i+1,x+s*.65,y-s*2.1);ctx.restore()})}
-function renderMarks(){const L=document.getElementById('mk_list');if(!L)return;if(L.contains(document.activeElement)&&L.querySelectorAll('input').length===MARKS.length){L.querySelectorAll('li').forEach((li,i)=>li.classList.toggle('sel',MARKS[i]&&MARKS[i].id===selMark));return}L.innerHTML=MARKS.map((m,i)=>`<li class="${m.id===selMark?'sel':''}"><span class="n">${i+1}</span><input data-id="${m.id}" value="${esc(m.l)}" placeholder="${esc(t('mk_ph'))}" aria-label="${esc(t('mk_title'))} ${i+1}"><button type="button" data-mkdel="${m.id}" aria-label="${esc(t('del'))}">✕</button></li>`).join('')||`<li class="small">${esc(t('mk_none'))}</li>`}
+function renderMarks(){if(typeof renderTpls==='function'&&TPLK)renderTpls();const L=document.getElementById('mk_list');if(!L)return;if(L.contains(document.activeElement)&&L.querySelectorAll('input').length===MARKS.length){L.querySelectorAll('li').forEach((li,i)=>li.classList.toggle('sel',MARKS[i]&&MARKS[i].id===selMark));return}L.innerHTML=MARKS.map((m,i)=>`<li class="${m.id===selMark?'sel':''}"><span class="n">${i+1}</span><input data-id="${m.id}" value="${esc(m.l)}" placeholder="${esc(t('mk_ph'))}" aria-label="${esc(t('mk_title'))} ${i+1}"><button type="button" data-mkdel="${m.id}" aria-label="${esc(t('del'))}">✕</button></li>`).join('')||`<li class="small">${esc(t('mk_none'))}</li>`}
 document.getElementById('mk_list').addEventListener('input',e=>{const m=MARKS.find(x=>x.id===e.target.dataset.id);if(m){m.l=e.target.value.slice(0,200);clearTimeout(window._mkT);window._mkT=setTimeout(save,300)}});
 document.getElementById('mk_list').addEventListener('focusin',e=>{if(e.target.dataset.id){selMark=e.target.dataset.id;draw()}});
 document.getElementById('mk_list').addEventListener('click',e=>{const b=e.target.closest('[data-mkdel]');if(!b)return;snap();MARKS=MARKS.filter(m=>m.id!==b.dataset.mkdel);save();draw()});
@@ -1144,6 +1148,7 @@ function inArea(c,ar){return ar&&c.x>=Math.min(ar.a.x,ar.b.x)&&c.x<=Math.max(ar.
 function areaApply(ar){const x0=Math.min(ar.a.x,ar.b.x),x1=Math.max(ar.a.x,ar.b.x),y0=Math.min(ar.a.y,ar.b.y),y1=Math.max(ar.a.y,ar.b.y);let allEnv=true;if(tool==='env')for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const v=ENV[x+','+y];if(!v||(v.k||v)!==envSel)allEnv=false}
  for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const h=H[x][y];if(tool==='up')H[x][y]=Math.min(3,h+1);else if(tool==='down'){const v=Math.max(-2,h-1);setH({x,y},v)}else if(tool==='flat'){H[x][y]=0;F[x][y]=0;const oi=objAt(x,y);if(oi>=0)OBJS.splice(oi,1)}else if(tool==='env'){const key=x+','+y;if(allEnv)delete ENV[key];else ENV[key]={k:envSel,dc:envDC()}}else if(tool==='surf'){if(H[x][y]>=0)F[x][y]=surfSel}}}
 cv.addEventListener('pointerdown',e=>{const[mx,my]=pos(e),c=pick(mx,my);
+ if(tool==='tpl'&&e.button===0&&c&&MP.role!=='player'){tplClick(c);return}
  if(MP.role==='player'&&e.button===0&&c&&!(tool==='measure'||(tool==='move'&&tokAt(c)>=0&&tokens[tokAt(c)].cid&&tokens[tokAt(c)].cid===MP.me))){if(!(tool==='move'&&tokAt(c)<0))return}
  if(e.button===1||e.button===2||(!c&&CAM.z>1)||(c&&tool==='move'&&e.button===0&&tokAt(c)<0&&objAt(c.x,c.y)<0&&CAM.z>1)){cv.setPointerCapture(e.pointerId);pan={x:e.clientX,y:e.clientY};cv.style.cursor='grabbing';e.preventDefault();return}
  if(!c)return;cv.setPointerCapture(e.pointerId);snap();const inv=e.button===2;
@@ -1161,8 +1166,10 @@ cv.addEventListener('pointermove',e=>{if(pan){CAM.px+=e.clientX-pan.x;CAM.py+=e.
 const end=()=>{if(painting&&painting.area){areaApply(painting.area);painting=null;save();draw();return}if(pan){pan=null;cv.style.cursor=tool==='move'?'grab':'crosshair';return}if(drag!==null&&meas&&meas.drag&&meas.a.x===meas.b.x&&meas.a.y===meas.b.y&&tokens[drag]){selTok=tokens[drag].id;renderTok()}if(painting||drag!==null)save();painting=null;drag=null;if(meas){meas.live=false;if(meas.drag){meas=null;draw()}}};
 cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
 cv.addEventListener('pointerleave',()=>{hover=null;draw()});
+cv.addEventListener('dblclick',e=>{const[mx,my]=pos(e),c=pick(mx,my);if(!c)return;const i=tokAt(c);if(i<0)return;const k=tokens[i],m=k.mid&&MON.find(x=>x.id===k.mid);if(m&&!(MP.role==='player'))monSheet(m,k)});
+document.getElementById('in_list').addEventListener('click',e=>{const b=e.target.closest('[data-isb]');if(!b)return;e.stopPropagation();const k=tokens.find(x=>x.id===b.dataset.isb),m=k&&k.mid&&MON.find(x=>x.id===k.mid);if(m)monSheet(m,k)},true);
 document.getElementById('tools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!b.dataset.t)return;setTool(b.dataset.t)});
-function setTool(t){tool=t;if(t!=='place'){placing=null;const a=document.getElementById('pl_ally'),f=document.getElementById('pl_foe');if(a)a.value='';if(f)f.value=''}if(t!=='measure')meas=null;
+function setTool(t){tool=t;if(t!=='place'){placing=null;const a=document.getElementById('pl_ally'),f=document.getElementById('pl_foe');if(a)a.value='';if(f)f.value=''}if(t!=='measure')meas=null;if(t!=='tpl')TPLA=null;
  for(const x of document.querySelectorAll('#tools button'))x.setAttribute('aria-pressed',x.dataset.t===t);cv.style.cursor=t==='move'?'grab':'crosshair';draw()}
 const bz=document.getElementById('biomes');
 document.getElementById('biosel').addEventListener('change',e=>{const b=bz.querySelector(`button[data-b="${e.target.value}"]`);if(b)b.click()});
@@ -1173,7 +1180,7 @@ function legend(){const b=B[bio];if(typeof fillBio==='function'){const el=docume
 bz.addEventListener('click',e=>{const b=e.target.closest('button[data-b]');if(!b)return;bio=b.dataset.b;for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x===b);legend();if(typeof fillScenes==='function')fillScenes();save();draw()});
 document.getElementById('rot').onclick=()=>{rot=(rot+1)%4;save();draw()};
 document.getElementById('zin').onclick=()=>zoomAt(1.4,W/2,Hc/2);document.getElementById('zout').onclick=()=>zoomAt(1/1.4,W/2,Hc/2);document.getElementById('zfit').onclick=()=>{CAM.z=1;CAM.px=0;CAM.py=0;camSet();draw()};
-document.getElementById('undo').onclick=()=>{const s=hist.pop();if(!s)return;const d=JSON.parse(s);H=d.H;F=d.F||blank(N);tokens=d.tokens;MARKS=d.marks||MARKS;ENV=d.env||{};OBJS=d.objs||[];save();draw()};
+document.getElementById('undo').onclick=()=>{const s=hist.pop();if(!s)return;const d=JSON.parse(s);H=d.H;F=d.F||blank(N);tokens=d.tokens;MARKS=d.marks||MARKS;ENV=d.env||{};OBJS=d.objs||[];TPLS=d.tpls||[];save();draw()};
 const KH={'0':0,'1':1,'2':2,'3':3,'4':-1,'5':-2},held=new Set();
 function setH(c,v){if(!c||H[c.x][c.y]===v)return;H[c.x][c.y]=v;if(v<0)F[c.x][c.y]=0;if(v===-2)tokens=tokens.filter(k=>!covers(k,c.x,c.y))}
 function pickTool(t){const b=document.querySelector(`#tools button[data-t="${t}"]`);if(b)b.click()}
@@ -1186,7 +1193,7 @@ document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,sele
  });
 document.addEventListener('keyup',e=>{const dg=/^Digit([0-5])$/.exec(e.code);if(dg)held.delete(dg[1])});
 window.addEventListener('blur',()=>held.clear());
-document.getElementById('clear').onclick=()=>{snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];OBJS=[];ENV={};save();draw()};
+document.getElementById('clear').onclick=()=>{snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];OBJS=[];TPLS=[];ENV={};save();draw()};
 let RNG=Math.random;const R=n=>Math.floor(RNG()*n),ok=(x,y)=>x>=0&&y>=0&&x<N&&y<N;
 function genFree(){const p=B[bio].gen;
  if(p.rooms){for(let x=0;x<N;x++){H[x][0]=3;H[x][N-1]=3}for(let y=0;y<N;y++){H[0][y]=3;H[N-1][y]=3}
@@ -1348,12 +1355,12 @@ function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1
 function seedOf(id,d){if(d&&+d.seed)return +d.seed;let h=2166136261;for(const c of String(id))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0}
 function ctxBar(){const el=document.getElementById('ctxbar');if(!el)return;el.hidden=!CTX;if(!CTX)return;const mem=CTX.startsWith('mem:');el.innerHTML=`<b>${esc(mem?L2('Saved map','Carte enregistrée'):t('ctx_town'))} : ${esc(CTXN)} <span class="small">(${N}×${N})</span></b><button type="button" id="ctx_regen">${esc(mem?L2('Back to the saved version','Revenir à la version enregistrée'):t('ctx_regen'))}</button><button type="button" class="go" id="ctx_back">${esc(t('ctx_back'))}</button>`}
 document.getElementById('ctxbar').addEventListener('click',e=>{if(e.target.id==='ctx_back')leaveTown();else if(e.target.id==='ctx_regen'&&CTX){if(CTX.startsWith('mem:')){const m=memList().find(x=>'mem:'+x.id===CTX);if(m){snap();applyState(m.st);finishCtx(null)}return}const o=towns()[CTX];regenTown(o&&o.src,CTX)}});
-function regenTown(d,id){snap();ENV={};N=d&&d.c==='town'?64:128;H=blank(N);F=blank(N);tokens=[];MARKS=[];OBJS=[];INI={o:[],cur:0,round:0};rot=0;const old=RNG;RNG=mulberry(seedOf(id,d));try{genCity(d)}finally{RNG=old}finishCtx(d)}
+function regenTown(d,id){snap();ENV={};N=d&&d.c==='town'?64:128;H=blank(N);F=blank(N);tokens=[];MARKS=[];OBJS=[];TPLS=[];INI={o:[],cur:0,round:0};rot=0;const old=RNG;RNG=mulberry(seedOf(id,d));try{genCity(d)}finally{RNG=old}finishCtx(d)}
 function finishCtx(d){for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x.dataset.b===bio);legend();showSize();CAM.z=1;CAM.px=0;CAM.py=0;save();if(d&&CTX){const o=towns();if(o[CTX]){o[CTX].src=d;try{localStorage.setItem('luparis-towns',JSON.stringify(o))}catch(e){}}}ctxBar();layout()}
 function memList(){try{return JSON.parse(localStorage.getItem('luparis-maps'))||[]}catch(e){return[]}}
 function memSave(l){try{localStorage.setItem('luparis-maps',JSON.stringify(l));return true}catch(e){alert(L2('Browser storage is full: delete an old saved map.','Le stockage du navigateur est plein : supprime une ancienne carte enregistrée.'));return false}}
 function memThumb(){try{const c=document.createElement('canvas'),w=240,h=Math.round(240*cv.height/cv.width);c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#2b2a26';x.fillRect(0,0,w,h);x.drawImage(cv,0,0,w,h);return c.toDataURL('image/jpeg',.7)}catch(e){return''}}
-function memStateNow(){return{v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV,objs:OBJS}}
+function memStateNow(){return{v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV,objs:OBJS,tpls:TPLS}}
 document.getElementById('savemap').addEventListener('click',()=>{const box=document.getElementById('savebox');box.hidden=false;const d=new Date();document.getElementById('save_n').value=(CTX&&CTXN?CTXN:tr(B[bio].n))+' — '+d.toLocaleDateString(lang);document.getElementById('save_n').focus();document.getElementById('save_n').select()});
 document.getElementById('savebox').addEventListener('submit',e=>{e.preventDefault();const n=document.getElementById('save_n').value.trim().slice(0,80)||L2('Battle map','Battle map');const l=memList();l.unshift({id:'m'+Date.now().toString(36),n,d:new Date().toISOString(),st:memStateNow(),th:memThumb()});if(memSave(l)){document.getElementById('savebox').hidden=true;document.getElementById('save_msg').textContent=L2('Saved. Find it in the World tab, “Saved maps”.','Enregistrée. Retrouve-la dans l\'onglet Monde, « Cartes enregistrées ».');setTimeout(()=>{document.getElementById('save_msg').textContent=''},4000);if(typeof renderMem==='function')renderMem()}});
 document.getElementById('save_cancel').addEventListener('click',()=>{document.getElementById('savebox').hidden=true});
@@ -1363,7 +1370,7 @@ function openTown(id,name,d){if(!CTX)save();CTX='town:'+id;CTXN=name;const o=tow
 function leaveTown(){CTX=null;CTXN='';try{localStorage.setItem('luparis-ctx','null')}catch(e){}if(!load()){H=blank(N);F=blank(N)}finishCtx(null)}
 window.lupOpenTown=openTown;
 const SCN_ORDER=['forest_road','forest_clearing','bandit_camp','snow_forest','mtn_bend','mtn_pass','cave','dungeon','ruins','graveyard','river_ford','bridge','marsh_walk','oasis','lava_field','crossroads','farmland','tavern','outskirts','village_square','docks','free'];
-function runScene(){snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];OBJS=[];ENV={};NZ=null;RNG=Math.random;const sc=SCN[scene]||SCN.free;sc.run();save();draw()}
+function runScene(){snap();H=blank(N);F=blank(N);tokens=[];MARKS=[];OBJS=[];TPLS=[];ENV={};NZ=null;RNG=Math.random;const sc=SCN[scene]||SCN.free;sc.run();save();draw()}
 const SCN_BIO={gen:['ruins','graveyard','dungeon','cave','crossroads'],prairie:['crossroads','farmland','tavern','outskirts','village_square','docks','bridge','river_ford','ruins','graveyard'],foret:['forest_road','forest_clearing','bandit_camp','river_ford','crossroads','tavern','ruins'],montagne:['mtn_bend','mtn_pass','cave','ruins','bridge'],volcan:['lava_field','cave','mtn_pass','ruins'],desert:['oasis','ruins','mtn_pass','crossroads','village_square'],neige:['snow_forest','mtn_pass','mtn_bend','cave','village_square'],marais:['marsh_walk','river_ford','ruins','bandit_camp'],donjon:['dungeon','cave','graveyard','ruins']};
 function scenesFor(b){return[...(SCN_BIO[b]||[]),'free']}
 function fillScenes(){const el=document.getElementById('scene'),L=t('scn');if(!L)return;const list=scenesFor(bio);if(!list.includes(scene))scene=list[0];el.innerHTML=list.map(k=>`<option value="${k}"${k===scene?' selected':''}>${esc(t('scn')[k])}</option>`).join('')}
@@ -1679,8 +1686,8 @@ $('c_tgt').addEventListener('input',()=>{});
 $('c_wf').addEventListener('submit',e=>{e.preventDefault();const n=$('c_wn').value.trim();if(!n)return;C.weapons.push({n,f:$('c_wfam').value,s:$('c_wsz').value});$('c_wn').value='';saveC();renderSheet()});
 T.en.sk_confirm2='Confirm: erase the sheet?';T.fr.sk_confirm2='Confirmer : effacer la fiche ?';
 
-Object.assign(T.en,{mp_title:'Multiplayer (test)',m_desc:'Description',m_traits:'Traits (one per line, “Name: what it does”)',m_traits_ph:'Pack Tactics: advantage when an ally is adjacent to the target',sn_title:'Session notes',t_obj:'Object',t_pref:'Building',savemap:'Save the map',save_name:'Name',w_mem:'Saved maps',t_surf:'Ground',t_env:'Effect',sk_lay:'Drag a module by its ⠿ handle to reorder.',sk_cols:'Columns',sk_layreset:'Reset layout',t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Remove one with its ✕ in this list.',ctx_town:'Town map',ctx_regen:'Reset to the original town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},z_fit:'Fit',z_out:'Zoom out',scn:{forest_clearing:'Forest clearing',bandit_camp:'Bandit camp',snow_forest:'Snowy forest',mtn_pass:'Mountain pass',cave:'Cave',dungeon:'Dungeon rooms',ruins:'Ruins',graveyard:'Graveyard',river_ford:'River ford',marsh_walk:'Swamp boardwalk',oasis:'Desert oasis',lava_field:'Lava field',crossroads:'Crossroads',farmland:'Farmland',village_square:'Village square',docks:'Docks',forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain'}});
-Object.assign(T.fr,{mp_title:'Partie à plusieurs (test)',m_desc:'Description',m_traits:'Capacités (une par ligne, « Nom : ce qu\'elle fait »)',m_traits_ph:'Tactique de meute : avantage quand un allié est au contact de la cible',sn_title:'Notes de séance',t_obj:'Objet',t_pref:'Bâtiment',savemap:'Enregistrer la carte',save_name:'Nom',w_mem:'Cartes enregistrées',t_surf:'Sol',t_env:'Effet',sk_lay:'Glisse un module par sa poignée ⠿ pour le déplacer.',sk_cols:'Colonnes',sk_layreset:'Réinitialiser l\'agencement',t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Retire-le avec sa croix ✕ dans cette liste.',ctx_town:'Carte de ville',ctx_regen:'Revenir à la ville d\'origine',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},z_fit:'Ajuster',z_out:'Dézoomer',scn:{forest_clearing:'Clairière',bandit_camp:'Camp de bandits',snow_forest:'Forêt enneigée',mtn_pass:'Col de montagne',cave:'Grotte',dungeon:'Salles de donjon',ruins:'Ruines',graveyard:'Cimetière',river_ford:'Gué',marsh_walk:'Passerelles du marais',oasis:'Oasis',lava_field:'Champ de lave',crossroads:'Carrefour',farmland:'Champs et ferme',village_square:'Place de village',docks:'Quais',forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre'}});
+Object.assign(T.en,{t_tpl:'Zone',tpl_zones:'Effect zones',mp_title:'Multiplayer (test)',m_desc:'Description',m_traits:'Traits (one per line, “Name: what it does”)',m_traits_ph:'Pack Tactics: advantage when an ally is adjacent to the target',sn_title:'Session notes',t_obj:'Object',t_pref:'Building',savemap:'Save the map',save_name:'Name',w_mem:'Saved maps',t_surf:'Ground',t_env:'Effect',sk_lay:'Drag a module by its ⠿ handle to reorder.',sk_cols:'Columns',sk_layreset:'Reset layout',t_mark:'Landmark',mk_title:'Landmarks',mk_ph:'What is here?',mk_none:'No landmark yet.',mk_hint:'Landmark tool (P): click a tile to pin a numbered flag, then name it here. Remove one with its ✕ in this list.',ctx_town:'Town map',ctx_regen:'Reset to the original town',ctx_back:'Back to the free table',scene:'Scene',m_sz:'Size',szn:{T:'Tiny (½ square)',S:'Small',M:'Medium',L:'Large (2×2)',H:'Huge (3×3)',G:'Gargantuan (4×4)'},z_fit:'Fit',z_out:'Zoom out',scn:{forest_clearing:'Forest clearing',bandit_camp:'Bandit camp',snow_forest:'Snowy forest',mtn_pass:'Mountain pass',cave:'Cave',dungeon:'Dungeon rooms',ruins:'Ruins',graveyard:'Graveyard',river_ford:'River ford',marsh_walk:'Swamp boardwalk',oasis:'Desert oasis',lava_field:'Lava field',crossroads:'Crossroads',farmland:'Farmland',village_square:'Village square',docks:'Docks',forest_road:'Road through the forest',mtn_bend:'Bend on a mountainside',outskirts:'Town outskirts',tavern:'Roadside tavern',bridge:'Bridge over a river',free:'Free terrain'}});
+Object.assign(T.fr,{t_tpl:'Zone',tpl_zones:'Zones d\'effet',mp_title:'Partie à plusieurs (test)',m_desc:'Description',m_traits:'Capacités (une par ligne, « Nom : ce qu\'elle fait »)',m_traits_ph:'Tactique de meute : avantage quand un allié est au contact de la cible',sn_title:'Notes de séance',t_obj:'Objet',t_pref:'Bâtiment',savemap:'Enregistrer la carte',save_name:'Nom',w_mem:'Cartes enregistrées',t_surf:'Sol',t_env:'Effet',sk_lay:'Glisse un module par sa poignée ⠿ pour le déplacer.',sk_cols:'Colonnes',sk_layreset:'Réinitialiser l\'agencement',t_mark:'Repère',mk_title:'Repères',mk_ph:'Qu\'y a-t-il ici ?',mk_none:'Aucun repère pour l\'instant.',mk_hint:'Outil Repère (P) : clique une case pour planter un fanion numéroté, puis nomme-le ici. Retire-le avec sa croix ✕ dans cette liste.',ctx_town:'Carte de ville',ctx_regen:'Revenir à la ville d\'origine',ctx_back:'Retour à la table libre',scene:'Scène',m_sz:'Taille',szn:{T:'Très petite (½ case)',S:'Petite',M:'Moyenne',L:'Grande (2×2)',H:'Très grande (3×3)',G:'Gigantesque (4×4)'},z_fit:'Ajuster',z_out:'Dézoomer',scn:{forest_clearing:'Clairière',bandit_camp:'Camp de bandits',snow_forest:'Forêt enneigée',mtn_pass:'Col de montagne',cave:'Grotte',dungeon:'Salles de donjon',ruins:'Ruines',graveyard:'Cimetière',river_ford:'Gué',marsh_walk:'Passerelles du marais',oasis:'Oasis',lava_field:'Champ de lave',crossroads:'Carrefour',farmland:'Champs et ferme',village_square:'Place de village',docks:'Quais',forest_road:'Route en forêt',mtn_bend:'Lacet à flanc de montagne',outskirts:'Faubourg',tavern:'Taverne au bord de la route',bridge:'Pont sur la rivière',free:'Terrain libre'}});
 setTimeout(()=>{fillScenes();fillSz()});
 Object.assign(T.en,{pl_title:'Quick place',pl_ally:'Ally (characters)',pl_foe:'Enemy (bestiary)',pl_hint:'Pick a name, then click tiles on the map. Esc to stop.',pl_choose:'— choose —',
 in_title:'Initiative',in_roll:'Roll',in_next:'Next turn',in_end:'End',in_rnd:n=>`Round ${n}`,in_empty:'Place tokens, then roll. Allies use Physical Finesse, monsters their initiative bonus.',
@@ -1703,7 +1710,7 @@ $('pl_foe').addEventListener('change',e=>{const v=e.target.value;if(!v)return se
 function renderIni(){const L=document.getElementById('in_list');if(!L)return;INI.o=INI.o.filter(o=>tokens.some(k=>k.id===o.id));if(INI.cur>=INI.o.length)INI.cur=0;
  document.getElementById('in_round').textContent=INI.o.length?t('in_rnd')(INI.round):t('in_empty');
  L.innerHTML=INI.o.map((o,i)=>{const k=tokens.find(k=>k.id===o.id),nm=k?(k.nm?tr(k.nm)+(k.num?' '+k.num:''):k.n):'?';
-  return`<li class="${i===INI.cur?'cur':''}"><input class="iv" type="number" value="${o.v}" data-iv="${i}" aria-label="${esc(t('in_title'))} ${esc(nm)}"><span class="inm ${k&&k.t==='pj'?'ally':'foe'}">${esc(nm)}</span><button type="button" data-ix="${i}" aria-label="${esc(t('sk_remove'))} ${esc(nm)}">×</button></li>`}).join('')}
+  return`<li class="${i===INI.cur?'cur':''}"><input class="iv" type="number" value="${o.v}" data-iv="${i}" aria-label="${esc(t('in_title'))} ${esc(nm)}"><span class="inm ${k&&k.t==='pj'?'ally':'foe'}">${esc(nm)}</span>${k&&k.mid&&MON.find(m=>m.id===k.mid)?`<button type="button" class="isb" data-isb="${esc(k.id)}" title="${L2('Monster sheet','Fiche du monstre')}" aria-label="${L2('Monster sheet','Fiche du monstre')} ${esc(nm)}">📜</button>`:''}<button type="button" data-ix="${i}" aria-label="${esc(t('sk_remove'))} ${esc(nm)}">×</button></li>`}).join('')}
 const iniSort=()=>INI.o.sort((a,b)=>b.v-a.v||b.b-a.b);
 $('in_roll').onclick=()=>{if(!tokens.length)return;INI.o=tokens.map(k=>{const b=+k.init||0,pv=k.cid&&typeof INIP!=='undefined'?INIP[k.cid]:null;return{id:k.id||(k.id=tid()),v:pv!=null?pv:dRoll(20)+b,b}});iniSort();INI.cur=0;INI.round=1;save();draw();if(typeof renderHand==='function')renderHand()};
 $('in_next').onclick=()=>{if(!INI.o.length)return;INI.cur++;if(INI.cur>=INI.o.length){INI.cur=0;INI.round++}save();draw()};
@@ -2034,7 +2041,7 @@ new ResizeObserver(()=>{if(WS&&!$('v-monde').hidden)wApply()}).observe(wst);
 
 function nm0(m){return tr(m.n)}
 function applyLang(){document.documentElement.lang=lang;document.title='Luparis';
- for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof snRender==='function'&&typeof SN!=='undefined'&&SN)snRender();if(typeof aiUI==='function'&&typeof AIC!=='undefined')aiUI();if(typeof fillBio==='function')fillBio();
+ for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof fillTpl==='function'&&TPLK)fillTpl();if(typeof snRender==='function'&&typeof SN!=='undefined'&&SN)snRender();if(typeof aiUI==='function'&&typeof AIC!=='undefined')aiUI();if(typeof fillBio==='function')fillBio();
  for(const e of document.querySelectorAll('[data-i18n-html]'))e.innerHTML=t(e.dataset.i18nHtml);
  for(const e of document.querySelectorAll('[data-i18n-ph]'))e.placeholder=t(e.dataset.i18nPh);
  for(const b of bz.querySelectorAll('button[data-b]'))b.querySelector('.bn').textContent=tr(B[b.dataset.b].n);
@@ -2110,6 +2117,37 @@ function monSheet(m,tk){SBM=m;SBT=tk||null;let dl=document.getElementById('sbdlg
    else{const n=TKCRIT[key]?a.nd*2:a.nd,rs=Array.from({length:n},()=>dRoll(a.dd)),tot=rs.reduce((x,y)=>x+y,0)+a.mod;TKCRIT[key]=false;pushRoll(`${esc(nm)} · ${n}d${a.dd}${a.mod?sgn(a.mod):''} [${rs.join(', ')}] = <b>${tot}</b>`)}}})}
  const paint=D=>{dl.innerHTML=`<div class="sbbar"><button type="button" id="sb_close" aria-label="${L2('Close','Fermer')}">×</button></div>`+monBlockHTML(m,D,SBT)};
  paint(null);if(!dl.open)dl.showModal();const en=Array.isArray(m.n)?m.n[0]:String(m.n),k2=String(m.id).startsWith('s-')?m.id:'s-'+en.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');srdDetails().then(o=>{if(SBM===m&&dl.open&&o[k2])paint(o[k2])})}
+
+// ---- area templates (circle, sphere, cone, line, cube)
+TPLK={circle:['Circle','Cercle'],sphere:['Sphere','Sphère'],cone:['Cone','Cône'],line:['Line','Ligne'],cube:['Cube','Cube']},TPLC={circle:'255,140,40',sphere:'170,90,220',cone:'230,70,60',line:'60,150,230',cube:'70,170,110'};
+
+function fillTpl(){const a=document.getElementById('tplk');if(a)a.innerHTML=Object.keys(TPLK).map(k=>`<option value="${k}"${k===tplSel?' selected':''}>${esc(tr(TPLK[k]))}</option>`).join('')}
+function tplSize(){return Math.max(5,Math.min(300,Math.round((+document.getElementById('tplsz').value||20)/5)*5))}
+function tplCells(T){const L=T.s/5,out=[],ox=T.x+.5,oy=T.y+.5,ca=Math.cos(T.a||0),sa=Math.sin(T.a||0);
+ for(let x=Math.max(0,Math.floor(T.x-L-1));x<=Math.min(N-1,Math.ceil(T.x+L+1));x++)for(let y=Math.max(0,Math.floor(T.y-L-1));y<=Math.min(N-1,Math.ceil(T.y+L+1));y++){
+  const dx=x+.5-ox,dy=y+.5-oy,d=Math.hypot(dx,dy);let ok=false;
+  if(T.k==='circle'||T.k==='sphere')ok=d<=L+.01;
+  else if(T.k==='cube')ok=Math.abs(dx)<=L/2+.01&&Math.abs(dy)<=L/2+.01;
+  else{const al=dx*ca+dy*sa,pe=Math.abs(-dx*sa+dy*ca);if(T.k==='line')ok=al>0.01&&al<=L+.01&&pe<=.5;else ok=d>0.01&&al>0&&d<=L+.01&&pe<=al*.5+.01}
+  if(ok)out.push([x,y])}return out}
+function tplTokens(T){const set=new Set(tplCells(T).map(([x,y])=>x+','+y));return tokens.filter(k=>{const n=tfp(k);for(let i=k.x;i<k.x+n;i++)for(let j=k.y;j<k.y+n;j++)if(set.has(i+','+j))return true;return false})}
+function tplLabel(T){const n=tplTokens(T).length;return`${tr(TPLK[T.k])} ${T.s} ft · ${n} ${L2(n===1?'target':'targets',n>1?'cibles':'cible')}`}
+function drawTpl(T,ghost){const col=TPLC[T.k]||'255,140,40';for(const[x,y]of tplCells(T)){const[vx,vy]=view(x,y),h=Math.max(H[x][y],0);poly(dia(vx,vy,h),`rgba(${col},${ghost?.2:.3})`,`rgba(${col},.85)`,ghost?1:1.4)}
+ if(T.x<0||T.y<0||T.x>=N||T.y>=N)return;const[vx,vy]=view(T.x,T.y),[cx,cy]=scr(vx,vy,Math.max(H[T.x][T.y],0));
+ if(T.k==='sphere'){const r=T.s/5*TW*.72;const g=ctx.createRadialGradient(cx-r*.3,cy+TW/4-r*.6,r*.1,cx,cy+TW/4-r*.3,r);g.addColorStop(0,`rgba(${col},.05)`);g.addColorStop(1,`rgba(${col},.28)`);ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(cx,cy+TW/4-r*.25,r,r*.75,0,Math.PI,0);ctx.ellipse(cx,cy+TW/4-r*.25,r,r*.32,0,0,Math.PI);ctx.fill();ctx.strokeStyle=`rgba(${col},.7)`;ctx.lineWidth=1.2;ctx.stroke()}
+ ctx.fillStyle=`rgb(${col})`;ctx.beginPath();ctx.arc(cx,cy+TW/4,Math.max(3,TW*.08),0,7);ctx.fill();
+ if(!ghost||1){ctx.font=`700 ${Math.max(11,Math.min(15,TW*.3))}px "Alegreya Sans",sans-serif`;ctx.textAlign='center';const tx=tplLabel(T);ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.strokeText(tx,cx,cy+TW/4-Math.max(8,TW*.25));ctx.fillStyle='#1d1a17';ctx.fillText(tx,cx,cy+TW/4-Math.max(8,TW*.25))}}
+function drawTpls(){for(const T of TPLS)drawTpl(T);if(tool==='tpl'&&hover){const k=tplSel,needAim=k==='cone'||k==='line';if(needAim&&TPLA){const a=Math.atan2(hover.y-TPLA.y,hover.x-TPLA.x);drawTpl({k,x:TPLA.x,y:TPLA.y,a,s:tplSize()},true)}else if(!needAim)drawTpl({k,x:hover.x,y:hover.y,a:0,s:tplSize()},true);else drawTpl({k,x:hover.x,y:hover.y,a:0,s:tplSize()},true)}}
+function tplClick(c){const k=tplSel,needAim=k==='cone'||k==='line';
+ if(needAim&&!TPLA){TPLA={x:c.x,y:c.y};draw();return}
+ if(needAim&&c.x===TPLA.x&&c.y===TPLA.y)return;
+ snap();const T=needAim?{k,x:TPLA.x,y:TPLA.y,a:Math.atan2(c.y-TPLA.y,c.x-TPLA.x),s:tplSize(),id:tid()}:{k,x:c.x,y:c.y,a:0,s:tplSize(),id:tid()};TPLA=null;TPLS.push(T);save();draw();renderTpls()}
+function renderTpls(){const L=document.getElementById('tpl_list');if(!L)return;L.innerHTML=TPLS.length?TPLS.map((T,i)=>`<li><span style="color:rgb(${TPLC[T.k]})">●</span> ${esc(tplLabel(T))}${tplTokens(T).length?`<div class="small">${tplTokens(T).map(k=>esc(k.nm?tr(k.nm)+(k.num?' '+k.num:''):k.n)).join(', ')}</div>`:''}<button type="button" data-tpx="${i}" aria-label="${L2('Remove','Retirer')}">×</button></li>`).join('')+`<li><button type="button" data-tpx="all">${L2('Clear all zones','Effacer toutes les zones')}</button></li>`:`<li class="small">${L2('No zone. Tool “Zone”: click to place a circle, sphere or cube; for a cone or a line, click the origin then the direction.','Aucune zone. Outil « Zone » : clique pour poser un cercle, une sphère ou un cube ; pour un cône ou une ligne, clique l\'origine puis la direction.')}</li>`}
+document.getElementById('tplk').addEventListener('change',e=>{tplSel=e.target.value;TPLA=null;setTool('tpl')});
+document.getElementById('tplsz').addEventListener('input',()=>draw());
+document.getElementById('tpl_list').addEventListener('click',e=>{const b=e.target.closest('[data-tpx]');if(!b)return;snap();if(b.dataset.tpx==='all')TPLS=[];else TPLS.splice(+b.dataset.tpx,1);save();draw();renderTpls()});
+renderTpls();
+fillTpl();
 // ---- session notes (GM)
 var SN=null;try{SN=JSON.parse(localStorage.getItem('luparis-session'))}catch(e){}
 function snNew(){return{t:'',start:Date.now(),txt:''}}
