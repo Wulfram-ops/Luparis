@@ -6,6 +6,28 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 
 ---
 
+## 0. Règles : chantier en cours (avant le reste)
+
+### 0.1 Équilibrage des personnages
+- Refaire les calculs et les simulations de combat sur les personnages (niveaux 1, 5, 10, 15, 20) : coûts d'XP, plafonds de stats, Esquive et armures, seuils, Parade, talents, pactes.
+- Vérifier aussi les monstres convertis du SRD, et le nouveau souffle à recharge (Tier dés par tour de recharge).
+- Sortie attendue : un tableau des écarts (combien de coups pour tomber, dégâts par round) et les corrections proposées.
+
+### 0.2 Brainstorm Daggerheart : la Maîtrise donne le nombre de dés
+- Piste : comme dans Daggerheart, une stat de **Maîtrise** (Proficiency) donne le nombre de dés de dégâts, pour les armes comme pour la magie.
+- Les **écoles de magie** deviennent moins chères : elles donnent l'accès, le dé de l'école, l'affinité et le budget d'effets, mais plus le nombre de dés.
+- La **Maîtrise** devient plus chère.
+- But : plus de variété de builds, sans déséquilibrer les dégâts.
+- Questions ouvertes :
+  - Maîtrise gagnée avec le niveau, achetée en XP, ou les deux ?
+  - Une seule Maîtrise, ou une martiale et une magique ?
+  - Que garde un spécialiste d'une école face à quelqu'un qui y a seulement goûté ?
+- À valider par les simulations de 0.1.
+
+### 0.3 Brainstorm : Luparis à travers les âges
+- Luparis n'est pas seulement un monde médiéval : le système doit suivre la chronologie du monde, du lointain passé (D&D) jusqu'au lointain futur (inspiration Warhammer 40 000).
+- À explorer : ce qui reste fixe (Matrice, seuils, cases, Maîtrise) et ce qui change d'une ère à l'autre (familles d'armes, armures, écoles, bestiaire, technologie, cartes).
+
 ## 1. Prochaines étapes (dans l'ordre)
 
 ### 1.1 Rôles MJ / joueur / spectateur
@@ -82,4 +104,5 @@ Points des avis externes écartés : framework (React/Vue) inutile pour l'instan
 - **Interface** : barre d'outils contextuelle, aperçu avant placement (empreinte, rotation, hauteur), recherche universelle (Ctrl+K), titres de cartes cliquables (réduire) et déplaçables (maintenir), fiche Personnage fixe en trois colonnes.
 - **Jeu** : fiches de monstres depuis les tokens, zones d'effet (cercle, sphère, cône, ligne, cube), notes de séance du MJ, multijoueur de test.
 - **Règles v0.5** : six stats, talents, pactes, équilibrage par simulations.
+- **Bestiaire** : fiches de monstres minimalistes converties aux règles Luparis (EN/FR), dragons chaotiques neutres, souffles à recharge choisie (1 à 3 tours).
 - **Carte du monde** : style atlas à plat, rendu en image.
