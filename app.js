@@ -11417,22 +11417,35 @@ async function mgModel(key) {
     } catch (e) {}
     return 'gpt-4o-mini';
   }
-  // pick the newest "flash" model this key can use
+  return '';
+}
+// Gemini models get overloaded at times: try several, the last one that answered first
+async function mgGeminiList(key) {
+  if (MG.list) return MG.list;
+  let L = [];
   try {
     const j = await (
-      await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=' + encodeURIComponent(key))
+      await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=' + encodeURIComponent(key),
+        {
+          signal: AbortSignal.timeout(10000),
+        },
+      )
     ).json();
-    const L = (j.models || [])
+    L = (j.models || [])
       .filter(x => (x.supportedGenerationMethods || []).includes('generateContent'))
-      .map(x => x.name.replace(/^models\//, ''))
-      .filter(x => /^gemini-[\d.]+-flash$/.test(x))
-      .sort((a, b) => parseFloat(b.slice(7)) - parseFloat(a.slice(7)));
-    if (L[0]) {
-      mgSet(MG_MODEL, L[0]);
-      return L[0];
-    }
+      .map(x => x.name.replace(/^models\//, ''));
   } catch (e) {}
-  return 'gemini-flash-latest';
+  const num = re => L.filter(x => re.test(x)).sort((a, b) => parseFloat(b.slice(7)) - parseFloat(a.slice(7)));
+  MG.list = [
+    ...new Set([
+      'gemini-flash-lite-latest',
+      ...num(/^gemini-[\d.]+-flash-lite$/).slice(0, 2),
+      'gemini-flash-latest',
+      ...num(/^gemini-[\d.]+-flash$/).slice(0, 2),
+    ]),
+  ].filter(x => !L.length || L.includes(x));
+  return MG.list;
 }
 function mgPrompt(text) {
   return `You turn a game master's description of a tabletop battle map into a JSON recipe. Answer with JSON only.
@@ -11486,21 +11499,35 @@ async function mgAI(text) {
     const j = await res.json();
     return mgClean(json((j.choices && j.choices[0] && j.choices[0].message.content) || ''));
   }
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: mgPrompt(text) }] }],
-        generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
-      }),
-    },
-  );
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const j = await res.json(),
-    out = j.candidates && j.candidates[0] && j.candidates[0].content.parts.map(p => p.text || '').join('');
-  return mgClean(json(out || ''));
+  const body = JSON.stringify({
+      contents: [{ parts: [{ text: mgPrompt(text) }] }],
+      generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+    }),
+    tries = model ? [model] : [...new Set([MG.ok, ...(await mgGeminiList(key))].filter(Boolean))];
+  let last = '';
+  for (const m of tries) {
+    let res;
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(key)}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(20000) },
+      );
+    } catch (e) {
+      last = L2('no answer', 'pas de réponse');
+      continue;
+    }
+    if (res.status === 400 || res.status === 401 || res.status === 403)
+      throw new Error(L2('key refused', 'clé refusée') + ' (' + res.status + ')');
+    if (!res.ok) {
+      last = res.status === 503 || res.status === 429 ? L2('AI overloaded', 'IA surchargée') : 'HTTP ' + res.status;
+      continue;
+    }
+    const j = await res.json(),
+      out = j.candidates && j.candidates[0] && j.candidates[0].content.parts.map(p => p.text || '').join('');
+    MG.ok = m;
+    return mgClean(json(out || ''));
+  }
+  throw new Error(last || L2('no model available', 'aucun modèle disponible'));
 }
 // ---- UI: a line in the map toolbar
 function mgMsg(m) {
