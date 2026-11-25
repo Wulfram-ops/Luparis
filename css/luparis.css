@@ -359,3 +359,9 @@ body.mp-player #v-bestiaire>.band:not(#pbest){display:none!important}
 .rsz:hover::after{background:rgba(255,255,255,.85)}
 #rl_list li.mine{border-left:3px solid var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);padding-left:8px}
 .mgkeys{display:flex;flex-direction:column;gap:6px}.mgkeys label{display:flex;flex-direction:column;gap:2px}.mgkeys label>span{display:flex;gap:6px;align-items:center;font-size:13px}
+
+/* Play / Edit modes of the map */
+.modes button[aria-pressed=true]{background:var(--acc);color:#fff}
+body.mp-player #modes{display:none!important}
+body.mode-play #tools button:is([data-t=shift],[data-t=up],[data-t=down],[data-t=flat],[data-t=surf],[data-t=obj],[data-t=pref],[data-t=mark],[data-t=hide]),body.mode-play #tools :is(#objrot,#prefrot,#prefroll),body.mode-play .szl,body.mode-play .bar label:has(#biosel),body.mode-play .bar label:has(#scene),body.mode-play #gen,body.mode-play #clear,body.mode-play #mg_f{display:none!important}
+body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){display:none!important}

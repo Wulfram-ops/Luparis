@@ -425,6 +425,10 @@ function toolHint() {
   const el = document.getElementById('thint');
   if (!el) return;
   const H = {
+    shift: [
+      'Drag an object or a marker to another square.',
+      'Glisse un objet ou un repère vers une autre case.',
+    ],
     move: [
       'Drag a token; double-click a monster for its sheet.',
       'Glisse un token ; double-clic sur un monstre pour sa fiche.',

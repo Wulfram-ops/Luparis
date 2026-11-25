@@ -3534,6 +3534,7 @@ function areaApply(ar) {
 cv.addEventListener('pointerdown', e => {
   const [mx, my] = pos(e),
     c = pick(mx, my);
+  if (tool === 'shift') return; // handled by the asset mover
   if (tool === 'tpl' && e.button === 0 && c && !(MP.role === 'player' && MP.prole === 'spec')) {
     tplClick(c);
     return;
@@ -7715,6 +7716,7 @@ Object.assign(T.en, {
   sk_cols: 'Columns',
   sk_layreset: 'Reset layout',
   t_mark: 'Landmark',
+  t_shift: '✥ Move assets',
   t_hide: '👁 Hide',
   mk_title: 'Landmarks',
   mk_ph: 'What is here?',
@@ -7775,6 +7777,7 @@ Object.assign(T.fr, {
   sk_cols: 'Colonnes',
   sk_layreset: "Réinitialiser l'agencement",
   t_mark: 'Repère',
+  t_shift: '✥ Déplacer',
   t_hide: '👁 Cacher',
   mk_title: 'Repères',
   mk_ph: "Qu'y a-t-il ici ?",
@@ -11291,6 +11294,10 @@ function toolHint() {
   const el = document.getElementById('thint');
   if (!el) return;
   const H = {
+    shift: [
+      'Drag an object or a marker to another square.',
+      'Glisse un objet ou un repère vers une autre case.',
+    ],
     move: [
       'Drag a token; double-click a monster for its sheet.',
       'Glisse un token ; double-clic sur un monstre pour sa fiche.',
@@ -11986,6 +11993,75 @@ for (const id of ['stage', 'w_stage']) {
       apply();
     });
   }
+}
+
+// ---- two modes on the map: Play (tokens, combat, zones) and Edit (terrain, objects, buildings)
+const MODE_T = {
+  play: ['move', 'measure', 'tpl', 'env'],
+  edit: ['shift', 'up', 'down', 'flat', 'surf', 'env', 'obj', 'pref', 'mark', 'hide'],
+};
+function setMode(m) {
+  if (MP.role === 'player') m = 'play';
+  m = m === 'edit' ? 'edit' : 'play';
+  document.body.classList.toggle('mode-edit', m === 'edit');
+  document.body.classList.toggle('mode-play', m === 'play');
+  for (const b of document.querySelectorAll('#modes [data-mode]')) b.setAttribute('aria-pressed', b.dataset.mode === m);
+  lsSet('luparis-mode', m);
+  if (!MODE_T[m].includes(tool) && tool !== 'place') setTool(m === 'edit' ? 'shift' : 'move');
+}
+{
+  const P = document.getElementById('mode_play'),
+    E = document.getElementById('mode_edit');
+  P.textContent = L2('⚔ Play', '⚔ Jeu');
+  E.textContent = L2('✏ Edit', '✏ Édition');
+  P.title = L2('Tokens, combat, zones', 'Tokens, combats, zones');
+  E.title = L2('Terrain, objects, buildings', 'Terrain, objets, bâtiments');
+  document.getElementById('modes').addEventListener('click', e => {
+    const b = e.target.closest('[data-mode]');
+    if (b) setMode(b.dataset.mode);
+  });
+  setMode(lsGet('luparis-mode', 'play'));
+}
+// ---- the asset mover: drag an object or a marker to another square (Edit mode)
+{
+  let mv = null;
+  const free = (c, o) => c && H[c.x][c.y] >= 0 && H[c.x][c.y] < 3 && (objAt(c.x, c.y) < 0 || OBJS[objAt(c.x, c.y)] === o);
+  cv.addEventListener('pointerdown', e => {
+    if (tool !== 'shift' || e.button !== 0 || MP.role === 'player') return;
+    const [mx, my] = pos(e),
+      c = pick(mx, my);
+    if (!c) return;
+    const oi = objAt(c.x, c.y),
+      mk = MARKS.find(m => m.x === c.x && m.y === c.y);
+    if (oi < 0 && !mk) return;
+    snap();
+    mv = oi >= 0 ? { o: OBJS[oi] } : { m: mk };
+    cv.setPointerCapture(e.pointerId);
+    cv.style.cursor = 'grabbing';
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!mv) return;
+    const [mx, my] = pos(e),
+      c = pick(mx, my);
+    if (!c) return;
+    const it = mv.o || mv.m;
+    if (it.x === c.x && it.y === c.y) return;
+    if (mv.o ? free(c, mv.o) : !MARKS.some(m => m !== mv.m && m.x === c.x && m.y === c.y)) {
+      it.x = c.x;
+      it.y = c.y;
+      draw();
+    }
+  });
+  const end = () => {
+    if (!mv) return;
+    mv = null;
+    cv.style.cursor = 'crosshair';
+    save();
+    if (typeof renderMarks === 'function') renderMarks();
+    draw();
+  };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
 }
 // ---- 58-mapgen.js
 // ---- a map from a sentence ("temple en ruines dans la forêt")
