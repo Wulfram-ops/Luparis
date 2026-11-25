@@ -53,7 +53,7 @@ def run(chrome: str | None) -> None:
     srv, url = serve()
     with sync_playwright() as p:
         browser = p.chromium.launch(**({"executable_path": chrome} if chrome else {}))
-        ctx = browser.new_context(viewport={"width": 1400, "height": 900}, accept_downloads=True)
+        ctx = browser.new_context(viewport={"width": 1400, "height": 900}, accept_downloads=True, reduced_motion="reduce")
         page = ctx.new_page()
         errors: list[str] = []
         page.on("pageerror", lambda e: errors.append(str(e)))
