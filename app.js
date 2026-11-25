@@ -12127,19 +12127,23 @@ function gShown(k) {
   const m = gEl(k);
   return !!m && getComputedStyle(m).display !== 'none';
 }
-// modules stay where they are put; only one that would overlap another (a new card, an old layout) goes down
+// modules stay where they are put. A hidden module (no token selected, GM-only card…) takes no room;
+// when one shows up on a taken spot, it is the one that goes down, never the modules already shown.
+let gVis = new Set();
 function gFix() {
-  const keys = Object.keys(GL)
-      .filter(k => gEl(k))
-      .sort((a, b) => GL[a][1] - GL[b][1] || GL[a][0] - GL[b][0]),
+  const keys = Object.keys(GL).filter(gShown),
+    old = keys.filter(k => gVis.has(k)),
+    neu = keys.filter(k => !gVis.has(k)),
+    by = (a, b) => GL[a][1] - GL[b][1] || GL[a][0] - GL[b][0],
     done = [];
-  for (const k of keys) {
+  for (const k of [...old.sort(by), ...neu.sort(by)]) {
     const r = GL[k];
     while (done.some(d => gHit(r, GL[d]))) r[1]++;
     done.push(k);
   }
+  gVis = new Set(keys);
 }
-const gFree = (k, r) => Object.keys(GL).every(o => o === k || !gEl(o) || !gHit(r, GL[o]));
+const gFree = (k, r) => Object.keys(GL).every(o => o === k || !gShown(o) || !gHit(r, GL[o]));
 function gApply() {
   for (const k in GL) {
     const m = gEl(k);
@@ -12318,6 +12322,12 @@ function gHandSync() {
   };
   grid.addEventListener('pointerup', end);
   grid.addEventListener('pointercancel', end);
+  // a module that appears or disappears: make room only for the one that appears
+  new MutationObserver(() => {
+    if (act) return;
+    gFix();
+    gApply();
+  }).observe(grid, { attributes: true, subtree: true, attributeFilter: ['hidden'] });
 }
 // ---- 58-mapgen.js
 // ---- a map from a sentence ("temple en ruines dans la forêt")
