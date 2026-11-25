@@ -51,6 +51,8 @@ input[type=range]{width:96px;accent-color:var(--acc)}
 body.mp-player #tools button:not([data-t=move]):not([data-t=measure]),body.mp-player #tools label,body.mp-player #tools .scn,body.mp-player .bar>.grp:not(#tools),body.mp-player #sn_card,body.mp-player #mk_card .small{display:none!important}
 #tools [data-for]{display:none}#tools[data-tool="surf"] [data-for~="surf"]{display:inline-flex}#tools[data-tool="env"] [data-for~="env"]{display:inline-flex}#tools[data-tool="tpl"] [data-for~="tpl"]{display:inline-flex}#tools[data-tool="obj"] [data-for~="obj"]{display:inline-flex}#tools[data-tool="pref"] [data-for~="pref"]{display:inline-flex}
 #tools[data-tool="env"] .envdc{display:inline-flex}.thint{max-width:26em;line-height:1.25;align-self:center}
+.lswarn{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99;background:#5a1f1f;color:#fff;padding:10px 16px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.3);cursor:pointer;max-width:90vw}
+.bkb{min-width:0;padding:6px 10px}#bkdlg{width:min(520px,94vw);border:1px solid var(--line);border-radius:14px;padding:18px}#bkdlg::backdrop{background:rgba(20,18,14,.35)}#bkdlg .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .usb{display:inline-flex;align-items:center;gap:8px;min-width:15em;justify-content:space-between;color:var(--mut,#6b665e)}.usb kbd{font:600 11px/1 ui-monospace,monospace;border:1px solid var(--line);border-radius:4px;padding:2px 4px}
 #usdlg{width:min(640px,94vw);padding:0;border:1px solid var(--line);border-radius:14px;margin-top:9vh}#usdlg::backdrop{background:rgba(20,18,14,.35)}
 #usdlg input{width:100%;box-sizing:border-box;border:0;border-bottom:1px solid var(--line);padding:14px 16px;font-size:17px;border-radius:14px 14px 0 0}#usdlg input:focus{outline:none}
@@ -274,7 +276,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 </head>
 <body>
 <header><h1 data-i18n="title"></h1>
- <div class="prefs"><div class="grp" id="langs"><button data-lang="en">English</button><button data-lang="fr">Français</button></div><button type="button" id="us_open" class="usb" aria-keyshortcuts="Control+K"></button><div class="grp" id="units"><button data-u="ft" data-i18n="u_ft"></button><button data-u="m" data-i18n="u_m"></button></div></div></header>
+ <div class="prefs"><div class="grp" id="langs"><button data-lang="en">English</button><button data-lang="fr">Français</button></div><button type="button" id="us_open" class="usb" aria-keyshortcuts="Control+K"></button><button type="button" id="bk_open" class="bkb" title="Backup" aria-label="Backup">💾</button><div class="grp" id="units"><button data-u="ft" data-i18n="u_ft"></button><button data-u="m" data-i18n="u_m"></button></div></div></header>
 <nav class="tabs"><a href="#monde" data-v="monde" data-i18n="tab_world"></a><a href="#carte" data-v="carte" data-i18n="tab_map"></a><a href="#fiche" data-v="fiche" data-i18n="tab_sheet"></a><a href="#bestiaire" data-v="bestiaire" data-i18n="tab_best"></a><a href="#regles" data-v="regles" data-i18n="tab_rules"></a></nav>
 <section id="v-monde" class="view" hidden>
 <div class="bar">
@@ -803,8 +805,14 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 </template>
 <aside class="rolls" id="rolls" aria-label="Jets"><div class="rlh"><button type="button" class="rlt" id="rl_tog" aria-expanded="true"><span id="rl_ttl"></span> <span class="rlc" id="rl_cnt"></span></button><button type="button" id="rl_clr" class="rlx"></button></div><ol id="rl_list" aria-live="polite"></ol></aside>
 <script>
-var TPLK=null,TPLC=null,tplSel='circle',FOLD={},INIP={},MP={role:null,me:null,conns:[],code:'',n:0};try{FOLD=JSON.parse(localStorage.getItem('luparis-fold'))||{}}catch(e){}
-function foldSave(){try{localStorage.setItem('luparis-fold',JSON.stringify(FOLD))}catch(e){}}
+// ---- storage: every read and write of the browser storage goes through here; failures are reported once
+var LS_SCHEMA=1,LSW=false;
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){console.warn('Luparis: unreadable data',k,e);return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){console.error('Luparis: save failed',k,e);lsWarn();return false}}
+function lsWarn(){if(LSW)return;LSW=true;const fr=(document.documentElement.lang||'').startsWith('fr')||/fr/.test(localStorage.getItem('luparis-prefs')||''),d=document.createElement('div');d.className='lswarn';d.setAttribute('role','alert');d.textContent=fr?'Sauvegarde impossible dans ce navigateur (stockage plein ?). Exporte une sauvegarde complète avec 💾.':'Saving failed in this browser (storage full?). Export a full backup with 💾.';d.onclick=()=>d.remove();document.body.appendChild(d)}
+(function migrate(){let v=+localStorage.getItem('luparis-schema')||0;/* future migrations: if(v<2){...;v=2} */if(v!==LS_SCHEMA)try{localStorage.setItem('luparis-schema',String(LS_SCHEMA))}catch(e){}})();
+var TPLK=null,TPLC=null,tplSel='circle',FOLD={},INIP={},MP={role:null,me:null,conns:[],code:'',n:0};try{FOLD=lsGet('luparis-fold',null)||{}}catch(e){}
+function foldSave(){lsSet('luparis-fold',FOLD)}
 
 {
 const cv=document.getElementById('cv');let ctx=cv.getContext('2d');const stage=document.getElementById('stage'),info=document.getElementById('info');
@@ -830,7 +838,7 @@ const B={
 };
 const ORDER=['gen','prairie','foret','montagne','volcan','desert','neige','marais','donjon'];
 let placing=null,meas=null,selTok=null;
-let lang='en',unit='ft';try{const p=JSON.parse(localStorage.getItem('luparis-prefs'));if(p){if(p.lang==='fr')lang='fr';if(p.unit==='m')unit='m'}}catch(e){}
+let lang='en',unit='ft';try{const p=lsGet('luparis-prefs',null);if(p){if(p.lang==='fr')lang='fr';if(p.unit==='m')unit='m'}}catch(e){}
 const LI=()=>lang==='fr'?1:0,tr=v=>Array.isArray(v)?v[LI()]:v;
 const T={en:{title:'Luparis',sub:'Prototype: sculpt a battle map in a few clicks.',u_ft:'feet',u_m:'meters',tab_map:'Map',tab_best:'Bestiary',tab_rules:'Rules',toc:'Contents',ver:'Draft v0.7, filled in as we go',
 t_up:'Raise',t_down:'Dig',t_flat:'Flatten',t_pj:'Ally token',t_foe:'Enemy token',t_move:'Interact',t_measure:'Measure',rot:'Rotate',undo:'Undo',gen:'Generate',clear:'Clear all',size:'Size',decor:'Setting',
@@ -874,7 +882,7 @@ function blank(n){return Array.from({length:n},()=>Array(n).fill(0))}
 let INI={o:[],cur:0,round:0};
 function encG(G,neg){return G.map(r=>r.map(v=>String.fromCharCode(neg?99+v:48+v)).join(''))}
 function decG(G,neg){return G.map(r=>typeof r==='string'?[...r].map(c=>c.charCodeAt(0)-(neg?99:48)):r)}
-function towns(){if(saveT)saveNow();try{return JSON.parse(localStorage.getItem('luparis-towns'))||{}}catch(e){return{}}}
+function towns(){if(saveT)saveNow();try{return lsGet('luparis-towns',null)||{}}catch(e){return{}}}
 function save(){if(MP.role==='player'){if(typeof mpPlayerSave==='function')mpPlayerSave();if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks();return}if(MP.role==='host'&&typeof mpPush==='function')mpPush();if(saveT&&saveCtx!==CTX)saveNow();clearTimeout(saveT);saveT=setTimeout(saveNow,250);saveCtx=CTX;saveCtxN=CTXN;panelsSoon()}
 let saveT=0,saveCtx=null,saveCtxN='',panQ=false;
 // writing the whole map to storage is the costly part: done once the gesture settles, and flushed when the page is left
@@ -882,7 +890,7 @@ function saveNow(){clearTimeout(saveT);saveT=0;if(MP.role==='player')return;cons
 function panelsSoon(){if(panQ)return;panQ=true;requestAnimationFrame(()=>{panQ=false;if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks()})}
 addEventListener('pagehide',()=>{if(saveT)saveNow();if(saveCT)saveCNow()});document.addEventListener('visibilitychange',()=>{if(document.hidden){if(saveT)saveNow();if(saveCT)saveCNow()}});
 function applyState(d){if(!(d&&d.H&&d.N))return false;N=d.N;H=decG(d.H,1);F=Array.isArray(d.F)&&d.F.length===d.N?decG(d.F,0):blank(d.N);if(d.scene)scene=d.scene;tokens=d.tokens||[];rot=d.rot||0;bio=B[d.bio]?d.bio:'gen';INI=d.ini&&Array.isArray(d.ini.o)?d.ini:{o:[],cur:0,round:0};MARKS=Array.isArray(d.marks)?d.marks:[];ENV=d.env&&typeof d.env==='object'?d.env:{};OBJS=Array.isArray(d.objs)?d.objs.filter(o=>o&&OBJT[o.k]):[];TPLS=Array.isArray(d.tpls)?d.tpls:[];return true}
-function load(){try{const c=JSON.parse(localStorage.getItem('luparis-ctx'));if(c&&c.id){const o=towns()[c.id];if(o&&applyState(o)){CTX=c.id;CTXN=c.n||o.name||'';return true}}}catch(e){}try{return applyState(JSON.parse(localStorage.getItem('luparis-tac')))}catch(e){}return false}
+function load(){try{const c=lsGet('luparis-ctx',null);if(c&&c.id){const o=towns()[c.id];if(o&&applyState(o)){CTX=c.id;CTXN=c.n||o.name||'';return true}}}catch(e){}try{return applyState(lsGet('luparis-tac',null))}catch(e){}return false}
 function tid(){return 't'+Math.random().toString(36).slice(2,9)}
 function snap(){hist.push(JSON.stringify({H,F,tokens,marks:MARKS,env:ENV,objs:OBJS,tpls:TPLS}));if(hist.length>60)hist.shift()}
 const SIZES=[8,16,32,64,128];function sizeIdx(n){let i=SIZES.findIndex(s=>s>=n);return i<0?SIZES.length-1:i}function showSize(){document.getElementById('size').value=sizeIdx(N);document.getElementById('sv').textContent=N+'×'+N}
@@ -1113,7 +1121,7 @@ document.getElementById('surfk').addEventListener('change',e=>{surfSel=+e.target
 function drawMarks(){MARKS.forEach((m,i)=>{if(m.x<0||m.y<0||m.x>=N||m.y>=N)return;const[x,y]=ctr(m),s=Math.max(10,TW*.2);ctx.save();ctx.strokeStyle='#2a1a33';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y-s*2.6);ctx.stroke();
  ctx.fillStyle=m.id===selMark?'#f2c14e':'#7a3fb0';ctx.beginPath();ctx.moveTo(x,y-s*2.6);ctx.lineTo(x+s*1.7,y-s*2.1);ctx.lineTo(x,y-s*1.6);ctx.closePath();ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
  ctx.fillStyle='#fff';ctx.font=`700 ${Math.max(10,s*.8)}px "Alegreya Sans",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=m.id===selMark?'#2a1a33':'#fff';ctx.fillText(i+1,x+s*.65,y-s*2.1);ctx.restore()})}
-function renderMarks(){if(typeof renderTpls==='function'&&TPLK)renderTpls();const L=document.getElementById('mk_list');if(!L)return;if(L.contains(document.activeElement)&&L.querySelectorAll('input').length===MARKS.length){L.querySelectorAll('li').forEach((li,i)=>li.classList.toggle('sel',MARKS[i]&&MARKS[i].id===selMark));return}L.innerHTML=MARKS.map((m,i)=>`<li class="${m.id===selMark?'sel':''}"><span class="n">${i+1}</span><input data-id="${m.id}" value="${esc(m.l)}" placeholder="${esc(t('mk_ph'))}" aria-label="${esc(t('mk_title'))} ${i+1}"><button type="button" data-mkdel="${m.id}" aria-label="${esc(t('del'))}">✕</button></li>`).join('')||`<li class="small">${esc(t('mk_none'))}</li>`}
+function renderMarks(){if(typeof renderTpls==='function'&&TPLK)renderTpls();const L=document.getElementById('mk_list');if(!L)return;if(L.contains(document.activeElement)&&L.querySelectorAll('input').length===MARKS.length){L.querySelectorAll('li').forEach((li,i)=>li.classList.toggle('sel',MARKS[i]&&MARKS[i].id===selMark));return}L.innerHTML=MARKS.map((m,i)=>`<li class="${m.id===selMark?'sel':''}"><span class="n">${i+1}</span><input data-id="${esc(m.id)}" value="${esc(m.l)}" placeholder="${esc(t('mk_ph'))}" aria-label="${esc(t('mk_title'))} ${i+1}"><button type="button" data-mkdel="${esc(m.id)}" aria-label="${esc(t('del'))}">✕</button></li>`).join('')||`<li class="small">${esc(t('mk_none'))}</li>`}
 document.getElementById('mk_list').addEventListener('input',e=>{const m=MARKS.find(x=>x.id===e.target.dataset.id);if(m){m.l=e.target.value.slice(0,200);clearTimeout(window._mkT);window._mkT=setTimeout(save,300)}});
 document.getElementById('mk_list').addEventListener('focusin',e=>{if(e.target.dataset.id){selMark=e.target.dataset.id;draw()}});
 document.getElementById('mk_list').addEventListener('click',e=>{const b=e.target.closest('[data-mkdel]');if(!b)return;snap();MARKS=MARKS.filter(m=>m.id!==b.dataset.mkdel);save();draw()});
@@ -1181,7 +1189,7 @@ function apply(c,inv){const key=c.x+','+c.y;if(painting&&lastPainted===key)retur
  else if(t==='env'){const key=c.x+','+c.y,cur=envOf(key);if(!painting.em)painting.em=cur&&cur.k===envSel?'del':'set';if(painting.em==='del')delete ENV[key];else ENV[key]={k:envSel,dc:envDC()};return}
  else if(t==='obj'){painting=null;if(h<0)return;const i=objAt(c.x,c.y);if(i>=0&&OBJS[i].k===objSel)OBJS.splice(i,1);else{if(i>=0)OBJS.splice(i,1);OBJS.push({x:c.x,y:c.y,k:objSel,o:false,r:OBJR})}save();return}
  else if(t==='pref'){painting=null;hist.pop();prefPlace(c,prefSel,false,prefPend());PREFP=null;prefPend();return}
- else if(t==='mark'){const i=MARKS.findIndex(m=>m.x===c.x&&m.y===c.y);if(inv){if(i>=0){MARKS.splice(i,1);save()}}else if(i>=0){selMark=MARKS[i].id;const e=document.querySelector(`#mk_list input[data-id="${selMark}"]`);if(e)setTimeout(()=>e.focus(),30)}else{const m={id:tid(),x:c.x,y:c.y,l:''};MARKS.push(m);selMark=m.id;save();setTimeout(()=>{const e=document.querySelector(`#mk_list input[data-id="${m.id}"]`);if(e)e.focus()},30)}painting=null;return}
+ else if(t==='mark'){const i=MARKS.findIndex(m=>m.x===c.x&&m.y===c.y);if(inv){if(i>=0){MARKS.splice(i,1);save()}}else if(i>=0){selMark=MARKS[i].id;const e=document.querySelector(`#mk_list input[data-id="${selMark}"]`);if(e)setTimeout(()=>e.focus(),30)}else{const m={id:tid(),x:c.x,y:c.y,l:''};MARKS.push(m);selMark=m.id;save();setTimeout(()=>{const e=document.querySelector(`#mk_list input[data-id="${esc(m.id)}"]`);if(e)e.focus()},30)}painting=null;return}
  else if((t==='pj'||t==='foe')&&tokAt(c)<0&&h>-2)tokens.push({id:tid(),x:c.x,y:c.y,t,n:nextName(t),init:0});
  else if(t==='place'&&placing&&tokAt(c)<0&&h>-2){if(placing.ally){const ch=CH.list.find(x=>x.id===placing.ally);if(!ch)return;if(tokens.some(k=>k.cid===ch.id)){const k=tokens.find(k=>k.cid===ch.id);k.x=c.x;k.y=c.y;return}const D=derived(ch);
   tokens.push({id:tid(),x:c.x,y:c.y,t:'pj',cid:ch.id,n:abbr(ch.name||'?'),nm:ch.name||'?',esq:D.eva,maj:D.major,sev:D.severe,hp:D.hp-(ch.used?ch.used.hp||0:0),hpMax:D.hp,init:D.init});return}
@@ -1403,8 +1411,8 @@ function seedOf(id,d){if(d&&+d.seed)return +d.seed;let h=2166136261;for(const c 
 function ctxBar(){const el=document.getElementById('ctxbar');if(!el)return;el.hidden=!CTX;if(!CTX)return;const mem=CTX.startsWith('mem:');el.innerHTML=`<b>${esc(mem?L2('Saved map','Carte enregistrée'):t('ctx_town'))} : ${esc(CTXN)} <span class="small">(${N}×${N})</span></b><button type="button" id="ctx_regen">${esc(mem?L2('Back to the saved version','Revenir à la version enregistrée'):t('ctx_regen'))}</button><button type="button" class="go" id="ctx_back">${esc(t('ctx_back'))}</button>`}
 document.getElementById('ctxbar').addEventListener('click',e=>{if(e.target.id==='ctx_back')leaveTown();else if(e.target.id==='ctx_regen'&&CTX){if(CTX.startsWith('mem:')){const m=memList().find(x=>'mem:'+x.id===CTX);if(m){snap();applyState(m.st);finishCtx(null)}return}const o=towns()[CTX];regenTown(o&&o.src,CTX)}});
 function regenTown(d,id){snap();ENV={};N=d&&d.c==='town'?64:128;H=blank(N);F=blank(N);tokens=[];MARKS=[];OBJS=[];TPLS=[];INI={o:[],cur:0,round:0};rot=0;const old=RNG;RNG=mulberry(seedOf(id,d));try{genCity(d)}finally{RNG=old}finishCtx(d)}
-function finishCtx(d){for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x.dataset.b===bio);legend();showSize();CAM.z=1;CAM.px=0;CAM.py=0;save();if(d&&CTX){const o=towns();if(o[CTX]){o[CTX].src=d;try{localStorage.setItem('luparis-towns',JSON.stringify(o))}catch(e){}}}ctxBar();layout()}
-function memList(){try{return JSON.parse(localStorage.getItem('luparis-maps'))||[]}catch(e){return[]}}
+function finishCtx(d){for(const x of bz.querySelectorAll('button'))x.setAttribute('aria-pressed',x.dataset.b===bio);legend();showSize();CAM.z=1;CAM.px=0;CAM.py=0;save();if(d&&CTX){const o=towns();if(o[CTX]){o[CTX].src=d;lsSet('luparis-towns',o)}}ctxBar();layout()}
+function memList(){try{return lsGet('luparis-maps',null)||[]}catch(e){return[]}}
 function memSave(l){try{localStorage.setItem('luparis-maps',JSON.stringify(l));return true}catch(e){alert(L2('Browser storage is full: delete an old saved map.','Le stockage du navigateur est plein : supprime une ancienne carte enregistrée.'));return false}}
 function memThumb(){try{const c=document.createElement('canvas'),w=240,h=Math.round(240*cv.height/cv.width);c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#2b2a26';x.fillRect(0,0,w,h);x.drawImage(cv,0,0,w,h);return c.toDataURL('image/jpeg',.7)}catch(e){return''}}
 function memStateNow(){return{v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV,objs:OBJS,tpls:TPLS}}
@@ -1446,13 +1454,13 @@ const DEF=[[['Kobold','Kobold'],'humanoid','1/8',12,5,'montagne donjon'],[['Band
 [['Frost Giant','Géant du givre'],'giant','8',15,138,'neige'],[['Hydra','Hydre'],'monstrosity','8',15,172,'marais'],[['Treant','Sylvanien'],'plant','9',16,138,'foret'],[['Stone Golem','Golem de pierre'],'construct','10',17,178,'donjon'],
 [['Young Red Dragon','Jeune dragon rouge'],'dragon','10',18,178,'volcan montagne'],[['Vampire','Vampire'],'undead','13',16,144,'donjon'],[['Adult Red Dragon','Dragon rouge adulte'],'dragon','17',19,256,'volcan montagne'],[['Balor','Balor'],'fiend','19',19,262,'volcan'],
 [['Lich','Liche'],'undead','21',17,135,'donjon'],[['Tarrasque','Tarasque'],'monstrosity','30',25,676,'prairie montagne']].map((r,i)=>({id:'d'+i,n:r[0],type:r[1],fp:r[2],ca:r[3],pv:r[4],hab:r[5].split(' '),no:'',init:[2,1,2,2,-2,2,1,1,1,3,2,3,2,2,1,-1,-2,-4,1,2,3,1,2,1,3,-1,-1,2,-1,0,0,-1,1,-1,-1,0,4,0,2,3,0][i]}));
-let MON;function loadMon(){try{const d=JSON.parse(localStorage.getItem('luparis-bestiary-v2'));if(Array.isArray(d))return d}catch(e){}return DEF.map(m=>({...m,hab:[...m.hab]}))}
+let MON;function loadMon(){try{const d=lsGet('luparis-bestiary-v2',null);if(Array.isArray(d))return d}catch(e){}return DEF.map(m=>({...m,hab:[...m.hab]}))}
 MON=loadMon();let SRD=[];
 function mergeSrd(force){if(!SRD.length)return 0;let n=0;for(const x of SRD){const en=x.n[0],d=MON.find(m=>m.id===x.id||(Array.isArray(m.n)?m.n[0]:m.n)===en);
   if(d){if(String(d.id).startsWith('d')&&!d.noen){d.sz=x.sz;d.noen=x.noen;if(!d.no)d.no=x.no}continue}MON.push({...x,hab:[...x.hab]});n++}return n}
 fetch('srd-monsters.json').then(r=>r.ok?r.json():[]).then(d=>{if(!Array.isArray(d))return;SRD=d;let done=null;try{done=localStorage.getItem('luparis-srd')}catch(e){}
  if(done!=='1'){mergeSrd();try{localStorage.setItem('luparis-srd','1')}catch(e){}saveMon()}if(typeof fillSel==='function'){fillSel();renderB()}}).catch(()=>{});
-function saveMon(){try{localStorage.setItem('luparis-bestiary-v2',JSON.stringify(MON))}catch(e){}if(typeof renderPlace==='function')renderPlace()}
+function saveMon(){lsSet('luparis-bestiary-v2',MON);if(typeof renderPlace==='function')renderPlace()}
 const $=id=>document.getElementById(id);
 const opt=(v,t,sel)=>`<option value="${esc(v)}"${sel?' selected':''}>${esc(t)}</option>`;
 function fillSel(){const types=[...new Set(MON.map(m=>m.type))].sort((a,b)=>tyName(a).localeCompare(tyName(b),lang));const ft=$('ft').value,fh=$('fh').value,fs=$('fs').value||'fp';
@@ -1542,12 +1550,12 @@ const SHD={none:[['None','Aucun'],0],bocle:[['Buckler','Bocle'],0],rond:[['Small
 const blankC=()=>({id:tid(),camp:'',name:'',people:'',xp:150,st:{P:0,F:0,R:0,phy:0,men:0,soc:0},tal:{},sf:[],stances:[],cells:Object.fromEntries(INT.flatMap(i=>DOM.map(d=>[i+'_'+d,0]))),dv:6,sch:Object.fromEntries(Object.keys(SCH).map(k=>[k,0])),apex:0,prof:{arm:0,shd:0},fam:Object.fromEntries(Object.keys(FAM).map(k=>[k,0])),armor:'none',shield:'none',weapons:[],used:{hp:0,mana:0,st:0},notes:'',demo:false});
 function demoC(){const c=blankC();Object.assign(c,{camp:lang==='fr'?'Exemple':'Example',name:'Kael',people:lang==='fr'?'Humain':'Human',xp:300,dv:8,prof:{arm:2,shd:0},armor:'chem',shield:'none',demo:true});c.st={P:1,F:0,R:1,phy:1,men:0,soc:-1};syncCells(c);c.fam.taille=1;
  c.weapons=[{n:lang==='fr'?'Épée longue':'Longsword',f:'taille',s:'poly2'},{n:lang==='fr'?'Dague':'Dagger',f:'estoc',s:'one'}];return c}
-let CH;try{CH=JSON.parse(localStorage.getItem('luparis-chars'))}catch(e){}
-if(!CH||!Array.isArray(CH.list)||!CH.list.length){let old;try{old=JSON.parse(localStorage.getItem('luparis-sheet'))}catch(e){}CH={list:[old&&old.cells?old:demoC()],active:null}}
+let CH;try{CH=lsGet('luparis-chars',null)}catch(e){}
+if(!CH||!Array.isArray(CH.list)||!CH.list.length){let old;try{old=lsGet('luparis-sheet',null)}catch(e){}CH={list:[old&&old.cells?old:demoC()],active:null}}
 for(const c of CH.list){if(!c.prof)c.prof={arm:armNeed(c.armor||'none'),shd:c.shield&&c.shield!=='none'?1:0};if(c.sch&&c.sch.apex!=null){if(c.sch.apex>0&&!c.apex)c.apex=c.sch.apex;delete c.sch.apex}if(c.apex==null)c.apex=0;for(const k of Object.keys(FAM))if(c.fam&&c.fam[k]==null)c.fam[k]=0;if(!c.id)c.id=tid();if(c.camp==null)c.camp=c.demo?(lang==='fr'?'Exemple':'Example'):'';if(!c.used)c.used={hp:0,mana:0,st:0};if(!c.st)c.st=stFromCells(c.cells);if(!c.tal||typeof c.tal!=='object')c.tal={};for(const k in c.tal)if(!TAL[k])delete c.tal[k];if(c.pas){c.tal.pas=Math.max(c.tal.pas||0,c.pas)}delete c.pas;if(!Array.isArray(c.sf))c.sf=[];if(!Array.isArray(c.stances))c.stances=[];syncCells(c)}
 let C=CH.list.find(c=>c.id===CH.active)||CH.list[0];campSync();if(!CH.list.some(c=>c.id===CH.active))CH.active=null;
 var saveCT=0,handQ=0,handGen=0;
-function saveCNow(){clearTimeout(saveCT);saveCT=0;try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}}
+function saveCNow(){clearTimeout(saveCT);saveCT=0;lsSet('luparis-chars',CH)}
 function saveC(){if(MP.role==='player'){if(typeof mpSendChar==='function')mpSendChar()}else{clearTimeout(saveCT);saveCT=setTimeout(saveCNow,250);if(MP.role==='host'&&typeof mpPush==='function')mpPush()}if(typeof renderPlace==='function')renderPlace();
  if(typeof renderHand==='function'&&!handQ){const g=handGen;handQ=requestAnimationFrame(()=>{handQ=0;if(handGen===g)renderHand()})}}
 const lvl=(c=C)=>Math.max(1,Math.floor((+c.xp||0)/100)),mb=tier=>tier>0?tier+1:0,sgn=v=>(v>=0?'+':'')+v;
@@ -1560,10 +1568,10 @@ function derived(c=C){const L=lvl(c),a=ARM[c.armor]||ARM.none,cl=c.cells,pr=c.pr
  return{L,eva,av,armOk,shdOk,minor:av,major:base+av,severe:2*base+av,hp:1+Math.ceil(L*c.dv/12),mana:ts.reduce((s,x)=>s+MANA[x],0)+cl.R_men*Math.floor(maxT/2),nat,st:Math.max(0,Object.values(c.fam).reduce((s,x)=>s+STAM[x],0)+STAM[c.apex||0]+cl.R_phy),init:cl.F_phy,mv:6+2*((c.tal||{}).pas||0)-(armOk&&a[2]==='h'?2:0)}}
 function cellName(k){const[i,d]=k.split('_');const ii=INT.indexOf(i),di=DOM.indexOf(d);return lang==='fr'?`${T.fr.it[ii]} ${T.fr.dm[di]}`:`${T.en.dm[di]} ${T.en.it[ii]}`}
 const DIFF=[['trivial',0,['Trivial','Trivial']],['easy',5,['Easy','Facile']],['medium',10,['Medium','Moyen']],['hard',15,['Hard','Difficile']],['deadly',25,['Deadly','Mortel']],['impossible',50,['Impossible','Impossible']]];
-function campsGet(){try{return JSON.parse(localStorage.getItem('luparis-camps'))||{}}catch(e){return{}}}
-function campsPut(o){try{localStorage.setItem('luparis-camps',JSON.stringify(o))}catch(e){}}
+function campsGet(){try{return lsGet('luparis-camps',null)||{}}catch(e){return{}}}
+function campsPut(o){lsSet('luparis-camps',o)}
 function campRec(o,name){if(!o[name]){const xs=CH.list.filter(c=>(c.camp||'')===name).map(c=>+c.xp||0);o[name]={xp:xs.length?Math.max(...xs):150,log:[]}}return o[name]}
-function campSync(){const o=campsGet();let ch=false;for(const c of CH.list){const r=c.camp&&o[c.camp];if(r&&c.xp!==r.xp){c.xp=r.xp;ch=true}}if(ch)try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}}
+function campSync(){const o=campsGet();let ch=false;for(const c of CH.list){const r=c.camp&&o[c.camp];if(r&&c.xp!==r.xp){c.xp=r.xp;ch=true}}if(ch)lsSet('luparis-chars',CH)}
 function campAward(name,x,label){if(!name)return;const o=campsGet(),r=campRec(o,name);r.xp=Math.max(0,r.xp+x);r.log.unshift({d:Date.now(),l:String(label||'').slice(0,80),x});r.log=r.log.slice(0,60);campsPut(o);campSync();if(CH.active)renderSheet();else renderList();if(typeof renderHand==='function')renderHand()}
 function campPanel(){const o=campsGet(),names=camps();if(!names.length)return'';const ti=lang==='fr'?1:0;
  return`<section class="card campgm"><h3>${L2('Campaign XP','XP de campagne')} <span class="pill">${L2('GM','MJ')}</span></h3><p class="small">${L2('Every character of a campaign shares its XP. Only the game master awards it here, or when ending a fight.','Tous les personnages d\'une campagne partagent son XP. Seul le MJ l\'attribue, ici ou à la fin d\'un combat.')}</p>`+
@@ -1629,7 +1637,7 @@ function renderSheet(){$('c_camps').innerHTML=camps().map(x=>opt(x,x)).join('');
  if(typeof renderInv==='function')renderInv()}
 const LOG=[];let lastCrit={};
 const dRoll=n=>1+Math.floor(Math.random()*n);
-let RL=[],rlOpen=true;try{RL=JSON.parse(localStorage.getItem('luparis-rolls'))||[];const o=localStorage.getItem('luparis-rolls-open');if(o!=null)rlOpen=JSON.parse(o)}catch(e){}
+let RL=[],rlOpen=true;try{RL=lsGet('luparis-rolls',null)||[];RL=Array.isArray(RL)?RL.slice(0,40).map(r=>({h:safeRoll(r&&r.h||''),s:String(r&&r.s||''),t:+(r&&r.t)||Date.now()})):[];const o=localStorage.getItem('luparis-rolls-open');if(o!=null)rlOpen=JSON.parse(o)}catch(e){}
 function rlRender(){const el=document.getElementById('rl_list');if(!el)return;const P=document.getElementById('rolls');P.classList.toggle('min',!rlOpen);document.getElementById('rl_tog').setAttribute('aria-expanded',rlOpen);
  document.getElementById('rl_ttl').textContent=L2('Rolls','Jets');document.getElementById('rl_cnt').textContent=RL.length?'('+RL.length+')':'';document.getElementById('rl_clr').textContent=L2('Clear','Effacer');document.getElementById('rl_clr').hidden=!RL.length||!rlOpen;
  el.innerHTML=RL.length?RL.map((r,i)=>`<li class="${i===0?'new':''}"><span class="rlw">${new Date(r.t).toLocaleTimeString(lang,{hour:'2-digit',minute:'2-digit'})}${r.s?' · '+esc(r.s):''}</span>${r.h}</li>`).join(''):`<li class="small">${t('sk_nolog')}</li>`}
@@ -1638,8 +1646,8 @@ function safeRoll(h){const t=document.createElement('template');t.innerHTML=Stri
  (function walk(src,dst){for(const n of src.childNodes){if(n.nodeType===3){dst.append(n.textContent);continue}if(n.nodeType!==1)continue;const tg=n.tagName.toLowerCase();let e=null;
   if(tg==='b'||tg==='i'||tg==='br')e=document.createElement(tg);else if(tg==='span'){e=document.createElement('span');const c=(n.getAttribute('class')||'').split(/\s+/).filter(x=>x==='cr'||x==='ko'||x==='small');if(c.length)e.className=c.join(' ')}
   if(e){dst.append(e);walk(n,e)}else walk(n,dst)}})(t.content,out);return out.innerHTML}
-function pushRoll(h,src,remote){if(remote)h=safeRoll(h);RL.unshift({h,s:src||'',t:Date.now()});if(RL.length>40)RL.length=40;if(MP.role==='player'&&!remote&&typeof mpSend==='function')mpSend({type:'roll',h,s:src||''});if(MP.role!=='player')try{localStorage.setItem('luparis-rolls',JSON.stringify(RL))}catch(e){}if(MP.role==='host'&&typeof mpPush==='function')mpPush();if(!rlOpen){rlOpen=true;try{localStorage.setItem('luparis-rolls-open','true')}catch(e){}}rlRender();const el=document.getElementById('rl_list');if(el)el.scrollTop=0}
-document.getElementById('rl_tog').addEventListener('click',()=>{rlOpen=!rlOpen;try{localStorage.setItem('luparis-rolls-open',JSON.stringify(rlOpen))}catch(e){}rlRender()});
+function pushRoll(h,src,remote){if(remote)h=safeRoll(h);RL.unshift({h,s:src||'',t:Date.now()});if(RL.length>40)RL.length=40;if(MP.role==='player'&&!remote&&typeof mpSend==='function')mpSend({type:'roll',h,s:src||''});if(MP.role!=='player')lsSet('luparis-rolls',RL);if(MP.role==='host'&&typeof mpPush==='function')mpPush();if(!rlOpen){rlOpen=true;try{localStorage.setItem('luparis-rolls-open','true')}catch(e){}}rlRender();const el=document.getElementById('rl_list');if(el)el.scrollTop=0}
+document.getElementById('rl_tog').addEventListener('click',()=>{rlOpen=!rlOpen;lsSet('luparis-rolls-open',rlOpen);rlRender()});
 document.getElementById('rl_clr').addEventListener('click',()=>{RL=[];try{localStorage.removeItem('luparis-rolls')}catch(e){}rlRender()});
 rlRender();
 function logIt(h){pushRoll(h,C&&C.name||'');renderSheet()}
@@ -1764,8 +1772,8 @@ $('in_list').addEventListener('click',e=>{const b=e.target.closest('button[data-
 for(const k of tokens)if(!k.id)k.id=tid();
 let SAMPLE=null,aiCand=null;
 const AIP={claude:{n:'Claude (Anthropic)',m:'claude-haiku-5-5',k:1},gemini:{n:'Gemini (Google)',m:'gemini-flash-latest',k:1},openai:{n:'OpenAI',m:'gpt-5-mini',k:1},custom:{n:['OpenAI-compatible (LM Studio, Ollama, OpenRouter…)','Compatible OpenAI (LM Studio, Ollama, OpenRouter…)'],m:'',k:0,u:1},copy:{n:['Copy and paste (no key)','Copier-coller (sans clé)'],k:0}};
-var AIC={p:'copy',k:{},m:{},u:''};try{AIC=Object.assign(AIC,JSON.parse(localStorage.getItem('luparis-ai'))||{})}catch(e){}
-function aiSave(){try{localStorage.setItem('luparis-ai',JSON.stringify(AIC))}catch(e){}}
+var AIC={p:'copy',k:{},m:{},u:''};try{AIC=Object.assign(AIC,lsGet('luparis-ai',null)||{})}catch(e){}
+function aiSave(){lsSet('luparis-ai',AIC)}
 function aiUI(){const p=AIC.p,P=AIP[p]||AIP.copy;$('ai_p').innerHTML=(SAMPLE?opt('builtin',L2('Built-in (Claude)','Intégré (Claude)'),p==='builtin'):'')+Object.keys(AIP).map(k=>opt(k,tr(AIP[k].n),k===p)).join('');
  $('ai_kl').hidden=!P.k||p==='builtin';$('ai_ml').hidden=p==='copy'||p==='builtin';$('ai_ul').hidden=!P.u;$('ai_k').value=AIC.k[p]||'';$('ai_m').value=AIC.m[p]||P.m||'';$('ai_u').value=AIC.u||'';
  $('ai_paste').hidden=p!=='copy';$('ai_go').textContent=p==='copy'?L2('Copy the prompt','Copier le prompt'):t('ai_go');
@@ -1814,7 +1822,7 @@ Object.assign(T.en,{pl_search:'Search',pl_search_ph:'Name of an ally or a monste
 Object.assign(T.fr,{pl_search:'Rechercher',pl_search_ph:"Nom d'un allié ou d'un monstre",pl_none:'Aucun résultat.',tk_ally:'allié',tk_close:'Fermer',tk_del:'Retirer du plateau',tk_simple:'Pion simple : aucune stat associée.'});
 function tokHp(k,dl){if(!k||!k.hpMax)return;k.hp=Math.max(0,Math.min(k.hpMax,k.hp+dl));if(k.cid){const ch=CH.list.find(c=>c.id===k.cid);if(ch){ch.used.hp=k.hpMax-k.hp;saveC();if(ch===C&&CH.active)renderSheet()}}save();draw();renderTok()}
 function L2(en,fr){return lang==='fr'?fr:en}const lastInf={};let handId=null;const HLOG=[];
-try{handId=JSON.parse(localStorage.getItem('luparis-hand'))}catch(e){}
+try{handId=lsGet('luparis-hand',null)}catch(e){}
 const FX=[[1,['Pressed hit','Coup appuyé'],['+1 box on a hit','+1 case si le sort touche']],[1,['Offset','Déport'],['Cast from another point','Lancer depuis un autre point']],[1,['Movement','Déplacement'],['Non-instant movement of yourself or a target (flight, push of wind…)','Déplacement non instantané de soi ou d\'une cible (vol, poussée…)']],[1,['Light control','Contrôle léger'],['Push 10 ft or slow','Repousser de 10 pieds ou ralentir']],[2,['Multiply','Multiplication'],['One more target (2 per target)','Une cible de plus (2 par cible)']],[2,['Heavy control','Contrôle lourd'],['Prone, grappled, restrained, blinded…','À terre, agrippé, entravé, aveuglé…']],[2,['Persistence','Persistance'],['Lasts 1 minute','Dure 1 minute']],[3,['Major control','Contrôle majeur'],['Stunned, paralyzed','Étourdi, paralysé']],[3,['Area','Zone'],['Everyone within 20 ft; half on a save','Tous dans 6 m ; moitié sur une réussite']]];
 const FXS={horizon:[[2,['Teleport (willing)','Téléportation consentante'],['Instant: you or a willing target; Multiply for each extra person (a portal)','Instantané : soi ou une cible consentante ; Multiplication par personne en plus (un portail)']],[3,['Teleport a foe','Téléporter un ennemi'],['Instant, against an unwilling target: it makes a save','Instantané, sur une cible non consentante : elle fait un jet de sauvegarde']]],creuset:[[1,['Heal','Soin'],['Target regains 1 box (1 per box)','La cible regagne 1 case (1 par case)']]],harmonie:[[1,['Heal','Soin'],['Target regains 1 box (1 per box)','La cible regagne 1 case (1 par case)']],[1,['Song of rest','Chant de repos'],['Out of combat: +1 box on a short rest','Hors combat : +1 case au repos court']]],egide:[[2,['Aegis ward','Bouclier d\'Égide'],['An ally ignores the next box lost','Un allié ignore la prochaine case perdue']]]};
 const MAN=[[1,['Pressed hit','Coup appuyé'],['+1 box on a hit','+1 case si le coup touche']],[2,['Cleave','Clive'],['One more adjacent foe (2 per target)','Un ennemi adjacent de plus (2 par cible)']],[1,['Charge','Charge ou bond'],['Move before striking','Se déplacer avant de frapper']],[1,['Lunge','Allonge'],['Strike further','Frapper plus loin']],[1,['Shove','Bousculer'],['Push or break guard','Repousser, briser la garde']],[2,['Disarm, trip','Désarmer, renverser'],['Disarm, knock prone, immobilize','Désarmer, renverser, immobiliser']],[2,['Stance','Posture tenue'],['One effect held 1 minute','Un effet maintenu 1 minute']],[3,['Whirlwind','Tourbillon'],['All adjacent foes','Tous les ennemis adjacents']],[1,['Extra parry','Parade supplémentaire'],['Parry again this round','Parer encore ce round']],[3,['Extra action','Action supplémentaire'],['One more action this turn','Une action de plus ce tour']]];
@@ -1886,9 +1894,9 @@ document.getElementById('hand').addEventListener('submit',e=>{const f=e.target;i
  H0.addEventListener('dragstart',e=>{const cd=e.target.closest&&e.target.closest('[data-ck]');if(!cd||!cd.draggable)return;hDrag=cd;cd.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain','card')}catch(x){}});
  H0.addEventListener('dragover',e=>{if(!hDrag)return;e.preventDefault();const t2=e.target.closest('[data-ck]');if(!t2||t2===hDrag||t2.parentNode!==hDrag.parentNode)return;const r=t2.getBoundingClientRect(),before=e.clientY<r.top+8||(e.clientY<r.bottom&&e.clientX<r.left+r.width/2);t2.parentNode.insertBefore(hDrag,before?t2:t2.nextSibling)});
  H0.addEventListener('dragend',()=>{if(!hDrag)return;hDrag.classList.remove('dragging');hDrag.draggable=false;hDrag=null;const c=handChar();if(c)hSaveOrder(c)})}
-document.getElementById('hand').addEventListener('input',e=>{if(!e.target.dataset||!e.target.dataset.hnotes)return;const c=handChar();if(!c)return;c.notes=e.target.value.slice(0,5000);clearTimeout(window._hnT);window._hnT=setTimeout(()=>{try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(x){}},300);if(c===C){const t2=document.getElementById('c_notes');if(t2&&document.activeElement!==t2)t2.value=c.notes}});
-document.getElementById('hand').addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('pf')){pfOpen=e.target.open;try{localStorage.setItem('luparis-pf',JSON.stringify(pfOpen))}catch(x){}}},true);
-document.getElementById('hand').addEventListener('change',e=>{if(e.target.dataset.hinf!=null){const c=handChar();if(!c)return;handSel[c.id+'_inf'+e.target.dataset.hinf]=e.target.value;handSel[c.id+'_iv'+e.target.dataset.hinf]=1;renderHand();return}if(e.target.id==='h_ch'){handId=e.target.value||null;try{localStorage.setItem('luparis-hand',JSON.stringify(handId))}catch(x){}selTok=null;if(typeof renderTok==='function')renderTok();renderHand()}});
+document.getElementById('hand').addEventListener('input',e=>{if(!e.target.dataset||!e.target.dataset.hnotes)return;const c=handChar();if(!c)return;c.notes=e.target.value.slice(0,5000);clearTimeout(window._hnT);window._hnT=setTimeout(()=>{lsSet('luparis-chars',CH)},300);if(c===C){const t2=document.getElementById('c_notes');if(t2&&document.activeElement!==t2)t2.value=c.notes}});
+document.getElementById('hand').addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('pf')){pfOpen=e.target.open;lsSet('luparis-pf',pfOpen)}},true);
+document.getElementById('hand').addEventListener('change',e=>{if(e.target.dataset.hinf!=null){const c=handChar();if(!c)return;handSel[c.id+'_inf'+e.target.dataset.hinf]=e.target.value;handSel[c.id+'_iv'+e.target.dataset.hinf]=1;renderHand();return}if(e.target.id==='h_ch'){handId=e.target.value||null;lsSet('luparis-hand',handId);selTok=null;if(typeof renderTok==='function')renderTok();renderHand()}});
 document.getElementById('hand').addEventListener('submit',e=>{if(e.target.id!=='h_add')return;e.preventDefault();const c=handChar();if(!c)return;(c.cards||(c.cards=[])).push({k:$('h_ak').value,n:$('h_an').value.trim().slice(0,60),t:$('h_at').value.slice(0,400)});saveC();renderHand()});
 document.getElementById('hand').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const c=handChar();if(!c)return;const ds=b.dataset,D=derived(c),u=c.used;
  if(ds.ht){const max=ds.ht==='hp'?D.hp:ds.ht==='mana'?D.mana:D.st;u[ds.ht]=Math.max(0,Math.min(max,u[ds.ht]+(+ds.d)));if(ds.ht==='hp')for(const k of tokens)if(k.cid===c.id){k.hp=D.hp-u.hp;save();draw()}saveC();renderHand();return}
@@ -1960,8 +1968,8 @@ w_find:'Rechercher',w_find_hint:'Une ville, un pays ou un lieu',w_find_ph:'Ex : 
 w_hover:'Glisse pour déplacer, molette ou pincement pour zoomer.',w_trip:(mi,km,d)=>`${mi} miles · ${km} km · environ ${d} jour${d>1?'s':''} de marche (24 miles par jour)`,w_state:'Pays',w_note:"Carte simplifiée tirée de l'export Azgaar de Luparis (24 nov. 2026) : un pixel de carte = 3 miles. La position du groupe, les épingles et les modifications de villes sont gardées dans ton navigateur.",w_load:'Chargement de la carte…',w_fail:"La carte n'a pas pu être chargée.",w_center:'Centrer',w_rm:'Retirer',
 w_edit_hint:'Clique sur une ville pour la renommer ou la supprimer, fais-la glisser pour la déplacer.',w_new:'Nouvelle ville ici',w_newname:'Nouvelle ville',w_name:'Nom',w_kind:'Taille',w_k:{cap:'Capitale',city:'Cité',town:'Bourg'},w_del:'Supprimer cette ville',w_revert:'Annuler mes modifications sur cette ville',w_resetall:'Annuler toutes les modifications de villes',w_click_new:'Clique sur la carte à l\'endroit de la nouvelle ville.',w_miles:'miles'});
 const MI_PX=3;let WS=null,WV={x:0,y:0,w:1920,h:945},WT='pan',WST={party:null,pins:[],ed:{},add:[],lore:{}},wMeas=null,wSel=null,wNew=false;
-try{const o=JSON.parse(localStorage.getItem('luparis-world'));if(o){WST.party=o.party||null;WST.pins=Array.isArray(o.pins)?o.pins:[];WST.ed=o.ed&&typeof o.ed==='object'?o.ed:{};WST.add=Array.isArray(o.add)?o.add:[];WST.lore=o.lore&&typeof o.lore==='object'?o.lore:{}}}catch(e){}
-const wSave=()=>{try{localStorage.setItem('luparis-world',JSON.stringify(WST))}catch(e){}};
+try{const o=lsGet('luparis-world',null);if(o){WST.party=o.party||null;WST.pins=Array.isArray(o.pins)?o.pins:[];WST.ed=o.ed&&typeof o.ed==='object'?o.ed:{};WST.add=Array.isArray(o.add)?o.add:[];WST.lore=o.lore&&typeof o.lore==='object'?o.lore:{}}}catch(e){}
+const wSave=()=>{lsSet('luparis-world',WST)};
 const SVGNS='http://www.w3.org/2000/svg',wEl=(n,a)=>{const e=document.createElementNS(SVGNS,n);for(const k in a)e.setAttribute(k,a[k]);return e};
 let wPats=[],wHalo=[],BASEB=[],wBurgs=[],wMarks=[],wStates=[],wOv=null,wBG=null,wStarted=false;
 async function initWorld(){if(wStarted)return;wStarted=true;$('w_info').textContent=t('w_load');
@@ -2018,7 +2026,7 @@ const PIN={place:{c:'#2e5f96',d:['M-2.5,0 A2.5,2.5 0 1 1 2.5,0 A2.5,2.5 0 1 1 -2
  ruin:{c:'#6b6258',d:['M-4,4.5 L4,4.5 L4,3 L-4,3Z','M-2.6,3 L-2.6,-3 L-1,-5 L.6,-3.5 L2.6,-4.5 L2.6,3Z']},portal:{c:'#7b2a7a',d:['~M-3,4 L-3,-1 Q0,-6.5 3,-1 L3,4']},
  danger:{c:'#9c2f25',d:['~M-4,4 L4,-4 M4,4 L-4,-4','~M-4.5,-1.5 L-1.5,-4.5 M4.5,-1.5 L1.5,-4.5']},camp:{c:'#3f6e45',d:['M-5,4 L0,-4.5 L5,4Z']},bmap:{c:'#7a5a1e',d:['M-4.5,-3.5 L-1.5,-4.5 L1.5,-3.5 L4.5,-4.5 L4.5,3.5 L1.5,4.5 L-1.5,3.5 L-4.5,4.5Z']}};
 let memPlace=null;
-function renderMem(){const L=$('w_mem');if(!L)return;const l=memList();L.innerHTML=l.length?l.map(m=>`<li>${m.th?`<img src="${m.th}" alt="">`:''}<div><b>${esc(m.n)}</b><div class="small">${new Date(m.d).toLocaleDateString(lang)} · ${m.st.N}×${m.st.N}${WST.pins.some(p=>p.mid===m.id)?' · '+L2('on the map','sur la carte'):''}</div><div class="row"><button type="button" class="go" data-mo="${m.id}">${L2('Open','Ouvrir')}</button><button type="button" data-mp="${m.id}"${memPlace===m.id?' aria-pressed="true"':''}>${L2('Place on the world','Placer sur le monde')}</button><button type="button" data-md="${m.id}" aria-label="${L2('Delete','Supprimer')}">×</button></div></div></li>`).join(''):`<li class="small">${L2('No saved map yet. In the Map tab, use “Save the map”.','Aucune carte enregistrée. Dans l\'onglet Carte, utilise « Enregistrer la carte ».')}</li>`;
+function renderMem(){const L=$('w_mem');if(!L)return;const l=memList();L.innerHTML=l.length?l.map(m=>`<li>${m.th&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(m.th)?`<img src="${m.th}" alt="">`:''}<div><b>${esc(m.n)}</b><div class="small">${new Date(m.d).toLocaleDateString(lang)} · ${m.st.N}×${m.st.N}${WST.pins.some(p=>p.mid===m.id)?' · '+L2('on the map','sur la carte'):''}</div><div class="row"><button type="button" class="go" data-mo="${esc(m.id)}">${L2('Open','Ouvrir')}</button><button type="button" data-mp="${esc(m.id)}"${memPlace===m.id?' aria-pressed="true"':''}>${L2('Place on the world','Placer sur le monde')}</button><button type="button" data-md="${esc(m.id)}" aria-label="${L2('Delete','Supprimer')}">×</button></div></div></li>`).join(''):`<li class="small">${L2('No saved map yet. In the Map tab, use “Save the map”.','Aucune carte enregistrée. Dans l\'onglet Carte, utilise « Enregistrer la carte ».')}</li>`;
  const hint=$('w_memhint');if(hint)hint.textContent=memPlace?L2('Click on the world map to place it.','Clique sur la carte du monde pour la placer.'):''}
 $('w_mem').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const ds=b.dataset;
  if(ds.mo)openMem(ds.mo);else if(ds.mp){memPlace=memPlace===ds.mp?null:ds.mp;renderMem()}
@@ -2099,21 +2107,21 @@ function applyLang(){document.documentElement.lang=lang;document.title='Luparis'
  for(const b of document.querySelectorAll('#units button'))b.setAttribute('aria-pressed',b.dataset.u===unit);
  if(!$('mid').value)$('addsum').textContent=t('add');fillSel();renderB();prev();legend();rules();renderSheet();renderPlace();renderIni();renderTok();renderRes();if(WS)wRender();draw()}
 function rules(){const tp=$('rules-'+lang);$('rbody').replaceChildren(tp.content.cloneNode(true));for(const tb of $('rbody').querySelectorAll('table')){const w=document.createElement('div');w.className='scroll';tb.before(w);w.append(tb)}
- $('toc').innerHTML=`<div class="vtag">${esc(t('ver'))}</div>`+[...$('rbody').querySelectorAll('h2')].map(h=>`<button data-to="${h.id}">${esc(h.textContent)}</button>`).join('')}
+ $('toc').innerHTML=`<div class="vtag">${esc(t('ver'))}</div>`+[...$('rbody').querySelectorAll('h2')].map(h=>`<button data-to="${esc(h.id)}">${esc(h.textContent)}</button>`).join('')}
 $('toc').addEventListener('click',e=>{const b=e.target.closest('button[data-to]');if(b)document.getElementById(b.dataset.to).scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'})});
-function savePrefs(){try{localStorage.setItem('luparis-prefs',JSON.stringify({lang,unit}))}catch(e){}}
+function savePrefs(){lsSet('luparis-prefs',{lang,unit})}
 $('langs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;lang=b.dataset.lang;savePrefs();applyLang()});
 $('units').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;unit=b.dataset.u;savePrefs();applyLang()});
 applyLang();route();
 function makeReorder(box,key){if(!box)return;const kids=[...box.children].filter(x=>x.matches('section.card'));kids.forEach((sec,i)=>{if(!sec.dataset.mod)sec.dataset.mod=sec.id||key+i;sec.classList.add('rmod')});
- const sk='luparis-layout-'+key;let o=null;try{o=JSON.parse(localStorage.getItem(sk))}catch(e){}if(Array.isArray(o))for(const m of o){const el=[...box.children].find(x=>x.dataset.mod===m);if(el)box.append(el)}
+ const sk='luparis-layout-'+key;let o=null;try{o=lsGet(sk,null)}catch(e){}if(Array.isArray(o))for(const m of o){const el=[...box.children].find(x=>x.dataset.mod===m);if(el)box.append(el)}
  let dragEl=null;const secOf=e=>{const h=e.target.closest&&e.target.closest('h3.foldh');if(!h||e.target.closest('button,a,input,select,textarea'))return null;const sec=h.closest('section.card');return sec&&sec.parentNode===box&&sec.id!=='tk_panel'&&sec.id!=='w_sel'?sec:null};
  box.addEventListener('pointerdown',e=>{const sec=e.button===0&&secOf(e);if(sec)sec.draggable=true});
  box.addEventListener('pointerup',e=>{const sec=secOf(e);if(sec&&!dragEl)sec.draggable=false});
- box.addEventListener('keydown',e=>{if(!e.altKey||(e.key!=='ArrowUp'&&e.key!=='ArrowDown'))return;const sec=secOf(e);if(!sec)return;e.preventDefault();if(e.key==='ArrowUp'&&sec.previousElementSibling)box.insertBefore(sec,sec.previousElementSibling);else if(e.key==='ArrowDown'&&sec.nextElementSibling)box.insertBefore(sec.nextElementSibling,sec);try{localStorage.setItem(sk,JSON.stringify([...box.children].map(x=>x.dataset.mod).filter(Boolean)))}catch(x){}e.target.focus()});
+ box.addEventListener('keydown',e=>{if(!e.altKey||(e.key!=='ArrowUp'&&e.key!=='ArrowDown'))return;const sec=secOf(e);if(!sec)return;e.preventDefault();if(e.key==='ArrowUp'&&sec.previousElementSibling)box.insertBefore(sec,sec.previousElementSibling);else if(e.key==='ArrowDown'&&sec.nextElementSibling)box.insertBefore(sec.nextElementSibling,sec);lsSet(sk,[...box.children].map(x=>x.dataset.mod).filter(Boolean));e.target.focus()});
  box.addEventListener('dragstart',e=>{const t2=e.target.closest('.rmod');if(!t2||t2.parentNode!==box)return;dragEl=t2;dragEl.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',key)}catch(x){}});
  box.addEventListener('dragover',e=>{if(!dragEl)return;e.preventDefault();const tgt=e.target.closest('.rmod');if(!tgt||tgt===dragEl||tgt.parentNode!==box)return;const r=tgt.getBoundingClientRect();box.insertBefore(dragEl,e.clientY<r.top+r.height/2?tgt:tgt.nextSibling)});
- box.addEventListener('dragend',()=>{if(!dragEl)return;dragEl.classList.remove('dragging');dragEl.draggable=false;dragEl=null;try{localStorage.setItem(sk,JSON.stringify([...box.children].map(x=>x.dataset.mod).filter(Boolean)))}catch(e){}})}
+ box.addEventListener('dragend',()=>{if(!dragEl)return;dragEl.classList.remove('dragging');dragEl.draggable=false;dragEl=null;lsSet(sk,[...box.children].map(x=>x.dataset.mod).filter(Boolean))})}
 document.querySelectorAll('aside.side').forEach((a,i)=>makeReorder(a,i?'side-map':'side-world'));
 const KROW1=['KeyQ','KeyW','KeyE','KeyR','KeyT','KeyY','KeyU','KeyI','KeyO','KeyP'],KROW2=['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL'],KROW3=['KeyZ','KeyX','KeyC','KeyV','KeyB','KeyN','KeyM'];
 let KLAB=null;try{if(navigator.keyboard&&navigator.keyboard.getLayoutMap)navigator.keyboard.getLayoutMap().then(m=>{KLAB=m;kbHints()}).catch(()=>{})}catch(e){}
@@ -2173,6 +2181,21 @@ function monSheet(m,tk){SBM=m;SBT=tk||null;let dl=document.getElementById('sbdlg
 
 
 
+
+// ---- full backup: every luparis-* entry of this browser in one JSON file
+function bkCollect(){const data={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('luparis-')){data[k]=localStorage.getItem(k)}}return{app:'luparis',schema:LS_SCHEMA,date:new Date().toISOString(),data}}
+function bkSize(){let n=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('luparis-'))n+=(localStorage.getItem(k)||'').length}return n}
+function bkOpen(){if(typeof saveNow==='function'&&saveT)saveNow();if(typeof saveCNow==='function'&&saveCT)saveCNow();let d=document.getElementById('bkdlg');if(!d){d=document.createElement('dialog');d.id='bkdlg';document.body.appendChild(d)}
+ const kb=Math.round(bkSize()/1024);d.innerHTML=`<h3>${L2('Full backup','Sauvegarde complète')}</h3><p class="small">${L2('Characters, bestiary, maps, towns, campaigns, session notes and settings of this browser, in one file. Keep it somewhere safe; import it on another computer to get everything back.','Personnages, bestiaire, cartes, villes, campagnes, notes de séance et réglages de ce navigateur, dans un seul fichier. Garde-le en lieu sûr ; importe-le sur un autre ordinateur pour tout retrouver.')}</p><p class="small">${L2('Stored here','Stocké ici')} : ${kb} ${L2('KB','Ko')}</p>
+ <div class="row"><button type="button" class="go" id="bk_exp">${L2('Export','Exporter')}</button><label class="btn"><input type="file" id="bk_file" accept="application/json,.json" hidden><span role="button" tabindex="0" class="bkimp">${L2('Import a backup…','Importer une sauvegarde…')}</span></label><button type="button" id="bk_close">${L2('Close','Fermer')}</button></div><p class="small" id="bk_msg" aria-live="polite"></p>`;
+ d.querySelector('#bk_close').onclick=()=>d.close();
+ d.querySelector('#bk_exp').onclick=()=>{const b=new Blob([JSON.stringify(bkCollect())],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`luparis-backup-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);d.querySelector('#bk_msg').textContent=L2('Backup downloaded.','Sauvegarde téléchargée.')};
+ const imp=d.querySelector('.bkimp');imp.onclick=()=>d.querySelector('#bk_file').click();imp.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();imp.click()}};
+ d.querySelector('#bk_file').onchange=async e=>{const f=e.target.files[0];if(!f)return;const msg=d.querySelector('#bk_msg');try{const o=JSON.parse(await f.text());if(!o||o.app!=='luparis'||typeof o.data!=='object')throw 0;const keys=Object.keys(o.data).filter(k=>/^luparis-[\w-]{1,40}$/.test(k));
+   if(!confirm(L2(`Replace this browser's data with the backup of ${String(o.date||'').slice(0,10)} (${keys.length} entries)?`,`Remplacer les données de ce navigateur par la sauvegarde du ${String(o.date||'').slice(0,10)} (${keys.length} entrées) ?`)))return;
+   for(const k of keys){const v=o.data[k];localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v))}msg.textContent=L2('Imported. Reloading…','Importé. Rechargement…');setTimeout(()=>location.reload(),600)}catch(err){msg.textContent=L2('This file is not a Luparis backup.','Ce fichier n\'est pas une sauvegarde Luparis.')}};
+ d.showModal()}
+document.getElementById('bk_open').addEventListener('click',bkOpen);
 // ---- universal search (Ctrl+K)
 let US=[],USI=0;
 function usNorm(x){return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
@@ -2188,7 +2211,7 @@ function usItems(){const gm=MP.role!=='player'&&MP.role!=='spect',I=[],ty=(en,fr
   for(const k of Object.keys(ENVT))I.push({ty:ty('Effect','Effet'),n:tr(ENVT[k].n),kw:ENVT[k].n.join(' '),d:tr(ENVT[k].r),go:()=>usTool('env','envk',k)});
   for(const k of Object.keys(TPLK))I.push({ty:ty('Zone','Zone'),n:tr(TPLK[k]),kw:TPLK[k].join(' '),d:L2('area of effect','zone d\'effet'),go:()=>usTool('tpl','tplk',k)});
   for(const k of SURF_ORDER)if(k)I.push({ty:ty('Ground','Sol'),n:tr(FL[k]),kw:(Array.isArray(FL[k])?FL[k].join(' '):''),go:()=>usTool('surf','surfk',k)});
-  for(const m of MARKS)I.push({ty:ty('Landmark','Repère'),n:m.l||L2('(unnamed)','(sans nom)'),d:`${L2('tile','case')} ${m.x}, ${m.y}`,go:()=>{usGo('carte');selMark=m.id;renderMarks();draw();setTimeout(()=>usFlash(document.querySelector(`#mk_list input[data-id="${m.id}"]`)),60)}});
+  for(const m of MARKS)I.push({ty:ty('Landmark','Repère'),n:m.l||L2('(unnamed)','(sans nom)'),d:`${L2('tile','case')} ${m.x}, ${m.y}`,go:()=>{usGo('carte');selMark=m.id;renderMarks();draw();setTimeout(()=>usFlash(document.querySelector(`#mk_list input[data-id="${esc(m.id)}"]`)),60)}});
   if(SN&&SN.txt)SN.txt.split('\n').filter(x=>x.trim()).forEach(l=>I.push({ty:ty('Note','Note'),n:l.slice(0,90),d:L2('session notes','notes de séance'),go:()=>{usGo('carte');setTimeout(()=>usFlash(document.querySelector('#sn_txt,#sn_card textarea')),60)}}));
   for(const T of TPLS)I.push({ty:ty('Zone','Zone'),n:tplLabel(T),go:()=>{usGo('carte');setTimeout(()=>usFlash(document.getElementById('tpl_list')),60)}})}
  // settings: labelled controls across views
@@ -2269,11 +2292,11 @@ document.getElementById('tpl_list').addEventListener('click',e=>{const b=e.targe
 renderTpls();
 fillTpl();
 // ---- session notes (GM)
-var SN=null;try{SN=JSON.parse(localStorage.getItem('luparis-session'))}catch(e){}
+var SN=null;try{SN=lsGet('luparis-session',null)}catch(e){}
 function snNew(){return{t:'',start:Date.now(),txt:''}}
 if(!SN||typeof SN!=='object')SN=snNew();
-function snSave(){try{localStorage.setItem('luparis-session',JSON.stringify(SN))}catch(e){}}
-function snHist(){try{return JSON.parse(localStorage.getItem('luparis-sessions'))||[]}catch(e){return[]}}
+function snSave(){lsSet('luparis-session',SN)}
+function snHist(){try{return lsGet('luparis-sessions',null)||[]}catch(e){return[]}}
 function snRender(){const B=document.getElementById('sn_box');if(!B)return;const ac=document.activeElement;if(B.contains(ac)&&(ac.id==='sn_txt'||ac.id==='sn_t'))return;const H=snHist();
  B.innerHTML=`<p class="small">${L2('Game master only. Notes for the session report; export them at the end.','Réservé au MJ. Notes pour le compte rendu ; exporte-les à la fin.')}</p>
  <label><span class="small">${L2('Session','Séance')}</span><input id="sn_t" value="${esc(SN.t)}" placeholder="${L2('Session 11, the Thorn Queen','Séance 11, la Reine des ronces')}"></label>
@@ -2281,7 +2304,7 @@ function snRender(){const B=document.getElementById('sn_box');if(!B)return;const
  <div class="row sn_row"><button type="button" id="sn_stamp">${L2('Timestamp','Horodater')}</button><button type="button" id="sn_roll">${L2('Add last roll','Ajouter le dernier jet')}</button></div>
  <div class="row sn_row"><button type="button" class="go" id="sn_exp">${L2('Export (.md)','Exporter (.md)')}</button><button type="button" id="sn_copy">${L2('Copy','Copier')}</button><button type="button" id="sn_end">${L2('End the session','Clore la séance')}</button></div><p class="small" id="sn_msg" aria-live="polite"></p>
  ${H.length?`<details><summary class="small">${L2('Past sessions','Séances passées')} (${H.length})</summary><ul class="snh">${H.map((x,i)=>`<li><span>${esc(x.t||new Date(x.start).toLocaleDateString(lang))}</span><button type="button" data-snd="${i}">.md</button></li>`).join('')}</ul></details>`:''}`}
-function snMd(S){const d=new Date(S.start),xp=[];try{const o=JSON.parse(localStorage.getItem('luparis-camps'))||{};for(const n in o)for(const e of o[n].log||[])if(e.d>=S.start&&(!S.end||e.d<=S.end))xp.push(`- ${n} : ${e.x>=0?'+':''}${e.x} XP (${e.l})`)}catch(e){}
+function snMd(S){const d=new Date(S.start),xp=[];try{const o=lsGet('luparis-camps',null)||{};for(const n in o)for(const e of o[n].log||[])if(e.d>=S.start&&(!S.end||e.d<=S.end))xp.push(`- ${n} : ${e.x>=0?'+':''}${e.x} XP (${e.l})`)}catch(e){}
  const rolls=(RL||[]).filter(r=>r.t>=S.start&&(!S.end||r.t<=S.end)).reverse().map(r=>`- ${new Date(r.t).toLocaleTimeString(lang,{hour:'2-digit',minute:'2-digit'})} ${r.s?r.s+' · ':''}${r.h.replace(/<[^>]+>/g,'')}`);
  return`# ${S.t||L2('Session','Séance')} — ${d.toLocaleDateString(lang)}\n\n${S.txt.trim()}\n`+(xp.length?`\n## XP\n${xp.join('\n')}\n`:'')+(rolls.length?`\n## ${L2('Rolls','Jets')}\n${rolls.join('\n')}\n`:'')}
 function snDownload(S){const b=new Blob([snMd(S)],{type:'text/markdown'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=((S.t||'seance').replace(/[^\w\- àâçéèêëîïôûùüÿ]/gi,'').trim().replace(/\s+/g,'-')||'seance')+'-'+(d0=>d0.getFullYear()+'-'+String(d0.getMonth()+1).padStart(2,'0')+'-'+String(d0.getDate()).padStart(2,'0'))(new Date(S.start))+'.md';document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
@@ -2292,7 +2315,7 @@ document.getElementById('sn_card').addEventListener('click',e=>{const b=e.target
  else if(b.id==='sn_exp')snDownload(SN);
  else if(b.id==='sn_copy'){navigator.clipboard.writeText(snMd(SN)).then(()=>msg(L2('Copied.','Copié.')),()=>msg(L2('Copy failed.','Copie impossible.')))}
  else if(b.id==='sn_end'){if(!b.dataset.armed){b.dataset.armed='1';b.textContent=L2('Confirm: export and start a new session','Confirmer : exporter et commencer une nouvelle séance');setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent=L2('End the session','Clore la séance')}},4000);return}
-  SN.end=Date.now();snDownload(SN);const H=snHist();H.unshift(SN);try{localStorage.setItem('luparis-sessions',JSON.stringify(H.slice(0,50)))}catch(x){}SN=snNew();snSave();snRender();msg(L2('Session exported and archived.','Séance exportée et archivée.'))}
+  SN.end=Date.now();snDownload(SN);const H=snHist();H.unshift(SN);lsSet('luparis-sessions',H.slice(0,50));SN=snNew();snSave();snRender();msg(L2('Session exported and archived.','Séance exportée et archivée.'))}
  else if(b.dataset.snd!=null){const S=snHist()[+b.dataset.snd];if(S)snDownload(S)}});
 snRender();
 
@@ -2303,11 +2326,16 @@ function mpSend(o,conn){const txt=o;if(MP.local){MP.bc&&MP.bc.postMessage(JSON.s
 let mpT=null;function mpPush(){if(MP.role!=='host')return;clearTimeout(mpT);mpT=setTimeout(()=>mpSend(mpState()),200)}
 function mpPlayerSave(){if(!MP.me)return;mpSend({type:'tokens',me:MP.me,t:tokens.filter(k=>k.cid===MP.me).map(k=>({id:k.id,x:k.x,y:k.y,hp:k.hp}))})}
 function mpSendChar(){const c=CH.list.find(x=>x.id===MP.me);if(c)mpSend({type:'char',c})}
+// what a player may change on its own character, with types checked
+function cleanCharPatch(c){const N=(v,a,b)=>{v=Math.round(+v);return isFinite(v)?Math.max(a,Math.min(b,v)):0},S=(v,n)=>String(v==null?'':v).slice(0,n),o={};
+ if(c.used&&typeof c.used==='object'){o.used={};for(const k of Object.keys(c.used).slice(0,20))if(/^\w{1,12}$/.test(k))o.used[k]=N(c.used[k],0,999)}
+ if(c.inv&&typeof c.inv==='object'){const g=c.inv.gold||{},p=c.inv.pot||{};o.inv={gold:{h:N(g.h,0,1e6),b:N(g.b,0,1e6),c:N(g.c,0,1e6)},pot:{},items:(Array.isArray(c.inv.items)?c.inv.items:[]).slice(0,200).map(x=>({n:S(x&&x.n,60),q:N(x&&x.q,0,9999),no:S(x&&x.no,600)}))};for(const k of Object.keys(p).slice(0,40))if(/^\w{1,20}$/.test(k))o.inv.pot[k]=N(p[k],0,999)}
+ if(c.notes!=null)o.notes=S(c.notes,5000);if(Array.isArray(c.corder))o.corder=c.corder.slice(0,40).map(x=>S(x,40));return o}
 function mpHostMsg(m,conn){if(m.type==='hello'){mpSend(mpState(),conn);return}
  if(conn&&(m.type==='tokens'||m.type==='char')){const id=m.type==='tokens'?m.me:m.c&&m.c.id;if(!conn.me)conn.me=id;else if(conn.me!==id)return}
  if(m.type==='tokens'){for(const u of m.t||[]){const k=tokens.find(x=>x.id===u.id&&x.cid===m.me);if(!k)continue;const n=tfp(k);if(fits(u.x,u.y,n,k.id)){k.x=u.x;k.y=u.y}if(typeof u.hp==='number'&&k.hpMax){k.hp=Math.max(0,Math.min(k.hpMax,u.hp))}}save();draw();return}
  if(m.type==='roll'){pushRoll(String(m.h||''),String(m.s||''),true);return}
- if(m.type==='char'&&m.c&&m.c.id){const i=CH.list.findIndex(x=>x.id===m.c.id);if(i>=0){CH.list[i]=Object.assign({},CH.list[i],{used:m.c.used,inv:m.c.inv,notes:m.c.notes,corder:m.c.corder});if(C&&C.id===m.c.id)C=CH.list[i];saveC();if(CH.active)renderSheet()}}}
+ if(m.type==='char'&&m.c&&m.c.id){const i=CH.list.findIndex(x=>x.id===m.c.id);if(i>=0){CH.list[i]=Object.assign({},CH.list[i],cleanCharPatch(m.c));if(C&&C.id===m.c.id)C=CH.list[i];saveC();if(CH.active)renderSheet()}}}
 function mpClientMsg(m){if(m.type==='closed'){mpRender(L2('The game master closed the game.','Le MJ a fermé la partie.'));setTimeout(mpLeave,1500);return}if(m.type!=='state')return;const first=!MP.got;MP.got=true;
  applyState(m.map);CH.list=m.chars||[];C=CH.list.find(c=>c.id===CH.active)||CH.list[0]||null;RL=(Array.isArray(m.rolls)?m.rolls:[]).slice(0,40).map(r=>({h:safeRoll(r&&r.h||''),s:String(r&&r.s||''),t:+(r&&r.t)||Date.now()}));rlRender();
  if(MP.me&&!CH.list.some(c=>c.id===MP.me))MP.me=null;if(MP.me)handId=MP.me;
