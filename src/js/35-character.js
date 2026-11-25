@@ -250,6 +250,95 @@ const FAM = {
     },
   },
 };
+// Weapon-family passives. Target values are optional table inputs, never hidden monster stats.
+const WP = {
+  taille: ['Sweep', 'Balayage'],
+  estoc: ['Weak point', 'Point faible'],
+  cont: ['Armor break', 'Fracassement'],
+};
+const weaponInputs = new Map(), weaponStrikes = new Map(), sweepUsed = new Map();
+const weaponKey = (c, i) => JSON.stringify([c.id, i]);
+function weaponInput(c, i) {
+  const key = weaponKey(c, i);
+  if (!weaponInputs.has(key)) weaponInputs.set(key, {});
+  return weaponInputs.get(key);
+}
+function weaponNumber(v) {
+  if (v == null || String(v).trim() === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+function weaponPassiveText(f) {
+  if (f === 'taille') return L2('Once per turn: half weapon damage to a second enemy adjacent to the target and within reach, if the same attack meets its Evasion.', 'Une fois par tour : moitié des dégâts de l’arme à un second ennemi adjacent à la cible et à portée, si le même jet atteint son Esquive.');
+  if (f === 'estoc') return L2('+1 weapon die when your attack exceeds the target’s Evasion by at least 5.', '+1 dé de l’arme si ton jet dépasse l’Esquive de la cible d’au moins 5.');
+  if (f === 'cont') return L2('Ignore up to 2 armor value; reduce all three damage thresholds accordingly.', 'Ignore jusqu’à 2 points de valeur d’armure : réduis les trois seuils de dégâts en conséquence.');
+  return '';
+}
+function sweepTurn() {
+  const o = INI.o[INI.cur];
+  return o ? JSON.stringify([INI.round, o.id]) : 'manual';
+}
+function weaponPassiveHTML(c, i, w, tier, hand = false) {
+  if (!tier || !WP[w.f]) return '';
+  const q = weaponInput(c, i), key = esc(weaponKey(c, i));
+  const field = (k, label) => `<label><span>${label}</span><input type="number" min="0" step="1" style="width:4.5em" data-wp-key="${key}" data-wp-field="${k}" value="${esc(q[k] ?? '')}" placeholder="—"></label>`;
+  return `<div class="small"><b>${tr(WP[w.f])}</b> · ${weaponPassiveText(w.f)}</div><div class="row" style="flex-wrap:wrap">${hand && w.f !== 'cont' ? field('target', L2('Target Evasion', 'Esquive cible')) : ''}${w.f === 'taille' ? field('second', L2('Second enemy Evasion (adjacent, in reach)', 'Esquive du second ennemi (adjacent, à portée)')) : ''}${w.f === 'cont' ? field('armor', L2('Target armor', 'Armure cible')) : ''}${w.f === 'taille' && !INI.o.length ? `<button type="button" data-wp-reset="${esc(c.id)}">${L2('New turn', 'Nouveau tour')}</button>` : ''}</div>`;
+}
+document.addEventListener('input', e => {
+  const { wpKey, wpField } = e.target.dataset || {};
+  if (wpKey && ['target', 'second', 'armor'].includes(wpField) && weaponInputs.has(wpKey))
+    weaponInputs.get(wpKey)[wpField] = e.target.value;
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('button[data-wp-reset]');
+  if (!b || INI.o.length) return;
+  sweepUsed.delete(b.dataset.wpReset);
+});
+// A natural 1 misses; a natural 20 hits, but the secondary target still needs a sufficient total.
+function weaponOutcome(f, tier, r, total, target, second) {
+  const hit = r !== 1 && (r === 20 || (target != null && total >= target));
+  const missed = r === 1 || (r !== 20 && target != null && total < target);
+  return {
+    hit, missed, crit: r === 20,
+    weak: !!(tier && f === 'estoc' && hit && target != null && total - target >= 5),
+    sweep: !!(tier && f === 'taille' && hit && second != null && total >= second),
+  };
+}
+function weaponAttack(c, i, target) {
+  const w = c.weapons[i], tier = c.fam[w.f] || 0,
+    q = weaponInput(c, i), ab = (c.cells[FAM[w.f].c] || 0) + mb(tier),
+    r = dRoll(20), total = r + ab,
+    result = weaponOutcome(w.f, tier, r, total, weaponNumber(target), weaponNumber(q.second));
+  weaponStrikes.set(weaponKey(c, i), { ...result, f: w.f, n: w.n, s: w.s, turn: sweepTurn() });
+  const status = result.crit ? ` <span class="cr">${t('sk_crit')}</span>` : result.missed ? ` <span class="ko">${t('sk_miss')}</span>` : result.hit ? ` · ${t('sk_hit')}` : '';
+  const bonus = result.weak ? ` · ${tr(WP.estoc)} +1d${SZ[w.s]}` : result.sweep && sweepUsed.get(c.id) !== sweepTurn() ? ` · ${tr(WP.taille)}` : '';
+  return `${esc(w.n)} · d20 (${r}) ${sgn(ab)} = <b>${total}</b>${status}${bonus}`;
+}
+function weaponArmorReduction(armor) {
+  return armor == null ? null : Math.min(2, Math.max(0, armor));
+}
+function weaponDamage(c, i) {
+  const w = c.weapons[i], tier = c.fam[w.f] || 0, key = weaponKey(c, i),
+    previous = weaponStrikes.get(key),
+    strike = previous && previous.f === w.f && previous.n === w.n && previous.s === w.s ? previous : null;
+  weaponStrikes.delete(key);
+  const d = SZ[w.s] || 6, mod = c.cells[FAM[w.f].c] || 0,
+    // Only the normal mastery dice double on a critical; Point faible is one additional die.
+    n = Math.max(1, tier) * (strike && strike.crit ? 2 : 1) + (strike && strike.weak && tier ? 1 : 0),
+    rs = Array.from({ length: n }, () => dRoll(d)), total = rs.reduce((a, b) => a + b, 0) + mod;
+  let h = `${esc(w.n)} · ${n}d${d}${mod ? sgn(mod) : ''} [${rs.join(', ')}] = <b>${total}</b>`;
+  if (strike && strike.missed) return h + ` · ${t('sk_miss')}`;
+  if (tier && strike && strike.weak) h += ` · ${tr(WP.estoc)} (+1d${d})`;
+  if (tier && strike && strike.sweep && strike.turn === sweepTurn() && sweepUsed.get(c.id) !== strike.turn) {
+    sweepUsed.set(c.id, strike.turn);
+    h += ` · ${tr(WP.taille)}: <b>${Math.max(0, Math.floor(total / 2))}</b> ${L2('damage to the second enemy', 'dégâts au second ennemi')}`;
+  }
+  if (tier && w.f === 'cont') {
+    const reduction = weaponArmorReduction(weaponNumber(weaponInput(c, i).armor));
+    h += ` · ${tr(WP.cont)}: ${reduction == null ? L2('ignore up to 2 armor (all thresholds)', 'ignore jusqu’à 2 d’armure (tous les seuils)') : L2('all thresholds', 'tous les seuils') + ' −' + reduction}`;
+  }
+  return h;
+}
 function szLabel(f, k) {
   const o = FAM[f] && FAM[f].sz;
   return o ? (o[k] ? tr(o[k]) : '') : T[lang].sz[k];
@@ -765,7 +854,7 @@ function renderSheet() {
         ab = mod + mb(tier),
         nd = Math.max(1, tier),
         dd = SZ[x.s];
-      return `<div class="atk"><div><div class="an">${esc(x.n)}</div><div class="ad">${esc(tr(FAM[x.f].n))} · ${esc(szLabel(x.f, x.s))} · ${tier ? 'Tier ' + tier : esc(t('sk_unm'))}<br>${t('sk_attack')} ${sgn(ab)} · ${t('sk_damage')} ${nd}d${dd}${mod ? sgn(mod) : ''}</div></div>
+      return `<div class="atk"><div><div class="an">${esc(x.n)}</div><div class="ad">${esc(tr(FAM[x.f].n))} · ${esc(szLabel(x.f, x.s))} · ${tier ? 'Tier ' + tier : esc(t('sk_unm'))}<br>${t('sk_attack')} ${sgn(ab)} · ${t('sk_damage')} ${nd}d${dd}${mod ? sgn(mod) : ''}</div>${weaponPassiveHTML(C, i, x, tier)}</div>
   <div class="ab"><button type="button" class="go" data-roll="atk" data-i="${i}">${t('sk_attack')}</button><button type="button" data-roll="dmg" data-i="${i}">${t('sk_damage')}</button><button type="button" data-wdel="${i}" aria-label="${t('sk_remove')} ${esc(x.n)}">×</button></div></div>`;
     })
     .join('');
@@ -977,11 +1066,9 @@ fiche.addEventListener('click', e => {
     C.weapons.splice(+ds.wdel, 1);
   } else if (ds.roll) {
     if (ds.roll === 'atk' || ds.roll === 'dmg') {
-      const x = C.weapons[+ds.i],
-        tier = C.fam[x.f] || 0,
-        mod = C.cells[FAM[x.f].c];
-      if (ds.roll === 'atk') rollAtk(x.n, mod + mb(tier), 'w' + ds.i);
-      else rollDmg(x.n, Math.max(1, tier), SZ[x.s], mod, 'w' + ds.i);
+      const i = +ds.i;
+      if (ds.roll === 'atk') logIt(weaponAttack(C, i, $('c_tgt').value));
+      else logIt(weaponDamage(C, i));
     } else {
       const k = ds.k,
         tier = C.sch[k],

@@ -128,6 +128,22 @@ def run(chrome: str | None) -> None:
             r,
         )
 
+        # Weapon passives: exact hit margins, misses, mastery requirement and armor floor.
+        check("weak point triggers at margin five", D("weaponOutcome('estoc',1,13,18,13,null).weak") is True)
+        check("weak point does not trigger at margin four", D("weaponOutcome('estoc',1,13,17,13,null).weak") is False)
+        check("sweep requires both targets to be hit", D("weaponOutcome('taille',1,14,17,15,17).sweep && !weaponOutcome('taille',1,14,17,15,18).sweep"))
+        check("sweep needs mastery and a primary hit", D("!weaponOutcome('taille',0,14,17,15,17).sweep && !weaponOutcome('taille',1,14,17,18,15).sweep"))
+        check("natural one never triggers passives", D("!weaponOutcome('estoc',1,1,25,13,null).weak && !weaponOutcome('taille',1,1,25,13,13).sweep"))
+        check("armor break respects armor floor", D("weaponArmorReduction(0)===0 && weaponArmorReduction(1)===1 && weaponArmorReduction(6)===2"))
+        check("sweep damage is rolled once and limited per turn", D("""(()=>{
+            const c=blankC();c.id='sweep-test';c.fam.taille=1;c.weapons=[{n:'Sword',f:'taille',s:'one'}];
+            const k=weaponKey(c,0), original=Math.random;
+            try { Math.random=()=>0.99;weaponInput(c,0).second=10;
+              weaponAttack(c,0,10);const first=weaponDamage(c,0);
+              weaponAttack(c,0,10);const second=weaponDamage(c,0);
+              return first.includes(tr(WP.taille)) && first.includes('<b>6</b>') && !second.includes(tr(WP.taille));
+            } finally { Math.random=original;sweepUsed.delete(c.id);weaponInputs.delete(k);weaponStrikes.delete(k); }
+        })()"""))
         # multiplayer (same browser): a player's roll reaches the GM cleaned of any script
         host = ctx.new_page()
         host.goto(url + "?debug=1&local=1")

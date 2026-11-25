@@ -280,6 +280,7 @@ function renderIni() {
 const iniSort = () => INI.o.sort((a, b) => b.v - a.v || b.b - a.b);
 $('in_roll').onclick = () => {
   if (!tokens.length) return;
+  sweepUsed.clear();
   INI.o = tokens.map(k => {
     const b = +k.init || 0,
       pv = k.cid && typeof INIP !== 'undefined' ? INIP[k.cid] : null;
@@ -311,6 +312,7 @@ $('in_next').onclick = () => {
   draw();
 };
 function iniReset() {
+  sweepUsed.clear();
   INI = { o: [], cur: 0, round: 0 };
   $('in_xp').hidden = true;
   save();
@@ -969,7 +971,7 @@ function renderHand() {
       ? `<div class="inf"><label><span>${L2('Infusion', 'Infusion')}</span><select data-hinf="${i}"><option value="">—</option>${srcs.map(k => `<option value="${k}"${infOn === k ? ' selected' : ''}>${esc(srcN(k))}</option>`).join('')}</select></label>${infOn ? `<div class="fx">${Array.from({ length: infT }, (_, n) => `<button type="button" class="chip${infV === n + 1 ? ' on' : ''}" data-hiv="${i}" data-v="${n + 1}">${n + 1}</button>`).join('')}</div>` : ''}</div>`
       : '';
     WL.push(
-      `<div class="wpn"><div class="wpt"><b>${esc(w.n)}</b> <span class="small">${esc(tr(FAM[w.f] ? FAM[w.f].n : ['', '']))}</span></div><div class="hb">${L2('Attack', 'Attaque')} <b>${sgn(ab)}</b> · ${L2('Damage', 'Dégâts')} <b>${nd}d${dd}${mod ? sgn(mod) : ''}</b>${infOn ? ` <b>+${infV}d${infD}</b> (${esc(srcN(infOn))}, ${infV} ${infP})` : ''}${tier ? '' : ` <span class="small">(${L2('untrained', 'sans maîtrise')})</span>`}</div>${infH}<div class="hbt"><button type="button" class="go" data-ha="atk" data-i="${i}">${L2('Attack', 'Attaque')}</button><button type="button" data-ha="dmg" data-i="${i}">${L2('Damage', 'Dégâts')}</button></div></div>`,
+      `<div class="wpn"><div class="wpt"><b>${esc(w.n)}</b> <span class="small">${esc(tr(FAM[w.f] ? FAM[w.f].n : ['', '']))}</span></div><div class="hb">${L2('Attack', 'Attaque')} <b>${sgn(ab)}</b> · ${L2('Damage', 'Dégâts')} <b>${nd}d${dd}${mod ? sgn(mod) : ''}</b>${infOn ? ` <b>+${infV}d${infD}</b> (${esc(srcN(infOn))}, ${infV} ${infP})` : ''}${tier ? '' : ` <span class="small">(${L2('untrained', 'sans maîtrise')})</span>`}</div>${weaponPassiveHTML(c, i, w, tier, true)}${infH}<div class="hbt"><button type="button" class="go" data-ha="atk" data-i="${i}">${L2('Attack', 'Attaque')}</button><button type="button" data-ha="dmg" data-i="${i}">${L2('Damage', 'Dégâts')}</button></div></div>`,
     );
   });
   if (WL.length)
@@ -1308,8 +1310,6 @@ document.getElementById('hand').addEventListener('click', e => {
   if (ds.ha === 'atk' || ds.ha === 'dmg') {
     const i = +ds.i,
       w = c.weapons[i],
-      tier = c.fam[w.f] || 0,
-      mod = c.cells[FAM[w.f].c] || 0,
       ik0 = handSel[c.id + '_inf' + i] || '',
       dd = SZ[w.s] || 6;
     const ik = (ik0 === 'apex' ? (c.apex || 0) > 0 : ik0 && c.sch[ik0] > 0) ? ik0 : '',
@@ -1334,11 +1334,11 @@ document.getElementById('hand').addEventListener('click', e => {
         lastInf[key] = { sn, iv, iD };
         ex = ` · ${L2('infused', 'infusé')} (${esc(sn)} ${iv}) −${iv} ${pn}`;
       }
-      hRoll(hAtk(w.n, mod + mb(tier)) + ex);
+      hRoll(weaponAttack(c, i, weaponInput(c, i).target) + ex);
       return;
     }
     const li = lastInf[key];
-    let h = hDmg(w.n, Math.max(1, tier), dd, mod);
+    let h = weaponDamage(c, i);
     if (li) {
       h += ' · ' + hDmg(li.sn, li.iv, li.iD, 0);
       delete lastInf[key];
