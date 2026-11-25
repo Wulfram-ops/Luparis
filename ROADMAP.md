@@ -13,15 +13,16 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 - Vérifier aussi les monstres convertis du SRD, et le nouveau souffle à recharge (Tier dés par tour de recharge).
 - Sortie attendue : un tableau des écarts (combien de coups pour tomber, dégâts par round) et les corrections proposées.
 
-### 0.2 Brainstorm Daggerheart : la Maîtrise donne le nombre de dés
-- Piste : comme dans Daggerheart, une stat de **Maîtrise** (Proficiency) donne le nombre de dés de dégâts, pour les armes comme pour la magie.
-- Les **écoles de magie** deviennent moins chères : elles donnent l'accès, le dé de l'école, l'affinité et le budget d'effets, mais plus le nombre de dés.
-- La **Maîtrise** devient plus chère.
-- But : plus de variété de builds, sans déséquilibrer les dégâts.
-- Questions ouvertes :
-  - Maîtrise gagnée avec le niveau, achetée en XP, ou les deux ?
-  - Une seule Maîtrise, ou une martiale et une magique ?
-  - Que garde un spécialiste d'une école face à quelqu'un qui y a seulement goûté ?
+### 0.2 Maîtrise façon Daggerheart (décidé le 25 novembre, chiffres à valider)
+- **Décidé :** la **Maîtrise** donne le nombre de dés de dégâts, pour les armes comme pour la magie.
+  - Une partie vient du niveau, gratuitement : 1 au niveau 1, 2 au 5, 3 au 10, 4 au 15, 5 au 20.
+  - Le reste s'achète en XP, jusqu'à +5 au niveau 20, soit 10 dés au maximum.
+- **Décidé :** les écoles de magie et les familles d'armes coûtent moins cher et gardent leurs passifs. Exemples : l'Afflux a le plus gros dé ; le Creuset paie moins cher ses soins ; les armes contondantes ignorent une partie de l'armure. Se spécialiser garde de vrais avantages : budget d'effets plus haut, passifs, affinité.
+- **À chiffrer :**
+  - le prix des crans de Maîtrise et leur plafond par niveau ;
+  - le nouveau prix des écoles et des familles, et ce que chaque rang y apporte ;
+  - le bonus au toucher : tient-il à la Maîtrise totale ou seulement à la part donnée par le niveau ?
+  - l'effet sur les seuils et sur la conversion des monstres, si les dégâts maximums doublent (10 dés au lieu de 5).
 - À valider par les simulations de 0.1.
 
 ### 0.3 Brainstorm : Luparis à travers les âges
