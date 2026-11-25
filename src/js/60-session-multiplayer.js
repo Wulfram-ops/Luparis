@@ -506,6 +506,47 @@ function mpHostMsg(m, conn) {
     const id = m.type === 'char' ? m.c && m.c.id : m.me;
     if (!id || conn.me !== id) return;
   }
+  // zones and effects laid by players: checked, tagged with their character, then shared
+  if (m.type === 'tpl' && m.T && TPLC[m.T.k] && conn.me) {
+    const T = m.T,
+      n = v => (isFinite(+v) ? +v : 0);
+    if (TPLS.filter(x => x.by === conn.me).length >= 12) return;
+    TPLS.push({
+      k: T.k,
+      x: Math.round(n(T.x)),
+      y: Math.round(n(T.y)),
+      a: n(T.a),
+      s: Math.max(5, Math.min(300, n(T.s))),
+      id: tid(),
+      by: conn.me,
+    });
+    save();
+    draw();
+    renderTpls();
+    mpPush();
+    return;
+  }
+  if (m.type === 'tpldel' && conn.me) {
+    TPLS = TPLS.filter(x => !(x.id === m.id && x.by === conn.me));
+    save();
+    draw();
+    renderTpls();
+    mpPush();
+    return;
+  }
+  if (m.type === 'env' && conn.me) {
+    const x = Math.round(+m.x),
+      y = Math.round(+m.y),
+      key = x + ',' + y,
+      cur = ENV[key];
+    if (!ok(x, y) || (cur && cur.by !== conn.me)) return mpPush();
+    if (!m.k) delete ENV[key];
+    else if (ENVT[m.k]) ENV[key] = { k: m.k, dc: Math.max(5, Math.min(30, Math.round(+m.dc) || 12)), by: conn.me };
+    save();
+    draw();
+    mpPush();
+    return;
+  }
   if (m.type === 'place') {
     const ch = CH.list.find(c => c.id === m.me),
       x = Math.round(+m.x),

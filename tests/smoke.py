@@ -256,6 +256,12 @@ def run(chrome: str | None) -> None:
             "a player places their own token",
             host.evaluate("id => DBG('tokens.some(k=>k.cid===' + JSON.stringify(id) + '&&k.x===2&&k.y===2)')", created_id),
         )
+        creator.evaluate("DBG(`tplSel='circle';TPLA=null;tplClick({x:3,y:3});mpSend({type:'env',x:4,y:4,k:'fire',dc:12})`)")
+        host.wait_for_timeout(600)
+        check(
+            "players lay zones and effects",
+            host.evaluate("id => DBG('TPLS.some(T=>T.by===' + JSON.stringify(id) + ') && ENV[\\'4,4\\'] && ENV[\\'4,4\\'].by===' + JSON.stringify(id))", created_id),
+        )
         spec = ctx.new_page()
         spec.goto(url + "?debug=1&local=1")
         spec.wait_for_timeout(800)

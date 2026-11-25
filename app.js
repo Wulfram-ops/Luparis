@@ -3283,8 +3283,19 @@ function areaApply(ar) {
 cv.addEventListener('pointerdown', e => {
   const [mx, my] = pos(e),
     c = pick(mx, my);
-  if (tool === 'tpl' && e.button === 0 && c && MP.role !== 'player') {
+  if (tool === 'tpl' && e.button === 0 && c && !(MP.role === 'player' && MP.prole === 'spec')) {
     tplClick(c);
+    return;
+  }
+  // a player lays an effect (flames, ice…) on one square, or takes back one of their own
+  if (tool === 'env' && e.button === 0 && c && MP.role === 'player' && MP.prole !== 'spec') {
+    const key = c.x + ',' + c.y,
+      cur = ENV[key];
+    if (cur && cur.by !== MP.me) return;
+    if (cur) delete ENV[key];
+    else ENV[key] = { k: envSel, dc: envDC(), by: MP.me };
+    mpSend({ type: 'env', x: c.x, y: c.y, k: cur ? null : envSel, dc: envDC() });
+    draw();
     return;
   }
   if (
@@ -11276,6 +11287,14 @@ function tplClick(c) {
     ? { k, x: TPLA.x, y: TPLA.y, a: Math.atan2(c.y - TPLA.y, c.x - TPLA.x), s: tplSize(), id: tid() }
     : { k, x: c.x, y: c.y, a: 0, s: tplSize(), id: tid() };
   TPLA = null;
+  if (MP.role === 'player') {
+    T.by = MP.me;
+    TPLS.push(T);
+    mpSend({ type: 'tpl', T });
+    draw();
+    renderTpls();
+    return;
+  }
   TPLS.push(T);
   save();
   draw();
@@ -11293,9 +11312,11 @@ function renderTpls() {
                   .map(k => esc(k.nm ? tr(k.nm) + (k.num ? ' ' + k.num : '') : k.n))
                   .join(', ')}</div>`
               : ''
-          }<button type="button" data-tpx="${i}" aria-label="${L2('Remove', 'Retirer')}">×</button></li>`,
+          }${MP.role !== 'player' || (T.by && T.by === MP.me) ? `<button type="button" data-tpx="${i}" aria-label="${L2('Remove', 'Retirer')}">×</button>` : ''}</li>`,
       ).join('') +
-      `<li><button type="button" data-tpx="all">${L2('Clear all zones', 'Effacer toutes les zones')}</button></li>`
+      (MP.role !== 'player'
+        ? `<li><button type="button" data-tpx="all">${L2('Clear all zones', 'Effacer toutes les zones')}</button></li>`
+        : '')
     : `<li class="small">${L2('No zone. Tool “Zone”: click to place a circle, sphere or cube; for a cone or a line, click the origin then the direction.', "Aucune zone. Outil « Zone » : clique pour poser un cercle, une sphère ou un cube ; pour un cône ou une ligne, clique l'origine puis la direction.")}</li>`;
 }
 document.getElementById('tplk').addEventListener('change', e => {
@@ -11307,6 +11328,16 @@ document.getElementById('tplsz').addEventListener('input', () => draw());
 document.getElementById('tpl_list').addEventListener('click', e => {
   const b = e.target.closest('[data-tpx]');
   if (!b) return;
+  if (MP.role === 'player') {
+    const T = TPLS[+b.dataset.tpx];
+    if (T && T.by === MP.me) {
+      TPLS.splice(+b.dataset.tpx, 1);
+      mpSend({ type: 'tpldel', id: T.id });
+      draw();
+      renderTpls();
+    }
+    return;
+  }
   snap();
   if (b.dataset.tpx === 'all') TPLS = [];
   else TPLS.splice(+b.dataset.tpx, 1);
@@ -12691,6 +12722,47 @@ function mpHostMsg(m, conn) {
   if (m.type === 'tokens' || m.type === 'char' || m.type === 'place') {
     const id = m.type === 'char' ? m.c && m.c.id : m.me;
     if (!id || conn.me !== id) return;
+  }
+  // zones and effects laid by players: checked, tagged with their character, then shared
+  if (m.type === 'tpl' && m.T && TPLC[m.T.k] && conn.me) {
+    const T = m.T,
+      n = v => (isFinite(+v) ? +v : 0);
+    if (TPLS.filter(x => x.by === conn.me).length >= 12) return;
+    TPLS.push({
+      k: T.k,
+      x: Math.round(n(T.x)),
+      y: Math.round(n(T.y)),
+      a: n(T.a),
+      s: Math.max(5, Math.min(300, n(T.s))),
+      id: tid(),
+      by: conn.me,
+    });
+    save();
+    draw();
+    renderTpls();
+    mpPush();
+    return;
+  }
+  if (m.type === 'tpldel' && conn.me) {
+    TPLS = TPLS.filter(x => !(x.id === m.id && x.by === conn.me));
+    save();
+    draw();
+    renderTpls();
+    mpPush();
+    return;
+  }
+  if (m.type === 'env' && conn.me) {
+    const x = Math.round(+m.x),
+      y = Math.round(+m.y),
+      key = x + ',' + y,
+      cur = ENV[key];
+    if (!ok(x, y) || (cur && cur.by !== conn.me)) return mpPush();
+    if (!m.k) delete ENV[key];
+    else if (ENVT[m.k]) ENV[key] = { k: m.k, dc: Math.max(5, Math.min(30, Math.round(+m.dc) || 12)), by: conn.me };
+    save();
+    draw();
+    mpPush();
+    return;
   }
   if (m.type === 'place') {
     const ch = CH.list.find(c => c.id === m.me),

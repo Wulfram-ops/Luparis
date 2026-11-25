@@ -708,8 +708,19 @@ function areaApply(ar) {
 cv.addEventListener('pointerdown', e => {
   const [mx, my] = pos(e),
     c = pick(mx, my);
-  if (tool === 'tpl' && e.button === 0 && c && MP.role !== 'player') {
+  if (tool === 'tpl' && e.button === 0 && c && !(MP.role === 'player' && MP.prole === 'spec')) {
     tplClick(c);
+    return;
+  }
+  // a player lays an effect (flames, ice…) on one square, or takes back one of their own
+  if (tool === 'env' && e.button === 0 && c && MP.role === 'player' && MP.prole !== 'spec') {
+    const key = c.x + ',' + c.y,
+      cur = ENV[key];
+    if (cur && cur.by !== MP.me) return;
+    if (cur) delete ENV[key];
+    else ENV[key] = { k: envSel, dc: envDC(), by: MP.me };
+    mpSend({ type: 'env', x: c.x, y: c.y, k: cur ? null : envSel, dc: envDC() });
+    draw();
     return;
   }
   if (
