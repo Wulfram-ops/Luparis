@@ -3475,6 +3475,29 @@ function inArea(c, ar) {
     c.y <= Math.max(ar.a.y, ar.b.y)
   );
 }
+// effects laid by a player: on empty squares or their own; the same area again removes them
+function envAreaApply(ar, k, dc, by) {
+  const x0 = Math.max(0, Math.min(ar.a.x, ar.b.x)),
+    x1 = Math.min(N - 1, Math.max(ar.a.x, ar.b.x)),
+    y0 = Math.max(0, Math.min(ar.a.y, ar.b.y)),
+    y1 = Math.min(N - 1, Math.max(ar.a.y, ar.b.y));
+  if ((x1 - x0 + 1) * (y1 - y0 + 1) > 400) return false;
+  let all = true;
+  for (let x = x0; x <= x1; x++)
+    for (let y = y0; y <= y1; y++) {
+      const v = ENV[x + ',' + y];
+      if (!v || v.by !== by || (v.k || v) !== k) all = false;
+    }
+  for (let x = x0; x <= x1; x++)
+    for (let y = y0; y <= y1; y++) {
+      const key = x + ',' + y,
+        v = ENV[key];
+      if (v && v.by !== by) continue;
+      if (all) delete ENV[key];
+      else ENV[key] = { k, dc, by };
+    }
+  return true;
+}
 function areaApply(ar) {
   const x0 = Math.min(ar.a.x, ar.b.x),
     x1 = Math.max(ar.a.x, ar.b.x),
@@ -3525,14 +3548,10 @@ cv.addEventListener('pointerdown', e => {
       return;
     }
   }
-  // a player lays an effect (flames, ice…) on one square, or takes back one of their own
+  // a player lays an effect (flames, ice…) on a square or a dragged area, or takes back their own, like the GM
   if (tool === 'env' && e.button === 0 && c && MP.role === 'player' && MP.prole !== 'spec') {
-    const key = c.x + ',' + c.y,
-      cur = ENV[key];
-    if (cur && cur.by !== MP.me) return;
-    if (cur) delete ENV[key];
-    else ENV[key] = { k: envSel, dc: envDC(), by: MP.me };
-    mpSend({ type: 'env', x: c.x, y: c.y, k: cur ? null : envSel, dc: envDC() });
+    cv.setPointerCapture(e.pointerId);
+    painting = { inv: false, area: { a: c, b: c }, player: true };
     draw();
     return;
   }
@@ -3633,6 +3652,13 @@ cv.addEventListener('pointermove', e => {
 });
 const end = () => {
   if (drag !== null) setTimeout(draw, 0);
+  if (painting && painting.area && painting.player) {
+    envAreaApply(painting.area, envSel, envDC(), MP.me);
+    mpSend({ type: 'envarea', a: painting.area.a, b: painting.area.b, k: envSel, dc: envDC() });
+    painting = null;
+    draw();
+    return;
+  }
   if (painting && painting.area) {
     areaApply(painting.area);
     painting = null;
@@ -13713,6 +13739,15 @@ function mpHostMsg(m, conn) {
     const o = OBJS[objAt(Math.round(+m.x), Math.round(+m.y))];
     if (o && ['door', 'lever'].includes(o.k)) {
       o.o = !o.o;
+      save();
+      draw();
+    }
+    mpPush();
+    return;
+  }
+  if (m.type === 'envarea' && conn.me && m.a && m.b && ENVT[m.k]) {
+    const P = q => ({ x: Math.round(+q.x), y: Math.round(+q.y) });
+    if (envAreaApply({ a: P(m.a), b: P(m.b) }, m.k, Math.max(5, Math.min(30, Math.round(+m.dc) || 12)), conn.me)) {
       save();
       draw();
     }

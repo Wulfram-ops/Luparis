@@ -553,6 +553,15 @@ function mpHostMsg(m, conn) {
     mpPush();
     return;
   }
+  if (m.type === 'envarea' && conn.me && m.a && m.b && ENVT[m.k]) {
+    const P = q => ({ x: Math.round(+q.x), y: Math.round(+q.y) });
+    if (envAreaApply({ a: P(m.a), b: P(m.b) }, m.k, Math.max(5, Math.min(30, Math.round(+m.dc) || 12)), conn.me)) {
+      save();
+      draw();
+    }
+    mpPush();
+    return;
+  }
   if (m.type === 'env' && conn.me) {
     const x = Math.round(+m.x),
       y = Math.round(+m.y),

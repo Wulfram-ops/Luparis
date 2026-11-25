@@ -265,11 +265,11 @@ def run(chrome: str | None) -> None:
         host.evaluate("DBG(`rot=1;save();mpPush()`)")
         creator.wait_for_timeout(600)
         check("each player keeps their own viewing angle", creator.evaluate("DBG('rot')") == 2)
-        creator.evaluate("DBG(`tplSel='circle';TPLA=null;tplClick({x:3,y:3});mpSend({type:'env',x:4,y:4,k:'fire',dc:12})`)")
+        creator.evaluate("DBG(`tplSel='circle';TPLA=null;tplClick({x:3,y:3});mpSend({type:'envarea',a:{x:4,y:4},b:{x:5,y:5},k:'fire',dc:12})`)")
         host.wait_for_timeout(600)
         check(
             "players lay zones and effects",
-            host.evaluate("id => DBG('TPLS.some(T=>T.by===' + JSON.stringify(id) + ') && ENV[\\'4,4\\'] && ENV[\\'4,4\\'].by===' + JSON.stringify(id))", created_id),
+            host.evaluate("id => DBG('TPLS.some(T=>T.by===' + JSON.stringify(id) + ') && ENV[\\'5,5\\'] && ENV[\\'5,5\\'].by===' + JSON.stringify(id))", created_id),
         )
         creator.evaluate("DBG(`pushRoll('<b>12</b>','Moi')`)")
         host.evaluate("DBG(`pushRoll('<b>3</b>','MJ')`)")
