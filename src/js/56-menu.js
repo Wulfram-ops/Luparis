@@ -304,3 +304,43 @@ document.getElementById('img_card').addEventListener('contextmenu', e => {
     },
   ]);
 });
+
+// ---- map and world views: 4:3 by default; drag the bottom edge to resize, double-click it to go back to 4:3
+for (const id of ['stage', 'w_stage']) {
+  const el = document.getElementById(id);
+  if (!el) continue;
+  const key = 'luparis-ratio-' + id,
+    apply = () => {
+      const r = +lsGet(key, 0);
+      el.style.aspectRatio = r > 0.2 && r < 3 ? `1 / ${r}` : '4 / 3';
+    },
+    h = document.createElement('div');
+  h.className = 'rsz';
+  h.title = L2('Drag to resize · double-click: back to 4:3', 'Glisse pour redimensionner · double-clic : retour au 4:3');
+  h.setAttribute('aria-hidden', 'true');
+  el.append(h);
+  apply();
+  let st = null;
+  h.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    h.setPointerCapture(e.pointerId);
+    st = { y: e.clientY, hgt: el.getBoundingClientRect().height };
+  });
+  h.addEventListener('pointermove', e => {
+    if (!st) return;
+    const w = el.getBoundingClientRect().width,
+      nh = Math.max(240, Math.min(innerHeight * 1.5, st.hgt + e.clientY - st.y));
+    el.style.aspectRatio = `${w} / ${nh}`;
+  });
+  h.addEventListener('pointerup', () => {
+    if (!st) return;
+    st = null;
+    const r = el.getBoundingClientRect();
+    lsSet(key, Math.round((r.height / r.width) * 1000) / 1000);
+  });
+  h.addEventListener('dblclick', () => {
+    lsSet(key, 0);
+    apply();
+  });
+}
