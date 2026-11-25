@@ -233,11 +233,11 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 .pres{display:flex;flex-direction:column;gap:4px;margin:-2px 0 8px}.pres button{justify-content:space-between;border:1px solid var(--line);min-height:36px;text-align:left}
 .pres button small{color:var(--muted)}
 #tk_panel .stats{margin-top:6px}#tk_panel .tline{font-size:14px;margin:4px 0}#tk_panel .tno{font-size:14px;color:var(--muted);white-space:pre-wrap;margin:6px 0}
-.wstage{position:relative;height:min(74vh,800px);min-height:380px;border-radius:16px;overflow:hidden;background:#7b9893;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
-.wstage.tool{cursor:crosshair}#w_svg svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.wstage{position:relative;height:min(74vh,800px);min-height:380px;border-radius:16px;overflow:hidden;background:#4274a2;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.wstage.tool{cursor:crosshair}#w_svg svg{position:absolute;inset:0;width:100%;height:100%;display:block}#w_svg img{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;user-select:none;max-width:none;will-change:transform}
 .winfo{position:absolute;left:22px;bottom:22px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:14px;pointer-events:none;max-width:calc(100% - 24px)}
-#w_svg text{font-family:"IM Fell English",Georgia,serif;fill:#2a211a;paint-order:stroke;stroke:rgba(246,239,220,.9);stroke-width:2.6px;stroke-linejoin:round}
-.wframe{position:absolute;inset:0;pointer-events:none;border-radius:16px;box-shadow:inset 0 0 0 3px #3b2a1a,inset 0 0 0 9px #d8c597,inset 0 0 0 10.5px #3b2a1a,inset 0 0 0 13px #eadcb6,inset 0 0 0 14px #3b2a1a,inset 0 0 70px rgba(70,45,15,.4)}
+#w_svg text{font-family:"IM Fell English",Georgia,serif;fill:#1d1a17;paint-order:stroke;stroke:rgba(251,246,230,.85);stroke-width:2.4px;stroke-linejoin:round}
+.wframe{position:absolute;inset:0;pointer-events:none;border-radius:16px;box-shadow:inset 0 0 0 12px #efe6cc,inset 0 0 0 13.5px #1d1a17,inset 0 0 0 16px #efe6cc,inset 0 0 0 17px #1d1a17}
 .wpaper{position:absolute;inset:0;pointer-events:none;border-radius:16px;mix-blend-mode:multiply;opacity:.55;background:radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(95,62,25,.45) 100%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012' numOctaves='3' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .55 0 0 0 0 .4 0 0 0 0 .2 0 0 0 .55 -.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E"),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .22 0 0 0 0 .1 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .wtitle{position:absolute;left:26px;top:24px;pointer-events:none;padding:6px 30px;background:linear-gradient(#f3e8c9,#e3d2a6);border:1.5px solid #3b2a1a;box-shadow:0 0 0 3px #efe3c4,0 0 0 4px #3b2a1a,0 4px 10px rgba(40,25,10,.35);font:700 clamp(18px,2.2vw,30px)/1.1 "IM Fell English SC","Cinzel",Georgia,serif;letter-spacing:.14em;color:#2e1a0e}
 .wtitle::before,.wtitle::after{content:"";position:absolute;top:-6px;bottom:-6px;width:14px;background:linear-gradient(90deg,#c9b383,#f1e4c2 50%,#c9b383);border:1.5px solid #3b2a1a;border-radius:7px}.wtitle::before{left:-12px}.wtitle::after{right:-12px}
@@ -266,10 +266,10 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
   <div class="grp" id="w_tools"><button data-w="pan" aria-pressed="true" data-i18n="w_pan"></button><button data-w="party" data-i18n="w_party"></button><button data-w="pin" data-i18n="w_pin"></button><button data-w="meas" data-i18n="w_meas"></button><button data-w="edit" data-i18n="w_edit"></button></div>
   <div class="grp"><button id="w_zin" aria-label="Zoom +">+</button><button id="w_zout" aria-label="Zoom −">−</button><button id="w_fit" data-i18n="w_fit"></button><button id="w_goparty" data-i18n="w_goparty"></button></div>
   <div class="grp" id="w_layers"><span data-i18n="w_layers"></span>
-    <label class="chk"><input type="checkbox" data-ly="states"><span data-i18n="w_l_states"></span></label><label class="chk"><input type="checkbox" data-ly="routes" checked><span data-i18n="w_l_routes"></span></label>
-    <label class="chk"><input type="checkbox" data-ly="rivers" checked><span data-i18n="w_l_rivers"></span></label><label class="chk"><input type="checkbox" data-ly="burgs" checked><span data-i18n="w_l_burgs"></span></label></div>
+    <label class="chk"><input type="checkbox" data-ly="states"><span data-i18n="w_l_states"></span></label>
+    <label class="chk"><input type="checkbox" data-ly="burgs" checked><span data-i18n="w_l_burgs"></span></label></div>
 </div>
-<div class="mapwrap"><div class="wstage" id="w_stage"><div id="w_svg"></div><div class="wpaper" aria-hidden="true"></div><div class="wframe" aria-hidden="true"></div>
+<div class="mapwrap"><div class="wstage" id="w_stage"><div id="w_svg"><img id="w_lo" alt="" decoding="async" draggable="false"><img id="w_hi" alt="" decoding="async" draggable="false" hidden></div><div class="wframe" aria-hidden="true"></div>
 
 <div class="wscale" id="w_scale"></div><div id="w_info" class="winfo"></div></div>
 <aside class="side">
@@ -1914,7 +1914,7 @@ let wPats=[],wHalo=[],BASEB=[],wBurgs=[],wMarks=[],wStates=[],wOv=null,wBG=null,
 async function initWorld(){if(wStarted)return;wStarted=true;$('w_info').textContent=t('w_load');
  try{const[r1,r2]=await Promise.all([fetch('world.svg'),fetch('world-burgs.json')]);if(!r1.ok||!r2.ok)throw 0;const doc=new DOMParser().parseFromString(await r1.text(),'image/svg+xml');WS=document.importNode(doc.documentElement,true);if(WS.nodeName!=='svg')throw 0;BASEB=await r2.json();if(!Array.isArray(BASEB))throw 0}
  catch(e){$('w_info').textContent=t('w_fail');WS=null;wStarted=false;return}
- WS.removeAttribute('viewBox');$('w_svg').append(WS);wPats=[...WS.querySelectorAll('pattern')];wHalo=[...WS.querySelectorAll('.halo1,.halo2')].map(e=>[e,+e.getAttribute('stroke-width')]);WV={x:0,y:0,w:1920,h:945};
+ WS.removeAttribute('viewBox');$('w_svg').append(WS);{const lo=$('w_lo');lo.onload=()=>wApply();lo.src='world-lo.webp';const hi=$('w_hi');hi.onload=()=>{hi.dataset.ok='1';wApply()};setTimeout(()=>{hi.src='world-hi.webp'},400)}wPats=[...WS.querySelectorAll('pattern')];wHalo=[...WS.querySelectorAll('.halo1,.halo2')].map(e=>[e,+e.getAttribute('stroke-width')]);WV={x:0,y:0,w:1920,h:945};
  for(const g of WS.querySelectorAll('.mk')){const m=/translate\(([-\d.]+),([-\d.]+)\)/.exec(g.getAttribute('transform'));wMarks.push({g,x:+m[1],y:+m[2],n:g.dataset.n,note:g.dataset.note})}
  for(const e of WS.querySelectorAll('.sl'))wStates.push({e,x:+e.getAttribute('x'),y:+e.getAttribute('y'),n:e.textContent,a:+e.dataset.area});
  wBG=WS.querySelector('#w-burgs');wOv=wEl('g',{id:'w-ov'});WS.append(wOv);wBuild();wFit();$('w_info').textContent=t('w_hover')}
@@ -1922,24 +1922,24 @@ function wBuild(){wBG.replaceChildren();wBurgs=[];
  const all=BASEB.map(b=>({...b,id:'b'+b.i})).concat(WST.add.map(a=>({...a})));
  for(const b0 of all){const e=WST.ed[b0.id]||{};if(e.del)continue;const b={...b0,...e};const g=wEl('g',{class:'bg '+b.c});g.dataset.id=b.id;
   if(b.lm){g.append(wEl('circle',{r:16,cy:-12,fill:'transparent'}));const tx=wEl('text',{y:-30});tx.textContent=b.n;g.append(tx);wBG.append(g);wBurgs.push({g,tx,id:b.id,x:b.x,y:b.y,n:b.n,s:b.s||'',c:b.c,lm:b.lm,lh:b.lh,d:b});continue}
-  const P=(d,f)=>g.append(wEl('path',{d,fill:f,stroke:'#2a211a','stroke-width':.8,'stroke-linejoin':'round'}));
-  g.append(wEl('ellipse',{cx:0,cy:.6,rx:b.c==='town'?4:8,ry:b.c==='town'?1.2:1.8,fill:'#2a211a',opacity:.25}));
-  if(b.c==='cap'){P('M-8,0 L-8,-8 L-6.4,-8 L-6.4,-6.6 L-4.8,-6.6 L-4.8,-8 L-3.2,-8 L-3.2,0Z M3.2,0 L3.2,-8 L4.8,-8 L4.8,-6.6 L6.4,-6.6 L6.4,-8 L8,-8 L8,0Z','#efe3c4');P('M-3.2,0 L-3.2,-13 L3.2,-13 L3.2,0Z','#efe3c4');P('M-4.2,-13 L0,-18.5 L4.2,-13Z','#b2523e');P('M-1.3,0 L-1.3,-3.2 Q0,-4.8 1.3,-3.2 L1.3,0Z','#2a211a');P('M0,-18.5 L0,-23 L4,-21.6 L0,-20.2','#b2523e')}
-  else if(b.c==='city'){P('M-7,0 L-7,-5 L-4.2,-8.2 L-1.4,-5 L-1.4,0Z','#efe3c4');P('M-.4,0 L-.4,-10 L4.8,-10 L4.8,0Z','#efe3c4');P('M-1.2,-10 L2.2,-14 L5.6,-10Z','#b2523e');P('M-7.8,-5 L-4.2,-9 L-.6,-5Z','#8a5a44')}
-  else{P('M-3.4,0 L-3.4,-4.2 L0,-7.2 L3.4,-4.2 L3.4,0Z','#efe3c4');P('M-4.2,-4 L0,-7.8 L4.2,-4','none')}
-  const tx=wEl('text',{y:b.c==='cap'?-26:b.c==='city'?-17:-10});tx.textContent=b.n;g.append(tx);wBG.append(g);wBurgs.push({g,id:b.id,x:b.x,y:b.y,n:b.n,s:b.s||'',c:b.c,d:b})}
+  if(b.c==='cap'){g.append(wEl('circle',{r:4.2,fill:'#fbf6e6',stroke:'#14110e','stroke-width':1.3}));g.append(wEl('circle',{r:2,fill:'#14110e'}))}
+  else g.append(wEl('circle',{r:b.c==='city'?2.6:1.8,fill:'#14110e',stroke:'#fbf6e6','stroke-width':.8}));
+  const tx=wEl('text',{y:b.c==='cap'?-7:b.c==='city'?-5.5:-4});tx.textContent=b.n;g.append(tx);wBG.append(g);wBurgs.push({g,id:b.id,x:b.x,y:b.y,n:b.n,s:b.s||'',c:b.c,d:b})}
  wApply()}
 function wPx(){const r=$('w_stage').getBoundingClientRect();return{r,k:Math.min(r.width/WV.w,r.height/WV.h)}}
 function wApply(){if(!WS)return;const{r,k}=wPx();const vw=r.width/k,vh=r.height/k,cx=WV.x+WV.w/2,cy=WV.y+WV.h/2;WS.setAttribute('viewBox',`${cx-vw/2} ${cy-vh/2} ${vw} ${vh}`);
+ {const x0=cx-vw/2,y0=cy-vh/2,lo=$('w_lo'),hi=$('w_hi'),useHi=k>2.1&&hi.dataset.ok;lo.style.transform=`translate(${-x0*k}px,${-y0*k}px) scale(${k/2})`;if(useHi)hi.style.transform=`translate(${-x0*k}px,${-y0*k}px) scale(${k/4})`;hi.hidden=!useHi}
  const s=1/k;for(const b of wBurgs){b.g.setAttribute('transform',`translate(${b.x},${b.y}) scale(${s})`);if(b.lm){b.tx.setAttribute('y',-(b.lh*k+6));b.g.firstChild.setAttribute('r',Math.max(10,b.lh*k*.5));b.g.firstChild.setAttribute('cy',-b.lh*k*.5)}}for(const m of wMarks)m.g.setAttribute('transform',`translate(${m.x},${m.y}) scale(${s*1.6})`);
  
  const z=k*1920/r.width;WS.style.setProperty('--bfs',(1+Math.min(.6,Math.max(0,(z-1.4)*.1))).toFixed(3));WS.classList.toggle('hide-towns',z<3);WS.classList.toggle('hide-cities',z<1.6);WS.classList.toggle('hide-caps',z<1.4);WS.classList.toggle('hide-townicons',z<1.8);WS.classList.toggle('hide-cityicons',z<1.15);
  for(const st of wStates){const fs=Math.max(14,Math.min(36,Math.sqrt(st.a)*1.9))*(z>4?0:1);st.e.setAttribute('y',st.y);st.e.setAttribute('font-size',fs*s);st.e.setAttribute('stroke-width',fs*s*.22);st.e.style.display=fs?'':'none'}
- {const kept=[];for(const st of [...wStates].sort((p,q)=>q.a-p.a)){if(st.e.style.display==='none')continue;const pad=1*s,hit=bb=>kept.some(o=>bb.x-pad<o.x+o.width&&bb.x+bb.width+pad>o.x&&bb.y-pad<o.y+o.height&&bb.y+bb.height+pad>o.y);let bb;try{bb=st.e.getBBox()}catch(e){continue}
-  st.e.setAttribute('y',st.y);if(hit(bb)){const f0=+st.e.getAttribute('font-size');outer:for(const k2 of[1,.8,.65])for(const dy of[0,-1,1,-1.8,1.8]){st.e.setAttribute('font-size',f0*k2);st.e.setAttribute('stroke-width',f0*k2*.22);st.e.setAttribute('y',st.y+dy*f0*k2);bb=st.e.getBBox();if(!hit(bb))break outer}}if(hit(bb)){st.e.style.display='none';st.e.setAttribute('y',st.y)}else kept.push(bb)}}
- for(const id of['states','routes','rivers','burgs'])WS.classList.toggle('ly-off-'+id,!document.querySelector(`#w_layers input[data-ly="${id}"]`).checked);
+ clearTimeout(window._wLT);window._wLT=setTimeout(wLabels,140);
+ for(const id of['states','burgs'])WS.classList.toggle('ly-off-'+id,!document.querySelector(`#w_layers input[data-ly="${id}"]`).checked);
  const mi=Math.max(1,Math.round(120/k*MI_PX)),nice=[5,10,20,25,50,100,150,200,250,300,500,750,1000,1500,2000].reduce((a,b)=>Math.abs(b-mi)<Math.abs(a-mi)?b:a),px=nice/MI_PX*k;
  $('w_scale').innerHTML=`<div class="sb" style="width:${px}px"></div><span>${nice} ${t('w_miles')}</span>`;wRender()}
+function wLabels(){if(!WS)return;const{k}=wPx(),s=1/k;
+ {const kept=[];for(const st of [...wStates].sort((p,q)=>q.a-p.a)){if(st.e.style.display==='none')continue;const pad=1*s,hit=bb=>kept.some(o=>bb.x-pad<o.x+o.width&&bb.x+bb.width+pad>o.x&&bb.y-pad<o.y+o.height&&bb.y+bb.height+pad>o.y);let bb;try{bb=st.e.getBBox()}catch(e){continue}
+  st.e.setAttribute('y',st.y);if(hit(bb)){const f0=+st.e.getAttribute('font-size');outer:for(const k2 of[1,.8,.65])for(const dy of[0,-1,1,-1.8,1.8]){st.e.setAttribute('font-size',f0*k2);st.e.setAttribute('stroke-width',f0*k2*.22);st.e.setAttribute('y',st.y+dy*f0*k2);bb=st.e.getBBox();if(!hit(bb))break outer}}if(hit(bb)){st.e.style.display='none';st.e.setAttribute('y',st.y)}else kept.push(bb)}}}
 function wFit(){WV={x:0,y:0,w:1920,h:945};wApply()}
 function wZoom(f,px,py){const{r,k}=wPx(),mx=WV.x+WV.w/2+(px-r.width/2)/k,my=WV.y+WV.h/2+(py-r.height/2)/k,nw=Math.max(40,Math.min(1920*1.2,WV.w/f)),nh=nw*WV.h/WV.w,sc=nw/WV.w;
  const cx=mx-(mx-(WV.x+WV.w/2))*sc,cy=my-(my-(WV.y+WV.h/2))*sc;WV={x:cx-nw/2,y:cy-nh/2,w:nw,h:nh};wApply()}

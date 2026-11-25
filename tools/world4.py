@@ -1,4 +1,4 @@
-import json,sys,statistics,math,random
+import os,json,sys,statistics,math,random
 from xml.sax.saxutils import escape,quoteattr
 src,out=sys.argv[1],sys.argv[2]
 d=json.load(open(src));p=d['pack'];W,H=d['info']['width'],d['info']['height'];SEED=int(d['info']['seed'])
@@ -260,6 +260,8 @@ def smooth(pts):
         mx,my=(pts[i][0]+pts[i+1][0])/2,(pts[i][1]+pts[i+1][1])/2
         s+=f"Q{pts[i][0]:.1f},{pts[i][1]:.1f} {mx:.1f},{my:.1f}"
     return s+f"L{pts[-1][0]:.1f},{pts[-1][1]:.1f}"
+if '--fancy' not in sys.argv:
+    exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)),'world_flat.py')).read());sys.exit(0)
 o.append('<g id="w-rivers" class="ly-rivers" fill="none" stroke="#4d7a80" stroke-linecap="round" stroke-linejoin="round">')
 for r in p['rivers']:
     if not r or 'cells' not in r: continue
