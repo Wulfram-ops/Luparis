@@ -260,7 +260,7 @@ def run(chrome: str | None) -> None:
         player.click('.tabs a[data-v="carte"]')
         check("quick place toolbar hidden for players", not player.locator("#pl_bar").is_visible())
         player.locator('[data-gpre="combat"]').click()
-        check("player combat uses player-specific layout", player.evaluate("DBG('GL.map[2]===7 && GL.in[0]===8 && gIsParked(\'sn\')')"))
+        check("player combat uses player-specific layout", player.evaluate("x => DBG(x)", "GL.map[2]===7 && GL.in[0]===8 && gIsParked('sn')"))
         check("unclaimed player keeps session picker accessible", player.evaluate("DBG(\"(()=>{const me=MP.me;try{MP.me=null;return !gIsParked('mp')&&gRegions(GPRE.combat)[1].it[0][0]==='mp'}finally{MP.me=me}})()\")"))
         player.locator(".greset").click()
         # Campaign folders exist even when empty and are shared with players.
