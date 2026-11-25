@@ -7,6 +7,15 @@ function foldApply(root) {
   (root || document).querySelectorAll('section.card').forEach(sec => {
     const h = sec.querySelector('h3');
     if (!h || sec.closest('#c_mods')) return;
+    // the Map grid modules don't fold: their title moves them
+    if (sec.closest('#cgrid')) {
+      sec.classList.remove('fold');
+      h.classList.remove('foldh');
+      h.removeAttribute('role');
+      h.removeAttribute('aria-expanded');
+      h.removeAttribute('tabindex');
+      return;
+    }
     let w = h;
     while (w.parentNode && w.parentNode !== sec) w = w.parentNode;
     if (w !== h) w.classList.add('foldwrap');

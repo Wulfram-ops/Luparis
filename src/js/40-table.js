@@ -863,9 +863,9 @@ function pfSheet(c, D) {
     ...(c.shield !== 'none' ? [esc(tr(sh[0])) + (D.shdOk ? '' : ' ⚠')] : []),
     ...(c.weapons || []).map(w => esc(w.n)),
   ];
-  return `<details class="pf"${pfOpen ? ' open' : ''}><summary>${L2('Character sheet', 'Fiche')} · ${esc(c.people || '')}${c.people ? ' · ' : ''}${L2('level', 'niveau')} ${D.L} · ${+c.xp || 0} XP${c.camp ? ' · ' + esc(c.camp) : ''}</summary><div class="pfg">
+  return `<div class="pf"><div class="pfsum">${L2('Character sheet', 'Fiche')} · ${esc(c.people || '')}${c.people ? ' · ' : ''}${L2('level', 'niveau')} ${D.L} · ${+c.xp || 0} XP${c.camp ? ' · ' + esc(c.camp) : ''}</div><div class="pfg">
  <div>${mx}</div><div>${mods}${def}
- </div></div></details>`;
+ </div></div></div>`;
 }
 function talCards(c) {
   const ti = lang === 'fr' ? 1 : 0,
@@ -922,11 +922,8 @@ function hOrder(c, cards) {
   L.sort((a, b) => ix(a.k) - ix(b.k) || a.i - b.i);
   return L.map(x =>
     x.h
-      .replace(/^<div class="hc /, `<div data-ck="${esc(x.k)}" class="hc ${FOLD['c:' + x.k] ? 'fold ' : ''}`)
-      .replace(
-        '<div class="ht">',
-        `<div class="ht" data-htit="1" role="button" tabindex="0" aria-expanded="${!FOLD['c:' + x.k]}" title="${L2('Click to fold · hold and drag to move', 'Clic pour réduire · maintenir et glisser pour déplacer')}">`,
-      ),
+      // cards no longer fold: on the Map grid each one is a module, moved by its title
+      .replace(/^<div class="hc /, `<div data-ck="${esc(x.k)}" class="hc `),
   );
 }
 function hSaveOrder(c) {
