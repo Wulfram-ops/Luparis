@@ -2643,10 +2643,26 @@ function drawTok0(k, vx, vy, h, sc = 1) {
     }
     ctx.restore();
   }
-  ctx.strokeStyle = 'rgba(255,255,255,.75)';
-  ctx.lineWidth = 1.5;
+  // wounded monster (half its boxes or less): a red ring and a blood drop, seen by everyone
+  const bloodied = k.t !== 'pj' && !k.cid && (k.st === 'b' || (k.hpMax && k.hp > 0 && k.hp * 2 <= k.hpMax));
+  ctx.strokeStyle = bloodied ? '#c0182a' : 'rgba(255,255,255,.75)';
+  ctx.lineWidth = bloodied ? 3 : 1.5;
   ctx.stroke();
   const cy0 = y - r * 0.8;
+  if (bloodied) {
+    const dx = cx - r * 0.78,
+      dy = cy0 - r * 0.72,
+      s = Math.max(4, r * 0.38);
+    ctx.fillStyle = '#c0182a';
+    ctx.strokeStyle = 'rgba(255,255,255,.9)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(dx, dy - s);
+    ctx.bezierCurveTo(dx + s * 0.9, dy, dx + s * 0.7, dy + s * 0.9, dx, dy + s * 0.9);
+    ctx.bezierCurveTo(dx - s * 0.7, dy + s * 0.9, dx - s * 0.9, dy, dx, dy - s);
+    ctx.fill();
+    ctx.stroke();
+  }
   if (INI.o.length && INI.o[INI.cur] && INI.o[INI.cur].id === k.id) {
     ctx.strokeStyle = '#f2c14e';
     ctx.lineWidth = 3;
