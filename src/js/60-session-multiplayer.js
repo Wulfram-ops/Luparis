@@ -169,7 +169,7 @@ MP.uid = (() => {
   }
 })();
 MP.local = /[?&]local=1/.test(location.search);
-MP.prole = 'player';
+MP.prole = TABLE_DISPLAY ? 'spec' : 'player';
 MP.secret = false;
 MP.tries = 0;
 const MPK = 'luparis-mp-join',
@@ -182,6 +182,7 @@ function ssGet(k) {
   }
 }
 function ssSet(k, v) {
+  if (TABLE_DISPLAY) return;
   try {
     if (v == null) sessionStorage.removeItem(k);
     else sessionStorage.setItem(k, JSON.stringify(v));
@@ -1066,9 +1067,11 @@ mpRender();
     s = ssGet(MPK),
     h = ssGet(MPH);
   // a reload keeps the game going: the GM reopens the same code, players come back with the same character
-  if (j) setTimeout(() => mpJoin(j[1], s && s.code === j[1].toUpperCase() ? s : {}), 300);
-  else if (s && s.code) setTimeout(() => mpJoin(s.code, s), 300);
-  else if (h && h.code && !!h.local === MP.local) setTimeout(() => mpHost(h.code), 300);
+  if (!TABLE_DISPLAY) {
+    if (j) setTimeout(() => mpJoin(j[1], s && s.code === j[1].toUpperCase() ? s : {}), 300);
+    else if (s && s.code) setTimeout(() => mpJoin(s.code, s), 300);
+    else if (h && h.code && !!h.local === MP.local) setTimeout(() => mpHost(h.code), 300);
+  }
 }
 
 // ---- images shown to the players: the GM keeps a gallery (IndexedDB, on this computer) and shows one at a time

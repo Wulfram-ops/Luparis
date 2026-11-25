@@ -67,5 +67,6 @@ new MutationObserver(ms => {
 setTimeout(foldApply, 0);
 legend();
 layout();
+gDisplayBoot();
 // ?debug=1 exposes the app's scope to automated tests and to the console (window.DBG('expression'))
 if (/[?&]debug=1\b/.test(location.search)) window.DBG = x => eval(x);

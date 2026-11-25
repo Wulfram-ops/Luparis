@@ -1,8 +1,20 @@
 // ---- the Map page is a grid: every module (map, panels, each character card) can be moved and resized, snapped to it.
 // Each person keeps their own layout in their browser. Narrow screens fall back to one column.
-const GCOLS = 12,
-  GROW = 36,
-  GGAP = 8;
+let GCOLS = [12, 24, 36].includes(lsGet('luparis-grid-cols', 12)) ? lsGet('luparis-grid-cols', 12) : 12;
+const GROW = 36, GGAP = 8;
+const gDetached = new Map();
+function gScale(r, from = 12, to = GCOLS) {
+  const start = Math.floor((r[0] - 1) * to / from),
+    end = Math.round((r[0] - 1 + r[2]) * to / from);
+  return [start + 1, r[1], Math.max(2, end - start), r[3]];
+}
+function gColumns(n) {
+  if (![12, 24, 36].includes(n)) return;
+  if (n !== GCOLS) for (const k in GL) GL[k] = gScale(GL[k], GCOLS, n);
+  GCOLS = n;
+  const grid = document.getElementById('cgrid');
+  if (grid) grid.style.setProperty('--gcols', n);
+}
 const GDEF = {
   map: [1, 1, 9, 18],
   pf: [1, 19, 9, 9],
@@ -28,9 +40,9 @@ const GNAME = {
 let GL = {};
 // a character card (defense, weapons, a school…) gets its own place, under the map by default
 function gDefault(k) {
-  if (GDEF[k]) return [...GDEF[k]];
+  if (GDEF[k]) return gScale(GDEF[k]);
   const n = Object.keys(GL).filter(x => x.startsWith('c:')).length;
-  return [1 + (n % 3) * 3, 29 + Math.floor(n / 3) * 10, 3, 10];
+  return gScale([1 + (n % 3) * 3, 29 + Math.floor(n / 3) * 10, 3, 10]);
 }
 // Size the map against the visible page area, including the actual height of the
 // toolbar (it can wrap). Keep a useful minimum on very short screens.
@@ -56,7 +68,7 @@ function gLoad() {
     if (k === 'pl') continue; // quick place now lives in the toolbar, not in saved grids
     const a = Array.isArray(v[k]) && v[k].length === 4 && v[k].every(n => Number.isInteger(n)) ? v[k] : null;
     if (!a && !GDEF[k]) continue;
-    const r = a || [...GDEF[k]];
+    const r = a || gScale(GDEF[k]);
     if (!a && k === 'map') r[3] = mapRows;
     if (!a && (k === 'pf' || k === 'hhead')) r[1] = mapRows + 1;
     o[k] = [
@@ -73,7 +85,7 @@ const gHit = (a, b) => a[0] < b[0] + b[2] && b[0] < a[0] + a[2] && a[1] < b[1] +
 const gEl = k => document.querySelector(`#cgrid [data-gk="${CSS.escape(k)}"]`);
 function gShown(k) {
   const m = gEl(k);
-  return !!m && getComputedStyle(m).display !== 'none';
+  return !!m && !gDetached.has(k) && getComputedStyle(m).display !== 'none';
 }
 // modules stay where they are put. A hidden module (no token selected, GM-only card…) takes no room;
 // when one shows up on a taken spot, it is the one that goes down, never the modules already shown.
@@ -108,6 +120,26 @@ function gPush(snap, k, n) {
 }
 // layout presets: regions (column, width, first row) filled with modules on shelves; 'k-spl*' matches every spell card
 const GPRE = {
+  wide: {
+    n: ['Ultrawide 21:9', 'Ultrawide 21:9'], cols: 24,
+    reg: [
+      { c: 1, w: 5, y: 1, it: [['in',5,8],['tk',5,7],['mk',5,7],['mp',5,9]] },
+      { c: 6, w: 13, y: 1, it: [['map',13,30],['img',7,10],['sn',6,10]] },
+      { c: 19, w: 6, y: 1, it: [['pf',6,9],['hhead',6,3],['c:k-atk',6,8],['c:k-def',6,7],['c:k-spl*',6,8],['c:k-man',6,7]], rest: 1 },
+    ],
+  },
+  superwide: {
+    n: ['Super Ultrawide 32:9', 'Super Ultrawide 32:9'], cols: 36,
+    reg: [
+      { c: 1, w: 7, y: 1, it: [['in',7,8],['tk',7,7],['mk',7,7],['mp',7,9]] },
+      { c: 8, w: 16, y: 1, it: [['map',16,30],['img',8,10],['sn',8,10]] },
+      { c: 24, w: 13, y: 1, it: [['pf',13,9],['hhead',13,3],['c:k-atk',6,9],['c:k-def',7,9],['c:k-spl*',6,9],['c:k-man',7,9]], rest: 1 },
+    ],
+  },
+  dual: {
+    n: ['Dual screen GM', 'Double écran MJ'], cols: 12,
+    reg: [{ c:1,w:12,y:1,it:[['map',12,30],['in',4,8],['tk',4,8],['mk',4,8],['pf',12,9],['img',6,8],['sn',6,8],['mp',6,9]],rest:1 }],
+  },
   combat: {
     n: ['Combat', 'Combat'],
     reg: [
@@ -210,8 +242,10 @@ const GPRE = {
   },
 };
 function gPreset(id) {
-  const P = GPRE[id],
-    // only the modules shown now are packed; a hidden one keeps its place and finds room when it appears
+  const P = GPRE[id];
+  if (!P) return;
+  gColumns(P.cols || 12);
+  const // only the modules shown now are packed; a hidden one keeps its place and finds room when it appears
     keys = Object.keys(GL).filter(gShown),
     used = new Set(),
     out = {};
@@ -257,11 +291,15 @@ function gApply() {
 }
 function gSave() {
   lsSet('luparis-grid2', GL);
+  lsSet('luparis-grid-cols', GCOLS);
 }
 // the title of a module is its move handle (the map, without a title, keeps a small grip); a corner resizes it
 function gHandles(el, k) {
   el.dataset.gk = k;
   el.classList.add('gitem');
+  el.classList.toggle('gdetached', gDetached.has(k));
+  if (!TABLE_DISPLAY && !el.querySelector(':scope > .gwindow'))
+    el.insertAdjacentHTML('beforeend', `<button type="button" class="gwindow" data-gwindow="${esc(k)}" title="${L2('Open on another screen', 'Ouvrir sur un autre écran')}" aria-label="${L2('Open on another screen', 'Ouvrir sur un autre écran')}">↗</button>`);
   const t = el.querySelector('.hside > h3, .ht, h3, h2');
   if (t) {
     t.classList.add('gttl');
@@ -325,6 +363,7 @@ function gHandSync() {
     grid = document.createElement('div');
   grid.className = 'cgrid';
   grid.id = 'cgrid';
+  grid.style.setProperty('--gcols', GCOLS);
   const cardOf = {
     map: document.getElementById('stage'),
     tk: document.getElementById('tk_panel'),
@@ -354,7 +393,7 @@ function gHandSync() {
   bar.className = 'gpresets';
   bar.innerHTML = `<span class="small">${L2('Layout', 'Disposition')}</span>${Object.keys(GPRE)
     .map(id => `<button type="button" data-gpre="${id}">${L2(...GPRE[id].n)}</button>`)
-    .join('')}<button type="button" class="greset">${L2('Default', 'Par défaut')}</button>`;
+    .join('')}<button type="button" class="greset">${L2('Default', 'Par défaut')}</button><span class="gdisplaytools"><button type="button" id="g_public">${L2('Public table', 'Table publique')}</button><button type="button" id="g_screens">${L2('Detect screens', 'Détecter les écrans')}</button><select id="g_screen" aria-label="${L2('Destination screen', 'Écran de destination')}" hidden></select><button type="button" id="g_restore">${L2('Restore windows', 'Rouvrir les fenêtres')}</button><button type="button" id="g_return">${L2('Reattach all', 'Tout réintégrer')}</button><span class="small" id="g_display_msg" aria-live="polite"></span></span>`;
   grid.before(bar);
   bar.onclick = e => {
     const b = e.target.closest('[data-gpre]');
@@ -363,6 +402,7 @@ function gHandSync() {
   const reset = bar.querySelector('.greset');
   reset.onclick = () => {
     lsSet('luparis-grid2', null);
+    gColumns(12);
     GL = gLoad();
     gHandSync();
     gSave();
@@ -453,10 +493,253 @@ function gHandSync() {
     },
     true,
   );
+  grid.addEventListener('click', e => {
+    const b = e.target.closest('[data-gwindow]');
+    if (b) gOpenWindow(b.dataset.gwindow);
+  });
+  grid.addEventListener('contextmenu', e => {
+    if (!e.target.closest('.gttl, .ggrip, .gwindow')) return;
+    const m = e.target.closest('[data-gk]');
+    if (!m || TABLE_DISPLAY) return;
+    e.preventDefault();
+    e.stopPropagation();
+    ctxMenu(e.clientX, e.clientY, [{label:L2('Open on another screen', 'Ouvrir sur un autre écran'),fn:()=>gOpenWindow(m.dataset.gk)}]);
+  }, true);
   // a module that appears or disappears: make room only for the one that appears
   new MutationObserver(() => {
     if (act) return;
     gFix();
     gApply();
   }).observe(grid, { attributes: true, subtree: true, attributeFilter: ['hidden'] });
+}
+
+// ---- Local multi-screen windows. The opener owns all gameplay and storage.
+// Controls in detached panels are mirrors: commands are dispatched to the original DOM.
+const gWanted = new Set((lsGet('luparis-detached', []) || []).filter(k => typeof k === 'string'));
+const gViews = new Map();
+let gTick = 0, gScreenDetails = null, gClosing = false;
+function gDisplayMsg(en, fr) {
+  const el = $('g_display_msg');
+  if (el) el.textContent = L2(en, fr);
+}
+function gRememberWindows() {
+  lsSet('luparis-detached', [...gWanted]);
+}
+function gPopupFeatures() {
+  const sel = $('g_screen'), s = gScreenDetails && sel && gScreenDetails.screens[+sel.value];
+  if (!s || sel.hidden) return 'popup,width=900,height=720';
+  return 'popup,left=' + Math.round(s.availLeft) + ',top=' + Math.round(s.availTop) +
+    ',width=' + Math.max(400, Math.round(s.availWidth * .9)) + ',height=' + Math.max(300, Math.round(s.availHeight * .9));
+}
+async function gDetectScreens() {
+  if (!window.getScreenDetails) return gDisplayMsg('Screen detection is unavailable. Move windows manually.', 'Détection indisponible : déplace les fenêtres manuellement.');
+  try {
+    gScreenDetails = await window.getScreenDetails();
+    const s = $('g_screen');
+    const render = () => {
+      s.replaceChildren();
+      gScreenDetails.screens.forEach((screen, i) => {
+        const o = document.createElement('option');
+        o.value = i;
+        o.textContent = (screen.label || L2('Screen ', 'Écran ') + (i + 1)) + ' · ' + screen.width + '×' + screen.height;
+        s.append(o);
+      });
+      const i = gScreenDetails.screens.indexOf(gScreenDetails.currentScreen);
+      if (gScreenDetails.screens.length > 1) s.value = String(i === 0 ? 1 : 0);
+      s.hidden = false;
+    };
+    render();
+    gScreenDetails.addEventListener('screenschange', render);
+    gDisplayMsg('Choose a screen, then open a window.', 'Choisis un écran, puis ouvre une fenêtre.');
+  } catch (e) {
+    gDisplayMsg('Screen permission refused. Move windows manually.', 'Autorisation refusée : déplace les fenêtres manuellement.');
+  }
+}
+function gReattach(k, close = true) {
+  const p = gDetached.get(k);
+  if (!p) return;
+  gDetached.delete(k);
+  gWanted.delete(k);
+  if (!gClosing) gRememberWindows();
+  if (close && !p.win.closed) p.win.close();
+  const el = gEl(k);
+  if (el) el.classList.remove('gdetached');
+  gFix();
+  gApply();
+}
+function gSourceControls(el) {
+  return [...el.querySelectorAll('button,input,select,textarea,a,summary,form')].filter(x => !x.closest('.gwindow,.ggrip,.gsz'));
+}
+function gMirrorPanel(k, p) {
+  const el = gEl(k);
+  if (!el) {
+    if (p.root.dataset.missing !== '1') {
+      p.root.dataset.missing = '1';
+      p.root.textContent = L2('This module is not available for the selected character.', 'Ce module est indisponible pour le personnage sélectionné.');
+      p.signature = '';
+      p.controls = [];
+    }
+    return;
+  }
+  delete p.root.dataset.missing;
+  const doc = p.win.document;
+  if (p.root.contains(doc.activeElement) && doc.activeElement.matches('input,textarea,select')) return;
+  const copy = el.cloneNode(true);
+  copy.classList.remove('gdetached','gdrag','gitem');
+  copy.removeAttribute('style');
+  copy.querySelectorAll('.gwindow,.ggrip,.gsz').forEach(x => x.remove());
+  const originals = gSourceControls(el), controls = gSourceControls(copy);
+  controls.forEach((c,i) => {
+    c.dataset.gproxy = String(i);
+    const s = originals[i];
+    if (!s) return;
+    if (c.matches('input,textarea,select')) {
+      if (c.type !== 'file') c.value = s.value;
+      if (c.matches('input') && c.type !== 'file') c.setAttribute('value',s.value);
+      if (c.matches('textarea')) c.textContent = s.value;
+      if (c.matches('input[type=checkbox],input[type=radio]')) c.toggleAttribute('checked',s.checked);
+      if (c.matches('select')) [...c.options].forEach((o,j)=>o.toggleAttribute('selected',!!s.options[j]?.selected));
+    }
+  });
+  const signature = copy.outerHTML + '|' + document.body.className;
+  if (signature === p.signature && originals.every((s,i)=>p.controls[i]===s)) return;
+  p.signature = signature;
+  p.controls = originals;
+  const scroll = p.root.scrollTop;
+  doc.body.className = 'gpopup ' + document.body.className;
+  p.root.replaceChildren(doc.adoptNode(copy));
+  p.root.scrollTop = scroll;
+}
+function gOpenWindow(k) {
+  if (TABLE_DISPLAY) return;
+  if (k === 'map') return gOpenView('gm');
+  if (gDetached.has(k)) return gDetached.get(k).win.focus();
+  const el = gEl(k);
+  if (!el || !gShown(k)) return;
+  const win = window.open('', '_blank', gPopupFeatures());
+  if (!win) return gDisplayMsg('Popup blocked. Allow popups for Luparis.', 'Fenêtre bloquée : autorise les pop-ups pour Luparis.');
+  const doc = win.document;
+  doc.documentElement.lang = lang;
+  doc.title = 'Luparis · ' + (GNAME[k] ? tr(GNAME[k]) : (el.querySelector('.ht,h3,h2')?.textContent || k));
+  for (const link of document.querySelectorAll('link[rel=stylesheet]')) {
+    const l = doc.createElement('link');
+    l.rel = 'stylesheet'; l.href = link.href; doc.head.append(l);
+  }
+  const meta = doc.createElement('meta'); meta.name='viewport';meta.content='width=device-width,initial-scale=1';doc.head.append(meta);
+  const bar = doc.createElement('div'); bar.className='gpopupbar';
+  const title = doc.createElement('strong'); title.textContent=doc.title;bar.append(title);
+  const btn = (label,fn) => {const b=doc.createElement('button');b.type='button';b.textContent=label;b.onclick=fn;bar.append(b);};
+  btn(L2('Fullscreen','Plein écran'),()=>{if(doc.fullscreenElement) doc.exitFullscreen();else doc.documentElement.requestFullscreen?.().catch(()=>{});});
+  btn(L2('Reattach','Réintégrer'),()=>gReattach(k));
+  const root = doc.createElement('main');root.className='gpopupcontent';
+  doc.body.append(bar,root);
+  const p = {win,root,controls:[],signature:''};
+  const source = e => {
+    const t = e.target.closest('[data-gproxy]');
+    if (!t) return [];
+    const s = p.controls[+t.dataset.gproxy];
+    return s && s.isConnected ? [t,s] : [];
+  };
+  const update = () => {p.signature='';gMirrorPanel(k,p);};
+  root.addEventListener('click',e=>{
+    const [t,s]=source(e);
+    if (!s || !t.matches('button,a')) return;
+    e.preventDefault();
+    s.click();
+    update();
+  });
+  for (const type of ['input','change']) root.addEventListener(type,e=>{
+    const [t,s]=source(e);
+    if (!s || !t.matches('input,textarea,select') || t.type==='file') return;
+    if (t.matches('input[type=checkbox],input[type=radio]')) s.checked=t.checked;
+    else s.value=t.value;
+    s.dispatchEvent(new Event(type,{bubbles:true}));
+    if(type==='change') update();
+  });
+  root.addEventListener('submit',e=>{
+    e.preventDefault();
+    const [,s]=source(e);
+    if(s && s.matches('form')) {s.requestSubmit();update();}
+  });
+  // file pickers and native dialogs remain in the main window.
+  root.addEventListener('click',e=>{
+    if(e.target.matches('input[type=file]')) {e.preventDefault();window.focus();gDisplayMsg('Use file pickers in the main window.','Utilise les sélecteurs de fichiers dans la fenêtre principale.');}
+  });
+  gDetached.set(k,p);
+  gWanted.add(k);
+  gRememberWindows();
+  el.classList.add('gdetached');
+  gMirrorPanel(k,p);
+  gFix();gApply();gStartTick();
+}
+function gOpenView(kind) {
+  if (TABLE_DISPLAY || (kind==='public' && MP.role==='player')) return;
+  if (gViews.has(kind) && !gViews.get(kind).win.closed) return gViews.get(kind).win.focus();
+  const url = new URL(location.pathname,location.href);
+  url.searchParams.set('table-display',kind);
+  url.hash='carte';
+  const win = window.open(url.href,'_blank',gPopupFeatures());
+  if(!win) return gDisplayMsg('Popup blocked. Allow popups for Luparis.','Fenêtre bloquée : autorise les pop-ups pour Luparis.');
+  gViews.set(kind,{win,signature:'',ready:false});
+  gStartTick();
+}
+function gViewState(kind) {
+  const state = memStateNow();
+  // A public display receives the same visibility-filtered map as spectators, never the GM state.
+  return kind==='public' ? mpView(state,[]) : state;
+}
+function gStartTick() {
+  if (gTick) return;
+  gTick=setInterval(()=>{
+    for(const [k,p] of gDetached) {
+      if(p.win.closed) gReattach(k,false);
+      else try {gMirrorPanel(k,p);} catch(e) {gReattach(k);}
+    }
+    for(const [kind,p] of gViews) {
+      if(p.win.closed) {gViews.delete(kind);continue;}
+      if(!p.ready) continue;
+      if(kind==='public' && MP.role==='player') {p.win.close();gViews.delete(kind);continue;}
+      const state=gViewState(kind), signature=JSON.stringify(state);
+      if(signature!==p.signature) {
+        p.signature=signature;
+        p.win.postMessage({type:'luparis-table-state',state},location.origin);
+      }
+    }
+    if(!gDetached.size&&!gViews.size) {clearInterval(gTick);gTick=0;}
+  },200);
+}
+function gDisplayBoot() {
+  if(TABLE_DISPLAY) {
+    // Separate read-only renderer, no multiplayer host/join, no local gameplay saves.
+    document.body.classList.add('mp-player','mp-spec');
+    const button=document.createElement('button');
+    button.className='table-fullscreen';
+    button.textContent=L2('Fullscreen','Plein écran');
+    button.onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.().catch(()=>{});};
+    document.body.append(button);
+    document.addEventListener('keydown',e=>{if(e.key!=='Escape'&&e.key!=='F11'&&e.key!=='Tab'){e.stopImmediatePropagation();e.preventDefault();}},true);
+    window.addEventListener('message',e=>{
+      if(e.origin!==location.origin||e.source!==window.opener||e.data?.type!=='luparis-table-state')return;
+      if(!applyState(e.data.state))return;
+      document.body.classList.add('table-ready');
+      CAM.z=1;CAM.px=0;CAM.py=0;layout();
+    });
+    new ResizeObserver(()=>{if(document.body.classList.contains('table-ready'))layout();}).observe(stage);
+    if(window.opener)window.opener.postMessage({type:'luparis-table-ready'},location.origin);
+    return;
+  }
+  window.addEventListener('message',e=>{
+    if(e.origin!==location.origin||e.data?.type!=='luparis-table-ready')return;
+    for(const p of gViews.values()) if(e.source===p.win){p.ready=true;p.signature='';}
+  });
+  $('g_public').onclick=()=>gOpenView('public');
+  $('g_screens').onclick=gDetectScreens;
+  $('g_return').onclick=()=>{for(const k of [...gDetached.keys()])gReattach(k);};
+  $('g_restore').onclick=()=>{for(const k of [...gWanted])gOpenWindow(k);};
+  window.addEventListener('pagehide',()=>{
+    gClosing=true;
+    for(const p of gDetached.values())if(!p.win.closed)p.win.close();
+    for(const p of gViews.values())if(!p.win.closed)p.win.close();
+    clearInterval(gTick);
+  });
 }

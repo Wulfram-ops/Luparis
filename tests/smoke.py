@@ -142,6 +142,25 @@ def run(chrome: str | None) -> None:
                 check(f"{preset} board corners visible", D("""[dia(0,0,0),dia(0,N-1,0),dia(N-1,0,0),dia(N-1,N-1,0)].flat().every(([x,y])=>x>=0&&x<=W&&y>=0&&y<=Hc)"""))
         page.set_viewport_size({"width": 1400, "height": 900})
         page.locator(".greset").click()
+        # Wide grids use finer horizontal snapping and return to the standard layout.
+        page.set_viewport_size({"width": 2560, "height": 1080})
+        page.locator('[data-gpre="wide"]').click()
+        check("ultrawide grid", D("GCOLS===24 && GL.map[0]===6 && GL.map[2]===13"))
+        page.set_viewport_size({"width": 3840, "height": 1080})
+        page.locator('[data-gpre="superwide"]').click()
+        check("super ultrawide grid", D("GCOLS===36 && GL.map[0]===8 && GL.map[2]===16"))
+        page.set_viewport_size({"width": 1400, "height": 900})
+        page.locator(".greset").click()
+        check("standard grid restored", D("GCOLS===12"))
+        with page.expect_popup() as popup:
+            page.locator('[data-gk="in"] > .gwindow').evaluate("(b)=>b.click()")
+        detached = popup.value
+        detached.wait_for_selector(".gpopupcontent #in_next")
+        check("detached initiative is live", D("gDetached.has('in')") and detached.locator("#in_next").count() == 1)
+        detached.locator(".gpopupbar button").last.click()
+        page.wait_for_timeout(300)
+        check("module reattached", D("!gDetached.has('in')") and page.locator('[data-gk="in"]').is_visible())
+        check("public display filters hidden map objects", D("""(()=>{const k={id:'screen-secret',t:'foe',x:1,y:1,hid:1};tokens.push(k);try{return !gViewState('public').tokens.some(t=>t.id===k.id)&&gViewState('gm').tokens.some(t=>t.id===k.id)}finally{tokens.pop()}})()"""))
         # Quick placement belongs to the map toolbar, not the draggable layout.
         page.click('.tabs a[data-v="carte"]')
         check("quick place is in GM toolbar", page.locator("#v-carte > .bar #pl_bar").is_visible() and page.locator('#cgrid [data-mod="pl"]').count() == 0)

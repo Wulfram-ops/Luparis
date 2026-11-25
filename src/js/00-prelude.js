@@ -1,7 +1,10 @@
 // ---- storage: every read and write of the browser storage goes through here; failures are reported once
+const TABLE_DISPLAY = ['public', 'gm'].includes(new URLSearchParams(location.search).get('table-display'));
+if (TABLE_DISPLAY) document.body.classList.add('table-display');
 var LS_SCHEMA = 1,
   LSW = false;
 function lsGet(k, d) {
+  if (TABLE_DISPLAY && k !== 'luparis-prefs') return d;
   try {
     const v = localStorage.getItem(k);
     return v == null ? d : JSON.parse(v);
@@ -11,6 +14,7 @@ function lsGet(k, d) {
   }
 }
 function lsSet(k, v) {
+  if (TABLE_DISPLAY) return true;
   try {
     localStorage.setItem(k, JSON.stringify(v));
     return true;
@@ -35,6 +39,7 @@ function lsWarn() {
   document.body.appendChild(d);
 }
 (function migrate() {
+  if (TABLE_DISPLAY) return;
   let v = +localStorage.getItem('luparis-schema') || 0;
   /* future migrations: if(v<2){...;v=2} */ if (v !== LS_SCHEMA)
     try {
@@ -46,7 +51,7 @@ var TPLK = null,
   tplSel = 'circle',
   FOLD = {},
   INIP = {},
-  MP = { role: null, me: null, conns: [], code: '', n: 0 };
+  MP = { role: TABLE_DISPLAY ? 'player' : null, me: null, conns: [], code: '', n: 0 };
 try {
   FOLD = lsGet('luparis-fold', null) || {};
 } catch (e) {}

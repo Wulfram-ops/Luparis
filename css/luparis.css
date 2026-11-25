@@ -368,7 +368,7 @@ body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){dis
 .mppick{margin:6px 0 2px;font-weight:600}.mpwant select{outline:2px solid var(--acc);outline-offset:1px}
 
 /* Map page grid: modules snap to it */
-.cgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:36px;gap:8px;margin:6px max(2vw,8px) 0;position:relative}
+.cgrid{display:grid;grid-template-columns:repeat(var(--gcols,12),minmax(0,1fr));grid-auto-rows:36px;gap:8px;margin:6px max(2vw,8px) 0;position:relative}
 .cgrid.gon{background-image:linear-gradient(to right,color-mix(in srgb,var(--acc) 22%,transparent) 1px,transparent 1px),linear-gradient(to bottom,color-mix(in srgb,var(--acc) 22%,transparent) 1px,transparent 1px);background-size:var(--gcw,80px) 44px;background-position:-4px -4px}
 .gmod{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column}
 .gmod:has(>[hidden]),body.mp-player .gmod[data-mod=sn]{display:none}
@@ -417,3 +417,30 @@ body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){dis
 #pl_bar .pl_hint{font-size:12px;max-width:25em}
 body.mp-player #pl_bar{display:none!important}
 @media(max-width:600px){#pl_bar{width:100%}#pl_bar .scn{white-space:normal}#pl_bar select{max-width:44vw}#pl_bar .pl_hint{max-width:100%}}
+
+/* Wide-screen grids and local detached module windows. */
+.gwindow{position:absolute;top:4px;right:28px;z-index:8;min-height:0;line-height:22px;padding:0 6px;background:var(--panel);border:1px solid var(--line);opacity:0}
+.gitem:hover>.gwindow,.gwindow:focus-visible{opacity:1}
+.gdetached{display:none!important}
+.gdisplaytools{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.gdisplaytools select{min-height:26px;max-width:220px}
+body.mp-player #g_public,body.mp-player [data-gpre=dual]{display:none}
+body.gpopup{margin:0;padding:0;overflow:auto}
+.gpopupbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px;background:var(--panel);border-bottom:1px solid var(--line)}
+.gpopupbar strong{flex:1}
+.gpopupcontent{padding:8px;overflow:auto}
+.gpopupcontent>.gmod,.gpopupcontent>.pfbox,.gpopupcontent>.hc{display:block;min-height:auto;width:100%;margin:0}
+.gpopupcontent .gttl{cursor:default}
+body.table-display{padding:0;overflow:hidden}
+body.table-display> *:not(#v-carte):not(.table-fullscreen){display:none!important}
+body.table-display #v-carte{display:block!important}
+body.table-display #v-carte> *:not(#cgrid){display:none!important}
+body.table-display #cgrid{display:block!important;margin:0;width:100vw;height:100dvh}
+body.table-display #cgrid> *:not([data-gk=map]){display:none!important}
+body.table-display [data-gk=map]{width:100%;height:100%;display:flex!important;pointer-events:none}
+body.table-display .stage{visibility:hidden;border-radius:0;aspect-ratio:auto!important;min-height:0;flex:1!important}
+body.table-display.table-ready .stage{visibility:visible}
+body.table-display .ggrip,body.table-display .gsz,body.table-display #info,body.table-display .gwindow{display:none!important}
+.table-fullscreen{position:fixed;right:12px;top:12px;z-index:90;background:var(--panel);opacity:.6}
+.table-fullscreen:hover,.table-fullscreen:focus-visible{opacity:1}
+@media(max-width:900px){.gwindow{opacity:1}}
