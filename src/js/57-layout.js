@@ -32,14 +32,33 @@ function gDefault(k) {
   const n = Object.keys(GL).filter(x => x.startsWith('c:')).length;
   return [1 + (n % 3) * 3, 29 + Math.floor(n / 3) * 10, 3, 10];
 }
+// Size the map against the visible page area, including the actual height of the
+// toolbar (it can wrap). Keep a useful minimum on very short screens.
+function gMapRows(preferred) {
+  const grid = document.getElementById('cgrid');
+  if (!grid || getComputedStyle(grid).display !== 'grid' || !grid.getBoundingClientRect().width) return preferred;
+  const top = grid.getBoundingClientRect().top + window.scrollY,
+    available = window.innerHeight - top - 12;
+  return Math.max(4, Math.min(preferred, Math.floor((available + GGAP) / (GROW + GGAP))));
+}
+function gFitMap() {
+  CAM.z = 1;
+  CAM.px = 0;
+  CAM.py = 0;
+  // Read the stage dimensions after the new grid positions have been applied.
+  layout();
+}
 function gLoad() {
   const v = lsGet('luparis-grid2', null) || {},
-    o = {};
+    o = {},
+    mapRows = gMapRows(GDEF.map[3]);
   for (const k of new Set([...Object.keys(GDEF), ...Object.keys(v)])) {
     if (k === 'pl') continue; // quick place now lives in the toolbar, not in saved grids
     const a = Array.isArray(v[k]) && v[k].length === 4 && v[k].every(n => Number.isInteger(n)) ? v[k] : null;
     if (!a && !GDEF[k]) continue;
-    const r = a || GDEF[k];
+    const r = a || [...GDEF[k]];
+    if (!a && k === 'map') r[3] = mapRows;
+    if (!a && (k === 'pf' || k === 'hhead')) r[1] = mapRows + 1;
     o[k] = [
       Math.max(1, Math.min(GCOLS, r[0])),
       Math.max(1, r[1]),
@@ -178,10 +197,10 @@ const GPRE = {
         w: 4,
         y: 1,
         it: [
+          ['map', 4, 10],
           ['img', 4, 11],
           ['sn', 4, 9],
           ['in', 4, 9],
-          ['map', 4, 10],
           ['tk', 4, 8],
           ['mk', 4, 7],
           ['mp', 4, 9],
@@ -203,6 +222,7 @@ function gPreset(id) {
       sh = 0;
     const put = (k, w, h) => {
       w = Math.min(w, R.w);
+      if (k === 'map') h = gMapRows(h);
       if (x + w > R.w) {
         y += sh;
         x = 0;
@@ -224,6 +244,7 @@ function gPreset(id) {
   gFix();
   gApply();
   gSave();
+  gFitMap();
 }
 function gApply() {
   for (const k in GL) {
@@ -344,6 +365,8 @@ function gHandSync() {
     lsSet('luparis-grid2', null);
     GL = gLoad();
     gHandSync();
+    gSave();
+    gFitMap();
   };
   GL = gLoad();
   renderHand = (f =>

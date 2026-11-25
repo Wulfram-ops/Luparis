@@ -125,6 +125,23 @@ def run(chrome: str | None) -> None:
             D("(()=>{const o={type:'state',x:'a'.repeat(200000)},P=mpPieces(o),st={};let r=null;for(const p of P.reverse())r=mpJoinPiece(st,p)||r;return P.length>3&&r&&r.x.length===200000})()"),
         )
 
+        # Layout presets fit the entire map in the viewport and reset an old zoom/pan.
+        page.click('.tabs a[data-v="carte"]')
+        for width, height in ((1400, 900), (1280, 720)):
+            page.set_viewport_size({"width": width, "height": height})
+            for preset in ("combat", "explo", "totm", "default"):
+                D("CAM.z=3;CAM.px=130;CAM.py=-90;camSet();draw()")
+                if preset == "default":
+                    page.locator(".greset").click()
+                else:
+                    page.locator(f'[data-gpre="{preset}"]').click()
+                page.wait_for_timeout(100)
+                bounds = page.locator("#stage").bounding_box()
+                check(f"{preset} map fits {width}x{height}", bool(bounds and bounds["y"] >= 0 and bounds["y"] + bounds["height"] <= height + 1), str(bounds))
+                check(f"{preset} resets camera", D("CAM.z===1 && CAM.px===0 && CAM.py===0"))
+                check(f"{preset} board corners visible", D("""[dia(0,0,0),dia(0,N-1,0),dia(N-1,0,0),dia(N-1,N-1,0)].flat().every(([x,y])=>x>=0&&x<=W&&y>=0&&y<=Hc)"""))
+        page.set_viewport_size({"width": 1400, "height": 900})
+        page.locator(".greset").click()
         # Quick placement belongs to the map toolbar, not the draggable layout.
         page.click('.tabs a[data-v="carte"]')
         check("quick place is in GM toolbar", page.locator("#v-carte > .bar #pl_bar").is_visible() and page.locator('#cgrid [data-mod="pl"]').count() == 0)
