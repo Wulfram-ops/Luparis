@@ -29,7 +29,8 @@ const GNAME = {
   img: ['Images', 'Images'],
   sn: ['Session notes', 'Notes de séance'],
 };
-let GL = {};
+let GL = {},
+  GLK = new Set(lsGet('luparis-grid2-lock', []) || []);
 // a character card (defense, weapons, a school…) gets its own place, under the map by default
 function gDefault(k) {
   if (GDEF[k]) return [...GDEF[k]];
@@ -59,21 +60,47 @@ function gShown(k) {
   const m = gEl(k);
   return !!m && getComputedStyle(m).display !== 'none';
 }
-// the module just moved keeps its place; the others rise as high as they can without overlapping
+// locked modules never move; the module just moved keeps its place (below a locked one if it lands on it);
+// the others rise as high as they can without overlapping
 function gSettle(fixed) {
   const keys = Object.keys(GL).filter(gShown),
-    order = [fixed, ...keys.filter(k => k !== fixed).sort((a, b) => GL[a][1] - GL[b][1] || GL[a][0] - GL[b][0])].filter(
-      k => k && keys.includes(k),
-    ),
-    done = [];
-  for (const k of order) {
+    locked = keys.filter(k => GLK.has(k)),
+    done = [...locked];
+  if (fixed && keys.includes(fixed) && !GLK.has(fixed)) {
+    const r = GL[fixed];
+    while (done.some(d => gHit(r, GL[d]))) r[1]++;
+    done.push(fixed);
+  }
+  for (const k of keys.filter(k => !done.includes(k)).sort((a, b) => GL[a][1] - GL[b][1] || GL[a][0] - GL[b][0])) {
     const r = GL[k];
-    if (k !== fixed) {
-      r[1] = 1;
-      while (done.some(d => gHit(r, GL[d]))) r[1]++;
-    }
+    r[1] = 1;
+    while (done.some(d => gHit(r, GL[d]))) r[1]++;
     done.push(k);
   }
+}
+function gLockSync(el, k) {
+  const on = GLK.has(k),
+    b = el.querySelector(':scope > .glock');
+  el.classList.toggle('glocked', on);
+  if (!b) return;
+  b.textContent = on ? '🔒' : '🔓';
+  b.title = on
+    ? L2(
+        'Locked: other modules flow around it. Click to unlock',
+        'Verrouillé : les autres modules passent autour. Clic pour déverrouiller',
+      )
+    : L2('Lock in place', 'Verrouiller à sa place');
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+}
+function gLockToggle(k) {
+  if (GLK.has(k)) GLK.delete(k);
+  else GLK.add(k);
+  lsSet('luparis-grid2-lock', [...GLK]);
+  const m = gEl(k);
+  if (m) gLockSync(m, k);
+  gSettle(null);
+  gApply();
+  gSave();
 }
 function gApply() {
   for (const k in GL) {
@@ -91,12 +118,13 @@ function gSave() {
 function gHandles(el, k) {
   el.dataset.gk = k;
   el.classList.add('gitem');
-  if (el.querySelector(':scope > .ggrip')) return;
+  if (el.querySelector(':scope > .ggrip')) return gLockSync(el, k);
   const nm = GNAME[k] ? L2(...GNAME[k]) : (el.querySelector('.ht') || el).textContent.trim().slice(0, 30);
   el.insertAdjacentHTML(
     'beforeend',
-    `<button type="button" class="ggrip" title="${L2('Drag to move', 'Glisse pour déplacer')} · ${esc(nm)}" aria-label="${L2('Move', 'Déplacer')} ${esc(nm)}">⠿</button><div class="gsz" title="${L2('Drag to resize', 'Glisse pour redimensionner')}" aria-hidden="true"></div>`,
+    `<button type="button" class="glock"></button><button type="button" class="ggrip" title="${L2('Drag to move', 'Glisse pour déplacer')} · ${esc(nm)}" aria-label="${L2('Move', 'Déplacer')} ${esc(nm)}">⠿</button><div class="gsz" title="${L2('Drag to resize', 'Glisse pour redimensionner')}" aria-hidden="true"></div>`,
   );
+  gLockSync(el, k);
 }
 // the character cards are rebuilt often: each time, give every card its module place again
 function gHandSync() {
@@ -164,6 +192,9 @@ function gHandSync() {
   grid.after(reset);
   reset.onclick = () => {
     lsSet('luparis-grid2', null);
+    lsSet('luparis-grid2-lock', []);
+    GLK.clear();
+    grid.querySelectorAll('[data-gk]').forEach(m => gLockSync(m, m.dataset.gk));
     GL = gLoad();
     gHandSync();
   };
@@ -189,12 +220,13 @@ function gHandSync() {
   grid.addEventListener(
     'pointerdown',
     e => {
+      if (e.target.closest('.glock')) return e.stopPropagation();
       const g = e.target.closest('.ggrip, .gsz');
       if (!g) return;
       const m = g.closest('[data-gk]'),
         k = m.dataset.gk,
         p = cell(e.clientX, e.clientY);
-      if (!GL[k]) return;
+      if (!GL[k] || GLK.has(k)) return;
       e.preventDefault();
       e.stopPropagation();
       g.setPointerCapture(e.pointerId);
@@ -231,6 +263,17 @@ function gHandSync() {
     gApply();
     gSave();
   };
+  grid.addEventListener(
+    'click',
+    e => {
+      const lk = e.target.closest('.glock');
+      if (!lk) return;
+      e.preventDefault();
+      e.stopPropagation();
+      gLockToggle(lk.closest('[data-gk]').dataset.gk);
+    },
+    true,
+  );
   grid.addEventListener('pointerup', end);
   grid.addEventListener('pointercancel', end);
   // a card that appears or disappears (selected token, GM-only cards) lets the others settle again
