@@ -277,8 +277,8 @@ function wPan() {
 function wImg(x0, y0, k) {
   const lo = $('w_lo'),
     hi = $('w_hi');
-  if (!PERF.low && k > 2.1 && !hi.src && hi.dataset.src) hi.src = hi.dataset.src;
-  const useHi = k > 2.1 && hi.dataset.ok && !PERF.low;
+  if (k > 2.1 && !hi.src && hi.dataset.src) hi.src = hi.dataset.src;
+  const useHi = k > 2.1 && hi.dataset.ok;
   lo.style.transform = `translate(${-x0 * k}px,${-y0 * k}px) scale(${k / 2})`;
   if (useHi) hi.style.transform = `translate(${-x0 * k}px,${-y0 * k}px) scale(${k / 4})`;
   hi.hidden = !useHi;

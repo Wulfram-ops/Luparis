@@ -403,7 +403,9 @@ function usPick(it, alt) {
 }
 function usBtn() {
   const b = document.getElementById('us_open');
-  if (b) b.innerHTML = `<span>🔍 ${esc(L2('Search', 'Rechercher'))}</span><kbd>Ctrl K</kbd>`;
+  const label = L2('Search', 'Rechercher');
+  b.setAttribute('aria-label', label);
+  b.innerHTML = `<span aria-hidden="true">🔍</span><span class="us-label">${esc(label)}</span><kbd>Ctrl K</kbd>`;
 }
 document.getElementById('us_open').addEventListener('click', usOpen);
 document.addEventListener(
@@ -418,8 +420,6 @@ document.addEventListener(
   true,
 );
 usBtn();
-perfUI();
-document.getElementById('perfq').addEventListener('change', e => perfSet(e.target.value));
 // ---- contextual tool hint + placement preview
 function toolHint() {
   const el = document.getElementById('thint');

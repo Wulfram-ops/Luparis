@@ -1,6 +1,6 @@
 // Integrated play workspace: fixed responsive columns, no movable modules.
 const PLAY_AUX={in:['Initiative','Initiative'],tk:['Token','Pion'],mk:['Markers / zones','Repères / zones'],mp:['Session','Session'],img:['Illustrations','Illustrations'],sn:['GM notes','Notes MJ'],roll:['Rolls','Jets']};
-const PLAY_SHEET={actions:['Actions','Actions'],checks:['Checks','Tests'],gear:['Equipment','Équipement'],notes:['Notes','Notes']};
+const PLAY_SHEET={actions:['Combat','Combat'],checks:['Checks','Tests'],magic:['Magic','Magie'],gear:['Equipment','Équipement'],profile:['Profile','Profil']};
 let playAuxTab='in',playSheetTab='actions',playClaimState='',playLastToken=null,playSizeQ=0;
 const playWorkspace=$('play_workspace'),playAux=$('play_aux'),playHand=$('hand');
 function playSelectAux(k){
@@ -31,11 +31,16 @@ function playTabsKeyboard(e,selector){
 }
 function playLabels(){
   for(const b of playAux.querySelectorAll('[data-play-tab]'))b.textContent=tr(PLAY_AUX[b.dataset.playTab]);
-  const labels={play_aux_label:['Table tools','Outils de table'],play_map_label:['Battle map','Carte tactique'],g_public:['Public table','Table publique'],g_map:['Second map screen','Carte sur un second écran'],g_screens:['Detect screens','Détecter les écrans']};
+  const labels={play_aux_label:['Table tools','Outils de table'],play_map_label:['Battle map','Carte tactique'],play_jump_sheet:['Character','Personnage'],play_display_label:['Displays','Écrans'],g_public:['Public table','Table publique'],g_map:['Second map screen','Carte sur un second écran'],g_screens:['Detect screens','Détecter les écrans']};
   for(const [id,p] of Object.entries(labels))$(id).textContent=tr(p);
+  $('zin').setAttribute('aria-label',L2('Zoom in','Zoom avant'));
+  $('zout').setAttribute('aria-label',L2('Zoom out','Zoom arrière'));
+  $('mode_play').textContent=L2('Play','Partie');
+  $('mode_edit').textContent=L2('Edit','Édition');
   $('g_screen').setAttribute('aria-label',L2('Destination screen','Écran de destination'));
   for(const o of $('g_screen').options)if(o.dataset.screenSize)o.textContent=(o.dataset.screenLabel||L2('Screen ','Écran ')+(+o.value+1))+' · '+o.dataset.screenSize;
   const msg=$('g_display_msg');if(msg.dataset.en!==undefined)msg.textContent=L2(msg.dataset.en,msg.dataset.fr);
+  playRollPreview();
 }
 function playFit(){
   if(TABLE_DISPLAY||$('v-carte').hidden||playSizeQ)return;
@@ -85,13 +90,16 @@ function playArrangeHand(scroll=0){
   }
   panes.checks.append(matrix);
   for(const card of [...cards.children]){
-    const k=card.matches('.k-sf')?'checks':card.matches('.k-inv,.k-eq')?'gear':card.matches('.k-note,.k-add,.k-cus')?'notes':'actions';
+    const k=card.matches('.k-sf')?'checks'
+      :card.matches('.k-spl')?'magic'
+      :card.matches('.k-inv,.k-eq')?'gear'
+      :card.matches('.k-note,.k-add,.k-cus,.k-tal,.k-training')?'profile'
+      :'actions';
     panes[k].append(card);
   }
   for(const k of Object.keys(panes))if(!panes[k].children.length){
-    const p=document.createElement('p');p.className='small';p.textContent=L2('Nothing in this section yet.','Aucun élément dans cette section pour le moment.');panes[k].append(p);
+    const p=document.createElement('p');p.className='play-empty-sheet';p.textContent=t('sk_nospell');panes[k].append(p);
   }
-  const edit=document.createElement('a');edit.href='#fiche';edit.className='play-edit-sheet';edit.textContent=L2('Character management','Gestion des personnages');summary.append(edit);
   cards.replaceWith(nav,content);playSelectSheet(playSheetTab);content.scrollTop=scroll;
 }
 function playRoute(){
@@ -103,8 +111,22 @@ function playRoute(){
 {
   const originalHand=renderHand;
   renderHand=function(){
-    const scroll=playHand.querySelector('.play-sheet-body')?.scrollTop||0;
-    const r=originalHand.apply(this,arguments);playArrangeHand(scroll);return r;
+    const character=handChar()?.id||'';
+    const sameCharacter=playHand.dataset.character===character;
+    const scroll=sameCharacter?playHand.querySelector('.play-sheet-body')?.scrollTop||0:0;
+    const openWeapons=sameCharacter?[...playHand.querySelectorAll('[data-weapon][open]')].map(e=>e.dataset.weapon):[];
+    const active=document.activeElement;
+    const focusAttrs=sameCharacter&&playHand.contains(active)&&active.matches('button,select')
+      ?[...active.attributes].filter(a=>a.name==='id'||a.name.startsWith('data-'))
+      :[];
+    originalHand.apply(this,arguments);
+    playHand.dataset.character=character;
+    playArrangeHand(scroll);
+    for(const d of playHand.querySelectorAll('[data-weapon]'))d.open=openWeapons.includes(d.dataset.weapon);
+    if(focusAttrs.length){
+      const match=[...playHand.querySelectorAll(active.tagName)].find(el=>focusAttrs.every(a=>el.getAttribute(a.name)===a.value));
+      match?.focus({preventScroll:true});
+    }
   };
   const originalTok=renderTok;
   renderTok=function(){const r=originalTok.apply(this,arguments);playTokenSync();return r;};
@@ -118,6 +140,15 @@ function playRoute(){
     const b=e.target.closest('[data-sheet-tab]');if(!b)return;
     playSelectSheet(b.dataset.sheetTab);const p=playHand.querySelector('.play-sheet-body');if(p)p.scrollTop=0;
   });
+  playWorkspace.addEventListener('click',e=>{
+    const b=e.target.closest('[data-play-jump]');if(!b)return;
+    const target=$(b.dataset.playJump);target.focus({preventScroll:true});target.scrollIntoView({block:'start'});
+  });
+  $('pl_toggle').onclick=()=>{
+    const open=$('pl_bar').classList.toggle('open');
+    $('pl_toggle').setAttribute('aria-expanded',String(open));
+    if(open)$('pl_q').focus({preventScroll:true});
+  };
   playAux.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-play-tab]'));
   playHand.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-sheet-tab]'));
   $('play_last_roll').onclick=()=>{playSelectAux('roll');if(!rlOpen){rlOpen=true;rlRender();}};
