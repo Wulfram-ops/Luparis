@@ -291,12 +291,35 @@ function mgKey() {
     return '';
   }
 }
+// the key says which AI it belongs to: Gemini (AIza…), Claude (sk-ant-…), OpenAI (sk-…)
+function mgProv(key) {
+  return /^sk-ant-/.test(key) ? 'claude' : /^sk-/.test(key) ? 'openai' : 'gemini';
+}
 async function mgModel(key) {
   let m = '';
   try {
     m = localStorage.getItem(MG_MODEL) || '';
   } catch (e) {}
   if (m) return m;
+  const prov = mgProv(key);
+  if (prov === 'claude') return 'claude-haiku-5-5';
+  if (prov === 'openai') {
+    try {
+      const j = await (
+        await fetch('https://api.openai.com/v1/models', { headers: { Authorization: 'Bearer ' + key } })
+      ).json();
+      const L = (j.data || [])
+        .map(x => x.id)
+        .filter(x => /^gpt-[\d.o]+-mini$/.test(x))
+        .sort()
+        .reverse();
+      if (L[0]) {
+        mgSet(MG_MODEL, L[0]);
+        return L[0];
+      }
+    } catch (e) {}
+    return 'gpt-4o-mini';
+  }
   // pick the newest "flash" model this key can use
   try {
     const j = await (
@@ -331,21 +354,56 @@ async function mgAI(text) {
   const key = mgKey();
   if (!key) return null;
   const model = await mgModel(key),
-    res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: mgPrompt(text) }] }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
-        }),
+    prov = mgProv(key),
+    json = t => {
+      const a = t.indexOf('{'),
+        b = t.lastIndexOf('}');
+      return JSON.parse(a >= 0 ? t.slice(a, b + 1) : t);
+    };
+  if (prov === 'claude') {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
       },
-    );
+      body: JSON.stringify({ model, max_tokens: 800, messages: [{ role: 'user', content: mgPrompt(text) }] }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    return mgClean(json((j.content || []).map(c => c.text || '').join('')));
+  }
+  if (prov === 'openai') {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: mgPrompt(text) }],
+        response_format: { type: 'json_object' },
+      }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    return mgClean(json((j.choices && j.choices[0] && j.choices[0].message.content) || ''));
+  }
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: mgPrompt(text) }] }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+      }),
+    },
+  );
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const j = await res.json(),
     out = j.candidates && j.candidates[0] && j.candidates[0].content.parts.map(p => p.text || '').join('');
-  return mgClean(JSON.parse(out));
+  return mgClean(json(out || ''));
 }
 // ---- UI: a line in the map toolbar
 function mgMsg(m) {
@@ -362,7 +420,7 @@ async function mgGo(again) {
     mgMsg(L2('The AI reads your description…', "L'IA lit ta description…"));
     try {
       r = await mgAI(text);
-      via = 'IA';
+      via = { gemini: 'Gemini', claude: 'Claude', openai: 'OpenAI' }[mgProv(mgKey())];
     } catch (e) {
       mgMsg(
         L2('AI unavailable (', 'IA indisponible (') +
@@ -406,9 +464,9 @@ async function mgGo(again) {
       document.body.append(d);
     }
     d.innerHTML = `<form method="dialog" class="mgd"><h3>${L2('AI for map drawing', 'IA pour dessiner les cartes')}</h3>
-<p class="small">${L2('Optional. With a Gemini API key (free at Google AI Studio), any sentence is understood; without it, known keywords only. The key stays in this browser: it is never put on the site nor sent to the players.', "Facultatif. Avec une clé d'API Gemini (gratuite sur Google AI Studio), n'importe quelle phrase est comprise ; sans clé, seulement les mots-clés connus. La clé reste dans ce navigateur : elle n'est jamais mise sur le site ni envoyée aux joueurs.")}</p>
-<label><span class="small">${L2('Gemini API key', "Clé d'API Gemini")}</span><input id="mg_key" type="password" autocomplete="off" value="${esc(mgKey())}"></label>
-<label><span class="small">${L2('Model (empty = newest Flash)', 'Modèle (vide = le Flash le plus récent)')}</span><input id="mg_model" value="${esc(
+<p class="small">${L2('Optional. With an AI key, any sentence is understood; without it, known keywords only. Gemini (free at aistudio.google.com), Claude (console.anthropic.com) or OpenAI (platform.openai.com): the site recognizes the key. It stays in this browser: never put on the site, sent to the players or saved in backups.', "Facultatif. Avec une clé d'IA, n'importe quelle phrase est comprise ; sans clé, seulement les mots-clés connus. Gemini (gratuit sur aistudio.google.com), Claude (console.anthropic.com) ou OpenAI (platform.openai.com) : le site reconnaît la clé. Elle reste dans ce navigateur : jamais mise sur le site, envoyée aux joueurs ni copiée dans les sauvegardes.")}</p>
+<label><span class="small">${L2('API key', "Clé d'API")}</span><input id="mg_key" type="password" autocomplete="off" value="${esc(mgKey())}"></label>
+<label><span class="small">${L2('Model (empty = chosen automatically)', 'Modèle (vide = choisi automatiquement)')}</span><input id="mg_model" value="${esc(
       (() => {
         try {
           return localStorage.getItem(MG_MODEL) || '';
@@ -426,7 +484,8 @@ async function mgGo(again) {
         mgSet(MG_KEY, '');
         mgSet(MG_MODEL, '');
       }
-      mgMsg(mgKey() ? L2('AI on.', 'IA activée.') : L2('Keywords only.', 'Mots-clés seulement.'));
+      const pv = { gemini: 'Gemini', claude: 'Claude', openai: 'OpenAI' }[mgProv(mgKey())];
+      mgMsg(mgKey() ? L2('AI on: ', 'IA activée : ') + pv + '.' : L2('Keywords only.', 'Mots-clés seulement.'));
     };
     d.showModal();
   };
