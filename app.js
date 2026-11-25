@@ -12308,14 +12308,19 @@ function gHandSync() {
       n = act.move
         ? [Math.max(1, Math.min(GCOLS - w0 + 1, c0 + dc)), Math.max(1, r0 + dr), w0, h0]
         : [c0, r0, Math.max(2, Math.min(GCOLS - c0 + 1, w0 + dc)), Math.max(2, h0 + dr)];
-    // a module never goes over another: it stops at the last free place
-    if (!gFree(act.k, n)) return;
+    // the module follows the pointer, even over the others; red while it would land on one
     GL[act.k] = n;
+    act.m.classList.toggle('gbad', !gFree(act.k, n));
     gApply();
   });
   const end = () => {
     if (!act) return;
-    act.m.classList.remove('gdrag');
+    // dropped on another module: it goes back where it was, unchanged
+    if (!gFree(act.k, GL[act.k])) {
+      GL[act.k] = act.r0;
+      gApply();
+    }
+    act.m.classList.remove('gdrag', 'gbad');
     grid.classList.remove('gon');
     act = null;
     gSave();

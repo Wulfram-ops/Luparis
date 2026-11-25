@@ -400,3 +400,5 @@ body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){dis
 #cgrid .pfbox>.hside .hsel{flex-direction:row;align-items:center;gap:6px}
 #cgrid .pfbox>.hside .hsel select{width:auto;min-width:150px}
 #cgrid .pfbox>.hside .htrk span{flex:none}
+#cgrid .gitem.gdrag{z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#cgrid .gitem.gbad{outline-color:#c0392b!important;opacity:.85}
