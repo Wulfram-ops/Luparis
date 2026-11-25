@@ -119,6 +119,12 @@ def run(chrome: str | None) -> None:
         check("backup holds the map", "luparis-tac" in backup.get("data", {}))
         page.keyboard.press("Escape")
 
+        # big messages (large maps) travel in pieces and come back whole
+        check(
+            "large multiplayer messages are cut and rebuilt",
+            D("(()=>{const o={type:'state',x:'a'.repeat(200000)},P=mpPieces(o),st={};let r=null;for(const p of P.reverse())r=mpJoinPiece(st,p)||r;return P.length>3&&r&&r.x.length===200000})()"),
+        )
+
         # right-click menus and campaign deletion (characters are kept)
         page.evaluate("DBG(`CH.list.push({...blankC(),id:'z1',name:'Zed',camp:'Temp'});saveC();deleteCampaign('Temp')`)")
         check(

@@ -220,6 +220,35 @@ function mpState() {
     code: MP.code,
   };
 }
+// WebRTC drops messages that are too big (large maps, many characters): cut them into pieces
+const MP_CHUNK = 48000;
+function mpPieces(o) {
+  const s = JSON.stringify(o);
+  if (s.length <= MP_CHUNK) return [o];
+  const id = Math.random().toString(36).slice(2, 10),
+    n = Math.ceil(s.length / MP_CHUNK);
+  return Array.from({ length: n }, (_, i) => ({ type: 'chunk', id, i, n, d: s.slice(i * MP_CHUNK, (i + 1) * MP_CHUNK) }));
+}
+// put the pieces back together; returns the whole message once every piece has arrived
+function mpJoinPiece(store, m) {
+  if (m.type !== 'chunk') return m;
+  const n = Math.round(+m.n),
+    i = Math.round(+m.i);
+  if (!(n > 0 && n < 400 && i >= 0 && i < n) || typeof m.d !== 'string') return null;
+  const e = (store[m.id] = store[m.id] || { n, p: [], got: 0, t: Date.now() });
+  if (e.p[i] == null) {
+    e.p[i] = m.d;
+    e.got++;
+  }
+  for (const k in store) if (Date.now() - store[k].t > 60000) delete store[k];
+  if (e.got < e.n) return null;
+  delete store[m.id];
+  try {
+    return JSON.parse(e.p.join(''));
+  } catch (x) {
+    return null;
+  }
+}
 function mpSend(o, conn) {
   if (MP.local) {
     MP.bc && MP.bc.postMessage(JSON.stringify({ ...o, from: MP.uid, ...(conn && conn.uid ? { to: conn.uid } : {}) }));
@@ -229,11 +258,11 @@ function mpSend(o, conn) {
     for (const c of conn ? [conn] : MP.conns)
       if (c.open)
         try {
-          c.send(o);
+          for (const p of mpPieces(o)) c.send(p);
         } catch (e) {}
   } else if (MP.conn && MP.conn.open)
     try {
-      MP.conn.send(o);
+      for (const p of mpPieces(o)) MP.conn.send(p);
     } catch (e) {}
 }
 let mpT = null;
@@ -378,6 +407,10 @@ function mpYou(conn, msg) {
 }
 function mpHostMsg(m, conn) {
   conn = conn || {};
+  if (m && m.type === 'chunk') {
+    m = mpJoinPiece((conn._pieces = conn._pieces || {}), m);
+    if (!m) return;
+  }
   if (m.type === 'hello') {
     conn.pname = String(m.name || '').slice(0, 30) || L2('Player', 'Joueur');
     conn.prole = m.role === 'spec' ? 'spec' : 'player';
@@ -538,6 +571,10 @@ function mpRemember() {
   if (MP.role === 'player') ssSet(MPK, { code: MP.code, name: MP.name || '', role: MP.prole, me: MP.me || '' });
 }
 function mpClientMsg(m) {
+  if (m && m.type === 'chunk') {
+    m = mpJoinPiece((MP.pieces = MP.pieces || {}), m);
+    if (!m) return;
+  }
   if (m.type === 'closed') {
     MP.closed = true;
     mpRender(L2('The game master closed the game.', 'Le MJ a fermé la partie.'));
@@ -583,9 +620,16 @@ function mpClientMsg(m) {
     return;
   }
   if (m.type !== 'state') return;
-  const first = !MP.got;
+  const first = !MP.got,
+    n0 = N;
   MP.got = true;
   applyState(m.map);
+  // the GM changed the map size: start again from the whole map in view
+  if (N !== n0) {
+    CAM.z = 1;
+    CAM.px = 0;
+    CAM.py = 0;
+  }
   CH.list = m.chars || [];
   CH.folders = Array.isArray(m.folders) ? m.folders.filter(validCampaignName) : camps();
   if (CH.active && !CH.list.some(c => c.id === CH.active)) CH.active = null;
