@@ -940,7 +940,11 @@ function renderHand() {
   const P = document.getElementById('hand');
   if (!P) return;
   const c = handChar();
-  const sel = `<label class="hsel"><span>${L2('Character', 'Personnage')}</span><select id="h_ch"><option value="">—</option>${CH.list.map(x => `<option value="${esc(x.id)}"${c && c.id === x.id ? ' selected' : ''}>${esc(x.name || '?')}${x.camp ? ' · ' + esc(x.camp) : ''}</option>`).join('')}</select></label>`;
+  // a player picks their character once, in the multiplayer card: no second chooser here
+  const sel =
+    MP.role === 'player'
+      ? `<div class="hsel"><span>${L2('Character', 'Personnage')}</span><b>${c ? esc(c.name || '?') : L2('choose it in “Multiplayer”', 'à choisir dans « Partie à plusieurs »')}</b></div>`
+      : `<label class="hsel"><span>${L2('Character', 'Personnage')}</span><select id="h_ch"><option value="">—</option>${CH.list.map(x => `<option value="${esc(x.id)}"${c && c.id === x.id ? ' selected' : ''}>${esc(x.name || '?')}${x.camp ? ' · ' + esc(x.camp) : ''}</option>`).join('')}</select></label>`;
   if (!c) {
     P.innerHTML = `<div class="hhead"><h3>${L2('Ability cards', 'Cartes de capacités')}</h3>${sel}</div><p class="small">${L2('Pick a character, or select a character token on the map.', "Choisis un personnage, ou sélectionne le pion d'un personnage sur la carte.")}</p>`;
     return;

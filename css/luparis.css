@@ -365,3 +365,4 @@ body.mp-player #v-bestiaire>.band:not(#pbest){display:none!important}
 body.mp-player #modes{display:none!important}
 body.mode-play #tools button:is([data-t=shift],[data-t=up],[data-t=down],[data-t=flat],[data-t=surf],[data-t=obj],[data-t=pref],[data-t=mark],[data-t=hide]),body.mode-play #tools :is(#objrot,#prefrot,#prefroll),body.mode-play .szl,body.mode-play .bar label:has(#biosel),body.mode-play .bar label:has(#scene),body.mode-play #gen,body.mode-play #clear,body.mode-play #mg_f{display:none!important}
 body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){display:none!important}
+.mppick{margin:6px 0 2px;font-weight:600}.mpwant select{outline:2px solid var(--acc);outline-offset:1px}

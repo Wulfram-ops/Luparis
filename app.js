@@ -8637,7 +8637,11 @@ function renderHand() {
   const P = document.getElementById('hand');
   if (!P) return;
   const c = handChar();
-  const sel = `<label class="hsel"><span>${L2('Character', 'Personnage')}</span><select id="h_ch"><option value="">—</option>${CH.list.map(x => `<option value="${esc(x.id)}"${c && c.id === x.id ? ' selected' : ''}>${esc(x.name || '?')}${x.camp ? ' · ' + esc(x.camp) : ''}</option>`).join('')}</select></label>`;
+  // a player picks their character once, in the multiplayer card: no second chooser here
+  const sel =
+    MP.role === 'player'
+      ? `<div class="hsel"><span>${L2('Character', 'Personnage')}</span><b>${c ? esc(c.name || '?') : L2('choose it in “Multiplayer”', 'à choisir dans « Partie à plusieurs »')}</b></div>`
+      : `<label class="hsel"><span>${L2('Character', 'Personnage')}</span><select id="h_ch"><option value="">—</option>${CH.list.map(x => `<option value="${esc(x.id)}"${c && c.id === x.id ? ' selected' : ''}>${esc(x.name || '?')}${x.camp ? ' · ' + esc(x.camp) : ''}</option>`).join('')}</select></label>`;
   if (!c) {
     P.innerHTML = `<div class="hhead"><h3>${L2('Ability cards', 'Cartes de capacités')}</h3>${sel}</div><p class="small">${L2('Pick a character, or select a character token on the map.', "Choisis un personnage, ou sélectionne le pion d'un personnage sur la carte.")}</p>`;
     return;
@@ -14257,7 +14261,7 @@ function mpRender(msg) {
     B.innerHTML = `<p>${L2('Connected to game', 'Connecté à la partie')} <b class="mpcode">${MP.code}</b>${MP.got ? '' : ' …'} · ${L2(...ROLE_N[MP.prole])}</p>${
       spec
         ? `<p class="small">${L2('You follow the game without acting on it.', 'Tu suis la partie sans y agir.')}</p>`
-        : `<label class="small">${L2('My character', 'Mon personnage')} <select id="mp_me"><option value="">—</option>${CH.list.map(c => `<option value="${esc(c.id)}"${c.id === MP.me ? ' selected' : ''}>${esc(c.name || '?')}</option>`).join('')}</select></label>${MP.me && MP.got ? `<div class="row"><button type="button" id="mp_place" class="go">${tokens.some(k => k.cid === MP.me) ? L2('Place my token elsewhere', 'Reposer mon pion ailleurs') : L2('Place my token on the map', 'Poser mon pion sur la carte')}</button></div>` : ''}<p class="small">${L2('You can place and move your own token, roll, use your cards and spend your earned XP. The game master awards XP.', 'Tu peux poser et déplacer ton pion, lancer les dés, utiliser tes cartes et dépenser ton XP. Le MJ attribue l’XP.')}</p>`
+        : `${MP.me ? '' : `<p class="mppick">${L2('Choose your character to play:', 'Choisis ton personnage pour jouer :')}</p>`}<label class="small${MP.me ? '' : ' mpwant'}">${L2('My character', 'Mon personnage')} <select id="mp_me"><option value="">—</option>${CH.list.map(c => `<option value="${esc(c.id)}"${c.id === MP.me ? ' selected' : ''}>${esc(c.name || '?')}</option>`).join('')}</select></label>${MP.me && MP.got ? `<div class="row"><button type="button" id="mp_place" class="go">${tokens.some(k => k.cid === MP.me) ? L2('Place my token elsewhere', 'Reposer mon pion ailleurs') : L2('Place my token on the map', 'Poser mon pion sur la carte')}</button></div>` : ''}<p class="small">${L2('You can place and move your own token, roll, use your cards and spend your earned XP. The game master awards XP.', 'Tu peux poser et déplacer ton pion, lancer les dés, utiliser tes cartes et dépenser ton XP. Le MJ attribue l’XP.')}</p>`
     }<div class="row"><button type="button" id="mp_leave">${L2('Leave', 'Quitter')}</button></div>`;
   }
   if (MP.msg) B.insertAdjacentHTML('beforeend', `<p class="small mpmsg" aria-live="polite">${esc(MP.msg)}</p>`);
