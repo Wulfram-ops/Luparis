@@ -547,6 +547,11 @@ button.play-stat{border-color:var(--acc)}
   .play-jump,.play-jumps{display:inline-flex}
   .play-jump[hidden]{display:none}
   .play-layout-bar .play-presets{flex:1 1 64%;padding:1px}
+  #v-carte #modes{order:-2}
+  #pl_toggle{order:-1;display:inline-flex;min-height:34px;padding:2px 8px;background:var(--panel);border:1px solid var(--line)}
+  body.mp-player #pl_toggle,#pl_bar:not(.open){display:none!important}
+  .mode-edit #map_fields_toggle{display:inline-flex}
+  .mode-edit #map_fields:not(.open){display:none}
 }
 @media(max-width:600px){
   body:has(#v-carte:not([hidden])) header{padding:8px 8px 4px;gap:3px 8px}
@@ -561,11 +566,6 @@ button.play-stat{border-color:var(--acc)}
   #v-carte #thint,#play_presets{display:none}
   #play_preset_select{display:block;flex:1 1 0;width:auto;min-height:36px}
   .play-jumps{width:100%}
-  #v-carte #modes{order:-2}
-  #pl_toggle{order:-1;display:inline-flex;min-height:34px;padding:2px 8px;background:var(--panel);border:1px solid var(--line)}
-  body.mp-player #pl_toggle,#pl_bar:not(.open){display:none!important}
-  .mode-edit #map_fields_toggle{display:inline-flex}
-  .mode-edit #map_fields:not(.open){display:none}
 }
 @media(max-width:420px){
   .play-presets button,#play_customize,.play-jumps button{padding-inline:6px;font-size:13px}
