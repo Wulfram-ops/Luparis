@@ -73,7 +73,162 @@ function gFix() {
   }
   gVis = new Set(keys);
 }
-const gFree = (k, r) => Object.keys(GL).every(o => o === k || !gShown(o) || !gHit(r, GL[o]));
+// preview while dragging: the held module takes its spot, the modules it touches go down just enough
+function gPush(snap, k, n) {
+  const out = {};
+  for (const o in snap) out[o] = [...snap[o]];
+  out[k] = n;
+  const placed = [k];
+  for (const o of Object.keys(snap)
+    .filter(o => o !== k && gShown(o))
+    .sort((a, b) => snap[a][1] - snap[b][1] || snap[a][0] - snap[b][0])) {
+    const r = out[o];
+    while (placed.some(d => gHit(r, out[d]))) r[1]++;
+    placed.push(o);
+  }
+  return out;
+}
+// layout presets: regions (column, width, first row) filled with modules on shelves; 'k-spl*' matches every spell card
+const GPRE = {
+  combat: {
+    n: ['Combat', 'Combat'],
+    reg: [
+      {
+        c: 1,
+        w: 9,
+        y: 1,
+        it: [
+          ['map', 9, 20],
+          ['pf', 9, 9],
+          ['c:k-atk', 3, 10],
+          ['c:k-def', 3, 10],
+          ['c:k-spl*', 3, 10],
+          ['c:k-man', 3, 10],
+          ['c:k-tal*', 3, 10],
+        ],
+        rest: 1,
+      },
+      {
+        c: 10,
+        w: 3,
+        y: 1,
+        it: [
+          ['in', 3, 10],
+          ['tk', 3, 8],
+          ['pl', 3, 7],
+          ['mk', 3, 7],
+          ['mp', 3, 9],
+        ],
+      },
+    ],
+  },
+  explo: {
+    n: ['Exploration', 'Exploration'],
+    reg: [
+      {
+        c: 1,
+        w: 8,
+        y: 1,
+        it: [
+          ['map', 8, 18],
+          ['c:k-inv', 4, 10],
+          ['c:k-sf', 4, 10],
+          ['c:k-eq', 4, 10],
+          ['c:k-note', 4, 10],
+          ['pf', 8, 9],
+        ],
+        rest: 1,
+      },
+      {
+        c: 9,
+        w: 4,
+        y: 1,
+        it: [
+          ['mk', 4, 8],
+          ['img', 4, 9],
+          ['tk', 4, 8],
+          ['pl', 4, 7],
+          ['sn', 4, 8],
+          ['in', 4, 9],
+          ['mp', 4, 9],
+        ],
+      },
+    ],
+  },
+  totm: {
+    n: ['Theatre of the mind', "Théâtre de l'esprit"],
+    reg: [
+      {
+        c: 1,
+        w: 8,
+        y: 1,
+        it: [
+          ['pf', 8, 10],
+          ['c:k-sf', 4, 10],
+          ['c:k-tal*', 4, 10],
+          ['c:k-def', 4, 10],
+          ['c:k-atk', 4, 10],
+          ['c:k-spl*', 4, 10],
+          ['c:k-man', 4, 10],
+          ['c:k-inv', 4, 10],
+          ['c:k-eq', 4, 10],
+          ['c:k-note', 4, 10],
+        ],
+        rest: 1,
+      },
+      {
+        c: 9,
+        w: 4,
+        y: 1,
+        it: [
+          ['img', 4, 11],
+          ['sn', 4, 9],
+          ['in', 4, 9],
+          ['map', 4, 10],
+          ['tk', 4, 8],
+          ['mk', 4, 7],
+          ['pl', 4, 7],
+          ['mp', 4, 9],
+        ],
+      },
+    ],
+  },
+};
+function gPreset(id) {
+  const P = GPRE[id],
+    // only the modules shown now are packed; a hidden one keeps its place and finds room when it appears
+    keys = Object.keys(GL).filter(gShown),
+    used = new Set(),
+    out = {};
+  const match = m => keys.filter(k => !used.has(k) && (m.endsWith('*') ? k.startsWith(m.slice(0, -1)) : k === m));
+  for (const R of P.reg) {
+    let x = 0,
+      y = R.y,
+      sh = 0;
+    const put = (k, w, h) => {
+      w = Math.min(w, R.w);
+      if (x + w > R.w) {
+        y += sh;
+        x = 0;
+        sh = 0;
+      }
+      out[k] = [R.c + x, y, w, h];
+      used.add(k);
+      x += w;
+      sh = Math.max(sh, h);
+    };
+    for (const [m, w, h] of R.it) for (const k of match(m)) put(k, w, h);
+    if (R.rest)
+      for (const k of keys.filter(k => !used.has(k) && !P.reg.some(Q => Q.it.some(([m]) => match(m).includes(k)))))
+        put(k, k.startsWith('c:') ? 3 : Math.min(GL[k][2], R.w), k.startsWith('c:') ? 10 : GL[k][3]);
+  }
+  for (const k in GL) if (!out[k]) out[k] = [...GL[k]];
+  GL = out;
+  gVis = new Set();
+  gFix();
+  gApply();
+  gSave();
+}
 function gApply() {
   for (const k in GL) {
     const m = gEl(k);
@@ -179,11 +334,17 @@ function gHandSync() {
   if (hand) grid.append(hand);
   if (side && !side.children.length) side.remove();
   if (!wrap.children.length) wrap.remove();
-  const reset = document.createElement('button');
-  reset.type = 'button';
-  reset.className = 'greset';
-  reset.textContent = L2('Reset the layout', 'Disposition par défaut');
-  grid.after(reset);
+  const bar = document.createElement('div');
+  bar.className = 'gpresets';
+  bar.innerHTML = `<span class="small">${L2('Layout', 'Disposition')}</span>${Object.keys(GPRE)
+    .map(id => `<button type="button" data-gpre="${id}">${L2(...GPRE[id].n)}</button>`)
+    .join('')}<button type="button" class="greset">${L2('Default', 'Par défaut')}</button>`;
+  grid.before(bar);
+  bar.onclick = e => {
+    const b = e.target.closest('[data-gpre]');
+    if (b) gPreset(b.dataset.gpre);
+  };
+  const reset = bar.querySelector('.greset');
   reset.onclick = () => {
     lsSet('luparis-grid2', null);
     GL = gLoad();
@@ -222,7 +383,15 @@ function gHandSync() {
       e.preventDefault();
       e.stopPropagation();
       g.setPointerCapture(e.pointerId);
-      act = { k, m, move: !g.classList.contains('gsz'), p0: p, r0: [...GL[k]], g };
+      act = {
+        k,
+        m,
+        move: !g.classList.contains('gsz'),
+        p0: p,
+        r0: [...GL[k]],
+        g,
+        snap: JSON.parse(JSON.stringify(GL)),
+      };
       m.classList.add('gdrag');
       grid.style.setProperty('--gcw', p.cw + GGAP + 'px');
       grid.classList.add('gon');
@@ -238,25 +407,34 @@ function gHandSync() {
       n = act.move
         ? [Math.max(1, Math.min(GCOLS - w0 + 1, c0 + dc)), Math.max(1, r0 + dr), w0, h0]
         : [c0, r0, Math.max(2, Math.min(GCOLS - c0 + 1, w0 + dc)), Math.max(2, h0 + dr)];
-    // the module follows the pointer, even over the others; red while it would land on one
-    GL[act.k] = n;
-    act.m.classList.toggle('gbad', !gFree(act.k, n));
+    // the others make room as a preview; nothing is kept until the button is released
+    GL = gPush(act.snap, act.k, n);
     gApply();
   });
-  const end = () => {
+  const end = keep => {
     if (!act) return;
-    // dropped on another module: it goes back where it was, unchanged
-    if (!gFree(act.k, GL[act.k])) {
-      GL[act.k] = act.r0;
-      gApply();
-    }
-    act.m.classList.remove('gdrag', 'gbad');
+    if (!keep) GL = act.snap;
+    gApply();
+    act.m.classList.remove('gdrag');
     grid.classList.remove('gon');
     act = null;
+    gVis = new Set(Object.keys(GL).filter(gShown));
     gSave();
   };
-  grid.addEventListener('pointerup', end);
-  grid.addEventListener('pointercancel', end);
+  grid.addEventListener('pointerup', () => end(true));
+  grid.addEventListener('pointercancel', () => end(false));
+  // Esc while dragging: everything goes back
+  document.addEventListener(
+    'keydown',
+    e => {
+      if (act && e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        end(false);
+      }
+    },
+    true,
+  );
   // a module that appears or disappears: make room only for the one that appears
   new MutationObserver(() => {
     if (act) return;
