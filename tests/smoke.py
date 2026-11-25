@@ -270,6 +270,7 @@ def run(chrome: str | None) -> None:
         host.wait_for_timeout(600)
         check("host ignores forged XP even with valid allocation", host.evaluate("DBG(\"CH.list.find(c=>c.id==='xp-test').xp\")") == 150)
         player.click('.tabs a[data-v="carte"]')
+        player.locator("#v-carte").wait_for(state="visible")
         check("quick place toolbar hidden for players", not player.locator("#pl_bar").is_visible())
         check("GM notes not accessible to players", not player.locator("#play_tab_sn").is_visible())
         check("player has integrated sheet", player.locator("#hand").is_visible())
