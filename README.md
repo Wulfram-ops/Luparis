@@ -55,7 +55,8 @@ Les mêmes vérifications tournent sur GitHub à chaque push (`.github/workflows
 | `world.svg` | Calques interactifs de la carte du monde (frontières, villes, noms des pays) |
 | `world-burgs.json` | Villes et bourgs : position, pays, population, remparts, port… |
 | `srd-monsters.json` | Créatures du SRD 5.1 converties aux règles Luparis, plus des PNJ génériques |
-| `srd-details.json` | Texte complet des fiches SRD, chargé à l'ouverture d'une fiche |
+| `srd-details.json` | Texte original des fiches SRD (anglais), chargé à l'ouverture d'une fiche |
+| `srd-luparis.json` | Fiches SRD converties aux règles Luparis (EN/FR), chargées à l'ouverture d'une fiche |
 | `ROADMAP.md` | Feuille de route : prochaines étapes, améliorations, dette technique |
 
 ### Outils (`tools/`)
@@ -67,6 +68,7 @@ Les mêmes vérifications tournent sur GitHub à chaque push (`.github/workflows
 | `python3 tools/build_world.py Luparis_Full.json` | Régénère la carte du monde depuis l'export Azgaar (`world_data.py` → `world_flat.py` → `world_raster.py`) |
 | `python3 tools/srd.py 5e-SRD-Monsters.json srd-monsters.json` | Régénère le bestiaire SRD depuis 5e-database (édition 2014) |
 | `python3 tools/srd_details.py 5e-SRD-Monsters.json srd-details.json` | Régénère le texte complet des fiches SRD |
+| `python3 tools/srd_luparis.py` | Convertit les fiches SRD aux règles Luparis (`srd-luparis.json`) ; textes français dans `tools/srd_fr.json` (`--templates` liste ce qui manque) |
 | `python3 tools/validate_data.py` | Vérifie les fichiers de données |
 
 Dépendances : `tools/requirements.txt`. La carte du monde demande un Chrome (celui du système ou `python3 -m playwright install chromium`). L'export Azgaar (≈ 6,6 Mo) n'est pas versionné.

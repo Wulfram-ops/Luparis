@@ -103,6 +103,14 @@ def run(chrome: str | None) -> None:
         page.keyboard.press("Escape")
         page.keyboard.press("Escape")
 
+        # monster sheet: Luparis version of an SRD creature
+        page.evaluate("DBG(\"monSheet(SRD.find(x=>x.id==='s-adult-red-dragon'))\")")
+        page.wait_for_timeout(900)
+        sheet = page.locator("#sbdlg .ms").inner_text()
+        check("monster sheet in Luparis terms", "Tier 5" in sheet and ("tiles" in sheet or "cases" in sheet), sheet[:80])
+        check("dragons are chaotic neutral", "chaotic neutral" in sheet or "chaotique neutre" in sheet)
+        page.evaluate("document.getElementById('sbdlg').close()")
+
         # backup round trip
         page.click("#bk_open")
         with page.expect_download() as dl:

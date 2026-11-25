@@ -263,3 +263,38 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 .pins li:last-child{border-bottom:0}.pins input{min-height:36px;padding:4px 8px}.pins button{min-height:36px;min-width:36px;padding:0 8px;border:1px solid var(--line);justify-content:center}
 @media(max-width:600px){.stage{height:62vh}#info{font-size:13px}table{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.stage{transition:none}}
+/* monster sheet: minimal Luparis stat block */
+.sbdlg{background:var(--panel);color:var(--ink);max-width:min(640px,94vw);border:1px solid var(--line)}
+.sbbar{background:linear-gradient(var(--panel),transparent)}
+.ms{padding:0 22px 18px;font:15px/1.45 "Alegreya Sans",sans-serif}
+.ms .mshd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ms h2{font:600 24px/1.15 "Cinzel",Georgia,serif;margin:0}
+.ms .mst{color:var(--muted);font-size:14px;white-space:nowrap}
+.ms .mss{margin:2px 0 12px;color:var(--muted);font-style:italic}
+.ms .msk{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.ms .msk div{background:var(--panel);display:flex;flex-direction:column;align-items:center;padding:6px 4px}
+.ms .msk span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.ms .msk b{font-size:18px}
+.ms .msm{border-collapse:collapse;margin:0 0 4px;font-size:14px}
+.ms .msm th,.ms .msm td{padding:2px 10px;text-align:center}
+.ms .msm thead th{font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.ms .msm thead th.sv::before{content:"● ";color:var(--acc)}
+.ms .msm tbody th{text-align:left;font-weight:600;padding-left:0}
+.ms .msm td{font-variant-numeric:tabular-nums;border-left:1px solid var(--line)}
+.ms .msn{color:var(--muted);font-size:13px;margin:2px 0 8px}
+.ms .msl p{margin:2px 0}
+.ms .mk{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.03em;margin-right:4px}
+.ms .msd{font-style:italic;margin:10px 0}
+.ms h4{font:600 13px "Alegreya Sans",sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--acc2);margin:16px 0 6px;padding-bottom:3px;border-bottom:1px solid var(--line)}
+.ms p{margin:5px 0}
+.ms .msai{padding:6px 0;border-bottom:1px dashed var(--line)}
+.ms .msai:last-child{border-bottom:0}
+.ms .msah{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ms .msah button{min-height:30px;padding:2px 10px;border:1px solid var(--line);border-radius:8px;font-variant-numeric:tabular-nums}
+.ms .msah button.go{background:var(--acc);color:#fff;border-color:var(--acc)}
+.ms .msty{color:var(--muted);font-size:14px}
+.ms .msh{color:var(--muted);font-size:13px;margin:2px 0 0}
+.ms .msraw{margin-top:16px;font-size:13px;color:var(--muted)}
+.ms .msraw summary{cursor:pointer}
+@media (max-width:520px){.ms .msk{grid-template-columns:repeat(3,1fr)}}
+.ms .mshd h2{padding:0;margin:0;text-align:left}

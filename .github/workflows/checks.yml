@@ -18,6 +18,8 @@ jobs:
         run: python tools/build_site.py --check
       - name: Talent table matches tools/talents.py
         run: python tools/talents.py --check
+      - name: Luparis stat blocks match tools/srd_luparis.py and tools/srd_fr.json
+        run: python tools/srd_luparis.py --check
       - name: Data files
         run: python tools/validate_data.py
       - name: Browser smoke tests

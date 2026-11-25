@@ -9877,42 +9877,111 @@ const SZN2 = {
   H: ['Huge', 'Très grand'],
   G: ['Gargantuan', 'Gigantesque'],
 };
-function monBlockHTML(m, D, tk) {
+// Luparis stat blocks of the SRD creatures (srd-luparis.json, built by tools/srd_luparis.py), loaded with the first sheet
+let SRDL = null,
+  SRDLP = null;
+function srdLuparis() {
+  if (SRDL) return Promise.resolve(SRDL);
+  if (!SRDLP)
+    SRDLP = fetch('srd-luparis.json')
+      .then(r => (r.ok ? r.json() : {}))
+      .catch(() => ({}))
+      .then(o => (SRDL = o));
+  return SRDLP;
+}
+function srdKey(m) {
+  const en = Array.isArray(m.n) ? m.n[0] : String(m.n);
+  return String(m.id).startsWith('s-')
+    ? m.id
+    : 's-' +
+        en
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[̀-ͯ]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+}
+// attacks shown on the sheet: the Luparis conversion when there is one, else the bestiary line
+let SBA = [];
+function monBlockHTML(m, D, tk, LU) {
   const v = conv(m),
-    mod = x => Math.floor((x - 10) / 2),
-    sg = x => (x >= 0 ? '+' : '') + x,
-    A = monAtk(m),
+    P = x => (Array.isArray(x) ? x[lang === 'fr' ? 1 : 0] : x || ''),
+    f = fpNum(m.fp),
+    T = monTier(f),
     key = tk ? tk.id : m.id;
-  const list = (h, a) =>
-    a && a.length ? `<h4>${h}</h4>` + a.map(([n, d]) => `<p><b><i>${esc(n)}.</i></b> ${esc(d)}</p>`).join('') : '';
-  const line = (k, x) => (x ? `<p><b>${k}</b> ${esc(x)}</p>` : '');
-  let h = `<div class="sb"><h2>${esc(tr(m.n))}${tk && tk.num ? ' ' + tk.num : ''}</h2><p class="sbt">${esc(tr(SZN2[monSz(m)] || ['', '']))} ${esc(tyName(m.type))}${D && D.sub ? ' (' + esc(D.sub) + ')' : ''}${D && D.al ? ', ' + esc(D.al) : ''}</p><hr class="sbr">
- <p><b>Luparis</b> · ${L2('Evasion', 'Esquive')} <b>${v.esq}</b> · ${L2('Thresholds', 'Seuils')} <b>${v.maj} / ${v.sev}</b> · ${L2('Boxes', 'Cases')} <b>${tk ? tk.hp + ' / ' + tk.hpMax : v.cases}</b> · Init <b>${sgn(+m.init || 0)}</b> · ${L2('CR', 'FP')} <b>${esc(m.fp)}</b>${D && D.xp ? ` (${D.xp} XP D&D)` : ''}</p>
- <p><b>D&amp;D</b> · ${L2('AC', 'CA')} ${m.ca} · ${L2('HP', 'PV')} ${m.pv}${D && D.hd ? ' (' + esc(D.hd) + ')' : ''}${D && D.spd ? ` · ${L2('Speed', 'Vitesse')} ${esc(D.spd)}` : ''}</p>`;
-  if (D && D.ab)
-    h += `<hr class="sbr"><div class="sbab">${['FOR', 'DEX', 'CON', 'INT', 'SAG', 'CHA'].map((k, i) => `<div><b>${lang === 'fr' ? k : ['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'][i]}</b><span>${D.ab[i]} (${sg(mod(D.ab[i]))})</span></div>`).join('')}</div>`;
-  if (D)
+  SBA = LU && LU.atk && LU.atk.length
+    ? LU.atk.map(a => ({
+        n: P(a.n),
+        ab: a.ab,
+        nd: a.nd,
+        dd: a.dd,
+        mod: a.mod,
+        ty: P(a.ty),
+        how: P(a.how),
+        plus: a.plus ? P(a.plus) : '',
+        rest: P(a.rest),
+      }))
+    : monAtk(m).map(a => ({ n: (a.n || '') + (a.k > 1 ? ' ×' + a.k : ''), ab: a.ab, nd: a.nd, dd: a.dd, mod: a.mod }));
+  const stat = (k, val) => `<div><span>${k}</span><b>${val}</b></div>`,
+    line = (k, x) => (x ? `<p><span class="mk">${k}</span> ${esc(x)}</p>` : ''),
+    list = (h, a) =>
+      a && a.length
+        ? `<h4>${h}</h4>` +
+          a.map(x => `<p><b>${esc(lang === 'fr' ? x[1] : x[0])}.</b> ${esc(lang === 'fr' ? x[3] : x[2])}</p>`).join('')
+        : '';
+  const sub = [tr(SZN2[monSz(m)] || ['', '']) + ' ' + tyName(m.type), LU ? P(LU.al) : ''].filter(Boolean).join(' · ');
+  let h = `<div class="ms"><div class="mshd"><h2>${esc(tr(m.n))}${tk && tk.num ? ' ' + tk.num : ''}</h2><span class="mst">Tier ${T} · ${L2('CR', 'FP')} ${esc(m.fp)}</span></div>
+ <p class="mss">${esc(sub)}</p>
+ <div class="msk">${stat(L2('Evasion', 'Esquive'), v.esq)}${stat(L2('Thresholds', 'Seuils'), v.maj + ' / ' + v.sev)}${stat(L2('Boxes', 'Cases'), tk ? tk.hp + ' / ' + tk.hpMax : v.cases)}${stat(L2('Mastery', 'Maîtrise'), sgn(T + 1))}${stat('Init', sgn(+m.init || 0))}</div>`;
+  if (LU && LU.mx) {
+    const I = [L2('Power', 'Puissance'), 'Finesse', L2('Resilience', 'Résistance')],
+      Dm = [
+        [L2('Physical', 'Physique'), 'phy'],
+        [L2('Mental', 'Mental'), 'men'],
+        [L2('Social', 'Social'), 'soc'],
+      ];
     h +=
-      `<hr class="sbr">` +
-      line(L2('Saving throws', 'Jets de sauvegarde'), D.sv) +
-      line(L2('Skills', 'Compétences'), D.sk) +
-      line(L2('Vulnerabilities', 'Vulnérabilités'), D.vul) +
-      line(L2('Resistances', 'Résistances'), D.res) +
-      line(L2('Immunities', 'Immunités'), D.imm) +
-      line(L2('Condition immunities', 'Immunités aux états'), D.cimm) +
-      line(L2('Senses', 'Sens'), D.sen) +
-      line(L2('Languages', 'Langues'), D.lng);
-  h += `<hr class="sbr">` + (m.desc ? `<p class="sbd">${esc(m.desc)}</p>` : '');
-  if (A.length)
-    h += `<h4>${L2('Luparis attacks', 'Attaques Luparis')}</h4><div class="matks">${A.map((a, i) => `<div class="matk"><span>${esc(a.n)}${a.k > 1 ? ' ×' + a.k : ''}</span><button type="button" class="go" data-sbr="atk" data-i="${i}">${sgn(a.ab)}</button><button type="button" data-sbr="dmg" data-i="${i}">${a.nd}d${a.dd}${a.mod ? sgn(a.mod) : ''}</button></div>`).join('')}</div>`;
-  h +=
-    list(L2('Traits', 'Capacités'), [...(m.tr || []), ...((D && D.tr) || [])]) +
-    list(L2('Actions (D&D text)', 'Actions (texte D&D)'), D && D.act) +
-    list(L2('Reactions', 'Réactions'), D && D.rea) +
-    list(L2('Legendary actions', 'Actions légendaires'), D && D.leg);
-  if (noT(m)) h += `<p class="small">${esc(noT(m))}</p>`;
-  if (D)
-    h += `<p class="small sbsrc">${L2('Text from the System Reference Document 5.1 (CC BY 4.0). Numbers in the D&D text are D&D values; use the Luparis line and attacks at the table.', 'Texte du System Reference Document 5.1 (CC BY 4.0), en anglais. Les nombres du texte D&D sont ceux de D&D ; à table, utilise la ligne Luparis et les attaques Luparis.')}</p>`;
+      `<table class="msm"><thead><tr><th></th>${Dm.map(([n, k]) => `<th${(LU.sv || []).includes(k) ? ` class="sv" title="${L2('Mastered saving throws', 'Sauvegardes maîtrisées')}"` : ''}>${n}</th>`).join('')}</tr></thead><tbody>` +
+      I.map((n, i) => `<tr><th>${n}</th>${[0, 1, 2].map(j => `<td>${sgn(LU.mx[i * 3 + j])}</td>`).join('')}</tr>`).join('') +
+      `</tbody></table>`;
+    if ((LU.sv || []).length)
+      h += `<p class="msn">${L2('● mastered saving throws: add the Mastery', '● sauvegardes maîtrisées : ajoute la Maîtrise')}</p>`;
+  }
+  if (LU)
+    h +=
+      `<div class="msl">` +
+      line(L2('Speed', 'Vitesse'), P(LU.spd)) +
+      line(L2('Senses', 'Sens'), P(LU.sen)) +
+      line(L2('Languages', 'Langues'), P(LU.lng)) +
+      line(L2('Skills', 'Compétences'), (LU.sk || []).map(P).join(', ')) +
+      line(L2('Vulnerable', 'Vulnérable'), P(LU.vul)) +
+      line(L2('Resistant', 'Résiste'), P(LU.res)) +
+      line(L2('Immune', 'Immunisé'), [P(LU.imm), P(LU.cimm)].filter(Boolean).join(' · ')) +
+      `</div>`;
+  if (m.desc) h += `<p class="msd">${esc(m.desc)}</p>`;
+  if (SBA.length)
+    h +=
+      `<h4>${L2('Attacks', 'Attaques')}</h4><div class="msa">` +
+      SBA.map(
+        (a, i) =>
+          `<div class="msai"><div class="msah"><b>${esc(a.n)}</b><button type="button" class="go" data-sbr="atk" data-i="${i}" title="${L2('Attack roll', "Jet d'attaque")}">${sgn(a.ab)}</button>${a.nd ? `<button type="button" data-sbr="dmg" data-i="${i}" title="${L2('Damage', 'Dégâts')}">${a.nd}d${a.dd}${a.mod ? sgn(a.mod) : ''}${a.plus ? ' ' + esc(a.plus.replace(/^\+ /, '+')).replace(/ .*/, '') : ''}</button>` : ''}<span class="msty">${esc([a.ty, a.plus && a.plus.replace(/^\+ \S+ /, '+ ')].filter(Boolean).join(' '))}</span></div>${a.how ? `<p class="msh">${esc(a.how)}</p>` : ''}${a.rest ? `<p>${esc(a.rest)}</p>` : ''}</div>`,
+      ).join('') +
+      `</div>`;
+  if (LU) {
+    h +=
+      list(L2('Traits', 'Capacités'), LU.tr) +
+      list(L2('Actions', 'Actions'), LU.act) +
+      list(L2('Reactions', 'Réactions'), LU.rea) +
+      list(L2('Legendary actions (3 per round)', 'Actions légendaires (3 par round)'), LU.leg);
+  } else if ((m.tr || []).length) h += list(L2('Traits', 'Capacités'), (m.tr || []).map(([n, d]) => [n, n, d, d]));
+  if (!LU && noT(m)) h += `<p class="msn">${esc(noT(m))}</p>`;
+  if (D) {
+    const raw = (t, a) =>
+      a && a.length ? `<p class="msn"><b>${t}</b></p>` + a.map(([n, d]) => `<p><i>${esc(n)}.</i> ${esc(d)}</p>`).join('') : '';
+    h += `<details class="msraw"><summary>${L2('Original SRD 5.1 text (D&D values)', 'Texte original du SRD 5.1 (valeurs D&D, en anglais)')}</summary>
+   <p>${L2('AC', 'CA')} ${m.ca} · ${L2('HP', 'PV')} ${m.pv}${D.hd ? ' (' + esc(D.hd) + ')' : ''} · ${['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].map((k, i) => k + ' ' + (D.ab || [])[i]).join(' · ')}</p>${raw('Traits', D.tr)}${raw('Actions', D.act)}${raw('Reactions', D.rea)}${raw('Legendary', D.leg)}</details>
+   <p class="msn">${L2('Contains SRD 5.1 content (CC BY 4.0), converted to the Luparis rules.', 'Contient du contenu du SRD 5.1 (CC BY 4.0), converti aux règles de Luparis.')}</p>`;
+  }
   return h + '</div>';
 }
 let SBM = null,
@@ -9938,7 +10007,7 @@ function monSheet(m, tk) {
         return;
       }
       if (b.dataset.sbr) {
-        const a = monAtk(SBM)[+b.dataset.i];
+        const a = SBA[+b.dataset.i];
         if (!a) return;
         const nm = tr(SBM.n) + (SBT && SBT.num ? ' ' + SBT.num : '') + ' · ' + a.n,
           key = 'sb_' + (SBT ? SBT.id : SBM.id) + '_' + b.dataset.i;
@@ -9951,32 +10020,38 @@ function monSheet(m, tk) {
         } else {
           const n = TKCRIT[key] ? a.nd * 2 : a.nd,
             rs = Array.from({ length: n }, () => dRoll(a.dd)),
-            tot = rs.reduce((x, y) => x + y, 0) + a.mod;
+            px = /^\+ ?(\d+)d(\d+)([+-]\d+)?/.exec(a.plus || ''),
+            ps = px ? Array.from({ length: +px[1] }, () => dRoll(+px[2])) : [],
+            tot = rs.reduce((x, y) => x + y, 0) + a.mod + ps.reduce((x, y) => x + y, 0) + (px && px[3] ? +px[3] : 0);
           TKCRIT[key] = false;
-          pushRoll(`${esc(nm)} · ${n}d${a.dd}${a.mod ? sgn(a.mod) : ''} [${rs.join(', ')}] = <b>${tot}</b>`);
+          pushRoll(
+            `${esc(nm)} · ${n}d${a.dd}${a.mod ? sgn(a.mod) : ''} [${rs.join(', ')}]${px ? ` + ${px[1]}d${px[2]} [${ps.join(', ')}]` : ''} = <b>${tot}</b>`,
+          );
         }
       }
     });
   }
-  const paint = D => {
+  let DD = null,
+    LU = null;
+  const paint = () => {
     dl.innerHTML =
       `<div class="sbbar"><button type="button" id="sb_close" aria-label="${L2('Close', 'Fermer')}">×</button></div>` +
-      monBlockHTML(m, D, SBT);
+      monBlockHTML(m, DD, SBT, LU);
   };
-  paint(null);
+  paint();
   if (!dl.open) dl.showModal();
-  const en = Array.isArray(m.n) ? m.n[0] : String(m.n),
-    k2 = String(m.id).startsWith('s-')
-      ? m.id
-      : 's-' +
-        en
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '');
+  const k2 = srdKey(m);
+  srdLuparis().then(o => {
+    if (SBM === m && dl.open && o[k2]) {
+      LU = o[k2];
+      paint();
+    }
+  });
   srdDetails().then(o => {
-    if (SBM === m && dl.open && o[k2]) paint(o[k2]);
+    if (SBM === m && dl.open && o[k2]) {
+      DD = o[k2];
+      paint();
+    }
   });
 }
 // ---- 55-tools.js

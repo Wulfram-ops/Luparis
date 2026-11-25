@@ -83,6 +83,25 @@ def check_details(ids: set[str]) -> None:
                 err(f"srd-details.json[{k}]: {sec} must be a list of [name, text]")
 
 
+def check_luparis(ids: set[str]) -> None:
+    data = load("srd-luparis.json")
+    if not isinstance(data, dict):
+        err("srd-luparis.json: expected an object keyed by monster id")
+        return
+    missing = {i for i in ids if i.startswith("s-")} - data.keys()
+    if missing:
+        err(f"srd-luparis.json: no Luparis stat block for {len(missing)} SRD monsters, e.g. {sorted(missing)[:3]}")
+    for k, v in data.items():
+        if v.get("mx") is not None and len(v["mx"]) != 9:
+            err(f"srd-luparis.json[{k}]: mx must hold the nine cells")
+        for sec in ("tr", "act", "leg", "rea"):
+            if not all(isinstance(x, list) and len(x) == 4 for x in v.get(sec, [])):
+                err(f"srd-luparis.json[{k}]: {sec} entries must be [name en, name fr, text en, text fr]")
+        for a in v.get("atk", []):
+            if not all(isinstance(a.get(f), int) for f in ("ab", "nd", "dd", "mod")):
+                err(f"srd-luparis.json[{k}]: attack {a.get('n')} has non-integer fields")
+
+
 def check_world() -> None:
     burgs = load("world-burgs.json")
     if not isinstance(burgs, list) or not burgs:
@@ -120,7 +139,9 @@ def check_rules() -> None:
 
 
 def main() -> int:
-    check_details(check_monsters())
+    ids = check_monsters()
+    check_details(ids)
+    check_luparis(ids)
     check_world()
     check_rules()
     if errors:
