@@ -23,6 +23,7 @@ puis ouvrir http://localhost:8000/index.html. En double-clic, la carte du monde 
 | `world-burgs.json` | Villes et bourgs : position, pays, population, remparts, port… |
 | `srd-monsters.json` | Créatures du SRD 5.1 converties aux règles Luparis, plus des PNJ génériques |
 | `tools/world4.py` | Régénère `world.svg` et `world-burgs.json` : `python3 tools/world4.py Luparis_Full.json world.svg` |
+| `ROADMAP.md` | Feuille de route : prochaines étapes, améliorations, dette technique |
 | `tools/srd.py` | Régénère `srd-monsters.json` depuis 5e-database : `python3 tools/srd.py 5e-SRD-Monsters.json srd-monsters.json` |
 
 L'export Azgaar (≈ 6,6 Mo) n'est pas versionné.
