@@ -230,10 +230,7 @@ const klab = code => {
   return (v || KLAY[KL][code] || code.replace(/^Key|^Digit/, '')).toUpperCase();
 };
 function kbRows() {
-  const v =
-      { '#bestiaire': 'bestiaire', '#regles': 'regles', '#fiche': 'fiche', '#monde': 'monde' }[location.hash] ||
-      'carte',
-    r = { 1: [], 2: [], 3: [] };
+  const v = activeView(), r = { 1: [], 2: [], 3: [] };
   if (v === 'carte') {
     r[1] = [...document.querySelectorAll('#tools button')];
     r[2] = ['pl_q', 'in_roll', 'in_next', 'in_end'].map(id => $(id));
@@ -275,7 +272,7 @@ document.addEventListener(
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target.closest && e.target.closest('input,textarea,select,[contenteditable]')) return;
     const c = e.code,
-      dm = /^Digit([1-5])$/.exec(c);
+      dm = /^Digit([1-6])$/.exec(c);
     if (dm && !e.shiftKey) {
       const a = document.querySelectorAll('.tabs a')[+dm[1] - 1];
       if (a) {

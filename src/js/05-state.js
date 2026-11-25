@@ -207,9 +207,9 @@ const T = {
     size: 'Size',
     decor: 'Setting',
     h_click:
-      '<b>Left click</b> applies the tool; drag to paint. You can aim at the top or the sides of a tile. <b>Right click and drag</b> moves the view; the mouse wheel zooms. On mobile, pick a tool, then tap.',
+      '<b>Left click</b> applies the tool; drag to paint. You can aim at the top or the sides of a tile. <b>Right click and drag</b> moves the view in both Play and Edit; the mouse wheel zooms. On mobile, pick a tool, then tap.',
     h_keys:
-      '<b>Keyboard, row by row</b> (keys follow the physical rows, whatever your layout; each button shows its key): number row <b>1–5</b> the tabs; top row (Q W E R T Y on QWERTY, A Z E R T Y on AZERTY) the tools; middle row the session (search a token, initiative: roll, next, end); bottom row zoom out, zoom in, fit, undo, generate, save the map, in the order of the buttons. Rotate is the second key of the top row. Heights on the hovered tile: <b>Shift + 1 2 3</b> height, <b>Shift + 4</b> ditch, <b>Shift + 5</b> chasm, <b>Shift + 0</b> ground (hold and drag to paint). <b>Esc</b> back to Interact, <b>Ctrl+Z</b> undo.',
+      '<b>Keyboard, row by row</b> (keys follow the physical rows, whatever your layout; each button shows its key): number row <b>1–6</b> the tabs; top row (Q W E R T Y on QWERTY, A Z E R T Y on AZERTY) the tools; middle row the session (search a token, initiative: roll, next, end); bottom row zoom out, zoom in, fit, undo, generate, save the map, in the order of the buttons. Rotate is the second key of the top row. Heights on the hovered tile: <b>Shift + 1 2 3</b> height, <b>Shift + 4</b> ditch, <b>Shift + 5</b> chasm, <b>Shift + 0</b> ground (hold and drag to paint). <b>Esc</b> back to Interact, <b>Ctrl+Z</b> undo.',
     h_meas:
       '<b>Measure:</b> click and drag from one tile to another. D&D rule: every tile counts 5 ft (1.5 m), diagonals included. <b>Monsters:</b> hover a token and press <b>−</b> or <b>+</b> to remove or restore a Vitality box.',
     h_heights:
@@ -302,9 +302,9 @@ const T = {
     size: 'Taille',
     decor: 'Décor',
     h_click:
-      "<b>Clic gauche</b> applique l'outil, en glissant pour peindre ; on peut viser le sommet ou les flancs d'une case. <b>Clic droit maintenu</b> déplace la vue ; la molette zoome. Sur mobile, choisis l'outil puis touche.",
+      "<b>Clic gauche</b> applique l'outil, en glissant pour peindre ; on peut viser le sommet ou les flancs d'une case. <b>Clic droit maintenu</b> déplace la vue en partie et en édition ; la molette zoome. Sur mobile, choisis l'outil puis touche.",
     h_keys:
-      "<b>Clavier, ligne par ligne</b> (les touches suivent les rangées physiques, quel que soit ton clavier ; chaque bouton affiche sa touche) : rangée des chiffres <b>1–5</b> les onglets ; rangée du haut (A Z E R T Y en AZERTY) les outils ; rangée du milieu la séance (rechercher un pion, initiative : lancer, suivant, fin) ; rangée du bas dézoomer, zoomer, ajuster, annuler, générer, enregistrer la carte, dans l'ordre des boutons. Pivoter est la deuxième touche de la rangée du haut. Hauteurs sur la case survolée : <b>Maj + 1 2 3</b> hauteur, <b>Maj + 4</b> fossé, <b>Maj + 5</b> gouffre, <b>Maj + 0</b> sol (garder et glisser pour peindre). <b>Échap</b> revenir à Interagir, <b>Ctrl+Z</b> annuler.",
+      "<b>Clavier, ligne par ligne</b> (les touches suivent les rangées physiques, quel que soit ton clavier ; chaque bouton affiche sa touche) : rangée des chiffres <b>1–6</b> les onglets ; rangée du haut (A Z E R T Y en AZERTY) les outils ; rangée du milieu la séance (rechercher un pion, initiative : lancer, suivant, fin) ; rangée du bas dézoomer, zoomer, ajuster, annuler, générer, enregistrer la carte, dans l'ordre des boutons. Pivoter est la deuxième touche de la rangée du haut. Hauteurs sur la case survolée : <b>Maj + 1 2 3</b> hauteur, <b>Maj + 4</b> fossé, <b>Maj + 5</b> gouffre, <b>Maj + 0</b> sol (garder et glisser pour peindre). <b>Échap</b> revenir à Interagir, <b>Ctrl+Z</b> annuler.",
     h_meas:
       "<b>Mesurer :</b> clique et glisse d'une case à l'autre. Règle D&D : chaque case compte 5 pieds (1,5 m), diagonales comprises. <b>Monstres :</b> survole un pion et appuie sur <b>−</b> ou <b>+</b> pour retirer ou rendre une case de Vitalité.",
     h_heights:

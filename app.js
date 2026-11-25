@@ -270,9 +270,9 @@ const T = {
     size: 'Size',
     decor: 'Setting',
     h_click:
-      '<b>Left click</b> applies the tool; drag to paint. You can aim at the top or the sides of a tile. <b>Right click and drag</b> moves the view; the mouse wheel zooms. On mobile, pick a tool, then tap.',
+      '<b>Left click</b> applies the tool; drag to paint. You can aim at the top or the sides of a tile. <b>Right click and drag</b> moves the view in both Play and Edit; the mouse wheel zooms. On mobile, pick a tool, then tap.',
     h_keys:
-      '<b>Keyboard, row by row</b> (keys follow the physical rows, whatever your layout; each button shows its key): number row <b>1–5</b> the tabs; top row (Q W E R T Y on QWERTY, A Z E R T Y on AZERTY) the tools; middle row the session (search a token, initiative: roll, next, end); bottom row zoom out, zoom in, fit, undo, generate, save the map, in the order of the buttons. Rotate is the second key of the top row. Heights on the hovered tile: <b>Shift + 1 2 3</b> height, <b>Shift + 4</b> ditch, <b>Shift + 5</b> chasm, <b>Shift + 0</b> ground (hold and drag to paint). <b>Esc</b> back to Interact, <b>Ctrl+Z</b> undo.',
+      '<b>Keyboard, row by row</b> (keys follow the physical rows, whatever your layout; each button shows its key): number row <b>1–6</b> the tabs; top row (Q W E R T Y on QWERTY, A Z E R T Y on AZERTY) the tools; middle row the session (search a token, initiative: roll, next, end); bottom row zoom out, zoom in, fit, undo, generate, save the map, in the order of the buttons. Rotate is the second key of the top row. Heights on the hovered tile: <b>Shift + 1 2 3</b> height, <b>Shift + 4</b> ditch, <b>Shift + 5</b> chasm, <b>Shift + 0</b> ground (hold and drag to paint). <b>Esc</b> back to Interact, <b>Ctrl+Z</b> undo.',
     h_meas:
       '<b>Measure:</b> click and drag from one tile to another. D&D rule: every tile counts 5 ft (1.5 m), diagonals included. <b>Monsters:</b> hover a token and press <b>−</b> or <b>+</b> to remove or restore a Vitality box.',
     h_heights:
@@ -365,9 +365,9 @@ const T = {
     size: 'Taille',
     decor: 'Décor',
     h_click:
-      "<b>Clic gauche</b> applique l'outil, en glissant pour peindre ; on peut viser le sommet ou les flancs d'une case. <b>Clic droit maintenu</b> déplace la vue ; la molette zoome. Sur mobile, choisis l'outil puis touche.",
+      "<b>Clic gauche</b> applique l'outil, en glissant pour peindre ; on peut viser le sommet ou les flancs d'une case. <b>Clic droit maintenu</b> déplace la vue en partie et en édition ; la molette zoome. Sur mobile, choisis l'outil puis touche.",
     h_keys:
-      "<b>Clavier, ligne par ligne</b> (les touches suivent les rangées physiques, quel que soit ton clavier ; chaque bouton affiche sa touche) : rangée des chiffres <b>1–5</b> les onglets ; rangée du haut (A Z E R T Y en AZERTY) les outils ; rangée du milieu la séance (rechercher un pion, initiative : lancer, suivant, fin) ; rangée du bas dézoomer, zoomer, ajuster, annuler, générer, enregistrer la carte, dans l'ordre des boutons. Pivoter est la deuxième touche de la rangée du haut. Hauteurs sur la case survolée : <b>Maj + 1 2 3</b> hauteur, <b>Maj + 4</b> fossé, <b>Maj + 5</b> gouffre, <b>Maj + 0</b> sol (garder et glisser pour peindre). <b>Échap</b> revenir à Interagir, <b>Ctrl+Z</b> annuler.",
+      "<b>Clavier, ligne par ligne</b> (les touches suivent les rangées physiques, quel que soit ton clavier ; chaque bouton affiche sa touche) : rangée des chiffres <b>1–6</b> les onglets ; rangée du haut (A Z E R T Y en AZERTY) les outils ; rangée du milieu la séance (rechercher un pion, initiative : lancer, suivant, fin) ; rangée du bas dézoomer, zoomer, ajuster, annuler, générer, enregistrer la carte, dans l'ordre des boutons. Pivoter est la deuxième touche de la rangée du haut. Hauteurs sur la case survolée : <b>Maj + 1 2 3</b> hauteur, <b>Maj + 4</b> fossé, <b>Maj + 5</b> gouffre, <b>Maj + 0</b> sol (garder et glisser pour peindre). <b>Échap</b> revenir à Interagir, <b>Ctrl+Z</b> annuler.",
     h_meas:
       "<b>Mesurer :</b> clique et glisse d'une case à l'autre. Règle D&D : chaque case compte 5 pieds (1,5 m), diagonales comprises. <b>Monstres :</b> survole un pion et appuie sur <b>−</b> ou <b>+</b> pour retirer ou rendre une case de Vitalité.",
     h_heights:
@@ -3449,7 +3449,7 @@ function areaApply(ar) {
 cv.addEventListener('pointerdown', e => {
   const [mx, my] = pos(e),
     c = pick(mx, my);
-  if (tool === 'shift') return; // handled by the asset mover
+  if (tool === 'shift' && e.button === 0) return; // the asset mover handles left-button gestures
   if (tool === 'tpl' && e.button === 0 && c && !(MP.role === 'player' && MP.prole === 'spec')) {
     tplClick(c);
     return;
@@ -5966,11 +5966,14 @@ $('reset').onclick = e => {
     b.textContent = t('reset_c');
   }
 };
+function activeView() {
+  const key = location.hash.slice(1);
+  return $('v-' + key)?.classList.contains('view') ? key : 'carte';
+}
 function route() {
-  const v =
-    { '#bestiaire': 'bestiaire', '#regles': 'regles', '#fiche': 'fiche', '#monde': 'monde' }[location.hash] || 'carte';
+  const v = activeView();
   if (v === 'monde') initWorld();
-  for (const x of ['monde', 'carte', 'fiche', 'bestiaire', 'regles']) $('v-' + x).hidden = v !== x;
+  for (const view of document.querySelectorAll('section.view')) view.hidden = view.id !== 'v-' + v;
   if (v === 'bestiaire' && BDIRTY) renderB();
   if (v === 'regles') rules();
   for (const a of document.querySelectorAll('.tabs a'))
@@ -7017,7 +7020,7 @@ const LOG = [];
 let lastCrit = {};
 const dRoll = n => 1 + Math.floor(Math.random() * n);
 let RL = [],
-  rlOpen = true;
+  rlOpen = false;
 try {
   RL = lsGet('luparis-rolls', null) || [];
   RL = Array.isArray(RL)
@@ -7035,6 +7038,7 @@ function rlRender() {
   if (!el) return;
   const P = document.getElementById('rolls');
   P.classList.toggle('min', !rlOpen);
+  P.setAttribute('aria-label', L2('Rolls', 'Jets'));
   document.getElementById('rl_tog').setAttribute('aria-expanded', rlOpen);
   document.getElementById('rl_ttl').textContent = L2('Rolls', 'Jets');
   document.getElementById('rl_cnt').textContent = RL.length ? '(' + RL.length + ')' : '';
@@ -7625,7 +7629,21 @@ T.fr.sk_confirm2 = 'Confirmer : effacer la fiche ?';
 Object.assign(T.en, {
   t_tpl: 'Zone',
   tpl_zones: 'Effect zones',
-  mp_title: 'Multiplayer (test)',
+  mp_title: 'Multiplayer',
+  map_templates: 'Map templates',
+  map_ai: 'Generate with AI',
+  map_dialog_close: 'Close',
+  mg_description: 'Describe the scene',
+  mg_example: 'A ruined temple in the forest…',
+  mg_prepare: 'Prepare a preview',
+  mg_engine: 'Mode',
+  mg_engine_auto: 'AI / auto',
+  mg_engine_local: 'Local',
+  mg_variant: 'New variant',
+  mg_keys: 'AI settings',
+  mg_auto_size: 'Automatic',
+  mg_replace: 'Replace the map',
+  mg_discard: 'Discard preview',
   img_title: 'Images',
   m_desc: 'Description',
   m_traits: 'Traits (one per line, “Name: what it does”)',
@@ -7684,7 +7702,21 @@ Object.assign(T.en, {
 Object.assign(T.fr, {
   t_tpl: 'Zone',
   tpl_zones: "Zones d'effet",
-  mp_title: 'Partie à plusieurs (test)',
+  mp_title: 'Multijoueur',
+  map_templates: 'Modèles de cartes',
+  map_ai: 'Générer avec IA',
+  map_dialog_close: 'Fermer',
+  mg_description: 'Décris la scène',
+  mg_example: 'Un temple en ruine dans la forêt…',
+  mg_prepare: 'Préparer un aperçu',
+  mg_engine: 'Mode',
+  mg_engine_auto: 'IA / auto',
+  mg_engine_local: 'Local',
+  mg_variant: 'Nouvelle variante',
+  mg_keys: 'Réglages IA',
+  mg_auto_size: 'Automatique',
+  mg_replace: 'Remplacer la carte',
+  mg_discard: 'Écarter l’aperçu',
   img_title: 'Images',
   m_desc: 'Description',
   m_traits: "Capacités (une par ligne, « Nom : ce qu'elle fait »)",
@@ -8579,9 +8611,10 @@ function renderHand() {
   P.setAttribute('aria-label', L2('Character sheet', 'Fiche de personnage'));
   if (!c) {
     const prompt = MP.role === 'player'
-      ? L2('Choose your character in the Session tab.', 'Choisis ton personnage dans l’onglet Session.')
+      ? L2('Choose your character in the Multiplayer tab.', 'Choisis ton personnage dans l’onglet Multijoueur.')
       : L2('Choose a character here or select their token on the map.', 'Choisis un personnage ici ou sélectionne son pion sur la carte.');
-    P.innerHTML = `<div class="hhead"><h3>${L2('Character', 'Personnage')}</h3><button type="button" class="play-jump" data-play-jump="stage">${L2('Map', 'Carte')}</button></div><div class="play-empty-sheet">${sel}<p>${prompt}</p>${MP.role === 'player' ? '' : `<a href="#fiche">${L2('Manage characters', 'Gérer les personnages')}</a>`}</div>`;
+    const link = MP.role === 'player' ? `<a href="#multijoueur">${t('mp_title')}</a>` : `<a href="#fiche">${L2('Manage characters', 'Gérer les personnages')}</a>`;
+    P.innerHTML = `<div class="hhead"><h3>${L2('Character', 'Personnage')}</h3><button type="button" class="play-jump" data-play-jump="stage">${L2('Map', 'Carte')}</button></div><div class="play-empty-sheet">${sel}<p>${prompt}</p>${link}</div>`;
     return;
   }
   const D = derived(c),
@@ -10477,10 +10510,7 @@ const klab = code => {
   return (v || KLAY[KL][code] || code.replace(/^Key|^Digit/, '')).toUpperCase();
 };
 function kbRows() {
-  const v =
-      { '#bestiaire': 'bestiaire', '#regles': 'regles', '#fiche': 'fiche', '#monde': 'monde' }[location.hash] ||
-      'carte',
-    r = { 1: [], 2: [], 3: [] };
+  const v = activeView(), r = { 1: [], 2: [], 3: [] };
   if (v === 'carte') {
     r[1] = [...document.querySelectorAll('#tools button')];
     r[2] = ['pl_q', 'in_roll', 'in_next', 'in_end'].map(id => $(id));
@@ -10522,7 +10552,7 @@ document.addEventListener(
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target.closest && e.target.closest('input,textarea,select,[contenteditable]')) return;
     const c = e.code,
-      dm = /^Digit([1-5])$/.exec(c);
+      dm = /^Digit([1-6])$/.exec(c);
     if (dm && !e.shiftKey) {
       const a = document.querySelectorAll('.tabs a')[+dm[1] - 1];
       if (a) {
@@ -12028,7 +12058,7 @@ function setMode(m, savePreference = true) {
   cv.addEventListener('pointercancel', end);
 }
 // ---- 57-layout.js
-const PLAY_AUX={in:['Initiative','Initiative'],tk:['Token','Pion'],mk:['Markers / zones','Repères / zones'],maps:['Maps','Cartes'],mp:['Session','Session'],img:['Illustrations','Illustrations'],sn:['GM notes','Notes MJ'],roll:['Rolls','Jets']};
+const PLAY_AUX={in:['Initiative','Initiative'],tk:['Token','Pion'],mk:['Markers / zones','Repères / zones'],img:['Illustrations','Illustrations'],sn:['GM notes','Notes MJ']};
 const PLAY_SHEET={actions:['Combat','Combat'],checks:['Checks','Tests'],magic:['Magic','Magie'],gear:['Equipment','Équipement'],profile:['Profile','Profil']};
 const PLAY_LAYOUT_LABELS={
   play_presets:['Play layouts','Dispositions de jeu'],
@@ -12042,15 +12072,14 @@ const PLAY_LAYOUT_LABELS={
   play_panels:['Visible panels','Panneaux visibles'],
   play_restore:['Reset layout','Rétablir le preset'],
   play_done:['Done','Terminer'],
-  play_custom_map:['Generate from a description','Générer à partir d’une description'],
   play_terrain:['Terrain','Terrain'],
 };
 const PLAY_PRESETS = {
   table: {label:['Table','Table'],hint:['Map, character and table tools','Carte, personnage et outils de table'],position:'table',width:'balanced',sheet:true,tools:true,aux:'in',tab:'actions'},
   combat: {label:['Combat','Combat'],hint:['Initiative above your combat sheet','Initiative au-dessus de la fiche de combat'],position:'rail',width:'map',sheet:true,tools:true,aux:'in',tab:'actions'},
   explore: {label:['Exploration','Exploration'],hint:['Full-width map with markers and zones','Carte pleine largeur avec repères et zones'],position:'table',width:'map',sheet:false,tools:true,aux:'mk',tab:'checks'},
-  sheet: {label:['Character','Fiche'],hint:['Wide character sheet with the map in view','Fiche au premier plan, carte à portée'],position:'sheet',width:'panel',sheet:true,tools:true,aux:'roll',tab:'checks'},
-  prepare: {label:['Preparation','Préparation'],hint:['Map editor and scenario presets','Éditeur et modèles de cartes'],position:'rail',width:'panel',sheet:false,tools:true,aux:'maps',tab:'profile',gm:true},
+  sheet: {label:['Character','Fiche'],hint:['Wide character sheet with the map in view','Fiche au premier plan, carte à portée'],position:'sheet',width:'panel',sheet:true,tools:true,aux:'in',tab:'checks'},
+  prepare: {label:['Preparation','Préparation'],hint:['Map editor and scenario presets','Éditeur et modèles de cartes'],position:'rail',width:'map',sheet:false,tools:true,aux:'mk',tab:'profile',gm:true},
 };
 const PLAY_POSITIONS = {
   table:['Map left, tools below','Carte à gauche, outils en dessous'],
@@ -12059,7 +12088,7 @@ const PLAY_POSITIONS = {
   stack:['Stacked panels','Panneaux empilés'],
 };
 const PLAY_WIDTHS = {balanced:['Balanced','Équilibrée'],map:['Wider map','Carte plus large'],panel:['Wider panels','Panneaux plus larges']};
-let playAuxTab='in',playSheetTab='actions',playClaimState='',playLastToken=null,playSizeQ=0;
+let playAuxTab='in',playSheetTab='actions',playLastToken=null,playSizeQ=0;
 const playWorkspace=$('play_workspace'),playAux=$('play_aux'),playHand=$('hand');
 const PLAY_LAYOUT_KEY = 'luparis-play-layout-v1';
 let playRole = '', playPreset = 'table', playOverrides = {}, playModeBeforePrep = null;
@@ -12084,10 +12113,9 @@ function playStoreLayout() {
 }
 function playApplyLayout() {
   const {position,width,sheet,tools} = playSettings(),
-    canReadSheet = playRole !== 'spectator',
-    sessionNeeded = playClaimState === 'unclaimed';
+    canReadSheet = playRole !== 'spectator';
   playHand.hidden = !canReadSheet || !sheet;
-  playAux.hidden = !tools && !sessionNeeded;
+  playAux.hidden = !tools;
   playWorkspace.dataset.preset = playPreset;
   playWorkspace.dataset.position = position;
   playWorkspace.dataset.width = width;
@@ -12108,7 +12136,6 @@ function playApplyLayout() {
   $('play_sheet_visible').checked = !playHand.hidden;
   $('play_sheet_visible').disabled = !canReadSheet;
   $('play_tools_visible').checked = !playAux.hidden;
-  $('play_tools_visible').disabled = sessionNeeded;
   for (const button of document.querySelectorAll('#v-carte [data-play-jump]')) button.hidden = $(button.dataset.playJump).hidden;
   playFit();
 }
@@ -12123,24 +12150,21 @@ function playUsePreset(key) {
   }
   playPreset = key;
   const base = PLAY_PRESETS[key];
-  playSelectAux(playClaimState === 'unclaimed' ? 'mp' : base.aux);
+  playSelectAux(base.aux);
   playSelectSheet(base.tab);
   const sheetBody = playHand.querySelector('.play-sheet-body');
   if (sheetBody) sheetBody.scrollTop = 0;
   playApplyLayout();
 }
 function playSelectAux(k){
-  const allowed=key=>!(['sn','maps'].includes(key)&&MP.role==='player')&&!(key==='tk'&&$('tk_panel').hidden);
+  const allowed=key=>!(key==='sn'&&MP.role==='player')&&!(key==='tk'&&$('tk_panel').hidden);
   if(!Object.hasOwn(PLAY_AUX,k)||!allowed(k))k='in';
-  const changed=playAuxTab!==k;
   playAuxTab=k;
   for(const b of playAux.querySelectorAll('[data-play-tab]')){
     const key=b.dataset.playTab,active=key===k;
     b.hidden=!allowed(key);b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;
   }
   for(const p of playAux.querySelectorAll('[data-play-pane]'))p.hidden=p.dataset.playPane!==k;
-  if (k === 'roll' && !rlOpen) {rlOpen=true;rlRender();}
-  if(changed)playAux.dispatchEvent(new Event('play-tab-change'));
 }
 function playSelectSheet(k){
   if(!Object.hasOwn(PLAY_SHEET,k))k='actions';
@@ -12171,7 +12195,6 @@ function playLabels(){
   }
   $('mode_play').textContent=L2('Play','Partie');
   $('mode_edit').textContent=L2('Edit','Édition');
-  playRollPreview();
   if (!TABLE_DISPLAY) playApplyLayout();
   document.dispatchEvent(new Event('play-labels'));
 }
@@ -12185,21 +12208,13 @@ function playFit(){
 }
 function playSync(){
   if(TABLE_DISPLAY)return;
-  const claim=MP.role==='player'&&MP.prole!=='spec'?(MP.me?'claimed':'unclaimed'):'other';
   const role=MP.role==='player'?(MP.prole==='spec'?'spectator':'player'):'table';
   if (role !== playRole) {
     playRole=role;
-    playClaimState=claim;
     const saved=lsGet(PLAY_LAYOUT_KEY,{})?.[role] || {};
     playOverrides=saved.overrides && typeof saved.overrides==='object' && !Array.isArray(saved.overrides) ? saved.overrides : {};
     playUsePreset(playPresetAllowed(saved.preset) ? saved.preset : role==='spectator'?'explore':'table');
     return;
-  }
-  if(claim!==playClaimState){
-    if(claim==='unclaimed')playAuxTab='mp';
-    else if(claim==='claimed'&&playAuxTab==='mp')playAuxTab=PLAY_PRESETS[playPreset].aux;
-    playClaimState=claim;
-    playApplyLayout();
   }
   playSelectAux(playAuxTab);
 }
@@ -12208,11 +12223,6 @@ function playTokenSync(){
   const k=tokens.find(t=>t.id===selTok);
   if(k&&k.id!==playLastToken&&!k.cid&&MP.role!=='player'&&!$('tk_panel').hidden)playAuxTab='tk';
   playLastToken=k?.id||null;playSync();
-}
-function playRollPreview(){
-  const el=$('play_last_roll'),last=$('rl_list').lastElementChild;
-  const s=last&&RL.length?last.textContent.trim():L2('No rolls yet','Aucun jet pour le moment');
-  if(el.textContent!==s)el.textContent=s;el.title=s;
 }
 function playArrangeHand(scroll=0){
   const top=playHand.querySelector('.htop'),cards=playHand.querySelector('.hcards');
@@ -12245,12 +12255,6 @@ function playArrangeHand(scroll=0){
   }
   cards.replaceWith(nav,content);playSelectSheet(playSheetTab);content.scrollTop=scroll;
 }
-function playRoute(){
-  if(TABLE_DISPLAY)return;
-  const rolls=$('rolls');
-  if(!$('v-carte').hidden){$('play_roll_pane').append(rolls);playFit();}
-  else if(rolls.parentNode!==document.body)document.body.append(rolls);
-}
 {
   const originalHand=renderHand;
   renderHand=function(){
@@ -12273,8 +12277,6 @@ function playRoute(){
   };
   const originalTok=renderTok;
   renderTok=function(){const r=originalTok.apply(this,arguments);playTokenSync();return r;};
-  const originalRoll=rlRender;
-  rlRender=function(){const r=originalRoll.apply(this,arguments);playRollPreview();return r;};
   playAux.addEventListener('click',e=>{
     const b=e.target.closest('[data-play-tab]');if(!b)return;
     playSelectAux(b.dataset.playTab);
@@ -12305,7 +12307,7 @@ function playRoute(){
     playOverrides[playPreset]={
       position:$('play_position').value,width:$('play_width').value,
       sheet:$('play_sheet_visible').disabled?current.sheet:$('play_sheet_visible').checked,
-      tools:$('play_tools_visible').disabled?current.tools:$('play_tools_visible').checked,
+      tools:$('play_tools_visible').checked,
     };
     playStoreLayout();
     playApplyLayout();
@@ -12326,11 +12328,10 @@ function playRoute(){
   };
   playAux.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-play-tab]'));
   playHand.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-sheet-tab]'));
-  $('play_last_roll').onclick=()=>playSelectAux('roll');
   const resize=new ResizeObserver(playFit);
   for(const e of [$('v-carte').querySelector('.bar'),$('ctxbar'),$('savebox'),$('play_presets').parentNode,document.querySelector('header'),document.querySelector('.tabs')])resize.observe(e);
-  window.addEventListener('resize',playFit);window.addEventListener('hashchange',playRoute);
-  playWorkspace.dataset.ready='1';playLabels();playSync();playRollPreview();renderHand();playRoute();
+  window.addEventListener('resize',playFit);window.addEventListener('hashchange',playFit);
+  playWorkspace.dataset.ready='1';playLabels();playSync();renderHand();playFit();
 }
 // Keep receiving map updates in a display opened by an older version.
 function gDisplayBoot(){
@@ -13552,7 +13553,7 @@ Design for tactical play: honor explicit quantities, directions, negative requir
 
 Description: ${JSON.stringify(String(text).slice(0, 1800))}`;
 }
-// ---- description-based generator in the map library
+// ---- description-based generator
 function mgMsg(m) {
   const el = document.getElementById('mg_msg');
   if (el) el.textContent = m;
@@ -13644,15 +13645,18 @@ function mgApplyPreview(){
     if(!mgCommit(p.candidate))return;
     const issues=p.candidate.issues;
     MG.last={...r,via:p.via};MG.pending=null;$('mg_preview').hidden=true;
-    mgMsg((r.title?r.title+' — ':'')+L2('Map generated','Carte générée')+' · '+N+'×'+N+' · '+p.via+(issues.length?' · '+L2('Not placed: ','Non placés : ')+issues.join(', '):''));
+    const message = (r.title?r.title+' — ':'')+L2('Map generated','Carte générée')+' · '+N+'×'+N+' · '+p.via+(issues.length?' · '+L2('Not placed: ','Non placés : ')+issues.join(', '):'');
+    if ($('map_ai_dialog').open) {
+      $('map_ai_dialog').close();
+      $('save_msg').textContent = message;
+    } else mgMsg(message);
   }catch(e){mgMsg(L2('Generation failed; map unchanged: ','Échec de génération ; carte inchangée : ')+e.message);}
 }
 {
-  const g = $('map_custom');
-  g.insertAdjacentHTML(
-    'beforeend',
-    `<form id="mg_f" class="mgf"><input id="mg_q" type="text" maxlength="1800" autocomplete="off" placeholder="${L2('Describe the scene: ruined temple in the forest…', 'Décris la scène : temple en ruines dans la forêt…')}" aria-label="${L2('Describe the scene', 'Décris la scène')}"><button type="submit" class="go">${L2('Prepare', 'Préparer')}</button><select id="mg_engine" aria-label="Mode"><option value="auto">${L2('AI / auto','IA / auto')}</option><option value="local">${L2('Local','Local')}</option></select><button type="button" id="mg_cancel" hidden>${L2('Cancel','Annuler')}</button><button type="button" id="mg_again" title="${L2('Another version of the same recipe', 'Une autre version de la même recette')}">↻</button><button type="button" id="mg_set" title="${L2('AI key', 'Clé IA')}" aria-label="${L2('AI key', 'Clé IA')}">⚙</button><span class="small" id="mg_msg" aria-live="polite"></span><div id="mg_preview" hidden><strong id="mg_source"></strong><div class="mgpreviewbody"><canvas id="mg_thumb" width="320" height="320" aria-label="${L2('Generated map preview','Aperçu de la carte générée')}"></canvas><div><p id="mg_plan"></p><p id="mg_details" class="small" aria-live="polite"></p><p class="small">${L2('Top view: grey walls, blue water, brown objects, red enemies, purple hidden, blue allies.','Vue du dessus : murs gris, eau bleue, objets bruns, ennemis rouges, secrets violets, alliés bleus.')}</p></div></div><label>${L2('Size','Taille')} <select id="mg_size"><option value="">${L2('Automatic','Automatique')}</option><option value="small">16×16</option><option value="medium">24×24</option><option value="large">32×32</option><option value="huge">64×64</option></select></label><button type="button" class="go" id="mg_apply">${L2('Apply / replace map','Appliquer / remplacer la carte')}</button><button type="button" id="mg_discard">${L2('Discard','Abandonner')}</button></div></form>`,
-  );
+  $('map_ai_open').onclick = () => {
+    if (MP.role !== 'player' && !TABLE_DISPLAY && document.body.classList.contains('mode-edit'))
+      $('map_ai_dialog').showModal();
+  };
   document.getElementById('mg_f').addEventListener('submit', e => {
     e.preventDefault();
     mgGo(false);
@@ -13814,15 +13818,18 @@ $('map_preset_apply').onclick = () => {
   if (mgCommit(mapPresetCandidate)) {
     mapPresetCandidate = null;
     $('map_preset_apply').disabled = true;
-    $('map_preset_status').textContent = L2('Map applied. Undo is available.', 'Carte appliquée. Annuler est disponible.');
+    $('map_templates_dialog').close();
+    $('save_msg').textContent = L2('Map applied. Undo is available.', 'Carte appliquée. Annuler est disponible.');
   }
 };
-playAux.addEventListener('play-tab-change', () => {
-  if (playAuxTab === 'maps' && $('map_preset_preview').hidden) selectMapPreset(mapPresetKey);
-});
+$('map_templates_open').onclick = () => {
+  if (MP.role === 'player' || TABLE_DISPLAY || !document.body.classList.contains('mode-edit')) return;
+  if ($('map_preset_preview').hidden) selectMapPreset(mapPresetKey);
+  else if (!mapPresetCandidate || mapPresetContext !== CTX || mapPresetCandidate.before !== mgSnapshot()) previewMapPreset();
+  $('map_templates_dialog').showModal();
+};
 document.addEventListener('play-labels', mapPresetLabels);
 mapPresetLabels();
-if (playAuxTab === 'maps') selectMapPreset(mapPresetKey);
 // ---- 60-session-multiplayer.js
 // ---- session notes (GM)
 var SN = null;
@@ -14753,6 +14760,7 @@ async function mpJoin(code, opt) {
   MP.closed = false;
   mpSetRole(opt.role);
   document.body.classList.add('mp-player');
+  setMode('play', false);
   mpRemember();
   mpRender(L2('Connecting…', 'Connexion…'));
   if (MP.local) {
@@ -14837,6 +14845,7 @@ document.getElementById('mp_card').addEventListener('click', e => {
     placing = { ally: ch.id, n: ch.name || '?' };
     setTool('place');
     mpRender(L2('Click a square of the map.', 'Clique sur une case de la carte.'));
+    location.hash = '#carte';
   } else if (b.dataset.mpk != null) {
     const c = mpHostPeople()[+b.dataset.mpk];
     if (!c) return;
@@ -14850,7 +14859,7 @@ document.getElementById('mp_card').addEventListener('click', e => {
     if (MP.lc) delete MP.lc[c.uid];
     mpRender();
   } else if (b.id === 'mp_link') {
-    const link = location.origin + location.pathname + '?join=' + MP.code + (MP.local ? '&local=1' : '') + '#carte';
+    const link = location.origin + location.pathname + '?join=' + MP.code + (MP.local ? '&local=1' : '') + '#multijoueur';
     navigator.clipboard.writeText(link).then(
       () => mpRender(L2('Link copied.', 'Lien copié.')),
       () => mpRender(link),
@@ -14895,7 +14904,11 @@ mpRender();
     h = ssGet(MPH);
   // a reload keeps the game going: the GM reopens the same code, players come back with the same character
   if (!TABLE_DISPLAY) {
-    if (j) setTimeout(() => mpJoin(j[1], s && s.code === j[1].toUpperCase() ? s : {}), 300);
+    if (j) {
+      const returning = s && s.code === j[1].toUpperCase();
+      if (!returning && (!location.hash || location.hash === '#carte')) location.hash = '#multijoueur';
+      setTimeout(() => mpJoin(j[1], returning ? s : {}), 300);
+    }
     else if (s && s.code) setTimeout(() => mpJoin(s.code, s), 300);
     else if (h && h.code && !!h.local === MP.local) setTimeout(() => mpHost(h.code), 300);
   }

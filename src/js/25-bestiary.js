@@ -468,11 +468,14 @@ $('reset').onclick = e => {
     b.textContent = t('reset_c');
   }
 };
+function activeView() {
+  const key = location.hash.slice(1);
+  return $('v-' + key)?.classList.contains('view') ? key : 'carte';
+}
 function route() {
-  const v =
-    { '#bestiaire': 'bestiaire', '#regles': 'regles', '#fiche': 'fiche', '#monde': 'monde' }[location.hash] || 'carte';
+  const v = activeView();
   if (v === 'monde') initWorld();
-  for (const x of ['monde', 'carte', 'fiche', 'bestiaire', 'regles']) $('v-' + x).hidden = v !== x;
+  for (const view of document.querySelectorAll('section.view')) view.hidden = view.id !== 'v-' + v;
   if (v === 'bestiaire' && BDIRTY) renderB();
   if (v === 'regles') rules();
   for (const a of document.querySelectorAll('.tabs a'))

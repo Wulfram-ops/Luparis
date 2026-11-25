@@ -1,7 +1,21 @@
 Object.assign(T.en, {
   t_tpl: 'Zone',
   tpl_zones: 'Effect zones',
-  mp_title: 'Multiplayer (test)',
+  mp_title: 'Multiplayer',
+  map_templates: 'Map templates',
+  map_ai: 'Generate with AI',
+  map_dialog_close: 'Close',
+  mg_description: 'Describe the scene',
+  mg_example: 'A ruined temple in the forest…',
+  mg_prepare: 'Prepare a preview',
+  mg_engine: 'Mode',
+  mg_engine_auto: 'AI / auto',
+  mg_engine_local: 'Local',
+  mg_variant: 'New variant',
+  mg_keys: 'AI settings',
+  mg_auto_size: 'Automatic',
+  mg_replace: 'Replace the map',
+  mg_discard: 'Discard preview',
   img_title: 'Images',
   m_desc: 'Description',
   m_traits: 'Traits (one per line, “Name: what it does”)',
@@ -60,7 +74,21 @@ Object.assign(T.en, {
 Object.assign(T.fr, {
   t_tpl: 'Zone',
   tpl_zones: "Zones d'effet",
-  mp_title: 'Partie à plusieurs (test)',
+  mp_title: 'Multijoueur',
+  map_templates: 'Modèles de cartes',
+  map_ai: 'Générer avec IA',
+  map_dialog_close: 'Fermer',
+  mg_description: 'Décris la scène',
+  mg_example: 'Un temple en ruine dans la forêt…',
+  mg_prepare: 'Préparer un aperçu',
+  mg_engine: 'Mode',
+  mg_engine_auto: 'IA / auto',
+  mg_engine_local: 'Local',
+  mg_variant: 'Nouvelle variante',
+  mg_keys: 'Réglages IA',
+  mg_auto_size: 'Automatique',
+  mg_replace: 'Remplacer la carte',
+  mg_discard: 'Écarter l’aperçu',
   img_title: 'Images',
   m_desc: 'Description',
   m_traits: "Capacités (une par ligne, « Nom : ce qu'elle fait »)",
@@ -955,9 +983,10 @@ function renderHand() {
   P.setAttribute('aria-label', L2('Character sheet', 'Fiche de personnage'));
   if (!c) {
     const prompt = MP.role === 'player'
-      ? L2('Choose your character in the Session tab.', 'Choisis ton personnage dans l’onglet Session.')
+      ? L2('Choose your character in the Multiplayer tab.', 'Choisis ton personnage dans l’onglet Multijoueur.')
       : L2('Choose a character here or select their token on the map.', 'Choisis un personnage ici ou sélectionne son pion sur la carte.');
-    P.innerHTML = `<div class="hhead"><h3>${L2('Character', 'Personnage')}</h3><button type="button" class="play-jump" data-play-jump="stage">${L2('Map', 'Carte')}</button></div><div class="play-empty-sheet">${sel}<p>${prompt}</p>${MP.role === 'player' ? '' : `<a href="#fiche">${L2('Manage characters', 'Gérer les personnages')}</a>`}</div>`;
+    const link = MP.role === 'player' ? `<a href="#multijoueur">${t('mp_title')}</a>` : `<a href="#fiche">${L2('Manage characters', 'Gérer les personnages')}</a>`;
+    P.innerHTML = `<div class="hhead"><h3>${L2('Character', 'Personnage')}</h3><button type="button" class="play-jump" data-play-jump="stage">${L2('Map', 'Carte')}</button></div><div class="play-empty-sheet">${sel}<p>${prompt}</p>${link}</div>`;
     return;
   }
   const D = derived(c),
