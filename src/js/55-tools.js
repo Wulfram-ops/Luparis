@@ -509,12 +509,12 @@ function drawPlacePreview() {
     if (c.x < 0 || c.y < 0 || c.x >= N || c.y >= N) return;
     const h = Math.max(H[c.x][c.y], 0),
       [vx, vy] = view(c.x, c.y);
-    poly(dia(vx, vy, h), 'rgba(90,140,60,.25)', 'rgba(60,110,40,.9)', 1.5);
+    poly(tileCorners(vx, vy, h), 'rgba(90,140,60,.25)', 'rgba(60,110,40,.9)', 1.5);
     ctx.save();
     ctx.globalAlpha = 0.55;
     drawObj({ x: c.x, y: c.y, k: objSel, o: false, r: OBJR }, vx, vy, h);
     ctx.restore();
-    const [cx, cy] = scr(vx, vy, h);
+    const [cx, cy] = scr(vx + 0.5, vy, h);
     lab(`${tr(OBJT[objSel].n)} · ${OBJR * 90}°`, cx, cy - LH * 2.2);
     return;
   }
@@ -532,12 +532,12 @@ function drawPlacePreview() {
           [vx, vy] = view(gx, gy),
           wall = p.P.G[x][y] === 'W';
         if (wall) {
-          const g = dia(vx, vy, 0),
-            t = dia(vx, vy, p.P.wh);
+          const g = tileCorners(vx, vy, 0),
+            t = tileCorners(vx, vy, p.P.wh);
           ctx.strokeStyle = 'rgba(60,50,40,.35)';
           ctx.lineWidth = 1;
           ctx.beginPath();
-          for (const i of [1, 2, 3]) {
+          for (const i of [2, 3]) {
             ctx.moveTo(g[i][0], g[i][1]);
             ctx.lineTo(t[i][0], t[i][1]);
           }
@@ -545,9 +545,9 @@ function drawPlacePreview() {
           poly(t, 'rgba(110,90,70,.45)', 'rgba(60,45,30,.9)', 1.2);
           if (t[0][1] < top) {
             top = t[0][1];
-            cxm = t[0][0];
+            cxm = t[0][0] + TW / 2;
           }
-        } else poly(dia(vx, vy, 0), 'rgba(200,170,110,.35)', 'rgba(140,110,60,.7)', 1);
+        } else poly(tileCorners(vx, vy, 0), 'rgba(200,170,110,.35)', 'rgba(140,110,60,.7)', 1);
       }
     for (const o of p.P.O) {
       const [a, b] = L.tf(o.x, o.y),
@@ -564,7 +564,7 @@ function drawPlacePreview() {
       [L.x0, L.y0 + L.Hh],
     ].map(([x, y]) => {
       const [vx, vy] = view(Math.min(x, N - 1), Math.min(y, N - 1));
-      return scr(vx, vy, 0);
+      return scr(vx + 0.5, vy, 0);
     });
     lab(
       `${tr(PREF[p.k])} · ${L.W}×${L.Hh} · ${p.r * 90}° · ${L2('walls', 'murs')} h${p.P.wh}`,
@@ -644,20 +644,19 @@ function drawTpl0(T, ghost) {
   for (const [x, y] of tplCells(T)) {
     const [vx, vy] = view(x, y),
       h = Math.max(H[x][y], 0);
-    poly(dia(vx, vy, h), `rgba(${col},${ghost ? 0.2 : 0.3})`, `rgba(${col},.85)`, ghost ? 1 : 1.4);
+    poly(tileCorners(vx, vy, h), `rgba(${col},${ghost ? 0.2 : 0.3})`, `rgba(${col},.85)`, ghost ? 1 : 1.4);
   }
   if (T.x < 0 || T.y < 0 || T.x >= N || T.y >= N) return;
-  const [vx, vy] = view(T.x, T.y),
-    [cx, cy] = scr(vx, vy, Math.max(H[T.x][T.y], 0));
+  const [cx, cy] = ctr(T);
   if (T.k === 'sphere') {
     const r = (T.s / 5) * TW * 0.72;
-    const g = ctx.createRadialGradient(cx - r * 0.3, cy + TW / 4 - r * 0.6, r * 0.1, cx, cy + TW / 4 - r * 0.3, r);
+    const g = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.6, r * 0.1, cx, cy - r * 0.3, r);
     g.addColorStop(0, `rgba(${col},.05)`);
     g.addColorStop(1, `rgba(${col},.28)`);
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.ellipse(cx, cy + TW / 4 - r * 0.25, r, r * 0.75, 0, Math.PI, 0);
-    ctx.ellipse(cx, cy + TW / 4 - r * 0.25, r, r * 0.32, 0, 0, Math.PI);
+    ctx.ellipse(cx, cy - r * 0.25, r, r * 0.75, 0, Math.PI, 0);
+    ctx.ellipse(cx, cy - r * 0.25, r, r * 0.32, 0, 0, Math.PI);
     ctx.fill();
     ctx.strokeStyle = `rgba(${col},.7)`;
     ctx.lineWidth = 1.2;
@@ -665,7 +664,7 @@ function drawTpl0(T, ghost) {
   }
   ctx.fillStyle = `rgb(${col})`;
   ctx.beginPath();
-  ctx.arc(cx, cy + TW / 4, Math.max(3, TW * 0.08), 0, 7);
+  ctx.arc(cx, cy, Math.max(3, TW * 0.08), 0, 7);
   ctx.fill();
   if (!ghost || 1) {
     ctx.font = `700 ${Math.max(11, Math.min(15, TW * 0.3))}px "Alegreya Sans",sans-serif`;
@@ -673,9 +672,9 @@ function drawTpl0(T, ghost) {
     const tx = tplLabel(T);
     ctx.lineWidth = 3;
     ctx.strokeStyle = 'rgba(255,255,255,.9)';
-    ctx.strokeText(tx, cx, cy + TW / 4 - Math.max(8, TW * 0.25));
+    ctx.strokeText(tx, cx, cy - Math.max(8, TW * 0.25));
     ctx.fillStyle = '#1d1a17';
-    ctx.fillText(tx, cx, cy + TW / 4 - Math.max(8, TW * 0.25));
+    ctx.fillText(tx, cx, cy - Math.max(8, TW * 0.25));
   }
 }
 function drawTpls() {

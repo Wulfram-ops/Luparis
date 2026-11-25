@@ -126,22 +126,49 @@ def run(chrome: str | None) -> None:
         )
 
         # Restored square geometry and migration of hex-era saves.
-        check("square cells have four vertices", D("dia(0,0,0).length===4"))
+        check("camera projects a square board aligned with the screen", D("""(() => {
+            const [topLeft, topRight] = tileCorners(0, 0, 0),
+                [, , bottomRight, bottomLeft] = tileCorners(N - 1, N - 1, 0),
+                [right] = scr(N, 0, 0), [left, top] = topLeft;
+            return Math.abs(right - left - (bottomRight[1] - top)) < 1e-6 &&
+                topRight[1] === top && bottomLeft[1] === bottomRight[1] &&
+                Math.abs(bottomRight[0] - right) < 1e-6;
+        })()"""))
+        check("picking follows the tops and faces of elevated tiles after rotation", D("""(() => {
+            const oldH = H, oldRot = rot;
+            try {
+                for (rot = 0; rot < 4; rot++) {
+                    H = blank(N);
+                    const [x, y] = unview(2, 2), [px, py] = unview(3, 2);
+                    H[x][y] = MAX_ELEVATION;
+                    H[px][py] = -2;
+                    const hits = (screen, tx, ty) => {
+                        const hit = pick(...screen);
+                        return hit?.x === tx && hit?.y === ty;
+                    };
+                    if (!hits(scr(2.5, 2.5, MAX_ELEVATION), x, y) ||
+                        !hits(scr(2.5, 2.9, 0), x, y) ||
+                        !hits(scr(3.5, 2.5, 0), px, py) || pick(...scr(-0.5, 2.5, 0))) return false;
+                }
+                return true;
+            } finally { H = oldH; rot = oldRot; }
+        })()"""))
         check("square radius two has 13 cells", D("tplCells({k:'circle',x:5,y:5,s:10,a:0}).length===13"))
         check("four rotations round trip", D("(()=>{const old=rot;try{for(rot=0;rot<4;rot++){const p=unview(...view(3,5));if(p[0]!==3||p[1]!==5)return false;}return true;}finally{rot=old}})()"))
         check("hex-era saves retain cells and entities", D("""(()=>{const original=JSON.parse(JSON.stringify(memStateNow()));try{for(const grid of ['hex','hex-offset']){const d={...original,grid,rot:5};if(!applyState(d))return false;const s=memStateNow();if(s.grid!=='square'||rot<0||rot>3)return false;for(const k of ['N','H','F','tokens','marks','objs','env','ini'])if(JSON.stringify(s[k])!==JSON.stringify(original[k]))return false;}return true;}finally{applyState(original);layout();}})()"""))
         # Integrated workspace adapts to all screen widths without movable modules.
         page.click('.tabs a[data-v="carte"]')
+        D("$('zfit').click()")
         for width, height in ((1400, 900), (1280, 720), (2560, 1080), (800, 900)):
             page.set_viewport_size({"width": width, "height": height})
             page.wait_for_timeout(150)
             m, h = page.locator("#stage").bounding_box(), page.locator("#hand").bounding_box()
             check(f"map and sheet visible {width}x{height}", bool(m and h and m["width"]>0 and h["width"]>0))
             check(f"responsive workspace {width}x{height}", bool(m and h and (m["x"]+m["width"]<=h["x"]+1 if width>900 else m["y"]+m["height"]<=h["y"]+1)))
-            check("board corners visible", D("""[[0,0],[0,N-1],[N-1,0],[N-1,N-1]].flatMap(p=>dia(...view(...p),0)).every(([x,y])=>x>=0&&x<=W&&y>=0&&y<=Hc)"""))
+            check("board corners visible", D("""[[0,0],[0,N-1],[N-1,0],[N-1,N-1]].flatMap(p=>tileCorners(...view(...p),0)).every(([x,y])=>x>=0&&x<=W&&y>=0&&y<=Hc)"""))
         page.set_viewport_size({"width":1400,"height":900})
         check("old module system removed", page.locator("#cgrid,.gpresets,.gsz,.gwindow").count()==0)
-        for key, target in (("in","#in_list"),("mp","#mp_box"),("mk","#mk_card"),("sn","#sn_box"),("img","#img_box"),("roll","#rolls")):
+        for key, target in (("in","#in_round"),("mp","#mp_box"),("mk","#mk_card"),("sn","#sn_box"),("img","#img_box"),("roll","#rolls")):
             page.locator(f'[data-play-tab="{key}"]').click()
             check(f"table tab {key} accessible", page.locator(target).is_visible())
         page.locator('[data-play-tab="in"]').click()
@@ -243,6 +270,7 @@ def run(chrome: str | None) -> None:
         host.wait_for_timeout(600)
         check("host ignores forged XP even with valid allocation", host.evaluate("DBG(\"CH.list.find(c=>c.id==='xp-test').xp\")") == 150)
         player.click('.tabs a[data-v="carte"]')
+        player.locator("#v-carte").wait_for(state="visible")
         check("quick place toolbar hidden for players", not player.locator("#pl_bar").is_visible())
         check("GM notes not accessible to players", not player.locator("#play_tab_sn").is_visible())
         check("player has integrated sheet", player.locator("#hand").is_visible())

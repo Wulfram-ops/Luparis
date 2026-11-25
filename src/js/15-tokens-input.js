@@ -40,8 +40,7 @@ function drawTok(a, ...r) {
   return v;
 }
 function drawTok0(k, vx, vy, h, sc = 1) {
-  const [cx, cy] = scr(vx, vy, h);
-  const y = cy + TW / 4,
+  const [cx, y] = scr(vx + 0.5, vy + 0.5, h),
     r = TW * 0.24 * (sc > 1 ? sc * 0.82 : sc);
   ctx.fillStyle = 'rgba(0,0,0,.28)';
   ctx.beginPath();
@@ -336,44 +335,18 @@ function icon(ty, cx, cy, r) {
   ctx.restore();
   return ok;
 }
-function inPoly(p, x, y) {
-  let s = false;
-  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
-    const [a, b] = p[i],
-      [c, d] = p[j];
-    if (b > y !== d > y && x < ((c - a) * (y - b)) / (d - b) + a) s = !s;
-  }
-  return s;
-}
-function shape(c) {
-  const h = H[c.x][c.y];
-  if (h <= 0) return dia(c.vx, c.vy, 0);
-  const t = dia(c.vx, c.vy, h),
-    g = dia(c.vx, c.vy, 0);
-  return [t[0], t[1], g[1], g[2], g[3], t[3]];
-}
 function pick(mx, my) {
-  const S0 = (my - oy) / (TW / 4),
-    D0 = (mx - ox) / (TW / 2);
-  let best = null,
-    bs = -1e9;
-  for (let S = Math.floor(S0 - 5); S <= Math.ceil(S0 + (3 * LH) / (TW / 4) + 2); S++)
-    for (let D = Math.floor(D0 - 2); D <= Math.ceil(D0 + 2); D++) {
-      if ((S + D) & 1) continue;
-      const vx = (S + D) / 2,
-        vy = (S - D) / 2;
-      if (vx < 0 || vy < 0 || vx >= N || vy >= N) continue;
-      const [x, y] = unview(vx, vy),
-        c = { x, y, vx, vy };
-      if (inPoly(shape(c), mx, my)) {
-        const sc = S * 1000 + vx;
-        if (sc > bs) {
-          bs = sc;
-          best = c;
-        }
-      }
-    }
-  return best;
+  const vx = Math.floor((mx - ox) / TW);
+  if (vx < 0 || vx >= N) return null;
+  const groundRow = Math.max(0, Math.floor((my - oy) / TW)),
+    frontRow = Math.min(N - 1, Math.floor((my - oy + MAX_ELEVATION * LH) / TW));
+  // The front row can overlap the row behind it if it is elevated.
+  for (let vy = frontRow; vy >= groundRow; vy--) {
+    const [x, y] = unview(vx, vy),
+      [, top] = scr(vx, vy, Math.max(H[x][y], 0));
+    if (my >= top) return { x, y, vx, vy };
+  }
+  return null;
 }
 function pos(e) {
   const r = cv.getBoundingClientRect();
@@ -549,7 +522,7 @@ function apply(c, inv) {
       return;
     }
   }
-  if (t === 'up') H[c.x][c.y] = Math.min(3, h + 1);
+  if (t === 'up') H[c.x][c.y] = Math.min(MAX_ELEVATION, h + 1);
   else if (t === 'down') {
     H[c.x][c.y] = Math.max(-2, h - 1);
     if (H[c.x][c.y] < 0) F[c.x][c.y] = 0;
@@ -710,7 +683,7 @@ function areaApply(ar) {
   for (let x = x0; x <= x1; x++)
     for (let y = y0; y <= y1; y++) {
       const h = H[x][y];
-      if (tool === 'up') H[x][y] = Math.min(3, h + 1);
+      if (tool === 'up') H[x][y] = Math.min(MAX_ELEVATION, h + 1);
       else if (tool === 'down') {
         const v = Math.max(-2, h - 1);
         setH({ x, y }, v);

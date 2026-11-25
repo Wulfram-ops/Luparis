@@ -394,6 +394,7 @@ const TY = {
 const tyName = k => (TY[k] ? tr(TY[k]) : k);
 const num = v => (lang === 'fr' ? String(v).replace('.', ',') : String(v));
 const CAM = { z: 1, px: 0, py: 0 };
+const MAX_ELEVATION = 3;
 let N = 16,
   H = [],
   F = [],
