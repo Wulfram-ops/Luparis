@@ -49,6 +49,8 @@ input[type=range]{width:96px;accent-color:var(--acc)}
 .sb .matks{margin:4px 0}.sb .matk button{border:1px solid #c9b58e;min-height:32px}.sb .matk button.go{background:#7a1f14;color:#fff;border-color:#7a1f14}.sbsrc{margin-top:12px!important;color:#7a6a58}.sbd{font-style:italic}
 .mpcode{font:700 20px/1 "Alegreya Sans",monospace;letter-spacing:.12em;color:var(--acc2)}#mp_box .row{gap:6px;flex-wrap:wrap;margin-top:6px}#mp_box input{min-width:0}.mpmsg{color:var(--acc2)}
 body.mp-player #tools button:not([data-t=move]):not([data-t=measure]),body.mp-player #tools label,body.mp-player #tools .scn,body.mp-player .bar>.grp:not(#tools),body.mp-player #sn_card,body.mp-player #mk_card .small{display:none!important}
+#tools [data-for]{display:none}#tools[data-tool="surf"] [data-for~="surf"]{display:inline-flex}#tools[data-tool="env"] [data-for~="env"]{display:inline-flex}#tools[data-tool="tpl"] [data-for~="tpl"]{display:inline-flex}#tools[data-tool="obj"] [data-for~="obj"]{display:inline-flex}#tools[data-tool="pref"] [data-for~="pref"]{display:inline-flex}
+#tools[data-tool="env"] .envdc{display:inline-flex}.thint{max-width:26em;line-height:1.25;align-self:center}
 .tplh{margin:10px 0 4px;font-size:14px}.tpls{list-style:none;margin:0;padding:0}.tpls li{display:grid;grid-template-columns:1fr auto;gap:2px 6px;align-items:center;padding:3px 0;border-top:1px dashed var(--line);font-size:14px}.tpls li .small{grid-column:1}.tpls li button{grid-row:1/span 2;grid-column:2}
 .hc.k-note{border-top-color:#8a7a5a}.hnote{width:100%;box-sizing:border-box;resize:vertical;font:15px/1.4 "Alegreya Sans",sans-serif;min-height:120px}
 .hc.k-tal{border-top-color:#6b7a3c}.hc.k-tal ul{margin:4px 0;padding-left:16px}.pfmx td{padding:0!important}.pfmx td button{width:100%;min-height:50px;min-width:76px;font-size:19px;justify-content:center;font-weight:700;font-variant-numeric:tabular-nums;border-radius:0}.pfmx th small{color:var(--ink);font-weight:700}.pfmods{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.pflab{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 4px 0 6px}.pfhint{margin:4px 0}.pflast{font-size:15px;margin:4px 0 8px;padding:4px 8px;border-left:3px solid var(--acc);background:var(--panel)}
@@ -284,7 +286,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 </section>
 <section id="v-carte" class="view">
 <div class="bar">
-  <div class="grp" id="tools">
+  <div class="grp" id="tools" data-tool="move">
     <button data-t="move" aria-pressed="true" data-i18n="t_move"></button>
     <button id="rot" data-i18n="rot"></button>
     <button data-t="up" aria-pressed="false" data-i18n="t_up"></button>
@@ -293,15 +295,18 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
     <button data-t="measure" data-i18n="t_measure"></button>
     <button data-t="mark" data-i18n="t_mark"></button>
     <button data-t="surf" data-i18n="t_surf"></button>
-    <label class="scn"><span class="vh" data-i18n="t_surf"></span><select id="surfk"></select></label>
+    <label class="scn" data-for="surf"><span class="vh" data-i18n="t_surf"></span><select id="surfk"></select></label>
     <button data-t="env" data-i18n="t_env"></button>
-    <label class="scn"><span class="vh" data-i18n="t_env"></span><select id="envk"></select></label><label class="scn envdc"><span>DD</span><input id="envdc" type="number" min="5" max="30" value="12"></label>
+    <label class="scn" data-for="env"><span class="vh" data-i18n="t_env"></span><select id="envk"></select></label><label class="scn envdc" data-for="env"><span>DD</span><input id="envdc" type="number" min="5" max="30" value="12"></label>
     <button data-t="tpl" data-i18n="t_tpl"></button>
-    <label class="scn"><span class="vh" data-i18n="t_tpl"></span><select id="tplk"></select></label><label class="scn"><input id="tplsz" type="number" min="5" max="300" step="5" value="20" aria-label="Taille (pieds)" style="width:4.5em"> <span class="small">ft</span></label>
+    <label class="scn" data-for="tpl"><span class="vh" data-i18n="t_tpl"></span><select id="tplk"></select></label><label class="scn" data-for="tpl"><input id="tplsz" type="number" min="5" max="300" step="5" value="20" aria-label="Taille (pieds)" style="width:4.5em"> <span class="small">ft</span></label>
     <button data-t="obj" data-i18n="t_obj"></button>
-    <label class="scn"><span class="vh" data-i18n="t_obj"></span><select id="objk"></select></label>
+    <label class="scn" data-for="obj"><span class="vh" data-i18n="t_obj"></span><select id="objk"></select></label><button type="button" data-for="obj" id="objrot" class="rotb"></button>
     <button data-t="pref" data-i18n="t_pref"></button>
-    <label class="scn"><span class="vh" data-i18n="t_pref"></span><select id="prefk"></select></label>
+    <label class="scn" data-for="pref"><span class="vh" data-i18n="t_pref"></span><select id="prefk"></select></label><button type="button" data-for="pref" id="prefrot" class="rotb"></button><button type="button" data-for="pref" id="prefroll"></button>
+    <span class="small thint" id="thint" aria-live="polite"></span>
+  </div>
+  <div class="grp">
     <label for="size" class="szl"><span data-i18n="size"></span> <input id="size" type="range" min="0" max="4" step="1" value="1"> <span id="sv">16×16</span></label>
   </div>
   <div class="grp">
@@ -951,7 +956,7 @@ function ftex(f,t,x,y){const[cx,cy]=t[0];ctx.save();poly(t);ctx.clip();ctx.lineW
  ctx.restore()}
 let drawQ=false;function draw(){if(drawQ)return;drawQ=true;requestAnimationFrame(()=>{drawQ=false;drawNow()})}
 const OBJT={door:{n:['Door','Porte'],tg:['open','ouverte','closed','fermée']},chest:{n:['Chest','Coffre'],tg:['open','ouvert','closed','fermé']},table:{n:['Table','Table']},chair:{n:['Chair','Chaise']},bench:{n:['Bench','Banc']},barrel:{n:['Barrel','Tonneau']},crate:{n:['Crate','Caisse']},bed:{n:['Bed','Lit']},counter:{n:['Counter','Comptoir']},hearth:{n:['Hearth','Âtre']},shelf:{n:['Bookshelf','Bibliothèque']},statue:{n:['Statue','Statue']},altar:{n:['Altar','Autel']},brazier:{n:['Brazier','Brasero']},lever:{n:['Lever','Levier'],tg:['pulled','abaissé','up','levé']},trap:{n:['Trapdoor','Trappe'],tg:['open','ouverte','closed','fermée']}};
-let objSel='door',prefSel='tavern';
+let objSel='door',prefSel='tavern',OBJR=0,PREFP=null;
 function objAt(x,y){return OBJS.findIndex(o=>o.x===x&&o.y===y)}
 function objName(o){const d=OBJT[o.k];if(!d)return'';return tr(d.n)+(d.tg?' ('+(lang==='fr'?(o.o?d.tg[1]:d.tg[3]):(o.o?d.tg[0]:d.tg[2]))+')':'')}
 function objToggle(c){const i=objAt(c.x,c.y);if(i<0||!OBJT[OBJS[i].k].tg)return false;snap();OBJS[i].o=!OBJS[i].o;save();draw();return true}
@@ -966,8 +971,8 @@ function drawObj(o,vx,vy,h){const[cx,cy]=scr(vx,vy,h),Z=LH,k=o.k;
   else{if(ax===0)obox(cx,cy,.04,.5,.14,1,0,hz,wood);else obox(cx,cy,.5,.04,1,.14,0,hz,wood)}return}
  if(k==='chest'){obox(cx,cy,.22,.3,.78,.7,0,Z*.45,'#8a5a2b');if(o.o){const[a,b]=oP(cx,cy,.5,.5,Z*.47);ctx.fillStyle='#f2cf4a';ctx.beginPath();ctx.ellipse(a,b,TW*.12,TW*.05,0,0,7);ctx.fill();obox(cx,cy,.22,.22,.78,.3,Z*.45,Z*.95,'#7a4c22')}else{obox(cx,cy,.22,.3,.78,.7,Z*.45,Z*.6,'#7a4c22');obox(cx,cy,.47,.68,.53,.72,Z*.3,Z*.5,'#d8b24a',0)}return}
  if(k==='table'){for(const[u,v]of[[.2,.2],[.8,.2],[.2,.8],[.8,.8]])obox(cx,cy,u-.04,v-.04,u+.04,v+.04,0,Z*.55,'#5e3d22',0);obox(cx,cy,.1,.1,.9,.9,Z*.55,Z*.68,'#a0703f');return}
- if(k==='chair'){obox(cx,cy,.32,.32,.68,.68,0,Z*.4,'#8b5e34');obox(cx,cy,.32,.32,.68,.4,Z*.4,Z*.95,'#7a4f2c');return}
- if(k==='bench'){obox(cx,cy,.08,.36,.92,.64,0,Z*.4,'#8b5e34');return}
+ if(k==='chair'){const r=((o.r||0)-rot+8)%4;obox(cx,cy,.32,.32,.68,.68,0,Z*.4,'#8b5e34');const B=[[.32,.32,.68,.4],[.6,.32,.68,.68],[.32,.6,.68,.68],[.32,.32,.4,.68]][r];obox(cx,cy,B[0],B[1],B[2],B[3],Z*.4,Z*.95,'#7a4f2c');return}
+ if(k==='bench'){if(((o.r||0)-rot+8)%2)obox(cx,cy,.36,.08,.64,.92,0,Z*.4,'#8b5e34');else obox(cx,cy,.08,.36,.92,.64,0,Z*.4,'#8b5e34');return}
  if(k==='barrel'){ocyl(cx,cy,.5,.5,.34,0,Z*.9,'#8a5a2b');const[x,y]=inD(cx,cy,.5,.5);ctx.strokeStyle='#3b2a1a';ctx.lineWidth=1;for(const f of[.25,.7]){ctx.beginPath();ctx.ellipse(x,y-Z*.9*f,TW*.17,TW*.085,0,0,Math.PI);ctx.stroke()}return}
  if(k==='crate'){obox(cx,cy,.18,.18,.82,.82,0,Z*.8,'#b08850');const P=(u,v,z)=>oP(cx,cy,u,v,z);ctx.strokeStyle='rgba(60,40,20,.7)';ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(...P(.82,.18,0));ctx.lineTo(...P(.82,.82,Z*.8));ctx.moveTo(...P(.18,.82,0));ctx.lineTo(...P(.82,.82,Z*.8));ctx.stroke();return}
  if(k==='bed'){obox(cx,cy,.1,.12,.9,.88,0,Z*.4,'#6b4428');obox(cx,cy,.14,.16,.86,.84,Z*.4,Z*.55,'#b9483e',0);obox(cx,cy,.16,.18,.84,.38,Z*.55,Z*.68,'#efe8d8',0);return}
@@ -1000,7 +1005,9 @@ function prefGen(k,rr){const ri=n=>Math.floor(rr()*n),G=[],O=[];let w,h;
  else if(k==='tower'){put(1,1,'brazier');put(w-2,1,'crate');put(w-2,h-2,'barrel');put(1,h-2,'chest');put(2,2,'trap');if(rr()<.5)put(w-2,2,'lever')}
  else if(k==='barn'){const bd=1+ri(w-2);if(G[bd][0]==='W'){door(bd,0)}for(let i=0;i<Math.round(w*h/5);i++){const x=1+ri(w-2),y=1+ri(h-2);if(free(x,y)&&Math.abs(x-fd)+Math.abs(y-(h-1))>1)put(x,y,rr()<.5?'crate':'barrel')}}
  return{w,h,G,O,wh:k==='tower'?3:2}}
-function prefPlace(c,k,quiet){const rr=Math.random,P=prefGen(k,rr),r=Math.floor(rr()*4);
+function prefLay(c,P,r){const W=r%2?P.h:P.w,Hh=r%2?P.w:P.h;return{W,Hh,x0:Math.max(0,Math.min(N-W,c.x-Math.floor(W/2))),y0:Math.max(0,Math.min(N-Hh,c.y-Math.floor(Hh/2))),tf:(x,y)=>r===0?[x,y]:r===1?[P.h-1-y,x]:r===2?[P.w-1-x,P.h-1-y]:[y,P.w-1-x]}}
+function prefPend(){if(!PREFP||PREFP.k!==prefSel)PREFP={k:prefSel,P:prefGen(prefSel,Math.random),r:PREFP?PREFP.r:0};return PREFP}
+function prefPlace(c,k,quiet,pend){const rr=Math.random,P=pend?pend.P:prefGen(k,rr),r=pend?pend.r:Math.floor(rr()*4);
  const tf=(x,y)=>r===0?[x,y]:r===1?[P.h-1-y,x]:r===2?[P.w-1-x,P.h-1-y]:[y,P.w-1-x];const W=r%2?P.h:P.w,Hh=r%2?P.w:P.h;
  const x0=Math.max(0,Math.min(N-W,c.x-Math.floor(W/2))),y0=Math.max(0,Math.min(N-Hh,c.y-Math.floor(Hh/2)));if(W>N||Hh>N)return false;
  if(!quiet)snap();for(let x=x0-1;x<=x0+W;x++)for(let y=y0-1;y<=y0+Hh;y++){if(!ok(x,y))continue;const inn=x>=x0&&y>=y0&&x<x0+W&&y<y0+Hh;if(inn||H[x][y]<0||F[x][y]===4||F[x][y]===5){H[x][y]=0;if(F[x][y]===4||F[x][y]===5||inn)F[x][y]=0}delete ENV[x+','+y]}
@@ -1028,7 +1035,7 @@ function drawNow(){const b=B[bio];const lod=TW>=9,lodS=TW>=5;if(hover){const ti=
   {const ek=ENV[c.x+','+c.y];if(ek)drawEnv(ek,vx,vy,h,c.x,c.y)}
   {const ob=OM.get(c.x+','+c.y);if(ob&&h>=0&&TW>=4)drawObj(ob,vx,vy,h)}
   for(const k of tokens)if(tokCell(k,c))drawTokAt(k)}
- drawFloat();if(typeof drawTpls==='function')drawTpls();drawMarks();if(meas)drawMeas();
+ drawFloat();if(typeof drawTpls==='function')drawTpls();if(typeof drawPlacePreview==='function')drawPlacePreview();drawMarks();if(meas)drawMeas();
  if(hasAnim()||(bio==='volcan'&&!reduce))requestAnimationFrame(tick)}
 function ctr(c){const[vx,vy]=view(c.x,c.y),h=Math.max(H[c.x][c.y],0);const[cx,cy]=scr(vx,vy,h);return[cx,cy+TW/4]}
 const ENVT={fire:{n:['Flames','Flammes'],c:'rgba(255,110,30,.5)',r:['Entering or starting a turn here: 1 box (Physical Resilience save DC 12 avoids it).','Entrer ou commencer son tour ici : 1 case (sauvegarde de Résistance physique DD 12 pour l\'éviter).']},
@@ -1060,7 +1067,7 @@ function drawEnv(k,vx,vy,h,x,y){k=k&&k.k||k;const e=ENVT[k];if(!e)return;const t
  else if(k==='holy'){ctx.strokeStyle='rgba(255,245,200,.9)';ctx.lineWidth=1.5;const[px,py]=inD(cx,cy,.5,.5);ctx.beginPath();ctx.moveTo(px,py-TW*.12);ctx.lineTo(px,py+TW*.04);ctx.moveTo(px-TW*.06,py-TW*.06);ctx.lineTo(px+TW*.06,py-TW*.06);ctx.stroke()}
  ctx.restore()}
 function fillEnv(){const el=document.getElementById('envk');if(!el)return;el.innerHTML=Object.keys(ENVT).map(k=>`<option value="${k}"${k===envSel?' selected':''} title="${esc(tr(ENVT[k].r))}">${esc(tr(ENVT[k].n))}</option>`).join('')}
-document.getElementById('objk').addEventListener('change',e=>{objSel=e.target.value;setTool('obj')});document.getElementById('prefk').addEventListener('change',e=>{prefSel=e.target.value;setTool('pref')});
+document.getElementById('objk').addEventListener('change',e=>{objSel=e.target.value;setTool('obj')});document.getElementById('prefk').addEventListener('change',e=>{prefSel=e.target.value;PREFP=null;setTool('pref')});
 document.getElementById('envk').addEventListener('change',e=>{envSel=e.target.value;setTool('env')});
 document.getElementById('surfk').addEventListener('change',e=>{surfSel=+e.target.value;setTool('surf')});
 
@@ -1132,8 +1139,8 @@ function apply(c,inv){const key=c.x+','+c.y;if(painting&&lastPainted===key)retur
  if(inv&&t!=='mark'){if(t==='up')t='down';else if(t==='down')t='up';else if(t==='pj'||t==='foe'||t==='move'||t==='place'){const i=tokAt(c);if(i>=0){const id=tokens[i].id;tokens.splice(i,1);INI.o=INI.o.filter(o=>o.id!==id)}return}}
  if(t==='up')H[c.x][c.y]=Math.min(3,h+1);else if(t==='down'){H[c.x][c.y]=Math.max(-2,h-1);if(H[c.x][c.y]<0)F[c.x][c.y]=0}else if(t==='flat'){H[c.x][c.y]=0;F[c.x][c.y]=0}
  else if(t==='env'){const key=c.x+','+c.y,cur=envOf(key);if(!painting.em)painting.em=cur&&cur.k===envSel?'del':'set';if(painting.em==='del')delete ENV[key];else ENV[key]={k:envSel,dc:envDC()};return}
- else if(t==='obj'){painting=null;if(h<0)return;const i=objAt(c.x,c.y);if(i>=0&&OBJS[i].k===objSel)OBJS.splice(i,1);else{if(i>=0)OBJS.splice(i,1);OBJS.push({x:c.x,y:c.y,k:objSel,o:false})}save();return}
- else if(t==='pref'){painting=null;hist.pop();prefPlace(c,prefSel);return}
+ else if(t==='obj'){painting=null;if(h<0)return;const i=objAt(c.x,c.y);if(i>=0&&OBJS[i].k===objSel)OBJS.splice(i,1);else{if(i>=0)OBJS.splice(i,1);OBJS.push({x:c.x,y:c.y,k:objSel,o:false,r:OBJR})}save();return}
+ else if(t==='pref'){painting=null;hist.pop();prefPlace(c,prefSel,false,prefPend());PREFP=null;prefPend();return}
  else if(t==='mark'){const i=MARKS.findIndex(m=>m.x===c.x&&m.y===c.y);if(inv){if(i>=0){MARKS.splice(i,1);save()}}else if(i>=0){selMark=MARKS[i].id;const e=document.querySelector(`#mk_list input[data-id="${selMark}"]`);if(e)setTimeout(()=>e.focus(),30)}else{const m={id:tid(),x:c.x,y:c.y,l:''};MARKS.push(m);selMark=m.id;save();setTimeout(()=>{const e=document.querySelector(`#mk_list input[data-id="${m.id}"]`);if(e)e.focus()},30)}painting=null;return}
  else if((t==='pj'||t==='foe')&&tokAt(c)<0&&h>-2)tokens.push({id:tid(),x:c.x,y:c.y,t,n:nextName(t),init:0});
  else if(t==='place'&&placing&&tokAt(c)<0&&h>-2){if(placing.ally){const ch=CH.list.find(x=>x.id===placing.ally);if(!ch)return;if(tokens.some(k=>k.cid===ch.id)){const k=tokens.find(k=>k.cid===ch.id);k.x=c.x;k.y=c.y;return}const D=derived(ch);
@@ -1169,7 +1176,7 @@ cv.addEventListener('pointerleave',()=>{hover=null;draw()});
 cv.addEventListener('dblclick',e=>{const[mx,my]=pos(e),c=pick(mx,my);if(!c)return;const i=tokAt(c);if(i<0)return;const k=tokens[i],m=k.mid&&MON.find(x=>x.id===k.mid);if(m&&!(MP.role==='player'))monSheet(m,k)});
 document.getElementById('in_list').addEventListener('click',e=>{const b=e.target.closest('[data-isb]');if(!b)return;e.stopPropagation();const k=tokens.find(x=>x.id===b.dataset.isb),m=k&&k.mid&&MON.find(x=>x.id===k.mid);if(m)monSheet(m,k)},true);
 document.getElementById('tools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!b.dataset.t)return;setTool(b.dataset.t)});
-function setTool(t){tool=t;if(t!=='place'){placing=null;const a=document.getElementById('pl_ally'),f=document.getElementById('pl_foe');if(a)a.value='';if(f)f.value=''}if(t!=='measure')meas=null;if(t!=='tpl')TPLA=null;
+function setTool(t){tool=t;if(t!=='place'){placing=null;const a=document.getElementById('pl_ally'),f=document.getElementById('pl_foe');if(a)a.value='';if(f)f.value=''}if(t!=='measure')meas=null;if(t!=='tpl')TPLA=null;{const g=document.getElementById('tools');if(g)g.dataset.tool=t}if(typeof toolHint==='function')toolHint();
  for(const x of document.querySelectorAll('#tools button'))x.setAttribute('aria-pressed',x.dataset.t===t);cv.style.cursor=t==='move'?'grab':'crosshair';draw()}
 const bz=document.getElementById('biomes');
 document.getElementById('biosel').addEventListener('change',e=>{const b=bz.querySelector(`button[data-b="${e.target.value}"]`);if(b)b.click()});
@@ -2041,7 +2048,7 @@ new ResizeObserver(()=>{if(WS&&!$('v-monde').hidden)wApply()}).observe(wst);
 
 function nm0(m){return tr(m.n)}
 function applyLang(){document.documentElement.lang=lang;document.title='Luparis';
- for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof fillTpl==='function'&&TPLK)fillTpl();if(typeof snRender==='function'&&typeof SN!=='undefined'&&SN)snRender();if(typeof aiUI==='function'&&typeof AIC!=='undefined')aiUI();if(typeof fillBio==='function')fillBio();
+ for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof fillTpl==='function'&&TPLK)fillTpl();if(typeof toolHint==='function'&&TPLK)toolHint();if(typeof snRender==='function'&&typeof SN!=='undefined'&&SN)snRender();if(typeof aiUI==='function'&&typeof AIC!=='undefined')aiUI();if(typeof fillBio==='function')fillBio();
  for(const e of document.querySelectorAll('[data-i18n-html]'))e.innerHTML=t(e.dataset.i18nHtml);
  for(const e of document.querySelectorAll('[data-i18n-ph]'))e.placeholder=t(e.dataset.i18nPh);
  for(const b of bz.querySelectorAll('button[data-b]'))b.querySelector('.bn').textContent=tr(B[b.dataset.b].n);
@@ -2118,6 +2125,33 @@ function monSheet(m,tk){SBM=m;SBT=tk||null;let dl=document.getElementById('sbdlg
  const paint=D=>{dl.innerHTML=`<div class="sbbar"><button type="button" id="sb_close" aria-label="${L2('Close','Fermer')}">×</button></div>`+monBlockHTML(m,D,SBT)};
  paint(null);if(!dl.open)dl.showModal();const en=Array.isArray(m.n)?m.n[0]:String(m.n),k2=String(m.id).startsWith('s-')?m.id:'s-'+en.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');srdDetails().then(o=>{if(SBM===m&&dl.open&&o[k2])paint(o[k2])})}
 
+
+// ---- contextual tool hint + placement preview
+function toolHint(){const el=document.getElementById('thint');if(!el)return;const H={
+ move:['Drag a token; double-click a monster for its sheet.','Glisse un token ; double-clic sur un monstre pour sa fiche.'],
+ up:['Click or drag: raise the ground by one level.','Clic ou glisser : monte le sol d\'un niveau.'],down:['Click or drag: lower the ground.','Clic ou glisser : baisse le sol.'],flat:['Click or drag: back to ground level.','Clic ou glisser : remet au niveau du sol.'],
+ measure:['Drag from one tile to another.','Glisse d\'une case à l\'autre.'],mark:['Click to drop a marker.','Clique pour poser un repère.'],
+ surf:['Paint the chosen surface.','Peins la surface choisie.'],env:['Paint a hazard with its DC.','Peins un danger avec son DD.'],
+ tpl:['Circle, sphere, cube: one click. Cone, line: origin, then direction.','Cercle, sphère, cube : un clic. Cône, ligne : origine, puis direction.'],
+ obj:['Preview follows the mouse. Shift + wheel or ⟳ rotates.','L\'aperçu suit la souris. Maj + molette ou ⟳ pour tourner.'],
+ pref:['The ghost shows footprint, rotation and wall height. Shift + wheel or ⟳ rotates, 🎲 rerolls the plan.','Le fantôme montre l\'empreinte, la rotation et la hauteur des murs. Maj + molette ou ⟳ pour tourner, 🎲 pour un autre plan.']};
+ el.textContent=H[tool]?tr(H[tool]):'';const a=document.getElementById('objrot'),b=document.getElementById('prefrot'),c=document.getElementById('prefroll');
+ if(a)a.textContent='⟳ '+OBJR*90+'°';if(b)b.textContent='⟳ '+((PREFP?PREFP.r:0)*90)+'°';if(c)c.textContent='🎲 '+L2('Other plan','Autre plan')}
+function rotPend(d){if(tool==='obj')OBJR=(OBJR+d+4)%4;else if(tool==='pref'){const p=prefPend();p.r=(p.r+d+4)%4}toolHint();draw()}
+document.getElementById('objrot').addEventListener('click',()=>rotPend(1));
+document.getElementById('prefrot').addEventListener('click',()=>rotPend(1));
+document.getElementById('prefroll').addEventListener('click',()=>{const r=PREFP?PREFP.r:0;PREFP={k:prefSel,P:prefGen(prefSel,Math.random),r};toolHint();draw()});
+cv.addEventListener('wheel',e=>{if(e.shiftKey&&(tool==='obj'||tool==='pref')){e.stopImmediatePropagation();e.preventDefault();rotPend(e.deltaY>0?1:-1)}},{passive:false,capture:true});
+function drawPlacePreview(){if(!hover||MP.role==='player')return;const c=hover;
+ const lab=(t,x,y)=>{ctx.font=`700 ${Math.max(11,Math.min(15,TW*.3))}px "Alegreya Sans",sans-serif`;ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(255,255,255,.92)';ctx.strokeText(t,x,y);ctx.fillStyle='#1d1a17';ctx.fillText(t,x,y)};
+ if(tool==='obj'){if(c.x<0||c.y<0||c.x>=N||c.y>=N)return;const h=Math.max(H[c.x][c.y],0),[vx,vy]=view(c.x,c.y);poly(dia(vx,vy,h),'rgba(90,140,60,.25)','rgba(60,110,40,.9)',1.5);ctx.save();ctx.globalAlpha=.55;drawObj({x:c.x,y:c.y,k:objSel,o:false,r:OBJR},vx,vy,h);ctx.restore();const[cx,cy]=scr(vx,vy,h);lab(`${tr(OBJT[objSel].n)} · ${OBJR*90}°`,cx,cy-LH*2.2);return}
+ if(tool==='pref'){const p=prefPend(),L=prefLay(c,p.P,p.r);if(L.W>N||L.Hh>N)return;let top=1e9,cxm=0;
+  for(let x=0;x<p.P.w;x++)for(let y=0;y<p.P.h;y++){const[a,b]=L.tf(x,y),gx=L.x0+a,gy=L.y0+b,[vx,vy]=view(gx,gy),wall=p.P.G[x][y]==='W';
+   if(wall){const g=dia(vx,vy,0),t=dia(vx,vy,p.P.wh);ctx.strokeStyle='rgba(60,50,40,.35)';ctx.lineWidth=1;ctx.beginPath();for(const i of[1,2,3]){ctx.moveTo(g[i][0],g[i][1]);ctx.lineTo(t[i][0],t[i][1])}ctx.stroke();poly(t,'rgba(110,90,70,.45)','rgba(60,45,30,.9)',1.2);if(t[0][1]<top){top=t[0][1];cxm=t[0][0]}}
+   else poly(dia(vx,vy,0),'rgba(200,170,110,.35)','rgba(140,110,60,.7)',1)}
+  for(const o of p.P.O){const[a,b]=L.tf(o.x,o.y),[vx,vy]=view(L.x0+a,L.y0+b);ctx.save();ctx.globalAlpha=.5;drawObj({x:L.x0+a,y:L.y0+b,k:o.k,o:o.o},vx,vy,0);ctx.restore()}
+  const cs=[[L.x0,L.y0],[L.x0+L.W,L.y0],[L.x0+L.W,L.y0+L.Hh],[L.x0,L.y0+L.Hh]].map(([x,y])=>{const[vx,vy]=view(Math.min(x,N-1),Math.min(y,N-1));return scr(vx,vy,0)});
+  lab(`${tr(PREF[p.k])} · ${L.W}×${L.Hh} · ${p.r*90}° · ${L2('walls','murs')} h${p.P.wh}`,cxm||cs[0][0],(top<1e9?top:cs[0][1])-10)}}
 // ---- area templates (circle, sphere, cone, line, cube)
 TPLK={circle:['Circle','Cercle'],sphere:['Sphere','Sphère'],cone:['Cone','Cône'],line:['Line','Ligne'],cube:['Cube','Cube']},TPLC={circle:'255,140,40',sphere:'170,90,220',cone:'230,70,60',line:'60,150,230',cube:'70,170,110'};
 
