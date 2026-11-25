@@ -3055,6 +3055,35 @@ function hideToggle(c) {
     if (tplCells(TPLS[j]).some(([x, y]) => x === c.x && y === c.y)) return tg(TPLS[j]);
   return false;
 }
+// put a character's token on the map, or move it there if it is already on the map
+function placeAlly(ch, c) {
+  if (!ch || !c || !ok(c.x, c.y) || H[c.x][c.y] <= -2) return false;
+  const k0 = tokens.find(k => k.cid === ch.id);
+  if (k0) {
+    if (tokAt(c) >= 0 && tokens[tokAt(c)] !== k0) return false;
+    k0.x = c.x;
+    k0.y = c.y;
+    return true;
+  }
+  if (tokAt(c) >= 0) return false;
+  const D = derived(ch);
+  tokens.push({
+    id: tid(),
+    x: c.x,
+    y: c.y,
+    t: 'pj',
+    cid: ch.id,
+    n: abbr(ch.name || '?'),
+    nm: ch.name || '?',
+    esq: D.eva,
+    maj: D.major,
+    sev: D.severe,
+    hp: D.hp - (ch.used ? ch.used.hp || 0 : 0),
+    hpMax: D.hp,
+    init: D.init,
+  });
+  return true;
+}
 function apply(c, inv) {
   const key = c.x + ',' + c.y;
   if (painting && lastPainted === key) return;
@@ -3140,28 +3169,15 @@ function apply(c, inv) {
     if (placing.ally) {
       const ch = CH.list.find(x => x.id === placing.ally);
       if (!ch) return;
-      if (tokens.some(k => k.cid === ch.id)) {
-        const k = tokens.find(k => k.cid === ch.id);
-        k.x = c.x;
-        k.y = c.y;
-        return;
+      placeAlly(ch, c);
+      // a player places their own token: the GM's table decides, then sends the map back
+      if (MP.role === 'player') {
+        mpSend({ type: 'place', me: ch.id, x: c.x, y: c.y });
+        painting = null;
+        placing = null;
+        setTool('move');
+        mpRender();
       }
-      const D = derived(ch);
-      tokens.push({
-        id: tid(),
-        x: c.x,
-        y: c.y,
-        t: 'pj',
-        cid: ch.id,
-        n: abbr(ch.name || '?'),
-        nm: ch.name || '?',
-        esq: D.eva,
-        maj: D.major,
-        sev: D.severe,
-        hp: D.hp - (ch.used ? ch.used.hp || 0 : 0),
-        hpMax: D.hp,
-        init: D.init,
-      });
       return;
     }
     const m = placing,
@@ -3261,6 +3277,7 @@ cv.addEventListener('pointerdown', e => {
     c &&
     !(
       tool === 'measure' ||
+      (tool === 'place' && placing && placing.ally && placing.ally === MP.me && MP.prole !== 'spec') ||
       (tool === 'move' && tokAt(c) >= 0 && tokens[tokAt(c)].cid && tokens[tokAt(c)].cid === MP.me)
     )
   ) {
@@ -12281,7 +12298,14 @@ function mpView(st, rolls) {
 }
 function mpState() {
   const v = mpView(memStateNow(), RL);
-  return { type: 'state', map: { ...v, rolls: undefined }, chars: CH.list, folders: campaignFolders(), rolls: v.rolls, code: MP.code };
+  return {
+    type: 'state',
+    map: { ...v, rolls: undefined },
+    chars: CH.list,
+    folders: campaignFolders(),
+    rolls: v.rolls,
+    code: MP.code,
+  };
 }
 function mpSend(o, conn) {
   if (MP.local) {
@@ -12323,7 +12347,8 @@ function mpCreateCharacter(c, imported = false) {
   MP.createMessage = '';
   ssSet(MPC, MP.createPending);
   mpSend({ type: 'create-char', ...MP.createPending });
-  if (CH.active) $('c_msg').textContent = L2('Registering the character with the GM…', 'Enregistrement du personnage auprès du MJ…');
+  if (CH.active)
+    $('c_msg').textContent = L2('Registering the character with the GM…', 'Enregistrement du personnage auprès du MJ…');
   else renderList();
 }
 function mpSendChar() {
@@ -12361,7 +12386,9 @@ function cleanCharPatch(c) {
   if (typeof c.armor === 'string' && Object.hasOwn(ARM, c.armor)) o.armor = c.armor;
   if (typeof c.shield === 'string' && Object.hasOwn(SHD, c.shield)) o.shield = c.shield;
   if (Array.isArray(c.weapons))
-    o.weapons = c.weapons.slice(0, 50).filter(w => w && Object.hasOwn(FAM, w.f) && szKeys(w.f).includes(w.s))
+    o.weapons = c.weapons
+      .slice(0, 50)
+      .filter(w => w && Object.hasOwn(FAM, w.f) && szKeys(w.f).includes(w.s))
       .map(w => ({ n: S(w.n, 60) || '?', f: w.f, s: w.s }));
   if (typeof c.patron === 'string' && (!c.patron || Object.hasOwn(PATR, c.patron))) o.patron = c.patron;
   if (typeof c.patronN === 'string') o.patronN = S(c.patronN, 60);
@@ -12394,7 +12421,8 @@ function cleanProgression(incoming, current) {
     !readMap('sch', Object.keys(SCH), 0, () => tierLimit) ||
     !readMap('fam', Object.keys(FAM), 0, () => tierLimit) ||
     !readMap('tal', Object.keys(TAL), 0, talentLimit)
-  ) return null;
+  )
+    return null;
   if (incoming.apex != null) {
     if (!integer(incoming.apex, 0, Math.max(current.apex || 0, tierLimit))) return null;
     patch.apex = incoming.apex;
@@ -12422,7 +12450,10 @@ function cleanProgression(incoming, current) {
   // Older over-budget sheets may be corrected without forcing an immediate full reset.
   if (!Number.isFinite(cost) || cost > Math.max(+current.xp || 0, spent(current))) return null;
   if (incoming.stances != null && Array.isArray(incoming.stances))
-    patch.stances = [...new Set(incoming.stances.filter(n => Number.isInteger(n) && STANCES[n]))].slice(0, candidate.tal.stance || 0);
+    patch.stances = [...new Set(incoming.stances.filter(n => Number.isInteger(n) && STANCES[n]))].slice(
+      0,
+      candidate.tal.stance || 0,
+    );
   if (Object.keys(patch).some(k => JSON.stringify(patch[k]) !== JSON.stringify(current[k]))) patch.demo = false;
   return patch;
 }
@@ -12476,13 +12507,21 @@ function mpHostMsg(m, conn) {
     c.name = source.name.trim().slice(0, 60);
     c.camp = typeof source.camp === 'string' ? source.camp.trim().slice(0, 60) : '';
     if (c.camp && !validCampaignName(c.camp)) return reply(null, L2('Invalid campaign.', 'Campagne invalide.'));
-    const campaigns = campsGet(), record = c.camp && Object.hasOwn(campaigns, c.camp) ? campaigns[c.camp] : null;
+    const campaigns = campsGet(),
+      record = c.camp && Object.hasOwn(campaigns, c.camp) ? campaigns[c.camp] : null;
     const existing = CH.list.filter(x => x.camp && x.camp === c.camp);
     if (record && Number.isFinite(record.xp)) c.xp = Math.max(0, record.xp);
     else if (existing.length) c.xp = Math.max(0, ...existing.map(x => +x.xp || 0));
     if (m.imported) {
       const progression = cleanProgression(source, c);
-      if (!progression) return reply(null, L2('Imported character exceeds the available XP or prerequisites.', 'Le personnage importé dépasse les XP disponibles ou ne respecte pas les prérequis.'));
+      if (!progression)
+        return reply(
+          null,
+          L2(
+            'Imported character exceeds the available XP or prerequisites.',
+            'Le personnage importé dépasse les XP disponibles ou ne respecte pas les prérequis.',
+          ),
+        );
       Object.assign(c, cleanCharPatch(source), progression);
       syncCells(c);
     }
@@ -12510,9 +12549,21 @@ function mpHostMsg(m, conn) {
     mpRender();
     return;
   }
-  if (m.type === 'tokens' || m.type === 'char') {
-    const id = m.type === 'tokens' ? m.me : m.c && m.c.id;
+  if (m.type === 'tokens' || m.type === 'char' || m.type === 'place') {
+    const id = m.type === 'char' ? m.c && m.c.id : m.me;
     if (!id || conn.me !== id) return;
+  }
+  if (m.type === 'place') {
+    const ch = CH.list.find(c => c.id === m.me),
+      x = Math.round(+m.x),
+      y = Math.round(+m.y);
+    if (ch && isFinite(x) && isFinite(y) && placeAlly(ch, { x, y })) {
+      save();
+      draw();
+      if (typeof renderIni === 'function') renderIni();
+    }
+    mpPush();
+    return;
   }
   if (m.type === 'tokens') {
     for (const u of m.t || []) {
@@ -12561,7 +12612,8 @@ function mpHostMsg(m, conn) {
       }
       saveC();
       if (CH.active) renderSheet();
-      if (!progression) mpYou(conn, L2('Not enough XP or unmet prerequisites.', 'XP insuffisante ou prérequis non remplis.'));
+      if (!progression)
+        mpYou(conn, L2('Not enough XP or unmet prerequisites.', 'XP insuffisante ou prérequis non remplis.'));
     }
   }
 }
@@ -12896,7 +12948,7 @@ function mpRender(msg) {
     B.innerHTML = `<p>${L2('Connected to game', 'Connecté à la partie')} <b class="mpcode">${MP.code}</b>${MP.got ? '' : ' …'} · ${L2(...ROLE_N[MP.prole])}</p>${
       spec
         ? `<p class="small">${L2('You follow the game without acting on it.', 'Tu suis la partie sans y agir.')}</p>`
-        : `<label class="small">${L2('My character', 'Mon personnage')} <select id="mp_me"><option value="">—</option>${CH.list.map(c => `<option value="${esc(c.id)}"${c.id === MP.me ? ' selected' : ''}>${esc(c.name || '?')}</option>`).join('')}</select></label><p class="small">${L2('You can move your own token, roll, use your cards and spend your earned XP. The game master awards XP.', 'Tu peux déplacer ton pion, lancer les dés, utiliser tes cartes et dépenser ton XP. Le MJ attribue l’XP.')}</p>`
+        : `<label class="small">${L2('My character', 'Mon personnage')} <select id="mp_me"><option value="">—</option>${CH.list.map(c => `<option value="${esc(c.id)}"${c.id === MP.me ? ' selected' : ''}>${esc(c.name || '?')}</option>`).join('')}</select></label>${MP.me && MP.got ? `<div class="row"><button type="button" id="mp_place" class="go">${tokens.some(k => k.cid === MP.me) ? L2('Place my token elsewhere', 'Reposer mon pion ailleurs') : L2('Place my token on the map', 'Poser mon pion sur la carte')}</button></div>` : ''}<p class="small">${L2('You can place and move your own token, roll, use your cards and spend your earned XP. The game master awards XP.', 'Tu peux poser et déplacer ton pion, lancer les dés, utiliser tes cartes et dépenser ton XP. Le MJ attribue l’XP.')}</p>`
     }<div class="row"><button type="button" id="mp_leave">${L2('Leave', 'Quitter')}</button></div>`;
   }
   if (MP.msg) B.insertAdjacentHTML('beforeend', `<p class="small mpmsg" aria-live="polite">${esc(MP.msg)}</p>`);
@@ -12910,7 +12962,13 @@ document.getElementById('mp_card').addEventListener('click', e => {
   if (b.id === 'mp_host') mpHost();
   else if (b.id === 'mp_stop') mpStop();
   else if (b.id === 'mp_leave') mpLeave();
-  else if (b.dataset.mpk != null) {
+  else if (b.id === 'mp_place' && MP.me) {
+    const ch = CH.list.find(c => c.id === MP.me);
+    if (!ch) return;
+    placing = { ally: ch.id, n: ch.name || '?' };
+    setTool('place');
+    mpRender(L2('Click a square of the map.', 'Clique sur une case de la carte.'));
+  } else if (b.dataset.mpk != null) {
     const c = mpHostPeople()[+b.dataset.mpk];
     if (!c) return;
     mpSend({ type: 'closed' }, c);

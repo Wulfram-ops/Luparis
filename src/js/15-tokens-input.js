@@ -480,6 +480,35 @@ function hideToggle(c) {
     if (tplCells(TPLS[j]).some(([x, y]) => x === c.x && y === c.y)) return tg(TPLS[j]);
   return false;
 }
+// put a character's token on the map, or move it there if it is already on the map
+function placeAlly(ch, c) {
+  if (!ch || !c || !ok(c.x, c.y) || H[c.x][c.y] <= -2) return false;
+  const k0 = tokens.find(k => k.cid === ch.id);
+  if (k0) {
+    if (tokAt(c) >= 0 && tokens[tokAt(c)] !== k0) return false;
+    k0.x = c.x;
+    k0.y = c.y;
+    return true;
+  }
+  if (tokAt(c) >= 0) return false;
+  const D = derived(ch);
+  tokens.push({
+    id: tid(),
+    x: c.x,
+    y: c.y,
+    t: 'pj',
+    cid: ch.id,
+    n: abbr(ch.name || '?'),
+    nm: ch.name || '?',
+    esq: D.eva,
+    maj: D.major,
+    sev: D.severe,
+    hp: D.hp - (ch.used ? ch.used.hp || 0 : 0),
+    hpMax: D.hp,
+    init: D.init,
+  });
+  return true;
+}
 function apply(c, inv) {
   const key = c.x + ',' + c.y;
   if (painting && lastPainted === key) return;
@@ -565,28 +594,15 @@ function apply(c, inv) {
     if (placing.ally) {
       const ch = CH.list.find(x => x.id === placing.ally);
       if (!ch) return;
-      if (tokens.some(k => k.cid === ch.id)) {
-        const k = tokens.find(k => k.cid === ch.id);
-        k.x = c.x;
-        k.y = c.y;
-        return;
+      placeAlly(ch, c);
+      // a player places their own token: the GM's table decides, then sends the map back
+      if (MP.role === 'player') {
+        mpSend({ type: 'place', me: ch.id, x: c.x, y: c.y });
+        painting = null;
+        placing = null;
+        setTool('move');
+        mpRender();
       }
-      const D = derived(ch);
-      tokens.push({
-        id: tid(),
-        x: c.x,
-        y: c.y,
-        t: 'pj',
-        cid: ch.id,
-        n: abbr(ch.name || '?'),
-        nm: ch.name || '?',
-        esq: D.eva,
-        maj: D.major,
-        sev: D.severe,
-        hp: D.hp - (ch.used ? ch.used.hp || 0 : 0),
-        hpMax: D.hp,
-        init: D.init,
-      });
       return;
     }
     const m = placing,
@@ -686,6 +702,7 @@ cv.addEventListener('pointerdown', e => {
     c &&
     !(
       tool === 'measure' ||
+      (tool === 'place' && placing && placing.ally && placing.ally === MP.me && MP.prole !== 'spec') ||
       (tool === 'move' && tokAt(c) >= 0 && tokens[tokAt(c)].cid && tokens[tokAt(c)].cid === MP.me)
     )
   ) {

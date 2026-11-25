@@ -236,6 +236,12 @@ def run(chrome: str | None) -> None:
         host.wait_for_timeout(600)
         check("GM moves character without deleting empty folder", host.locator('details[data-campfolder="Northern Expedition"] .cc').count() == 0 and host.locator(f'details[data-campfolder=""] [data-campmove="{created_id}"]').count() == 1)
         check("campaign move reaches player and preserves XP", creator.evaluate("DBG(\"CH.list.find(c=>c.id===MP.me).camp===''&&CH.list.find(c=>c.id===MP.me).xp===150\")"))
+        creator.evaluate("DBG(`placing={ally:MP.me,n:'x'};setTool('place');apply({x:2,y:2})`)")
+        host.wait_for_timeout(600)
+        check(
+            "a player places their own token",
+            host.evaluate("id => DBG('tokens.some(k=>k.cid===' + JSON.stringify(id) + '&&k.x===2&&k.y===2)')", created_id),
+        )
         spec = ctx.new_page()
         spec.goto(url + "?debug=1&local=1")
         spec.wait_for_timeout(800)
