@@ -64,8 +64,8 @@ button.pfb.pfini{cursor:pointer;min-height:0;border-color:var(--acc);gap:0;font:
 .pacm{margin:6px 0 0;padding:8px;border-radius:10px;background:linear-gradient(160deg,#2a1f33,#3b2440);color:#efe6f5}.pacl{display:flex;justify-content:space-between;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#cdb7dc}.pacl b{font-size:14px;color:#fff}
 .favs{display:flex;gap:6px;margin:4px 0 8px}.fav{width:16px;height:16px;transform:rotate(45deg);border:2px solid #d9b2ff;border-radius:3px;background:transparent}.fav.on{background:radial-gradient(circle at 35% 35%,#fff,#c58cff 45%,#7a3fb0);box-shadow:0 0 8px #b77cff}
 .debt{display:flex;gap:3px;margin-top:4px}.debt i{flex:1;height:10px;border-radius:3px;background:rgba(255,255,255,.12)}.debt i.on{background:linear-gradient(#e0566f,#8e1f3a)}.debt.due i.on{box-shadow:0 0 6px #ff4d6d}.pacm .ko{color:#ff9aa9;margin-top:6px}
-.hc{position:relative}.hc>.ht[data-htit]{cursor:pointer;user-select:none}.hc>.ht[data-htit]:hover{color:var(--acc)}.hc>.ht[data-htit]:active{cursor:grabbing}.hc.fold{opacity:.78}.hc.fold:hover{opacity:1}.hgr{position:absolute;z-index:2;top:4px;right:4px;display:flex;align-items:center;gap:0;opacity:.35;transition:opacity .15s}.hc:hover .hgr,.hgr:focus-within{opacity:1}.hgrip{cursor:grab;padding:0 3px;font-size:15px;color:var(--muted);user-select:none}.hmv{min-height:22px;min-width:18px;padding:0 3px;font-size:15px;color:var(--muted)}.hc.dragging{opacity:.4}
-.hc.fold>:not(.ht):not(.hn):not(.hgr){display:none}.hc.fold{min-height:0}.hc.fold .hfo{transform:rotate(-90deg)}
+.hc{position:relative}.hc>.ht[data-htit]{cursor:pointer;user-select:none}.hc>.ht[data-htit]:hover{color:var(--acc)}.hc>.ht[data-htit]:active{cursor:grabbing}.hc.fold{opacity:.78}.hc.fold:hover{opacity:1}.hc.dragging{opacity:.4}
+.hc.fold>:not(.ht):not(.hn){display:none}.hc.fold{min-height:0}
 section.card h3.foldh{cursor:pointer;display:flex;align-items:center;gap:8px;user-select:none}section.card h3.foldh:hover{color:var(--acc)}section.rmod h3.foldh:active{cursor:grabbing}section.card.fold{opacity:.78}section.card.fold:hover{opacity:1}
 section.card.fold>:not(h3):not(.grip):not(.foldwrap),section.card.fold .foldwrap>:not(h3){display:none!important}section.card.fold h3.foldh{margin-bottom:0}
 .hc.k-sf{border-top-color:#3f7f8a}.sfl{display:flex;flex-direction:column;gap:4px}.sfl button{justify-content:space-between;border:1px solid var(--line);min-height:36px;width:100%}.sfl button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
@@ -874,8 +874,13 @@ function blank(n){return Array.from({length:n},()=>Array(n).fill(0))}
 let INI={o:[],cur:0,round:0};
 function encG(G,neg){return G.map(r=>r.map(v=>String.fromCharCode(neg?99+v:48+v)).join(''))}
 function decG(G,neg){return G.map(r=>typeof r==='string'?[...r].map(c=>c.charCodeAt(0)-(neg?99:48)):r)}
-function towns(){try{return JSON.parse(localStorage.getItem('luparis-towns'))||{}}catch(e){return{}}}
-function save(){if(MP.role==='player'){if(typeof mpPlayerSave==='function')mpPlayerSave();if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks();return}if(MP.role==='host'&&typeof mpPush==='function')mpPush();const st={v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV,objs:OBJS,tpls:TPLS};try{if(CTX){const o=towns();o[CTX]={...st,name:CTXN};localStorage.setItem('luparis-towns',JSON.stringify(o))}else localStorage.setItem('luparis-tac',JSON.stringify(st));localStorage.setItem('luparis-ctx',JSON.stringify(CTX?{id:CTX,n:CTXN}:null))}catch(e){}if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks()}
+function towns(){if(saveT)saveNow();try{return JSON.parse(localStorage.getItem('luparis-towns'))||{}}catch(e){return{}}}
+function save(){if(MP.role==='player'){if(typeof mpPlayerSave==='function')mpPlayerSave();if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks();return}if(MP.role==='host'&&typeof mpPush==='function')mpPush();if(saveT&&saveCtx!==CTX)saveNow();clearTimeout(saveT);saveT=setTimeout(saveNow,250);saveCtx=CTX;saveCtxN=CTXN;panelsSoon()}
+let saveT=0,saveCtx=null,saveCtxN='',panQ=false;
+// writing the whole map to storage is the costly part: done once the gesture settles, and flushed when the page is left
+function saveNow(){clearTimeout(saveT);saveT=0;if(MP.role==='player')return;const st={v:2,N,H:encG(H,1),F:encG(F,0),scene,tokens,rot,bio,ini:INI,marks:MARKS,env:ENV,objs:OBJS,tpls:TPLS};try{if(saveCtx){const o=towns();o[saveCtx]={...st,name:saveCtxN};localStorage.setItem('luparis-towns',JSON.stringify(o))}else localStorage.setItem('luparis-tac',JSON.stringify(st));localStorage.setItem('luparis-ctx',JSON.stringify(saveCtx?{id:saveCtx,n:saveCtxN}:null))}catch(e){}}
+function panelsSoon(){if(panQ)return;panQ=true;requestAnimationFrame(()=>{panQ=false;if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks()})}
+addEventListener('pagehide',()=>{if(saveT)saveNow();if(saveCT)saveCNow()});document.addEventListener('visibilitychange',()=>{if(document.hidden){if(saveT)saveNow();if(saveCT)saveCNow()}});
 function applyState(d){if(!(d&&d.H&&d.N))return false;N=d.N;H=decG(d.H,1);F=Array.isArray(d.F)&&d.F.length===d.N?decG(d.F,0):blank(d.N);if(d.scene)scene=d.scene;tokens=d.tokens||[];rot=d.rot||0;bio=B[d.bio]?d.bio:'gen';INI=d.ini&&Array.isArray(d.ini.o)?d.ini:{o:[],cur:0,round:0};MARKS=Array.isArray(d.marks)?d.marks:[];ENV=d.env&&typeof d.env==='object'?d.env:{};OBJS=Array.isArray(d.objs)?d.objs.filter(o=>o&&OBJT[o.k]):[];TPLS=Array.isArray(d.tpls)?d.tpls:[];return true}
 function load(){try{const c=JSON.parse(localStorage.getItem('luparis-ctx'));if(c&&c.id){const o=towns()[c.id];if(o&&applyState(o)){CTX=c.id;CTXN=c.n||o.name||'';return true}}}catch(e){}try{return applyState(JSON.parse(localStorage.getItem('luparis-tac')))}catch(e){}return false}
 function tid(){return 't'+Math.random().toString(36).slice(2,9)}
@@ -952,19 +957,24 @@ function ftex(f,t,x,y){const[cx,cy]=t[0];ctx.save();poly(t);ctx.clip();ctx.lineW
  else if(f===10){ctx.fillStyle='rgba(60,80,90,.35)';const[px,py]=inD(cx,cy,.3+rnd(x,y,1)*.4,.3+rnd(x,y,2)*.4);ctx.beginPath();ctx.ellipse(px,py,TW*.13,TW*.05,0,0,7);ctx.fill()}
  else if(f===11){ctx.fillStyle='rgba(80,60,35,.4)';for(let i=0;i<4;i++){const[px,py]=inD(cx,cy,.15+rnd(x,y,i)*.7,.15+rnd(x,y,i+6)*.7);ctx.fillRect(px,py,2,1.5)}}
  ctx.restore()}
-let drawQ=false;function draw(){if(drawQ)return;drawQ=true;requestAnimationFrame(()=>{drawQ=false;drawNow()})}
+let drawQ=false;let drawFull=false,DIRTY=null;
+function drawFrame(){drawQ=false;const f=drawFull;drawFull=false;drawNow(!f)}
+function draw(){drawFull=true;if(drawQ)return;drawQ=true;requestAnimationFrame(drawFrame)}
+// painting the terrain only re-renders the few tiles around the brush, clipped, in the cached scene
+function drawDirty(c){const r=[1e9,1e9,-1e9,-1e9];for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const x=c.x+i,y=c.y+j;if(x<0||y<0||x>=N||y>=N)continue;const[vx,vy]=view(x,y),[cx,cy]=scr(vx,vy,0);r[0]=Math.min(r[0],cx-TW/2-3);r[2]=Math.max(r[2],cx+TW/2+3);r[1]=Math.min(r[1],cy-LH*4-TW*.6);r[3]=Math.max(r[3],cy+TW/2+LH*3+3)}
+ DIRTY=DIRTY?[Math.min(DIRTY[0],r[0]),Math.min(DIRTY[1],r[1]),Math.max(DIRTY[2],r[2]),Math.max(DIRTY[3],r[3])]:r;if(drawQ)return;drawQ=true;requestAnimationFrame(drawFrame)}
 // ---- render cache: the scene is drawn once, hover/preview overlays are drawn on a copy
 const BC=document.createElement('canvas'),BX=BC.getContext('2d');let BOK=false,liteQ=false,BCAM=null,BHIDE=null,fullT=0;
 var PERF={mode:'auto',low:false,hist:[],warned:false};try{const m=localStorage.getItem('luparis-perf');if(m==='low'||m==='high')PERF.mode=m;PERF.low=m==='low'}catch(e){}
 // overscan: the scene is rendered with a margin around the view, so panning never shows an empty edge
 function ovs(){return Math.round(Math.min(PERF.low?260:420,Math.max(W,Hc)*(PERF.low?.25:.35)))}
-function baseBegin(){const dpr=W?cv.width/W:1,M=ovs(),w=Math.max(1,Math.round((W+2*M)*dpr)),h=Math.max(1,Math.round((Hc+2*M)*dpr));if(BC.width!==w||BC.height!==h){BC.width=w;BC.height=h}
+function baseBegin(part){const dpr=W?cv.width/W:1;if(part){const M=BCAM.M,q=v=>v*dpr;part=[Math.floor(q(part[0]+M))/dpr-M,Math.floor(q(part[1]+M))/dpr-M,Math.ceil(q(part[2]+M))/dpr-M,Math.ceil(q(part[3]+M))/dpr-M];BX.setTransform(dpr,0,0,dpr,M*dpr,M*dpr);ctx=BX;ctx.save();ctx.beginPath();ctx.rect(part[0],part[1],part[2]-part[0],part[3]-part[1]);ctx.clip();ctx.clearRect(part[0],part[1],part[2]-part[0],part[3]-part[1]);return M}const M=ovs(),w=Math.max(1,Math.round((W+2*M)*dpr)),h=Math.max(1,Math.round((Hc+2*M)*dpr));if(BC.width!==w||BC.height!==h){BC.width=w;BC.height=h}
  BX.setTransform(1,0,0,1,0,0);BX.clearRect(0,0,w,h);BX.setTransform(dpr,0,0,dpr,M*dpr,M*dpr);ctx=BX;return M}
 function baseEnd(M){const dpr=W?cv.width/W:1;BCAM={ox,oy,TW,W,Hc,N,rot,hide:BHIDE,M,dpr};BOK=!!(cv.width&&cv.height)}
-function drawOverlay(){if(BHIDE&&BCAM&&BCAM.hide===BHIDE){const k=tokens.find(x=>x.id===BHIDE);if(k)drawTokAt(k)}if(hover&&hover.x>=0&&hover.y>=0&&hover.x<N&&hover.y<N&&!(painting&&painting.area)){const[vx,vy]=view(hover.x,hover.y);poly(dia(vx,vy,Math.max(H[hover.x][hover.y],0)),'rgba(192,112,58,.32)','#c0703a',2)}
+function drawOverlay(){if(painting&&painting.area){const A=painting.area,x0=Math.max(0,Math.min(A.a.x,A.b.x)),x1=Math.min(N-1,Math.max(A.a.x,A.b.x)),y0=Math.max(0,Math.min(A.a.y,A.b.y)),y1=Math.min(N-1,Math.max(A.a.y,A.b.y));ctx.beginPath();for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const[vx,vy]=view(x,y),p=dia(vx,vy,Math.max(H[x][y],0));ctx.moveTo(p[0][0],p[0][1]);ctx.lineTo(p[1][0],p[1][1]);ctx.lineTo(p[2][0],p[2][1]);ctx.lineTo(p[3][0],p[3][1]);ctx.closePath()}ctx.fillStyle='rgba(192,112,58,.35)';ctx.fill();ctx.strokeStyle='#c0703a';ctx.lineWidth=1;ctx.stroke()}if(BHIDE&&BCAM&&BCAM.hide===BHIDE){const k=tokens.find(x=>x.id===BHIDE);if(k)drawTokAt(k)}if(hover&&hover.x>=0&&hover.y>=0&&hover.x<N&&hover.y<N&&!(painting&&painting.area)){const[vx,vy]=view(hover.x,hover.y);poly(dia(vx,vy,Math.max(H[hover.x][hover.y],0)),'rgba(192,112,58,.32)','#c0703a',2)}
  if(typeof drawTplGhost==='function')drawTplGhost();if(typeof drawPlacePreview==='function')drawPlacePreview();if(meas)drawMeas()}
 function baseFits(){return BOK&&BCAM&&BCAM.W===W&&BCAM.Hc===Hc&&BCAM.dpr===(W?cv.width/W:1)&&BCAM.N===N&&BCAM.rot===rot}
-function drawLiteNow(){if(!baseFits())return drawNow();if(BCAM.ox!==ox||BCAM.oy!==oy||BCAM.TW!==TW)return drawMoveNow();hoverInfo();ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(BC,0,0);ctx.restore();drawOverlay()}
+function drawLiteNow(){if(!baseFits())return drawNow();drawMoveNow()}
 function drawMoveNow(){if(!baseFits())return drawNow();const f=TW/BCAM.TW,dx=ox-BCAM.ox*f,dy=oy-BCAM.oy*f;hoverInfo();ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.restore();const m=BCAM.M;ctx.imageSmoothingEnabled=f!==1;ctx.drawImage(BC,0,0,BC.width,BC.height,dx-m*f,dy-m*f,(BCAM.W+2*m)*f,(BCAM.Hc+2*m)*f);ctx.imageSmoothingEnabled=true;drawOverlay()}
 let moveQ=false;function drawMove(){clearTimeout(fullT);fullT=setTimeout(draw,PERF.low?160:90);if(BCAM&&BCAM.TW===TW&&(Math.abs(ox-BCAM.ox)>BCAM.M*.8||Math.abs(oy-BCAM.oy)>BCAM.M*.8)){clearTimeout(fullT);draw();return}if(drawQ||moveQ)return;moveQ=true;requestAnimationFrame(()=>{moveQ=false;if(!drawQ)drawMoveNow()})}
 function drawLite(){if(drawQ||liteQ)return;liteQ=true;requestAnimationFrame(()=>{liteQ=false;if(!drawQ)drawLiteNow()})}
@@ -1046,10 +1056,10 @@ function hoverInfo(){const b=B[bio];if(hover){const ti=tokAt(hover),tk=ti>=0?tok
   info.textContent=(tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)} (${t('stop')}) · `:'')+(tk&&tk.nm?`${tr(tk.nm)} ${tk.num||''} · ${t('esq')} ${tk.esq} · ${t('thr')} ${tk.maj}/${tk.sev} · ${t('box')} ${tk.hp}/${tk.hpMax}`:`${tr(b.n)} · ${t('tile')} ${hover.x+1}, ${hover.y+1} — ${label(H[hover.x][hover.y],F[hover.x][hover.y])}${H[hover.x][hover.y]>0?' · '+tr(ELEV[H[hover.x][hover.y]]):''}${objAt(hover.x,hover.y)>=0?' · '+objName(OBJS[objAt(hover.x,hover.y)]):''}${envOf(hover.x+','+hover.y)?` · ${tr(ENVT[envOf(hover.x+','+hover.y).k].n)} : ${envRule(envOf(hover.x+','+hover.y))}`:''}`)}
  else info.textContent=tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)}. ${t('click_tile')}`:tool==='measure'?t('meas_hint'):t('hover')}
 let STBG='';
-function drawNow(){const T0=performance.now(),b=B[bio],lq=PERF.low,lod=TW>=9&&!lq,lodS=TW>=5;hoverInfo();{const bg=`radial-gradient(ellipse at 50% 40%,${mul(b.bg[0],.36)},${mul(b.bg[1],.24)})`;if(bg!==STBG){STBG=bg;stage.style.background=bg}}const MAINX=ctx,M=baseBegin();
- const spAnim=b.sp&&b.sp.k==='ember';BHIDE=drag!==null&&tokens[drag]?tokens[drag].id:null;const TKM=new Map();for(const k of tokens){if(k.id===BHIDE)continue;const a=tokAnchor(k),kk=a[0]+','+a[1];if(!TKM.has(kk))TKM.set(kk,[]);TKM.get(kk).push(k)}
- const OM=new Map();for(const o of OBJS)OM.set(o.x+','+o.y,o);
- for(const c of cells()){const h=H[c.x][c.y],{vx,vy}=c;{const sx=ox+(vx-vy)*TW/2,sy=oy+(vx+vy)*TW/4;if(sx<-M-TW||sx>W+M+TW||sy<-M-TW-LH*4||sy>Hc+M+TW+LH*3)continue}
+function drawNow(partOk){if(!W||!Hc)return;const T0=performance.now(),b=B[bio],lq=PERF.low,lod=TW>=9&&!lq,lodS=TW>=5;const part=partOk&&DIRTY&&baseFits()&&BCAM.ox===ox&&BCAM.oy===oy&&BCAM.TW===TW&&BCAM.hide===(drag!==null&&tokens[drag]?tokens[drag].id:null)?DIRTY:null;DIRTY=null;hoverInfo();{const bg=`radial-gradient(ellipse at 50% 40%,${mul(b.bg[0],.36)},${mul(b.bg[1],.24)})`;if(bg!==STBG){STBG=bg;stage.style.background=bg}}const MAINX=ctx,M=baseBegin(part);
+ const spAnim=b.sp&&b.sp.k==='ember';BHIDE=drag!==null&&tokens[drag]?tokens[drag].id:null;const TKM=new Map(),EM=new Map();for(const e in ENV){const i=e.indexOf(',');EM.set((+e.slice(0,i))*4096+(+e.slice(i+1)),ENV[e])}for(const k of tokens){if(k.id===BHIDE)continue;const a=tokAnchor(k),kk=a[0]*4096+a[1];if(!TKM.has(kk))TKM.set(kk,[]);TKM.get(kk).push(k)}
+ const CL=part?part[0]:-M,CR=part?part[2]:W+M,CT=part?part[1]:-M,CB=part?part[3]+TW*2:Hc+M;const OM=new Map();for(const o of OBJS)OM.set(o.x*4096+o.y,o);
+ for(const c of cells()){const h=H[c.x][c.y],{vx,vy}=c;{const sx=ox+(vx-vy)*TW/2,sy=oy+(vx+vy)*TW/4;if(sx<CL-TW||sx>CR+TW||sy<CT-TW-LH*4||sy>CB+TW+LH*3)continue}
   if(h<0)pit(c,h);
   else{const f=F[c.x][c.y],t=dia(vx,vy,h);if(h>0){const g=dia(vx,vy,0),sc=f===4?FW.side[h-1]:f===5?'#6a4a2e':FSIDE[f]?FSIDE[f]:b.side[h-1];
     poly([t[3],t[2],g[2],g[3]],mul(sc,.9),'rgba(0,0,0,.25)');poly([t[2],t[1],g[1],g[2]],mul(sc,.72),'rgba(0,0,0,.25)');
@@ -1058,13 +1068,13 @@ function drawNow(){const T0=performance.now(),b=B[bio],lq=PERF.low,lod=TW>=9&&!l
    if(f||h>0||!lod||!spAnim)tile(fc,lodS,tx,f,tx?(rnd(c.x,c.y,77)*TVAR|0):0,t[0][0],t[0][1]);
    else{poly(t,fc,lodS?'rgba(0,0,0,.14)':null);specks(t[0][0],t[0][1],c.x,c.y)}
    if(h>0){ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(...t[3]);ctx.lineTo(...t[0]);ctx.lineTo(...t[1]);ctx.stroke()}}
-  if(painting&&painting.area&&inArea(c,painting.area))poly(dia(vx,vy,Math.max(h,0)),'rgba(192,112,58,.35)','#c0703a',1);
+
   if(h>0&&!F[c.x][c.y]&&TW>=7&&!lq){const[cx,cy]=scr(vx,vy,h);deco(b.deco[h-1],cx,cy,h,c.x,c.y)}
-  {const ek=ENV[c.x+','+c.y];if(ek)drawEnv(ek,vx,vy,h,c.x,c.y)}
-  {const ob=OM.get(c.x+','+c.y);if(ob&&h>=0&&TW>=4)drawObj(ob,vx,vy,h)}
-  {const tl=TKM.get(c.x+','+c.y);if(tl)for(const k of tl)drawTokAt(k)}}
+  const ck=c.x*4096+c.y;{const ek=EM.get(ck);if(ek)drawEnv(ek,vx,vy,h,c.x,c.y)}
+  {const ob=OM.get(ck);if(ob&&h>=0&&TW>=4)drawObj(ob,vx,vy,h)}
+  {const tl=TKM.get(ck);if(tl)for(const k of tl)drawTokAt(k)}}
  drawFloat();if(typeof drawTpls==='function')drawTpls();drawMarks();
- ctx=MAINX;baseEnd(M);drawMoveNow();perfNote(performance.now()-T0);
+ if(part)ctx.restore();ctx=MAINX;baseEnd(M);drawMoveNow();if(!part)perfNote(performance.now()-T0);
  if(hasAnim()||(bio==='volcan'&&!reduce))requestAnimationFrame(tick)}
 function ctr(c){const[vx,vy]=view(c.x,c.y),h=Math.max(H[c.x][c.y],0);const[cx,cy]=scr(vx,vy,h);return[cx,cy+TW/4]}
 const ENVT={fire:{n:['Flames','Flammes'],c:'rgba(255,110,30,.5)',r:['Entering or starting a turn here: 1 box (Physical Resilience save DC 12 avoids it).','Entrer ou commencer son tour ici : 1 case (sauvegarde de Résistance physique DD 12 pour l\'éviter).']},
@@ -1195,11 +1205,11 @@ cv.addEventListener('pointerdown',e=>{const[mx,my]=pos(e),c=pick(mx,my);
  if(AREA_T.has(tool)&&!inv){painting={inv,area:{a:c,b:c}};draw();return}
  painting={inv};lastPainted='';apply(c,inv);draw()});
 cv.addEventListener('pointermove',e=>{if(pan){CAM.px+=e.clientX-pan.x;CAM.py+=e.clientY-pan.y;pan={x:e.clientX,y:e.clientY};camSet();drawMove();return}const[mx,my]=pos(e),c=pick(mx,my);hover=c;
- if(c&&held.size){const k=[...held].pop();setH(c,KH[k]);save()}
+ if(c&&held.size){const k=[...held].pop();setH(c,KH[k]);save();drawDirty(c)}
  if(meas&&meas.live&&c)meas.b=c;
  if(drag!==null&&c&&tokens[drag]){const k=tokens[drag],n=tfp(k),a=anchor(c,n);if((a.x!==k.x||a.y!==k.y)&&fits(a.x,a.y,n,k.id)){k.x=a.x;k.y=a.y;if(meas&&meas.drag)meas.b={x:c.x,y:c.y}}}
  else if(painting&&painting.area&&c)painting.area.b=c;
- else if(painting&&c&&(tool==='up'||tool==='down'||tool==='flat'||tool==='env'))apply(c,painting.inv);if(!painting&&!held.size&&(drag===null||(BCAM&&tokens[drag]&&BCAM.hide===tokens[drag].id)))drawLite();else draw()});
+ else if(painting&&c&&(tool==='up'||tool==='down'||tool==='flat'||tool==='env')){apply(c,painting.inv);drawDirty(c);return}if((!painting||painting.area)&&!held.size&&(drag===null||(BCAM&&tokens[drag]&&BCAM.hide===tokens[drag].id)))drawLite();else draw()});
 const end=()=>{if(drag!==null)setTimeout(draw,0);if(painting&&painting.area){areaApply(painting.area);painting=null;save();draw();return}if(pan){pan=null;cv.style.cursor=tool==='move'?'grab':'crosshair';return}if(drag!==null&&meas&&meas.drag&&meas.a.x===meas.b.x&&meas.a.y===meas.b.y&&tokens[drag]){selTok=tokens[drag].id;renderTok()}if(painting||drag!==null)save();painting=null;drag=null;if(meas){meas.live=false;if(meas.drag){meas=null;draw()}}};
 cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
 cv.addEventListener('pointerleave',()=>{hover=null;drawLite()});
@@ -1536,7 +1546,10 @@ let CH;try{CH=JSON.parse(localStorage.getItem('luparis-chars'))}catch(e){}
 if(!CH||!Array.isArray(CH.list)||!CH.list.length){let old;try{old=JSON.parse(localStorage.getItem('luparis-sheet'))}catch(e){}CH={list:[old&&old.cells?old:demoC()],active:null}}
 for(const c of CH.list){if(!c.prof)c.prof={arm:armNeed(c.armor||'none'),shd:c.shield&&c.shield!=='none'?1:0};if(c.sch&&c.sch.apex!=null){if(c.sch.apex>0&&!c.apex)c.apex=c.sch.apex;delete c.sch.apex}if(c.apex==null)c.apex=0;for(const k of Object.keys(FAM))if(c.fam&&c.fam[k]==null)c.fam[k]=0;if(!c.id)c.id=tid();if(c.camp==null)c.camp=c.demo?(lang==='fr'?'Exemple':'Example'):'';if(!c.used)c.used={hp:0,mana:0,st:0};if(!c.st)c.st=stFromCells(c.cells);if(!c.tal||typeof c.tal!=='object')c.tal={};for(const k in c.tal)if(!TAL[k])delete c.tal[k];if(c.pas){c.tal.pas=Math.max(c.tal.pas||0,c.pas)}delete c.pas;if(!Array.isArray(c.sf))c.sf=[];if(!Array.isArray(c.stances))c.stances=[];syncCells(c)}
 let C=CH.list.find(c=>c.id===CH.active)||CH.list[0];campSync();if(!CH.list.some(c=>c.id===CH.active))CH.active=null;
-function saveC(){if(MP.role==='player'){if(typeof mpSendChar==='function')mpSendChar()}else{try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}if(MP.role==='host'&&typeof mpPush==='function')mpPush()}if(typeof renderPlace==='function')renderPlace();if(typeof renderHand==='function')renderHand()}
+var saveCT=0,handQ=0,handGen=0;
+function saveCNow(){clearTimeout(saveCT);saveCT=0;try{localStorage.setItem('luparis-chars',JSON.stringify(CH))}catch(e){}}
+function saveC(){if(MP.role==='player'){if(typeof mpSendChar==='function')mpSendChar()}else{clearTimeout(saveCT);saveCT=setTimeout(saveCNow,250);if(MP.role==='host'&&typeof mpPush==='function')mpPush()}if(typeof renderPlace==='function')renderPlace();
+ if(typeof renderHand==='function'&&!handQ){const g=handGen;handQ=requestAnimationFrame(()=>{handQ=0;if(handGen===g)renderHand()})}}
 const lvl=(c=C)=>Math.max(1,Math.floor((+c.xp||0)/100)),mb=tier=>tier>0?tier+1:0,sgn=v=>(v>=0?'+':'')+v;
 function discs(c=C){return[...Object.keys(c.sch).map(k=>['sch',k,c.sch[k]]),...Object.keys(c.fam).map(k=>['fam',k,c.fam[k]]),['apx','apex',c.apex||0]].filter(d=>d[2]>0).sort((a,b)=>b[2]-a[2])}
 function discCost(c=C){return discs(c).reduce((s,d,i)=>s+Math.round(COST.tier[d[2]]*COST.mult[Math.min(i,3)]),0)}
@@ -1697,9 +1710,6 @@ function invCards(c){const v=invOf(c),g=v.gold,ti=lang==='fr'?1:0,a=ARM[c.armor]
  return[eq,inv]}
 
 $('c_wfam').addEventListener('change',renderSheet);
-const MODS0=['mx','dv','sch','fam','apx','def','res','atk','log','inv','notes'];
-function layGet(){try{return JSON.parse(localStorage.getItem('luparis-sheet-layout'))||{}}catch(e){return{}}}
-function laySave(o){try{localStorage.setItem('luparis-sheet-layout',JSON.stringify(o))}catch(e){}}
 function layApply(){document.querySelectorAll('#c_mods .scolh').forEach(h=>{h.textContent=lang==='fr'?h.dataset.fr:h.dataset.en})}
 layApply();
 
@@ -1709,7 +1719,6 @@ $('c_prof').addEventListener('click',e=>{const b=e.target.closest('button[data-p
 $('c_prof').addEventListener('change',e=>{if(e.target.dataset.prof!=='shd'||!C)return;C.prof=C.prof||{arm:0,shd:0};C.prof.shd=e.target.checked?1:0;C.demo=false;saveC();renderSheet()});
 $('c_armor').addEventListener('change',e=>{C.armor=e.target.value;C.demo=false;saveC();renderSheet()});
 $('c_shield').addEventListener('change',e=>{C.shield=e.target.value;C.demo=false;saveC();renderSheet()});
-$('c_tgt').addEventListener('input',()=>{});
 $('c_wf').addEventListener('submit',e=>{e.preventDefault();const n=$('c_wn').value.trim();if(!n)return;C.weapons.push({n,f:$('c_wfam').value,s:$('c_wsz').value});$('c_wn').value='';saveC();renderSheet()});
 T.en.sk_confirm2='Confirm: erase the sheet?';T.fr.sk_confirm2='Confirmer : effacer la fiche ?';
 
@@ -1834,7 +1843,7 @@ function hKey(h){const m=/class="hc (k-[a-z]+)/.exec(h),cl=m?m[1]:'k';if(['k-def
 function hOrder(c,cards){const L=cards.map(h=>({k:hKey(h),h})),o=Array.isArray(c.corder)?c.corder:[],ix=k=>{const i=o.indexOf(k);return i<0?1e3:i};L.forEach((x,i)=>x.i=i);L.sort((a,b)=>ix(a.k)-ix(b.k)||a.i-b.i);
  return L.map(x=>x.h.replace(/^<div class="hc /,`<div data-ck="${esc(x.k)}" class="hc ${FOLD['c:'+x.k]?'fold ':''}`).replace('<div class="ht">',`<div class="ht" data-htit="1" role="button" tabindex="0" aria-expanded="${!FOLD['c:'+x.k]}" title="${L2('Click to fold · hold and drag to move','Clic pour réduire · maintenir et glisser pour déplacer')}">`))}
 function hSaveOrder(c){const box=document.querySelector('#hand .hcards');if(!box)return;c.corder=[...box.children].map(x=>x.dataset.ck).filter(Boolean);saveC()}
-function renderHand(){const P=document.getElementById('hand');if(!P)return;const c=handChar();
+function renderHand(){handGen++;const P=document.getElementById('hand');if(!P)return;const c=handChar();
  const sel=`<label class="hsel"><span>${L2('Character','Personnage')}</span><select id="h_ch"><option value="">—</option>${CH.list.map(x=>`<option value="${esc(x.id)}"${c&&c.id===x.id?' selected':''}>${esc(x.name||'?')}${x.camp?' · '+esc(x.camp):''}</option>`).join('')}</select></label>`;
  if(!c){P.innerHTML=`<div class="hhead"><h3>${L2('Ability cards','Cartes de capacités')}</h3>${sel}</div><p class="small">${L2('Pick a character, or select a character token on the map.','Choisis un personnage, ou sélectionne le pion d\'un personnage sur la carte.')}</p>`;return}
  const D=derived(c),u=c.used||(c.used={hp:0,mana:0,st:0}),manaL=D.mana-u.mana,stL=D.st-u.st;const cards=[];
@@ -2330,7 +2339,7 @@ function foldApply(root){(root||document).querySelectorAll('section.card').forEa
 function foldToggle(sec){const k=foldKey(sec);FOLD[k]=!FOLD[k];if(!FOLD[k])delete FOLD[k];foldSave();foldApply(sec.parentNode)}
 document.addEventListener('click',e=>{const h=e.target.closest('h3.foldh');if(!h||e.target.closest('button,a,input,select,textarea,label'))return;const sec=h.closest('section.card');if(sec)foldToggle(sec)});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('h3.foldh')){e.preventDefault();const sec=e.target.closest('section.card');if(sec)foldToggle(sec)}});
-new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&(n.matches('section.card,h3')||n.querySelector&&n.querySelector('section.card'))){foldApply();return}}).observe(document.body,{childList:true,subtree:true});
+let foldQ=false;new MutationObserver(ms=>{if(foldQ)return;for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1&&(n.matches('section.card,h3')||n.querySelector&&n.querySelector('section.card'))){foldQ=true;requestAnimationFrame(()=>{foldQ=false;foldApply()});return}}).observe(document.body,{childList:true,subtree:true});
 setTimeout(foldApply,0);
 legend();layout();
 }
