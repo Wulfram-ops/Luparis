@@ -380,19 +380,26 @@ function monBlockHTML(m, D, tk, LU) {
     f = fpNum(m.fp),
     T = monTier(f),
     key = tk ? tk.id : m.id;
-  SBA = LU && LU.atk && LU.atk.length
-    ? LU.atk.map(a => ({
-        n: P(a.n),
-        ab: a.ab,
-        nd: a.nd,
-        dd: a.dd,
-        mod: a.mod,
-        ty: P(a.ty),
-        how: P(a.how),
-        plus: a.plus ? P(a.plus) : '',
-        rest: P(a.rest),
-      }))
-    : monAtk(m).map(a => ({ n: (a.n || '') + (a.k > 1 ? ' ×' + a.k : ''), ab: a.ab, nd: a.nd, dd: a.dd, mod: a.mod }));
+  SBA =
+    LU && LU.atk && LU.atk.length
+      ? LU.atk.map(a => ({
+          n: P(a.n),
+          ab: a.ab,
+          nd: a.nd,
+          dd: a.dd,
+          mod: a.mod,
+          ty: P(a.ty),
+          how: P(a.how),
+          plus: a.plus ? P(a.plus) : '',
+          rest: P(a.rest),
+        }))
+      : monAtk(m).map(a => ({
+          n: (a.n || '') + (a.k > 1 ? ' ×' + a.k : ''),
+          ab: a.ab,
+          nd: a.nd,
+          dd: a.dd,
+          mod: a.mod,
+        }));
   const stat = (k, val) => `<div><span>${k}</span><b>${val}</b></div>`,
     line = (k, x) => (x ? `<p><span class="mk">${k}</span> ${esc(x)}</p>` : ''),
     list = (h, a, sec) =>
@@ -436,7 +443,9 @@ function monBlockHTML(m, D, tk, LU) {
       ];
     h +=
       `<table class="msm"><thead><tr><th></th>${Dm.map(([n, k]) => `<th${(LU.sv || []).includes(k) ? ` class="sv" title="${L2('Mastered saving throws', 'Sauvegardes maîtrisées')}"` : ''}>${n}</th>`).join('')}</tr></thead><tbody>` +
-      I.map((n, i) => `<tr><th>${n}</th>${[0, 1, 2].map(j => `<td>${sgn(LU.mx[i * 3 + j])}</td>`).join('')}</tr>`).join('') +
+      I.map((n, i) => `<tr><th>${n}</th>${[0, 1, 2].map(j => `<td>${sgn(LU.mx[i * 3 + j])}</td>`).join('')}</tr>`).join(
+        '',
+      ) +
       `</tbody></table>`;
     if ((LU.sv || []).length)
       h += `<p class="msn">${L2('● mastered saving throws: add the Mastery', '● sauvegardes maîtrisées : ajoute la Maîtrise')}</p>`;
@@ -467,11 +476,17 @@ function monBlockHTML(m, D, tk, LU) {
       list(L2('Actions', 'Actions'), LU.act, 'act') +
       list(L2('Reactions', 'Réactions'), LU.rea, 'rea') +
       list(L2('Legendary actions (3 per round)', 'Actions légendaires (3 par round)'), LU.leg, 'leg');
-  } else if ((m.tr || []).length) h += list(L2('Traits', 'Capacités'), (m.tr || []).map(([n, d]) => [n, n, d, d]));
+  } else if ((m.tr || []).length)
+    h += list(
+      L2('Traits', 'Capacités'),
+      (m.tr || []).map(([n, d]) => [n, n, d, d]),
+    );
   if (!LU && noT(m)) h += `<p class="msn">${esc(noT(m))}</p>`;
   if (D) {
     const raw = (t, a) =>
-      a && a.length ? `<p class="msn"><b>${t}</b></p>` + a.map(([n, d]) => `<p><i>${esc(n)}.</i> ${esc(d)}</p>`).join('') : '';
+      a && a.length
+        ? `<p class="msn"><b>${t}</b></p>` + a.map(([n, d]) => `<p><i>${esc(n)}.</i> ${esc(d)}</p>`).join('')
+        : '';
     h += `<details class="msraw"><summary>${L2('Original SRD 5.1 text (D&D values)', 'Texte original du SRD 5.1 (valeurs D&D, en anglais)')}</summary>
    <p>${L2('AC', 'CA')} ${m.ca} · ${L2('HP', 'PV')} ${m.pv}${D.hd ? ' (' + esc(D.hd) + ')' : ''} · ${['STR', 'DEX', 'CON', 'INT', 'WIS', 'CHA'].map((k, i) => k + ' ' + (D.ab || [])[i]).join(' · ')}</p>${raw('Traits', D.tr)}${raw('Actions', D.act)}${raw('Reactions', D.rea)}${raw('Legendary', D.leg)}</details>
    <p class="msn">${L2('Contains SRD 5.1 content (CC BY 4.0), converted to the Luparis rules.', 'Contient du contenu du SRD 5.1 (CC BY 4.0), converti aux règles de Luparis.')}</p>`;

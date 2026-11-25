@@ -35,16 +35,17 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 
 ## 1. Prochaines étapes (dans l'ordre)
 
-### 1.1 Rôles MJ / joueur / spectateur
-- Rôle choisi en rejoignant la partie ; le MJ peut changer le rôle d'un participant.
-- Côté joueur : masquer notes de séance, PV et seuils des monstres, fiches de monstres, secrets, repères et zones non révélés.
-- Côté spectateur : lecture seule, aucun jet ni déplacement.
-- Ajouter un état « révélé / caché » aux repères, zones, objets et tokens (bascule MJ en un clic).
+### 1.1 Rôles MJ / joueur / spectateur — fait le 25 novembre
+- Le joueur choisit son nom et son rôle (joueur ou spectateur) en rejoignant ; le MJ voit la liste, change un rôle ou retire quelqu'un.
+- L'hôte filtre ce qu'il envoie : rien de ce qui est caché, aucun chiffre de monstre (Esquive, seuils, cases, notes), seulement « indemne / blessé / à terre ». Jets secrets du MJ en option.
+- Outil 👁 Cacher (MJ) : token, objet, repère, danger ou zone ; le MJ le voit en transparence.
+- Spectateur : lecture seule (ni jet, ni déplacement, ni personnage).
+- Reste : brouillard de guerre (zones de carte non révélées).
 
 ### 1.2 Multijoueur fiable
 - **Envoyer des différences, pas l'état complet** : aujourd'hui l'hôte renvoie carte + personnages + jets à chaque changement (200 ms de regroupement). Passer à des messages ciblés (`terrain` par cases, `token` par id, `ini`, `roll`) avec un numéro de révision ; état complet seulement à la connexion et en secours.
 - Curseurs et sélections des autres participants (couleur par joueur, envoi limité à ~15 fois par seconde).
-- Reconnexion automatique (relance de la connexion PeerJS, reprise avec le même personnage).
+- ~~Reconnexion automatique~~ fait le 25 novembre : le joueur réessaie seul et reprend son personnage ; si le MJ recharge sa page, la partie se rouvre avec le même code.
 - Conflits d'édition : l'hôte fait foi ; chaque objet porte une révision, la plus récente validée par l'hôte gagne ; verrou léger pendant qu'un token est tenu.
 - Identité des joueurs : aujourd'hui un joueur se déclare sur un personnage. Lier la connexion à un personnage (fait en partie) puis, avec la connexion Google, à un compte.
 

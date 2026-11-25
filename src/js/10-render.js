@@ -932,7 +932,16 @@ function doorAxis(x, y) {
   const alongX = gx || !gy;
   return (alongX ? 0 : 1) ^ (rot % 2);
 }
-function drawObj(o, vx, vy, h) {
+// hidden from players: the GM sees it faded
+function drawObj(a, ...r) {
+  if (!(a && a.hid)) return drawObj0(a, ...r);
+  ctx.save();
+  ctx.globalAlpha *= 0.4;
+  const v = drawObj0(a, ...r);
+  ctx.restore();
+  return v;
+}
+function drawObj0(o, vx, vy, h) {
   const [cx, cy] = scr(vx, vy, h),
     Z = LH,
     k = o.k;
@@ -1401,9 +1410,11 @@ function hoverInfo() {
     } else
       info.textContent =
         (tool === 'place' && placing ? `${t('placing')}: ${tr(placing.n)} (${t('stop')}) · ` : '') +
-        (tk && tk.nm
-          ? `${tr(tk.nm)} ${tk.num || ''} · ${t('esq')} ${tk.esq} · ${t('thr')} ${tk.maj}/${tk.sev} · ${t('box')} ${tk.hp}/${tk.hpMax}`
-          : `${tr(b.n)} · ${t('tile')} ${hover.x + 1}, ${hover.y + 1} — ${label(H[hover.x][hover.y], F[hover.x][hover.y])}${H[hover.x][hover.y] > 0 ? ' · ' + tr(ELEV[H[hover.x][hover.y]]) : ''}${objAt(hover.x, hover.y) >= 0 ? ' · ' + objName(OBJS[objAt(hover.x, hover.y)]) : ''}${envOf(hover.x + ',' + hover.y) ? ` · ${tr(ENVT[envOf(hover.x + ',' + hover.y).k].n)} : ${envRule(envOf(hover.x + ',' + hover.y))}` : ''}`);
+        (tk && tk.nm && tk.st
+          ? `${tr(tk.nm)} ${tk.num || ''} · ${tk.st === 'd' ? L2('down', 'à terre') : tk.st === 'b' ? L2('wounded', 'blessé') : L2('unhurt', 'indemne')}`
+          : tk && tk.nm
+            ? `${tr(tk.nm)} ${tk.num || ''} · ${t('esq')} ${tk.esq} · ${t('thr')} ${tk.maj}/${tk.sev} · ${t('box')} ${tk.hp}/${tk.hpMax}`
+            : `${tr(b.n)} · ${t('tile')} ${hover.x + 1}, ${hover.y + 1} — ${label(H[hover.x][hover.y], F[hover.x][hover.y])}${H[hover.x][hover.y] > 0 ? ' · ' + tr(ELEV[H[hover.x][hover.y]]) : ''}${objAt(hover.x, hover.y) >= 0 ? ' · ' + objName(OBJS[objAt(hover.x, hover.y)]) : ''}${envOf(hover.x + ',' + hover.y) ? ` · ${tr(ENVT[envOf(hover.x + ',' + hover.y).k].n)} : ${envRule(envOf(hover.x + ',' + hover.y))}` : ''}`);
   } else
     info.textContent =
       tool === 'place' && placing
@@ -1654,7 +1665,16 @@ function drawFloat() {
   }
   FLOATQ = [];
 }
-function drawEnv(k, vx, vy, h, x, y) {
+// hidden from players: the GM sees it faded
+function drawEnv(a, ...r) {
+  if (!(a && a.hid)) return drawEnv0(a, ...r);
+  ctx.save();
+  ctx.globalAlpha *= 0.4;
+  const v = drawEnv0(a, ...r);
+  ctx.restore();
+  return v;
+}
+function drawEnv0(k, vx, vy, h, x, y) {
   k = (k && k.k) || k;
   const e = ENVT[k];
   if (!e) return;
@@ -1794,6 +1814,7 @@ function drawMarks() {
     const [x, y] = ctr(m),
       s = Math.max(10, TW * 0.2);
     ctx.save();
+    if (m.hid) ctx.globalAlpha *= 0.4;
     ctx.strokeStyle = '#2a1a33';
     ctx.lineWidth = 2;
     ctx.beginPath();

@@ -126,12 +126,34 @@ def run(chrome: str | None) -> None:
         host.evaluate("DBG('mpHost()')")
         host.wait_for_timeout(400)
         code = host.evaluate("DBG('MP.code')")
+        host.evaluate(
+            "DBG(`tokens.push({id:'f1',x:1,y:1,t:'foe',n:'G1',nm:'Gob',esq:12,maj:8,sev:16,hp:2,hpMax:4,mid:'x',no:'secret'},"
+            "{id:'h1',x:3,y:3,t:'foe',n:'H'}); tokens[tokens.length-1].hid=1; MP.secret=true; pushRoll('<b>7</b>','GM'); MP.secret=false`)"
+        )
         player = ctx.new_page()
         player.goto(url + "?debug=1&local=1")
         player.wait_for_timeout(800)
         player.evaluate(f"DBG(\"mpJoin('{code}')\")")
         player.wait_for_timeout(1000)
         check("player joins the game", player.evaluate("DBG('MP.got')") is True)
+        seen = player.evaluate("DBG('JSON.stringify(tokens.filter(k=>k.t===\\'foe\\'))')")
+        check(
+            "players see no hidden token nor monster numbers",
+            '"f1"' in seen and '"h1"' not in seen and "hpMax" not in seen and "secret" not in seen and '"st":"b"' in seen,
+            seen,
+        )
+        check("secret GM rolls stay secret", player.evaluate("DBG('RL.some(r=>r.s===\\'GM\\')')") is False)
+        spec = ctx.new_page()
+        spec.goto(url + "?debug=1&local=1")
+        spec.wait_for_timeout(800)
+        spec.evaluate(f"DBG(\"mpJoin('{code}',{{role:'spec',name:'Bob'}})\")")
+        spec.wait_for_timeout(800)
+        spec.evaluate("DBG(`pushRoll('<b>99</b>','Spec')`)")
+        host.wait_for_timeout(400)
+        check(
+            "spectators watch without acting",
+            spec.evaluate("DBG('MP.prole')") == "spec" and not host.evaluate("DBG('RL.some(r=>r.s===\\'Spec\\')')"),
+        )
         player.evaluate("""DBG(`pushRoll('<b>18</b><img src=x onerror="window.PWN=1">','Test')`)""")
         host.wait_for_timeout(500)
         got = host.evaluate("DBG('RL[0].h')")

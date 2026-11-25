@@ -156,27 +156,77 @@ document.getElementById('sn_card').addEventListener('click', e => {
 });
 snRender();
 
-// ---- multiplayer (test): host = GM, players join with a code. PeerJS (WebRTC) or ?local=1 (BroadcastChannel, same browser)
+// ---- multiplayer: host = GM, players and spectators join with a code. PeerJS (WebRTC) or ?local=1 (BroadcastChannel, same browser)
+// The host sends each participant a filtered view: hidden items, monster numbers and secret GM rolls never leave the GM's computer.
 MP.uid = Math.random().toString(36).slice(2, 10);
 MP.local = /[?&]local=1/.test(location.search);
+MP.prole = 'player';
+MP.secret = false;
+MP.tries = 0;
+const MPK = 'luparis-mp-join',
+  MPH = 'luparis-mp-host';
+function ssGet(k) {
+  try {
+    return JSON.parse(sessionStorage.getItem(k) || 'null');
+  } catch (e) {
+    return null;
+  }
+}
+function ssSet(k, v) {
+  try {
+    if (v == null) sessionStorage.removeItem(k);
+    else sessionStorage.setItem(k, JSON.stringify(v));
+  } catch (e) {}
+}
+// what players and spectators may see of the table
+function mpView(st, rolls) {
+  const hid = new Set(st.tokens.filter(k => k.hid).map(k => k.id)),
+    tokens = st.tokens
+      .filter(k => !k.hid)
+      .map(k => {
+        if (k.t === 'pj' || k.cid) return k;
+        const o = { id: k.id, x: k.x, y: k.y, t: k.t, n: k.n };
+        for (const f of ['sz', 'ab', 'ty', 'nm', 'num', 'img', 'r']) if (k[f] != null) o[f] = k[f];
+        if (k.hpMax) o.st = k.hp <= 0 ? 'd' : k.hp * 2 <= k.hpMax ? 'b' : 'ok';
+        if (k.hp === 0) o.hp = 0;
+        return o;
+      }),
+    o = st.ini && Array.isArray(st.ini.o) ? st.ini.o : [],
+    cur = o[st.ini.cur],
+    io = o.filter(e => !hid.has(e.id)),
+    env = {};
+  for (const e in st.env || {}) if (!(st.env[e] && st.env[e].hid)) env[e] = st.env[e];
+  let ci = cur ? io.indexOf(cur) : 0;
+  if (ci < 0) ci = Math.max(0, io.findIndex((e, i) => o.indexOf(e) > st.ini.cur) - 1);
+  return {
+    ...st,
+    tokens,
+    ini: { ...st.ini, o: io, cur: ci },
+    marks: (st.marks || []).filter(m => !m.hid),
+    objs: (st.objs || []).filter(x => !x.hid),
+    tpls: (st.tpls || []).filter(x => !x.hid),
+    env,
+    rolls: (rolls || []).filter(r => !r.gm).slice(0, 40),
+  };
+}
 function mpState() {
-  return { type: 'state', map: memStateNow(), chars: CH.list, rolls: RL.slice(0, 40), code: MP.code };
+  const v = mpView(memStateNow(), RL);
+  return { type: 'state', map: { ...v, rolls: undefined }, chars: CH.list, rolls: v.rolls, code: MP.code };
 }
 function mpSend(o, conn) {
-  const txt = o;
   if (MP.local) {
-    MP.bc && MP.bc.postMessage(JSON.stringify({ ...o, from: MP.uid }));
+    MP.bc && MP.bc.postMessage(JSON.stringify({ ...o, from: MP.uid, ...(conn && conn.uid ? { to: conn.uid } : {}) }));
     return;
   }
   if (MP.role === 'host') {
     for (const c of conn ? [conn] : MP.conns)
       if (c.open)
         try {
-          c.send(txt);
+          c.send(o);
         } catch (e) {}
   } else if (MP.conn && MP.conn.open)
     try {
-      MP.conn.send(txt);
+      MP.conn.send(o);
     } catch (e) {}
 }
 let mpT = null;
@@ -186,7 +236,7 @@ function mpPush() {
   mpT = setTimeout(() => mpSend(mpState()), 200);
 }
 function mpPlayerSave() {
-  if (!MP.me) return;
+  if (!MP.me || MP.prole === 'spec') return;
   mpSend({
     type: 'tokens',
     me: MP.me,
@@ -194,6 +244,7 @@ function mpPlayerSave() {
   });
 }
 function mpSendChar() {
+  if (MP.prole === 'spec') return;
   const c = CH.list.find(x => x.id === MP.me);
   if (c) mpSend({ type: 'char', c });
 }
@@ -225,15 +276,48 @@ function cleanCharPatch(c) {
   if (Array.isArray(c.corder)) o.corder = c.corder.slice(0, 40).map(x => S(x, 40));
   return o;
 }
+function mpTaken(id, conn) {
+  return MP.conns.some(c => c !== conn && c.open && c.me === id);
+}
+function mpYou(conn, msg) {
+  mpSend({ type: 'you', role: conn.prole, me: conn.me || null, msg: msg || '' }, conn);
+}
 function mpHostMsg(m, conn) {
+  conn = conn || {};
   if (m.type === 'hello') {
+    conn.pname = String(m.name || '').slice(0, 30) || L2('Player', 'Joueur');
+    conn.prole = m.role === 'spec' ? 'spec' : 'player';
+    const id = String(m.me || '');
+    // the same person coming back (reload, lost network) takes their character back from the dead connection
+    for (const c of MP.conns)
+      if (c !== conn && c.me === id && c.pname === conn.pname) {
+        c.me = null;
+        if (!MP.local)
+          try {
+            c.close();
+          } catch (e) {}
+      }
+    conn.me = conn.prole === 'player' && id && CH.list.some(c => c.id === id) && !mpTaken(id, conn) ? id : null;
     mpSend(mpState(), conn);
+    mpYou(conn);
+    mpRender();
     return;
   }
-  if (conn && (m.type === 'tokens' || m.type === 'char')) {
+  if (conn.prole === 'spec') return;
+  if (m.type === 'claim') {
+    const id = String(m.me || '');
+    if (!id) conn.me = null;
+    else if (!CH.list.some(c => c.id === id)) return;
+    else if (mpTaken(id, conn))
+      return mpYou(conn, L2('Someone already plays this character.', 'Quelqu’un joue déjà ce personnage.'));
+    else conn.me = id;
+    mpYou(conn);
+    mpRender();
+    return;
+  }
+  if (m.type === 'tokens' || m.type === 'char') {
     const id = m.type === 'tokens' ? m.me : m.c && m.c.id;
-    if (!conn.me) conn.me = id;
-    else if (conn.me !== id) return;
+    if (!id || conn.me !== id) return;
   }
   if (m.type === 'tokens') {
     for (const u of m.t || []) {
@@ -266,10 +350,28 @@ function mpHostMsg(m, conn) {
     }
   }
 }
+function mpSetRole(r) {
+  MP.prole = r === 'spec' ? 'spec' : 'player';
+  document.body.classList.toggle('mp-spec', MP.prole === 'spec');
+}
+function mpRemember() {
+  if (MP.role === 'player') ssSet(MPK, { code: MP.code, name: MP.name || '', role: MP.prole, me: MP.me || '' });
+}
 function mpClientMsg(m) {
   if (m.type === 'closed') {
+    MP.closed = true;
     mpRender(L2('The game master closed the game.', 'Le MJ a fermé la partie.'));
+    ssSet(MPK, null);
     setTimeout(mpLeave, 1500);
+    return;
+  }
+  if (m.type === 'you') {
+    mpSetRole(m.role);
+    MP.me = MP.prole === 'spec' ? null : m.me || null;
+    handId = MP.me;
+    mpRemember();
+    renderHand();
+    mpRender(m.msg || undefined);
     return;
   }
   if (m.type !== 'state') return;
@@ -301,6 +403,7 @@ function mpClientMsg(m) {
 function mpStop() {
   if (MP.role !== 'host') return;
   clearTimeout(mpT);
+  ssSet(MPH, null);
   mpSend({ type: 'closed' });
   setTimeout(() => {
     for (const c of MP.conns)
@@ -329,6 +432,8 @@ function mpStop() {
   }, 300);
 }
 function mpLeave() {
+  MP.closed = true;
+  ssSet(MPK, null);
   try {
     MP.conn && MP.conn.close();
     MP.peer && MP.peer.destroy();
@@ -351,107 +456,205 @@ function mpCode() {
   const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({ length: 6 }, () => A[Math.floor(Math.random() * A.length)]).join('');
 }
-async function mpHost() {
-  MP.code = mpCode();
+const MP_NOLIB = () =>
+  L2(
+    'Could not load the connection library (check your internet).',
+    'Impossible de charger la bibliothèque de connexion (vérifie ta connexion internet).',
+  );
+async function mpHost(code) {
+  MP.code = code || mpCode();
   MP.role = 'host';
   MP.conns = [];
   document.body.classList.add('mp-host');
+  ssSet(MPH, { code: MP.code, local: MP.local });
   mpRender(L2('Opening…', 'Ouverture…'));
   if (MP.local) {
     MP.bc = new BroadcastChannel('luparis-mp-' + MP.code);
+    MP.lc = {};
     MP.bc.onmessage = e => {
       const m = JSON.parse(e.data);
       if (m.from === MP.uid) return;
+      const c = (MP.lc[m.from] = MP.lc[m.from] || { open: false, uid: m.from });
       if (m.type === 'hello') {
-        MP.n++;
-        mpRender();
+        MP.n = Object.keys(MP.lc).length;
+        MP.conns = Object.values(MP.lc);
       }
-      mpHostMsg(m);
+      mpHostMsg(m, c);
     };
     mpRender();
     return;
   }
   try {
     await mpLoadPeer();
+  } catch (e) {
+    MP.role = null;
+    document.body.classList.remove('mp-host');
+    ssSet(MPH, null);
+    return mpRender(MP_NOLIB());
+  }
+  const open = () => {
     MP.peer = new Peer('luparis-' + MP.code);
-    MP.peer.on('open', () => mpRender());
-    MP.peer.on('error', e => mpRender(L2('Connection error: ', 'Erreur de connexion : ') + (e.type || e)));
+    MP.peer.on('open', () => {
+      MP.tries = 0;
+      mpRender('');
+    });
+    MP.peer.on('disconnected', () => {
+      if (MP.role === 'host')
+        try {
+          MP.peer.reconnect();
+        } catch (e) {}
+    });
+    MP.peer.on('error', e => {
+      // after a reload, the old code can stay reserved for a few seconds: try again
+      if (e.type === 'unavailable-id' && MP.role === 'host' && MP.tries++ < 15) {
+        mpRender(L2('Reopening the game…', 'Réouverture de la partie…'));
+        try {
+          MP.peer.destroy();
+        } catch (x) {}
+        setTimeout(open, 2000);
+        return;
+      }
+      mpRender(L2('Connection error: ', 'Erreur de connexion : ') + (e.type || e));
+    });
     MP.peer.on('connection', conn => {
       MP.conns.push(conn);
+      conn.on('data', m => mpHostMsg(m, conn));
       conn.on('open', () => {
         MP.n = MP.conns.filter(c => c.open).length;
         mpRender();
-        mpSend(mpState(), conn);
       });
-      conn.on('data', m => mpHostMsg(m, conn));
       conn.on('close', () => {
         MP.conns = MP.conns.filter(c => c !== conn);
         MP.n = MP.conns.filter(c => c.open).length;
         mpRender();
       });
     });
-  } catch (e) {
-    MP.role = null;
-    document.body.classList.remove('mp-host');
-    mpRender(
-      L2(
-        'Could not load the connection library (check your internet).',
-        'Impossible de charger la bibliothèque de connexion (vérifie ta connexion internet).',
-      ),
-    );
-  }
+  };
+  open();
 }
-async function mpJoin(code) {
+function mpConnect() {
+  const code = MP.code;
+  MP.conn = MP.peer.connect('luparis-' + code, { reliable: true, serialization: 'json' });
+  MP.conn.on('open', () => {
+    MP.tries = 0;
+    mpSend({ type: 'hello', name: MP.name || '', role: MP.prole, me: MP.me || '' });
+  });
+  MP.conn.on('data', mpClientMsg);
+  MP.conn.on('close', mpRetry);
+  MP.conn.on('error', mpRetry);
+}
+// lost connection: try again with growing pauses, until it works or the player leaves
+function mpRetry() {
+  if (MP.closed || MP.role !== 'player' || MP.retrying) return;
+  MP.retrying = true;
+  const wait = Math.min(10, 1 + MP.tries++ * 2);
+  mpRender(L2(`Connection lost, trying again in ${wait} s…`, `Connexion perdue, nouvel essai dans ${wait} s…`));
+  setTimeout(() => {
+    MP.retrying = false;
+    if (MP.closed) return;
+    try {
+      if (!MP.peer || MP.peer.destroyed) {
+        MP.peer = new Peer();
+        MP.peer.on('open', mpConnect);
+        MP.peer.on('error', mpRetry);
+        MP.peer.on('disconnected', () => {
+          try {
+            MP.peer.reconnect();
+          } catch (e) {}
+        });
+      } else if (MP.peer.disconnected) {
+        MP.peer.reconnect();
+        setTimeout(mpConnect, 800);
+      } else mpConnect();
+    } catch (e) {
+      mpRetry();
+    }
+  }, wait * 1000);
+}
+async function mpJoin(code, opt) {
   code = String(code || '')
     .trim()
     .toUpperCase();
   if (!code) return;
+  opt = opt || {};
   MP.code = code;
   MP.role = 'player';
+  MP.name = String(opt.name || '').slice(0, 30);
+  MP.me = opt.me || null;
   MP.got = false;
+  MP.closed = false;
+  mpSetRole(opt.role);
   document.body.classList.add('mp-player');
+  mpRemember();
   mpRender(L2('Connecting…', 'Connexion…'));
   if (MP.local) {
     MP.bc = new BroadcastChannel('luparis-mp-' + code);
     MP.bc.onmessage = e => {
       const m = JSON.parse(e.data);
-      if (m.from === MP.uid) return;
+      if (m.from === MP.uid || (m.to && m.to !== MP.uid)) return;
       mpClientMsg(m);
     };
-    mpSend({ type: 'hello' });
+    mpSend({ type: 'hello', name: MP.name, role: MP.prole, me: MP.me || '' });
     return;
   }
   try {
     await mpLoadPeer();
-    MP.peer = new Peer();
-    MP.peer.on('error', e => mpRender(L2('Connection error: ', 'Erreur de connexion : ') + (e.type || e)));
-    MP.peer.on('open', () => {
-      MP.conn = MP.peer.connect('luparis-' + code, { reliable: true, serialization: 'json' });
-      MP.conn.on('open', () => mpSend({ type: 'hello' }));
-      MP.conn.on('data', mpClientMsg);
-      MP.conn.on('close', () => mpRender(L2('The game master closed the game.', 'Le MJ a fermé la partie.')));
-    });
   } catch (e) {
-    mpRender(
-      L2(
-        'Could not load the connection library (check your internet).',
-        'Impossible de charger la bibliothèque de connexion (vérifie ta connexion internet).',
-      ),
-    );
+    return mpRender(MP_NOLIB());
   }
+  MP.peer = new Peer();
+  MP.peer.on('error', e => {
+    if (e.type === 'peer-unavailable') mpRetry();
+    else mpRender(L2('Connection error: ', 'Erreur de connexion : ') + (e.type || e));
+  });
+  MP.peer.on('disconnected', () => {
+    if (MP.closed) return;
+    try {
+      MP.peer.reconnect();
+    } catch (e) {}
+  });
+  MP.peer.on('open', mpConnect);
 }
+const ROLE_N = { player: ['Player', 'Joueur'], spec: ['Spectator', 'Spectateur'] };
 function mpRender(msg) {
   const B = document.getElementById('mp_box');
   if (!B) return;
   if (msg !== undefined) MP.msg = msg;
-  const link = location.origin + location.pathname + '?join=' + MP.code + (MP.local ? '&local=1' : '') + '#carte';
+  const saved = ssGet(MPK) || {};
   if (!MP.role)
-    B.innerHTML = `<p class="small">${L2('Test version: the game master opens a game, players join with the code. Your own data stays untouched on each computer.', 'Version de test : le MJ ouvre une partie, les joueurs entrent le code. Les données de chacun restent intactes sur son ordinateur.')}</p><div class="row"><button type="button" class="go" id="mp_host">${L2('Open a game (GM)', 'Ouvrir une partie (MJ)')}</button></div><form class="row" id="mp_jf"><input id="mp_code" placeholder="${L2('Code', 'Code')}" maxlength="8" size="8" aria-label="Code"><button type="submit">${L2('Join', 'Rejoindre')}</button></form>`;
-  else if (MP.role === 'host')
-    B.innerHTML = `<p>${L2('Game open, code', 'Partie ouverte, code')} <b class="mpcode">${MP.code}</b></p><p class="small">${L2('Players connected', 'Joueurs connectés')} : <b>${MP.n || 0}</b></p><div class="row"><button type="button" id="mp_link">${L2('Copy the invitation link', "Copier le lien d'invitation")}</button><button type="button" id="mp_stop">${L2('Close the game', 'Fermer la partie')}</button></div>`;
-  else
-    B.innerHTML = `<p>${L2('Connected to game', 'Connecté à la partie')} <b class="mpcode">${MP.code}</b>${MP.got ? '' : ' …'}</p><label class="small">${L2('My character', 'Mon personnage')} <select id="mp_me"><option value="">—</option>${CH.list.map(c => `<option value="${esc(c.id)}"${c.id === MP.me ? ' selected' : ''}>${esc(c.name || '?')}</option>`).join('')}</select></label><p class="small">${L2('You can move your own token, roll, and use your cards. The game master does the rest.', 'Tu peux déplacer ton pion, lancer les dés et utiliser tes cartes. Le MJ gère le reste.')}</p><div class="row"><button type="button" id="mp_leave">${L2('Leave', 'Quitter')}</button></div>`;
-  if (MP.msg) B.insertAdjacentHTML('beforeend', `<p class="small mpmsg">${esc(MP.msg)}</p>`);
+    B.innerHTML = `<p class="small">${L2('The game master opens a game; players and spectators join with the code. Everyone keeps their own data on their computer.', 'Le MJ ouvre une partie ; joueurs et spectateurs entrent le code. Chacun garde ses données sur son ordinateur.')}</p><div class="row"><button type="button" class="go" id="mp_host">${L2('Open a game (GM)', 'Ouvrir une partie (MJ)')}</button></div><form class="mpj" id="mp_jf"><input id="mp_name" placeholder="${L2('Your name', 'Ton nom')}" maxlength="30" value="${esc(saved.name || '')}" aria-label="${L2('Your name', 'Ton nom')}"><input id="mp_code" placeholder="${L2('Code', 'Code')}" maxlength="8" size="8" aria-label="Code"><select id="mp_role" aria-label="${L2('Role', 'Rôle')}"><option value="player">${L2('Player', 'Joueur')}</option><option value="spec">${L2('Spectator', 'Spectateur')}</option></select><button type="submit">${L2('Join', 'Rejoindre')}</button></form>`;
+  else if (MP.role === 'host') {
+    const P = MP.conns.filter(c => c.open || MP.local);
+    B.innerHTML = `<p>${L2('Game open, code', 'Partie ouverte, code')} <b class="mpcode">${MP.code}</b></p>
+<ul class="mppl">${
+      P.length
+        ? P.map((c, i) => {
+            const ch = c.me && CH.list.find(x => x.id === c.me);
+            return `<li><b>${esc(c.pname || '?')}</b> <span class="small">${ch ? esc(ch.name || '?') : c.prole === 'spec' ? '' : L2('no character yet', 'pas encore de personnage')}</span><select data-mpr="${i}" aria-label="${L2('Role of', 'Rôle de')} ${esc(c.pname || '')}">${Object.entries(
+              ROLE_N,
+            )
+              .map(([k, v]) => `<option value="${k}"${c.prole === k ? ' selected' : ''}>${L2(...v)}</option>`)
+              .join(
+                '',
+              )}</select><button type="button" data-mpk="${i}" title="${L2('Remove from the game', 'Retirer de la partie')}" aria-label="${L2('Remove', 'Retirer')} ${esc(c.pname || '')}">×</button></li>`;
+          }).join('')
+        : `<li class="small">${L2('Nobody yet.', 'Personne pour l’instant.')}</li>`
+    }</ul>
+<label class="small mpsec"><input type="checkbox" id="mp_secret"${MP.secret ? ' checked' : ''}> ${L2('My rolls stay secret', 'Mes jets restent secrets')}</label>
+<p class="small">${L2('Players never see what you hide (eye tool), nor monster numbers. They see whether a monster is hurt.', 'Les joueurs ne voient jamais ce que tu caches (outil œil), ni les chiffres des monstres. Ils voient seulement si un monstre est blessé.')}</p>
+<div class="row"><button type="button" id="mp_link">${L2('Copy the invitation link', "Copier le lien d'invitation")}</button><button type="button" id="mp_stop">${L2('Close the game', 'Fermer la partie')}</button></div>`;
+  } else {
+    const spec = MP.prole === 'spec';
+    B.innerHTML = `<p>${L2('Connected to game', 'Connecté à la partie')} <b class="mpcode">${MP.code}</b>${MP.got ? '' : ' …'} · ${L2(...ROLE_N[MP.prole])}</p>${
+      spec
+        ? `<p class="small">${L2('You follow the game without acting on it.', 'Tu suis la partie sans y agir.')}</p>`
+        : `<label class="small">${L2('My character', 'Mon personnage')} <select id="mp_me"><option value="">—</option>${CH.list.map(c => `<option value="${esc(c.id)}"${c.id === MP.me ? ' selected' : ''}>${esc(c.name || '?')}</option>`).join('')}</select></label><p class="small">${L2('You can move your own token, roll, and use your cards. The game master does the rest.', 'Tu peux déplacer ton pion, lancer les dés et utiliser tes cartes. Le MJ gère le reste.')}</p>`
+    }<div class="row"><button type="button" id="mp_leave">${L2('Leave', 'Quitter')}</button></div>`;
+  }
+  if (MP.msg) B.insertAdjacentHTML('beforeend', `<p class="small mpmsg" aria-live="polite">${esc(MP.msg)}</p>`);
+}
+function mpHostPeople() {
+  return MP.conns.filter(c => c.open || MP.local);
 }
 document.getElementById('mp_card').addEventListener('click', e => {
   const b = e.target.closest('button');
@@ -459,7 +662,19 @@ document.getElementById('mp_card').addEventListener('click', e => {
   if (b.id === 'mp_host') mpHost();
   else if (b.id === 'mp_stop') mpStop();
   else if (b.id === 'mp_leave') mpLeave();
-  else if (b.id === 'mp_link') {
+  else if (b.dataset.mpk != null) {
+    const c = mpHostPeople()[+b.dataset.mpk];
+    if (!c) return;
+    mpSend({ type: 'closed' }, c);
+    setTimeout(() => {
+      try {
+        c.close && c.close();
+      } catch (x) {}
+    }, 300);
+    MP.conns = MP.conns.filter(x => x !== c);
+    if (MP.lc) delete MP.lc[c.uid];
+    mpRender();
+  } else if (b.id === 'mp_link') {
     const link = location.origin + location.pathname + '?join=' + MP.code + (MP.local ? '&local=1' : '') + '#carte';
     navigator.clipboard.writeText(link).then(
       () => mpRender(L2('Link copied.', 'Lien copié.')),
@@ -470,18 +685,41 @@ document.getElementById('mp_card').addEventListener('click', e => {
 document.getElementById('mp_card').addEventListener('submit', e => {
   if (e.target.id !== 'mp_jf') return;
   e.preventDefault();
-  mpJoin(document.getElementById('mp_code').value);
+  mpJoin(document.getElementById('mp_code').value, {
+    name: document.getElementById('mp_name').value,
+    role: document.getElementById('mp_role').value,
+  });
 });
 document.getElementById('mp_card').addEventListener('change', e => {
+  if (e.target.id === 'mp_secret') {
+    MP.secret = e.target.checked;
+    return;
+  }
+  if (e.target.dataset.mpr != null) {
+    const c = mpHostPeople()[+e.target.dataset.mpr];
+    if (!c) return;
+    c.prole = e.target.value === 'spec' ? 'spec' : 'player';
+    if (c.prole === 'spec') c.me = null;
+    mpYou(c);
+    mpRender();
+    return;
+  }
   if (e.target.id !== 'mp_me') return;
   MP.me = e.target.value || null;
   handId = MP.me;
   selTok = null;
+  mpSend({ type: 'claim', me: MP.me || '' });
+  mpRemember();
   renderHand();
   mpRender();
 });
 mpRender();
 {
-  const j = /[?&]join=([A-Z0-9]+)/i.exec(location.search);
-  if (j) setTimeout(() => mpJoin(j[1]), 300);
+  const j = /[?&]join=([A-Z0-9]+)/i.exec(location.search),
+    s = ssGet(MPK),
+    h = ssGet(MPH);
+  // a reload keeps the game going: the GM reopens the same code, players come back with the same character
+  if (j) setTimeout(() => mpJoin(j[1], s && s.code === j[1].toUpperCase() ? s : {}), 300);
+  else if (s && s.code) setTimeout(() => mpJoin(s.code, s), 300);
+  else if (h && h.code && !!h.local === MP.local) setTimeout(() => mpHost(h.code), 300);
 }

@@ -30,7 +30,16 @@ function imgShrink(file, cb) {
   };
   fr.readAsDataURL(file);
 }
-function drawTok(k, vx, vy, h, sc = 1) {
+// hidden from players: the GM sees it faded
+function drawTok(a, ...r) {
+  if (!(a && a.hid)) return drawTok0(a, ...r);
+  ctx.save();
+  ctx.globalAlpha *= 0.4;
+  const v = drawTok0(a, ...r);
+  ctx.restore();
+  return v;
+}
+function drawTok0(k, vx, vy, h, sc = 1) {
   const [cx, cy] = scr(vx, vy, h);
   const y = cy + TW / 4,
     r = TW * 0.24 * (sc > 1 ? sc * 0.82 : sc);
@@ -449,12 +458,39 @@ function label(h, f) {
   const L = B[bio].L;
   return h === 0 ? t('ground') : h > 0 ? `${tr(L[h])} (+${h})` : `${tr(L['m' + -h])} (${h})`;
 }
+// GM: hide something from players, or show it again (token, object, marker, hazard, zone)
+function hideToggle(c) {
+  const tg = x => {
+    if (x.hid) delete x.hid;
+    else x.hid = 1;
+    save();
+    draw();
+    if (typeof renderIni === 'function') renderIni();
+    return true;
+  };
+  const i = tokAt(c);
+  if (i >= 0) return tg(tokens[i]);
+  const o = objAt(c.x, c.y);
+  if (o >= 0) return tg(OBJS[o]);
+  const m = MARKS.find(m => m.x === c.x && m.y === c.y);
+  if (m) return tg(m);
+  const e = ENV[c.x + ',' + c.y];
+  if (e) return tg(e);
+  for (let j = TPLS.length - 1; j >= 0; j--)
+    if (tplCells(TPLS[j]).some(([x, y]) => x === c.x && y === c.y)) return tg(TPLS[j]);
+  return false;
+}
 function apply(c, inv) {
   const key = c.x + ',' + c.y;
   if (painting && lastPainted === key) return;
   lastPainted = key;
   const h = H[c.x][c.y];
   let t = tool;
+  if (t === 'hide') {
+    painting = null;
+    hideToggle(c);
+    return;
+  }
   if (inv && t !== 'mark') {
     if (t === 'up') t = 'down';
     else if (t === 'down') t = 'up';

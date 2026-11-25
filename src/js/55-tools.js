@@ -433,6 +433,10 @@ function toolHint() {
     flat: ['Click or drag: back to ground level.', 'Clic ou glisser : remet au niveau du sol.'],
     measure: ['Drag from one tile to another.', "Glisse d'une case à l'autre."],
     mark: ['Click to drop a marker.', 'Clique pour poser un repère.'],
+    hide: [
+      'Click a token, object, marker, hazard or zone: hidden from players, or shown again.',
+      'Clique sur un token, un objet, un repère, un danger ou une zone : caché aux joueurs, ou de nouveau visible.',
+    ],
     surf: ['Paint the chosen surface.', 'Peins la surface choisie.'],
     env: ['Paint a hazard with its DC.', 'Peins un danger avec son DD.'],
     tpl: [
@@ -621,7 +625,16 @@ function tplLabel(T) {
   const n = tplTokens(T).length;
   return `${tr(TPLK[T.k])} ${T.s} ft · ${n} ${L2(n === 1 ? 'target' : 'targets', n > 1 ? 'cibles' : 'cible')}`;
 }
-function drawTpl(T, ghost) {
+// hidden from players: the GM sees it faded
+function drawTpl(a, ...r) {
+  if (!(a && a.hid)) return drawTpl0(a, ...r);
+  ctx.save();
+  ctx.globalAlpha *= 0.4;
+  const v = drawTpl0(a, ...r);
+  ctx.restore();
+  return v;
+}
+function drawTpl0(T, ghost) {
   const col = TPLC[T.k] || '255,140,40';
   for (const [x, y] of tplCells(T)) {
     const [vx, vy] = view(x, y),

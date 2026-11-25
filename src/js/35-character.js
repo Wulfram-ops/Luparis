@@ -808,7 +808,7 @@ function rlRender() {
   el.innerHTML = RL.length
     ? RL.map(
         (r, i) =>
-          `<li class="${i === 0 ? 'new' : ''}"><span class="rlw">${new Date(r.t).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}${r.s ? ' · ' + esc(r.s) : ''}</span>${r.h}</li>`,
+          `<li class="${i === 0 ? 'new' : ''}"><span class="rlw">${new Date(r.t).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}${r.s ? ' · ' + esc(r.s) : ''}${r.gm ? ' · 🔒' : ''}</span>${r.h}</li>`,
       ).join('')
     : `<li class="small">${t('sk_nolog')}</li>`;
 }
@@ -842,9 +842,10 @@ function safeRoll(h) {
 }
 function pushRoll(h, src, remote) {
   if (remote) h = safeRoll(h);
-  RL.unshift({ h, s: src || '', t: Date.now() });
+  RL.unshift({ h, s: src || '', t: Date.now(), ...(MP.role === 'host' && MP.secret && !remote ? { gm: 1 } : {}) });
   if (RL.length > 40) RL.length = 40;
-  if (MP.role === 'player' && !remote && typeof mpSend === 'function') mpSend({ type: 'roll', h, s: src || '' });
+  if (MP.role === 'player' && MP.prole !== 'spec' && !remote && typeof mpSend === 'function')
+    mpSend({ type: 'roll', h, s: src || '' });
   if (MP.role !== 'player') lsSet('luparis-rolls', RL);
   if (MP.role === 'host' && typeof mpPush === 'function') mpPush();
   if (!rlOpen) {
