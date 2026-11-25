@@ -33,6 +33,7 @@ function applyLang() {
   renderIni();
   renderTok();
   renderRes();
+  rlRender();
   if(typeof playLabels==='function'&&$('play_workspace')?.dataset.ready){playLabels();playSync();playFit();mpRender();}
   if (WS) wRender();
   draw();
@@ -236,7 +237,7 @@ function kbRows() {
   if (v === 'carte') {
     r[1] = [...document.querySelectorAll('#tools button')];
     r[2] = ['pl_q', 'in_roll', 'in_next', 'in_end'].map(id => $(id));
-    r[3] = ['zout', 'zin', 'zfit', 'undo', 'gen', 'savemap'].map(id => $(id));
+    r[3] = [() => zoomAt(1 / 1.4, W / 2, Hc / 2), () => zoomAt(1.4, W / 2, Hc / 2), fitMap, $('undo'), $('gen'), $('savemap')];
   } else if (v === 'monde') {
     r[1] = [...document.querySelectorAll('#w_layers input')];
     r[2] = ['w_fit', 'w_zout', 'w_zin', 'w_goparty'].map(id => $(id)).filter(Boolean);
@@ -261,7 +262,7 @@ function kbHints() {
     [3, KROW3],
   ].forEach(([n, codes]) =>
     r[n].forEach((el, i) => {
-      if (el && codes[i]) {
+      if (el instanceof Element && codes[i]) {
         const tgt = el.tagName === 'INPUT' && el.type === 'checkbox' ? el.closest('label') || el : el;
         tgt.setAttribute('data-kb', klab(codes[i]));
       }
@@ -295,7 +296,8 @@ document.addEventListener(
       if (!el) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      if (el.tagName === 'INPUT' && el.type === 'checkbox') {
+      if (typeof el === 'function') el();
+      else if (el.tagName === 'INPUT' && el.type === 'checkbox') {
         el.checked = !el.checked;
         el.dispatchEvent(new Event('change', { bubbles: true }));
       } else if (el.tagName === 'INPUT' || el.tagName === 'SELECT') el.focus();

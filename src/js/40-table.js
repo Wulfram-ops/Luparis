@@ -31,7 +31,6 @@ Object.assign(T.en, {
   scene: 'Scene',
   m_sz: 'Size',
   szn: { T: 'Tiny (½ square)', S: 'Small', M: 'Medium', L: 'Large (2×2)', H: 'Huge (3×3)', G: 'Gargantuan (4×4)' },
-  z_fit: 'Fit',
   z_out: 'Zoom out',
   scn: {
     forest_clearing: 'Forest clearing',
@@ -98,7 +97,6 @@ Object.assign(T.fr, {
     H: 'Très grande (3×3)',
     G: 'Gigantesque (4×4)',
   },
-  z_fit: 'Ajuster',
   z_out: 'Dézoomer',
   scn: {
     forest_clearing: 'Clairière',

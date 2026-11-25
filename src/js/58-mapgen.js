@@ -907,6 +907,7 @@ function mgBuild(r,seed=(Math.random()*4294967296)>>>0,preview=false) {
 function mgCommit(candidate){
   if(MP.role==='player')return false;
   mgRestore(candidate.state);NZ=null;
+  hover=null;meas=null;TPLA=null;
   hist.push(candidate.before);if(hist.length>60)hist.shift();
   MG.seed=candidate.seed;
   CAM.z=1;CAM.px=0;CAM.py=0;
@@ -1199,22 +1200,42 @@ Design for tactical play: honor explicit quantities, directions, negative requir
 
 Description: ${JSON.stringify(String(text).slice(0, 1800))}`;
 }
-// ---- UI: a line in the map toolbar
+// ---- description-based generator in the map library
 function mgMsg(m) {
   const el = document.getElementById('mg_msg');
   if (el) el.textContent = m;
 }
-function mgRenderCandidate(candidate){
-  const d=JSON.parse(candidate.state),cv=$('mg_thumb'),ctx=cv.getContext('2d'),n=d.N,t=cv.width/n;
-  const floors=['#7d9564','#ad9570','#a9a5a0','#b1855f','#494b50','#6f6a65','#6b9b5d','#b8b4aa','#9d9d88','#c7b288','#888f8c','#99744e','#9b8f76','#8a8176'];
+function paintMapPreview(d, canvas){
+  const ctx=canvas.getContext('2d'),n=d.N,t=canvas.width/n,b=B[d.bio]||B.gen;
+  const water={water:['#6da3bd','#32668b'],ice:['#9ccbe6','#79a9ca'],lava:['#e67a32','#cb4b23'],swamp:['#586b3a','#3f5434'],sand:['#c79a5a','#aa7f47'],chasm:['#403833','#2b2622']}[b.pit];
+  ctx.save();
+  ctx.translate(canvas.width/2,canvas.height/2);
+  ctx.rotate(d.rot*Math.PI/2);
+  ctx.translate(-canvas.width/2,-canvas.height/2);
   for(let x=0;x<n;x++)for(let y=0;y<n;y++){
-    const h=d.H[x][y],f=d.F[x][y];
-    ctx.fillStyle=h<0?(h===-1?'#6da3bd':'#32668b'):h>=2?'#42434b':h===1?'#a1967e':floors[f]||floors[0];
+    const h=d.H[x][y],f=d.F[x][y],shade=(x+y)%2;
+    ctx.fillStyle=h<0?water[-h-1]:FC[f]?.[shade]||(h>0?b.top[h-1]:b.g[shade]);
     ctx.fillRect(x*t,y*t,t+.5,t+.5);
+  }
+  if(n<=32){
+    ctx.beginPath();
+    for(let i=1;i<n;i++){
+      const p=i*t;
+      ctx.moveTo(p,0);ctx.lineTo(p,canvas.height);
+      ctx.moveTo(0,p);ctx.lineTo(canvas.width,p);
+    }
+    ctx.strokeStyle='rgba(20,18,14,.16)';
+    ctx.lineWidth=1;
+    ctx.stroke();
   }
   for(const key in d.env){const [x,y]=key.split(',').map(Number);ctx.fillStyle='#dc9d3b99';ctx.fillRect(x*t,y*t,t,t);}
   for(const o of d.objs){ctx.fillStyle=o.k==='door'?'#f2d19a':o.hid?'#b47ed6':'#5b4734';ctx.fillRect((o.x+.2)*t,(o.y+.2)*t,t*.6,t*.6);}
   for(const k of d.tokens){ctx.fillStyle=k.cid?'#4e9ee9':k.hid?'#b47ed6':'#e06055';ctx.beginPath();ctx.arc((k.x+.5)*t,(k.y+.5)*t,Math.max(2,t*.4),0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+}
+function mgRenderCandidate(candidate){
+  const d=JSON.parse(candidate.state);
+  paintMapPreview(d,$('mg_thumb'));
   $('mg_details').textContent=d.N+'×'+d.N+' · '+d.objs.length+' '+L2('objects','objets')+' · '+d.tokens.length+' '+L2('tokens','pions')+' · '+L2('Seed','Graine')+' '+candidate.seed+(candidate.issues.length?' · '+L2('Not placed: ','Non placés : ')+candidate.issues.join(', '):'');
 }
 function mgCandidate(newSeed=false){
@@ -1275,7 +1296,7 @@ function mgApplyPreview(){
   }catch(e){mgMsg(L2('Generation failed; map unchanged: ','Échec de génération ; carte inchangée : ')+e.message);}
 }
 {
-  const g = document.getElementById('gen').parentNode;
+  const g = $('map_custom');
   g.insertAdjacentHTML(
     'beforeend',
     `<form id="mg_f" class="mgf"><input id="mg_q" type="text" maxlength="1800" autocomplete="off" placeholder="${L2('Describe the scene: ruined temple in the forest…', 'Décris la scène : temple en ruines dans la forêt…')}" aria-label="${L2('Describe the scene', 'Décris la scène')}"><button type="submit" class="go">${L2('Prepare', 'Préparer')}</button><select id="mg_engine" aria-label="Mode"><option value="auto">${L2('AI / auto','IA / auto')}</option><option value="local">${L2('Local','Local')}</option></select><button type="button" id="mg_cancel" hidden>${L2('Cancel','Annuler')}</button><button type="button" id="mg_again" title="${L2('Another version of the same recipe', 'Une autre version de la même recette')}">↻</button><button type="button" id="mg_set" title="${L2('AI key', 'Clé IA')}" aria-label="${L2('AI key', 'Clé IA')}">⚙</button><span class="small" id="mg_msg" aria-live="polite"></span><div id="mg_preview" hidden><strong id="mg_source"></strong><div class="mgpreviewbody"><canvas id="mg_thumb" width="320" height="320" aria-label="${L2('Generated map preview','Aperçu de la carte générée')}"></canvas><div><p id="mg_plan"></p><p id="mg_details" class="small" aria-live="polite"></p><p class="small">${L2('Top view: grey walls, blue water, brown objects, red enemies, purple hidden, blue allies.','Vue du dessus : murs gris, eau bleue, objets bruns, ennemis rouges, secrets violets, alliés bleus.')}</p></div></div><label>${L2('Size','Taille')} <select id="mg_size"><option value="">${L2('Automatic','Automatique')}</option><option value="small">16×16</option><option value="medium">24×24</option><option value="large">32×32</option><option value="huge">64×64</option></select></label><button type="button" class="go" id="mg_apply">${L2('Apply / replace map','Appliquer / remplacer la carte')}</button><button type="button" id="mg_discard">${L2('Discard','Abandonner')}</button></div></form>`,

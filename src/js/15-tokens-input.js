@@ -976,15 +976,13 @@ document.getElementById('rot').onclick = () => {
   save();
   draw();
 };
-document.getElementById('zin').onclick = () => zoomAt(1.4, W / 2, Hc / 2);
-document.getElementById('zout').onclick = () => zoomAt(1 / 1.4, W / 2, Hc / 2);
-document.getElementById('zfit').onclick = () => {
+function fitMap() {
   CAM.z = 1;
   CAM.px = 0;
   CAM.py = 0;
   camSet();
   draw();
-};
+}
 document.getElementById('undo').onclick = () => {
   const s = hist.pop();
   if (!s) return;

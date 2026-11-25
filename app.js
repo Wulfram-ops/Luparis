@@ -3721,15 +3721,13 @@ document.getElementById('rot').onclick = () => {
   save();
   draw();
 };
-document.getElementById('zin').onclick = () => zoomAt(1.4, W / 2, Hc / 2);
-document.getElementById('zout').onclick = () => zoomAt(1 / 1.4, W / 2, Hc / 2);
-document.getElementById('zfit').onclick = () => {
+function fitMap() {
   CAM.z = 1;
   CAM.px = 0;
   CAM.py = 0;
   camSet();
   draw();
-};
+}
 document.getElementById('undo').onclick = () => {
   const s = hist.pop();
   if (!s) return;
@@ -7657,7 +7655,6 @@ Object.assign(T.en, {
   scene: 'Scene',
   m_sz: 'Size',
   szn: { T: 'Tiny (½ square)', S: 'Small', M: 'Medium', L: 'Large (2×2)', H: 'Huge (3×3)', G: 'Gargantuan (4×4)' },
-  z_fit: 'Fit',
   z_out: 'Zoom out',
   scn: {
     forest_clearing: 'Forest clearing',
@@ -7724,7 +7721,6 @@ Object.assign(T.fr, {
     H: 'Très grande (3×3)',
     G: 'Gigantesque (4×4)',
   },
-  z_fit: 'Ajuster',
   z_out: 'Dézoomer',
   scn: {
     forest_clearing: 'Clairière',
@@ -10284,6 +10280,7 @@ function applyLang() {
   renderIni();
   renderTok();
   renderRes();
+  rlRender();
   if(typeof playLabels==='function'&&$('play_workspace')?.dataset.ready){playLabels();playSync();playFit();mpRender();}
   if (WS) wRender();
   draw();
@@ -10487,7 +10484,7 @@ function kbRows() {
   if (v === 'carte') {
     r[1] = [...document.querySelectorAll('#tools button')];
     r[2] = ['pl_q', 'in_roll', 'in_next', 'in_end'].map(id => $(id));
-    r[3] = ['zout', 'zin', 'zfit', 'undo', 'gen', 'savemap'].map(id => $(id));
+    r[3] = [() => zoomAt(1 / 1.4, W / 2, Hc / 2), () => zoomAt(1.4, W / 2, Hc / 2), fitMap, $('undo'), $('gen'), $('savemap')];
   } else if (v === 'monde') {
     r[1] = [...document.querySelectorAll('#w_layers input')];
     r[2] = ['w_fit', 'w_zout', 'w_zin', 'w_goparty'].map(id => $(id)).filter(Boolean);
@@ -10512,7 +10509,7 @@ function kbHints() {
     [3, KROW3],
   ].forEach(([n, codes]) =>
     r[n].forEach((el, i) => {
-      if (el && codes[i]) {
+      if (el instanceof Element && codes[i]) {
         const tgt = el.tagName === 'INPUT' && el.type === 'checkbox' ? el.closest('label') || el : el;
         tgt.setAttribute('data-kb', klab(codes[i]));
       }
@@ -10546,7 +10543,8 @@ document.addEventListener(
       if (!el) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      if (el.tagName === 'INPUT' && el.type === 'checkbox') {
+      if (typeof el === 'function') el();
+      else if (el.tagName === 'INPUT' && el.type === 'checkbox') {
         el.checked = !el.checked;
         el.dispatchEvent(new Event('change', { bubbles: true }));
       } else if (el.tagName === 'INPUT' || el.tagName === 'SELECT') el.focus();
@@ -11649,8 +11647,7 @@ function ctxMenu(x, y, items) {
   m.style.left = Math.max(4, Math.min(x, innerWidth - r.width - 4)) + 'px';
   m.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 4)) + 'px';
   MENU = m;
-  const first = m.querySelector('button');
-  if (first) first.focus();
+  m.querySelector('button')?.focus({ preventScroll: true });
 }
 addEventListener('pointerdown', e => {
   if (MENU && !MENU.contains(e.target)) menuClose();
@@ -11911,12 +11908,11 @@ document.getElementById('img_card').addEventListener('contextmenu', e => {
   ]);
 });
 
-// ---- map and world views: 16:9 by default; drag the bottom edge, the right edge or the corner to resize,
+// ---- world view: 16:9 by default; drag the bottom edge, the right edge or the corner to resize,
 // double-click a handle to go back to 16:9 and full width
-for (const id of ['stage', 'w_stage']) {
-  const el = document.getElementById(id);
-  if (!el) continue;
-  const key = 'luparis-view-' + id,
+{
+  const el = $('w_stage');
+  const key = 'luparis-view-w_stage',
     apply = () => {
       const v = lsGet(key, null) || {},
         r = +v.r,
@@ -11968,13 +11964,13 @@ const MODE_T = {
   play: ['move', 'measure', 'tpl', 'env'],
   edit: ['shift', 'up', 'down', 'flat', 'surf', 'env', 'obj', 'pref', 'mark', 'hide'],
 };
-function setMode(m) {
+function setMode(m, savePreference = true) {
   if (MP.role === 'player') m = 'play';
   m = m === 'edit' ? 'edit' : 'play';
   document.body.classList.toggle('mode-edit', m === 'edit');
   document.body.classList.toggle('mode-play', m === 'play');
   for (const b of document.querySelectorAll('#modes [data-mode]')) b.setAttribute('aria-pressed', b.dataset.mode === m);
-  lsSet('luparis-mode', m);
+  if (savePreference) lsSet('luparis-mode', m);
   if (!MODE_T[m].includes(tool) && tool !== 'place') setTool(m === 'edit' ? 'shift' : 'move');
 }
 {
@@ -12032,20 +12028,119 @@ function setMode(m) {
   cv.addEventListener('pointercancel', end);
 }
 // ---- 57-layout.js
-// Integrated play workspace: fixed responsive columns, no movable modules.
-const PLAY_AUX={in:['Initiative','Initiative'],tk:['Token','Pion'],mk:['Markers / zones','Repères / zones'],mp:['Session','Session'],img:['Illustrations','Illustrations'],sn:['GM notes','Notes MJ'],roll:['Rolls','Jets']};
+const PLAY_AUX={in:['Initiative','Initiative'],tk:['Token','Pion'],mk:['Markers / zones','Repères / zones'],maps:['Maps','Cartes'],mp:['Session','Session'],img:['Illustrations','Illustrations'],sn:['GM notes','Notes MJ'],roll:['Rolls','Jets']};
 const PLAY_SHEET={actions:['Combat','Combat'],checks:['Checks','Tests'],magic:['Magic','Magie'],gear:['Equipment','Équipement'],profile:['Profile','Profil']};
+const PLAY_LAYOUT_LABELS={
+  play_presets:['Play layouts','Dispositions de jeu'],
+  play_customize:['Customize','Personnaliser'],
+  play_map_short:['Map','Carte'],
+  play_map:['Battle map','Carte tactique'],
+  play_character:['Character','Personnage'],
+  play_tools:['Table tools','Outils de table'],
+  play_position:['Arrangement','Disposition'],
+  play_width:['Column width','Largeur des colonnes'],
+  play_panels:['Visible panels','Panneaux visibles'],
+  play_restore:['Reset layout','Rétablir le preset'],
+  play_done:['Done','Terminer'],
+  play_custom_map:['Generate from a description','Générer à partir d’une description'],
+  play_terrain:['Terrain','Terrain'],
+};
+const PLAY_PRESETS = {
+  table: {label:['Table','Table'],hint:['Map, character and table tools','Carte, personnage et outils de table'],position:'table',width:'balanced',sheet:true,tools:true,aux:'in',tab:'actions'},
+  combat: {label:['Combat','Combat'],hint:['Initiative above your combat sheet','Initiative au-dessus de la fiche de combat'],position:'rail',width:'map',sheet:true,tools:true,aux:'in',tab:'actions'},
+  explore: {label:['Exploration','Exploration'],hint:['Full-width map with markers and zones','Carte pleine largeur avec repères et zones'],position:'table',width:'map',sheet:false,tools:true,aux:'mk',tab:'checks'},
+  sheet: {label:['Character','Fiche'],hint:['Wide character sheet with the map in view','Fiche au premier plan, carte à portée'],position:'sheet',width:'panel',sheet:true,tools:true,aux:'roll',tab:'checks'},
+  prepare: {label:['Preparation','Préparation'],hint:['Map editor and scenario presets','Éditeur et modèles de cartes'],position:'rail',width:'panel',sheet:false,tools:true,aux:'maps',tab:'profile',gm:true},
+};
+const PLAY_POSITIONS = {
+  table:['Map left, tools below','Carte à gauche, outils en dessous'],
+  rail:['Map left, tools in the right column','Carte à gauche, outils dans la colonne droite'],
+  sheet:['Character sheet first','Fiche au premier plan'],
+  stack:['Stacked panels','Panneaux empilés'],
+};
+const PLAY_WIDTHS = {balanced:['Balanced','Équilibrée'],map:['Wider map','Carte plus large'],panel:['Wider panels','Panneaux plus larges']};
 let playAuxTab='in',playSheetTab='actions',playClaimState='',playLastToken=null,playSizeQ=0;
 const playWorkspace=$('play_workspace'),playAux=$('play_aux'),playHand=$('hand');
+const PLAY_LAYOUT_KEY = 'luparis-play-layout-v1';
+let playRole = '', playPreset = 'table', playOverrides = {}, playModeBeforePrep = null;
+
+function playPresetAllowed(key) {
+  if (!Object.hasOwn(PLAY_PRESETS,key)) return false;
+  if (playRole === 'spectator') return key === 'explore';
+  return !(playRole === 'player' && PLAY_PRESETS[key].gm);
+}
+function playSettings() {
+  const base = PLAY_PRESETS[playPreset], saved = playOverrides[playPreset] || {};
+  return {
+    position: Object.hasOwn(PLAY_POSITIONS,saved.position) ? saved.position : base.position,
+    width: Object.hasOwn(PLAY_WIDTHS,saved.width) ? saved.width : base.width,
+    sheet: typeof saved.sheet === 'boolean' ? saved.sheet : base.sheet,
+    tools: typeof saved.tools === 'boolean' ? saved.tools : base.tools,
+  };
+}
+function playStoreLayout() {
+  const all = lsGet(PLAY_LAYOUT_KEY,{}) || {};
+  lsSet(PLAY_LAYOUT_KEY,{...all,[playRole]:{preset:playPreset,overrides:playOverrides}});
+}
+function playApplyLayout() {
+  const {position,width,sheet,tools} = playSettings(),
+    canReadSheet = playRole !== 'spectator',
+    sessionNeeded = playClaimState === 'unclaimed';
+  playHand.hidden = !canReadSheet || !sheet;
+  playAux.hidden = !tools && !sessionNeeded;
+  playWorkspace.dataset.preset = playPreset;
+  playWorkspace.dataset.position = position;
+  playWorkspace.dataset.width = width;
+  playWorkspace.dataset.sheet = String(!playHand.hidden);
+  playWorkspace.dataset.tools = String(!playAux.hidden);
+  for (const button of $('play_presets').querySelectorAll('[data-play-preset]')) {
+    button.hidden = !playPresetAllowed(button.dataset.playPreset);
+    button.setAttribute('aria-pressed',String(button.dataset.playPreset === playPreset));
+  }
+  for (const option of $('play_preset_select').options) {
+    option.hidden = !playPresetAllowed(option.value);
+    option.disabled = option.hidden;
+  }
+  $('play_preset_select').value = playPreset;
+  $('play_position').value = position;
+  $('play_width').value = width;
+  $('play_width').disabled = position === 'stack';
+  $('play_sheet_visible').checked = !playHand.hidden;
+  $('play_sheet_visible').disabled = !canReadSheet;
+  $('play_tools_visible').checked = !playAux.hidden;
+  $('play_tools_visible').disabled = sessionNeeded;
+  for (const button of document.querySelectorAll('#v-carte [data-play-jump]')) button.hidden = $(button.dataset.playJump).hidden;
+  playFit();
+}
+function playUsePreset(key) {
+  if (!playPresetAllowed(key)) return;
+  if (key === 'prepare' && playPreset !== 'prepare') {
+    playModeBeforePrep = document.body.classList.contains('mode-edit') ? 'edit' : 'play';
+    setMode('edit',false);
+  } else if (key !== 'prepare' && playModeBeforePrep) {
+    if (document.body.classList.contains('mode-edit')) setMode(playModeBeforePrep,false);
+    playModeBeforePrep = null;
+  }
+  playPreset = key;
+  const base = PLAY_PRESETS[key];
+  playSelectAux(playClaimState === 'unclaimed' ? 'mp' : base.aux);
+  playSelectSheet(base.tab);
+  const sheetBody = playHand.querySelector('.play-sheet-body');
+  if (sheetBody) sheetBody.scrollTop = 0;
+  playApplyLayout();
+}
 function playSelectAux(k){
-  const allowed=key=>!(key==='sn'&&MP.role==='player')&&!(key==='tk'&&$('tk_panel').hidden);
+  const allowed=key=>!(['sn','maps'].includes(key)&&MP.role==='player')&&!(key==='tk'&&$('tk_panel').hidden);
   if(!Object.hasOwn(PLAY_AUX,k)||!allowed(k))k='in';
+  const changed=playAuxTab!==k;
   playAuxTab=k;
   for(const b of playAux.querySelectorAll('[data-play-tab]')){
     const key=b.dataset.playTab,active=key===k;
     b.hidden=!allowed(key);b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;
   }
   for(const p of playAux.querySelectorAll('[data-play-pane]'))p.hidden=p.dataset.playPane!==k;
+  if (k === 'roll' && !rlOpen) {rlOpen=true;rlRender();}
+  if(changed)playAux.dispatchEvent(new Event('play-tab-change'));
 }
 function playSelectSheet(k){
   if(!Object.hasOwn(PLAY_SHEET,k))k='actions';
@@ -12065,16 +12160,20 @@ function playTabsKeyboard(e,selector){
 }
 function playLabels(){
   for(const b of playAux.querySelectorAll('[data-play-tab]'))b.textContent=tr(PLAY_AUX[b.dataset.playTab]);
-  const labels={play_aux_label:['Table tools','Outils de table'],play_map_label:['Battle map','Carte tactique'],play_jump_sheet:['Character','Personnage'],play_display_label:['Displays','Écrans'],g_public:['Public table','Table publique'],g_map:['Second map screen','Carte sur un second écran'],g_screens:['Detect screens','Détecter les écrans']};
-  for(const [id,p] of Object.entries(labels))$(id).textContent=tr(p);
-  $('zin').setAttribute('aria-label',L2('Zoom in','Zoom avant'));
-  $('zout').setAttribute('aria-label',L2('Zoom out','Zoom arrière'));
+  for (const node of document.querySelectorAll('[data-play-i18n]')) node.textContent=tr(PLAY_LAYOUT_LABELS[node.dataset.playI18n]);
+  $('play_presets').setAttribute('aria-label',tr(PLAY_LAYOUT_LABELS.play_presets));
+  $('play_presets').innerHTML=Object.entries(PLAY_PRESETS).map(([key,p])=>
+    `<button type="button" data-play-preset="${key}" title="${esc(tr(p.hint))}">${tr(p.label)}</button>`).join('');
+  $('play_preset_select').setAttribute('aria-label',tr(PLAY_LAYOUT_LABELS.play_presets));
+  $('play_preset_select').replaceChildren(...Object.entries(PLAY_PRESETS).map(([key,p])=>new Option(tr(p.label),key)));
+  for (const [id,choices] of [['play_position',PLAY_POSITIONS],['play_width',PLAY_WIDTHS]]) {
+    $(id).innerHTML=Object.entries(choices).map(([key,title])=>`<option value="${key}">${tr(title)}</option>`).join('');
+  }
   $('mode_play').textContent=L2('Play','Partie');
   $('mode_edit').textContent=L2('Edit','Édition');
-  $('g_screen').setAttribute('aria-label',L2('Destination screen','Écran de destination'));
-  for(const o of $('g_screen').options)if(o.dataset.screenSize)o.textContent=(o.dataset.screenLabel||L2('Screen ','Écran ')+(+o.value+1))+' · '+o.dataset.screenSize;
-  const msg=$('g_display_msg');if(msg.dataset.en!==undefined)msg.textContent=L2(msg.dataset.en,msg.dataset.fr);
   playRollPreview();
+  if (!TABLE_DISPLAY) playApplyLayout();
+  document.dispatchEvent(new Event('play-labels'));
 }
 function playFit(){
   if(TABLE_DISPLAY||$('v-carte').hidden||playSizeQ)return;
@@ -12087,10 +12186,20 @@ function playFit(){
 function playSync(){
   if(TABLE_DISPLAY)return;
   const claim=MP.role==='player'&&MP.prole!=='spec'?(MP.me?'claimed':'unclaimed'):'other';
+  const role=MP.role==='player'?(MP.prole==='spec'?'spectator':'player'):'table';
+  if (role !== playRole) {
+    playRole=role;
+    playClaimState=claim;
+    const saved=lsGet(PLAY_LAYOUT_KEY,{})?.[role] || {};
+    playOverrides=saved.overrides && typeof saved.overrides==='object' && !Array.isArray(saved.overrides) ? saved.overrides : {};
+    playUsePreset(playPresetAllowed(saved.preset) ? saved.preset : role==='spectator'?'explore':'table');
+    return;
+  }
   if(claim!==playClaimState){
     if(claim==='unclaimed')playAuxTab='mp';
-    else if(claim==='claimed'&&playAuxTab==='mp')playAuxTab='in';
+    else if(claim==='claimed'&&playAuxTab==='mp')playAuxTab=PLAY_PRESETS[playPreset].aux;
     playClaimState=claim;
+    playApplyLayout();
   }
   playSelectAux(playAuxTab);
 }
@@ -12168,121 +12277,77 @@ function playRoute(){
   rlRender=function(){const r=originalRoll.apply(this,arguments);playRollPreview();return r;};
   playAux.addEventListener('click',e=>{
     const b=e.target.closest('[data-play-tab]');if(!b)return;
-    playSelectAux(b.dataset.playTab);if(playAuxTab==='roll'&&!rlOpen){rlOpen=true;rlRender();}
+    playSelectAux(b.dataset.playTab);
   });
   playHand.addEventListener('click',e=>{
     const b=e.target.closest('[data-sheet-tab]');if(!b)return;
     playSelectSheet(b.dataset.sheetTab);const p=playHand.querySelector('.play-sheet-body');if(p)p.scrollTop=0;
   });
-  playWorkspace.addEventListener('click',e=>{
+  $('v-carte').addEventListener('click',e=>{
     const b=e.target.closest('[data-play-jump]');if(!b)return;
-    const target=$(b.dataset.playJump);target.focus({preventScroll:true});target.scrollIntoView({block:'start'});
+    const target=$(b.dataset.playJump);
+    if(target.hidden)return;
+    target.focus({preventScroll:true});target.scrollIntoView({block:'start'});
   });
+  $('play_presets').addEventListener('click',e=>{
+    const b=e.target.closest('[data-play-preset]');
+    if(!b || b.dataset.playPreset===playPreset)return;
+    playUsePreset(b.dataset.playPreset);
+    playStoreLayout();
+  });
+  $('play_preset_select').onchange=e=>{
+    playUsePreset(e.target.value);
+    playStoreLayout();
+  };
+  $('play_customize').onclick=()=>$('play_layout_dialog').showModal();
+  $('play_layout_dialog').addEventListener('change',()=>{
+    const current=playSettings();
+    playOverrides[playPreset]={
+      position:$('play_position').value,width:$('play_width').value,
+      sheet:$('play_sheet_visible').disabled?current.sheet:$('play_sheet_visible').checked,
+      tools:$('play_tools_visible').disabled?current.tools:$('play_tools_visible').checked,
+    };
+    playStoreLayout();
+    playApplyLayout();
+  });
+  $('play_restore').onclick=()=>{
+    delete playOverrides[playPreset];
+    playUsePreset(playPreset);
+    playStoreLayout();
+  };
   $('pl_toggle').onclick=()=>{
     const open=$('pl_bar').classList.toggle('open');
     $('pl_toggle').setAttribute('aria-expanded',String(open));
     if(open)$('pl_q').focus({preventScroll:true});
   };
+  $('map_fields_toggle').onclick=()=>{
+    const open=$('map_fields').classList.toggle('open');
+    $('map_fields_toggle').setAttribute('aria-expanded',String(open));
+  };
   playAux.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-play-tab]'));
   playHand.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-sheet-tab]'));
-  $('play_last_roll').onclick=()=>{playSelectAux('roll');if(!rlOpen){rlOpen=true;rlRender();}};
+  $('play_last_roll').onclick=()=>playSelectAux('roll');
   const resize=new ResizeObserver(playFit);
-  for(const e of [$('v-carte').querySelector('.bar'),$('ctxbar'),$('savebox'),$('play_display_bar'),document.querySelector('header'),document.querySelector('.tabs')])if(e)resize.observe(e);
+  for(const e of [$('v-carte').querySelector('.bar'),$('ctxbar'),$('savebox'),$('play_presets').parentNode,document.querySelector('header'),document.querySelector('.tabs')])resize.observe(e);
   window.addEventListener('resize',playFit);window.addEventListener('hashchange',playRoute);
   playWorkspace.dataset.ready='1';playLabels();playSync();playRollPreview();renderHand();playRoute();
 }
-// Second displays retain map-only and public spectator views, without module cloning.
-const gViews=new Map();
-let gTick=0,gScreenDetails=null;
-function gDisplayMsg(en, fr) {
-  const el = $('g_display_msg');
-  if (el) {el.dataset.en=en;el.dataset.fr=fr;el.textContent=L2(en,fr);}
-}
-function gPopupFeatures() {
-  const sel = $('g_screen'), s = gScreenDetails && sel && gScreenDetails.screens[+sel.value];
-  if (!s || sel.hidden) return 'popup,width=900,height=720';
-  return 'popup,left=' + Math.round(s.availLeft) + ',top=' + Math.round(s.availTop) +
-    ',width=' + Math.max(400, Math.round(s.availWidth * .9)) + ',height=' + Math.max(300, Math.round(s.availHeight * .9));
-}
-async function gDetectScreens() {
-  if (!window.getScreenDetails) return gDisplayMsg('Screen detection is unavailable. Move windows manually.', 'Détection indisponible : déplace les fenêtres manuellement.');
-  try {
-    gScreenDetails = await window.getScreenDetails();
-    const s = $('g_screen');
-    const render = () => {
-      s.replaceChildren();
-      gScreenDetails.screens.forEach((screen, i) => {
-        const o = document.createElement('option');
-        o.value = i;
-        o.dataset.screenLabel=screen.label||'';o.dataset.screenSize=screen.width+'×'+screen.height;
-        o.textContent=(screen.label||L2('Screen ','Écran ')+(i+1))+' · '+o.dataset.screenSize;
-        s.append(o);
-      });
-      const i = gScreenDetails.screens.indexOf(gScreenDetails.currentScreen);
-      if (gScreenDetails.screens.length > 1) s.value = String(i === 0 ? 1 : 0);
-      s.hidden = false;
-    };
-    render();
-    gScreenDetails.addEventListener('screenschange', render);
-    gDisplayMsg('Choose a screen, then open a window.', 'Choisis un écran, puis ouvre une fenêtre.');
-  } catch (e) {
-    gDisplayMsg('Screen permission refused. Move windows manually.', 'Autorisation refusée : déplace les fenêtres manuellement.');
-  }
-}
-function gOpenView(kind) {
-  if (TABLE_DISPLAY || (kind==='public' && MP.role==='player')) return;
-  if (gViews.has(kind) && !gViews.get(kind).win.closed) return gViews.get(kind).win.focus();
-  const url = new URL(location.pathname,location.href);
-  url.searchParams.set('table-display',kind);
-  url.hash='carte';
-  const win = window.open(url.href,'_blank',gPopupFeatures());
-  if(!win) return gDisplayMsg('Popup blocked. Allow popups for Luparis.','Fenêtre bloquée : autorise les pop-ups pour Luparis.');
-  gViews.set(kind,{win,signature:'',ready:false});
-  gStartTick();
-}
-function gViewState(kind) {
-  const state = memStateNow();
-  // A public display receives the same visibility-filtered map as spectators, never the GM state.
-  return kind==='public' ? mpView(state,[]) : state;
-}
-
-function gStartTick(){
-  if(gTick)return;
-  gTick=setInterval(()=>{
-    let full=null,publicState=null;
-    for(const [kind,p] of gViews){
-      if(p.win.closed){gViews.delete(kind);continue;}
-      if(!p.ready)continue;
-      if(kind==='public'&&MP.role==='player'){p.win.close();gViews.delete(kind);continue;}
-      full ||= memStateNow();
-      const state=kind==='public'?(publicState||=mpView(full,[])):full,signature=JSON.stringify(state);
-      if(signature!==p.signature){p.signature=signature;p.win.postMessage({type:'luparis-table-state',state},location.origin);}
-    }
-    if(!gViews.size){clearInterval(gTick);gTick=0;}
-  },300);
-}
+// Keep receiving map updates in a display opened by an older version.
 function gDisplayBoot(){
-  if(TABLE_DISPLAY){
-    document.body.classList.add('mp-player','mp-spec');
-    const button=document.createElement('button');button.className='table-fullscreen';button.textContent=L2('Fullscreen','Plein écran');
-    button.onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.().catch(()=>{});};
-    document.body.append(button);
-    document.addEventListener('keydown',e=>{if(!['Escape','F11','Tab'].includes(e.key)){e.stopImmediatePropagation();e.preventDefault();}},true);
-    window.addEventListener('message',e=>{
-      if(e.origin!==location.origin||e.source!==window.opener||e.data?.type!=='luparis-table-state')return;
-      const n=N,first=!document.body.classList.contains('table-ready');
-      if(!applyState(e.data.state))return;
-      document.body.classList.add('table-ready');
-      if(first||n!==N){CAM.z=1;CAM.px=0;CAM.py=0;}layout();
-    });
-    if(window.opener)window.opener.postMessage({type:'luparis-table-ready'},location.origin);return;
-  }
+  if(!TABLE_DISPLAY)return;
+  document.body.classList.add('mp-player','mp-spec');
+  const button=document.createElement('button');button.className='table-fullscreen';button.textContent=L2('Fullscreen','Plein écran');
+  button.onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.().catch(()=>{});};
+  document.body.append(button);
+  document.addEventListener('keydown',e=>{if(!['Escape','F11','Tab'].includes(e.key)){e.stopImmediatePropagation();e.preventDefault();}},true);
   window.addEventListener('message',e=>{
-    if(e.origin!==location.origin||e.data?.type!=='luparis-table-ready')return;
-    for(const p of gViews.values())if(e.source===p.win){p.ready=true;p.signature='';}
+    if(e.origin!==location.origin||e.source!==window.opener||e.data?.type!=='luparis-table-state')return;
+    const n=N,first=!document.body.classList.contains('table-ready');
+    if(!applyState(e.data.state))return;
+    document.body.classList.add('table-ready');
+    if(first||n!==N){CAM.z=1;CAM.px=0;CAM.py=0;}layout();
   });
-  $('g_public').onclick=()=>gOpenView('public');$('g_map').onclick=()=>gOpenView('gm');$('g_screens').onclick=gDetectScreens;
-  window.addEventListener('pagehide',()=>{for(const p of gViews.values())if(!p.win.closed)p.win.close();clearInterval(gTick);});
+  if(window.opener)window.opener.postMessage({type:'luparis-table-ready'},location.origin);
 }
 // ---- 58-mapgen.js
 // ---- a map from a sentence ("temple en ruines dans la forêt")
@@ -13194,6 +13259,7 @@ function mgBuild(r,seed=(Math.random()*4294967296)>>>0,preview=false) {
 function mgCommit(candidate){
   if(MP.role==='player')return false;
   mgRestore(candidate.state);NZ=null;
+  hover=null;meas=null;TPLA=null;
   hist.push(candidate.before);if(hist.length>60)hist.shift();
   MG.seed=candidate.seed;
   CAM.z=1;CAM.px=0;CAM.py=0;
@@ -13486,22 +13552,42 @@ Design for tactical play: honor explicit quantities, directions, negative requir
 
 Description: ${JSON.stringify(String(text).slice(0, 1800))}`;
 }
-// ---- UI: a line in the map toolbar
+// ---- description-based generator in the map library
 function mgMsg(m) {
   const el = document.getElementById('mg_msg');
   if (el) el.textContent = m;
 }
-function mgRenderCandidate(candidate){
-  const d=JSON.parse(candidate.state),cv=$('mg_thumb'),ctx=cv.getContext('2d'),n=d.N,t=cv.width/n;
-  const floors=['#7d9564','#ad9570','#a9a5a0','#b1855f','#494b50','#6f6a65','#6b9b5d','#b8b4aa','#9d9d88','#c7b288','#888f8c','#99744e','#9b8f76','#8a8176'];
+function paintMapPreview(d, canvas){
+  const ctx=canvas.getContext('2d'),n=d.N,t=canvas.width/n,b=B[d.bio]||B.gen;
+  const water={water:['#6da3bd','#32668b'],ice:['#9ccbe6','#79a9ca'],lava:['#e67a32','#cb4b23'],swamp:['#586b3a','#3f5434'],sand:['#c79a5a','#aa7f47'],chasm:['#403833','#2b2622']}[b.pit];
+  ctx.save();
+  ctx.translate(canvas.width/2,canvas.height/2);
+  ctx.rotate(d.rot*Math.PI/2);
+  ctx.translate(-canvas.width/2,-canvas.height/2);
   for(let x=0;x<n;x++)for(let y=0;y<n;y++){
-    const h=d.H[x][y],f=d.F[x][y];
-    ctx.fillStyle=h<0?(h===-1?'#6da3bd':'#32668b'):h>=2?'#42434b':h===1?'#a1967e':floors[f]||floors[0];
+    const h=d.H[x][y],f=d.F[x][y],shade=(x+y)%2;
+    ctx.fillStyle=h<0?water[-h-1]:FC[f]?.[shade]||(h>0?b.top[h-1]:b.g[shade]);
     ctx.fillRect(x*t,y*t,t+.5,t+.5);
+  }
+  if(n<=32){
+    ctx.beginPath();
+    for(let i=1;i<n;i++){
+      const p=i*t;
+      ctx.moveTo(p,0);ctx.lineTo(p,canvas.height);
+      ctx.moveTo(0,p);ctx.lineTo(canvas.width,p);
+    }
+    ctx.strokeStyle='rgba(20,18,14,.16)';
+    ctx.lineWidth=1;
+    ctx.stroke();
   }
   for(const key in d.env){const [x,y]=key.split(',').map(Number);ctx.fillStyle='#dc9d3b99';ctx.fillRect(x*t,y*t,t,t);}
   for(const o of d.objs){ctx.fillStyle=o.k==='door'?'#f2d19a':o.hid?'#b47ed6':'#5b4734';ctx.fillRect((o.x+.2)*t,(o.y+.2)*t,t*.6,t*.6);}
   for(const k of d.tokens){ctx.fillStyle=k.cid?'#4e9ee9':k.hid?'#b47ed6':'#e06055';ctx.beginPath();ctx.arc((k.x+.5)*t,(k.y+.5)*t,Math.max(2,t*.4),0,Math.PI*2);ctx.fill();}
+  ctx.restore();
+}
+function mgRenderCandidate(candidate){
+  const d=JSON.parse(candidate.state);
+  paintMapPreview(d,$('mg_thumb'));
   $('mg_details').textContent=d.N+'×'+d.N+' · '+d.objs.length+' '+L2('objects','objets')+' · '+d.tokens.length+' '+L2('tokens','pions')+' · '+L2('Seed','Graine')+' '+candidate.seed+(candidate.issues.length?' · '+L2('Not placed: ','Non placés : ')+candidate.issues.join(', '):'');
 }
 function mgCandidate(newSeed=false){
@@ -13562,7 +13648,7 @@ function mgApplyPreview(){
   }catch(e){mgMsg(L2('Generation failed; map unchanged: ','Échec de génération ; carte inchangée : ')+e.message);}
 }
 {
-  const g = document.getElementById('gen').parentNode;
+  const g = $('map_custom');
   g.insertAdjacentHTML(
     'beforeend',
     `<form id="mg_f" class="mgf"><input id="mg_q" type="text" maxlength="1800" autocomplete="off" placeholder="${L2('Describe the scene: ruined temple in the forest…', 'Décris la scène : temple en ruines dans la forêt…')}" aria-label="${L2('Describe the scene', 'Décris la scène')}"><button type="submit" class="go">${L2('Prepare', 'Préparer')}</button><select id="mg_engine" aria-label="Mode"><option value="auto">${L2('AI / auto','IA / auto')}</option><option value="local">${L2('Local','Local')}</option></select><button type="button" id="mg_cancel" hidden>${L2('Cancel','Annuler')}</button><button type="button" id="mg_again" title="${L2('Another version of the same recipe', 'Une autre version de la même recette')}">↻</button><button type="button" id="mg_set" title="${L2('AI key', 'Clé IA')}" aria-label="${L2('AI key', 'Clé IA')}">⚙</button><span class="small" id="mg_msg" aria-live="polite"></span><div id="mg_preview" hidden><strong id="mg_source"></strong><div class="mgpreviewbody"><canvas id="mg_thumb" width="320" height="320" aria-label="${L2('Generated map preview','Aperçu de la carte générée')}"></canvas><div><p id="mg_plan"></p><p id="mg_details" class="small" aria-live="polite"></p><p class="small">${L2('Top view: grey walls, blue water, brown objects, red enemies, purple hidden, blue allies.','Vue du dessus : murs gris, eau bleue, objets bruns, ennemis rouges, secrets violets, alliés bleus.')}</p></div></div><label>${L2('Size','Taille')} <select id="mg_size"><option value="">${L2('Automatic','Automatique')}</option><option value="small">16×16</option><option value="medium">24×24</option><option value="large">32×32</option><option value="huge">64×64</option></select></label><button type="button" class="go" id="mg_apply">${L2('Apply / replace map','Appliquer / remplacer la carte')}</button><button type="button" id="mg_discard">${L2('Discard','Abandonner')}</button></div></form>`,
@@ -13603,6 +13689,140 @@ function mgApplyPreview(){
     d.showModal();
   };
 }
+// ---- 59-map-presets.js
+const MAP_PRESETS = {
+  ambush: {
+    name: ['Forest road', 'Route forestière'],
+    description: ['A winding road with dense cover. Suitable for ambushes and pursuits.', 'Un chemin sinueux bordé de couverts. Pour les embuscades et les poursuites.'],
+    min: 16, size: 'medium', seed: 14,
+    recipe: { scene: 'forest_road' },
+  },
+  bridge: {
+    name: ['River crossing', 'Passage de rivière'],
+    description: ['A bridge between two banks, with a narrow crossing to defend.', 'Un pont relie deux rives. Le passage étroit est facile à défendre.'],
+    min: 16, size: 'medium', seed: 23,
+    recipe: { scene: 'bridge' },
+  },
+  tavern: {
+    name: ['Roadside tavern', 'Auberge'],
+    description: ['A furnished interior with an approach from the road. Useful for meetings or a close-quarters brawl.', 'Un intérieur meublé et une entrée sur la route. Pour les rencontres ou une rixe au corps à corps.'],
+    min: 24, size: 'medium', seed: 8,
+    recipe: { scene: 'tavern' },
+  },
+  vaults: {
+    name: ['Connected vaults', 'Salles souterraines'],
+    description: ['Two rooms with a connecting corridor, doors and cover. Ready for a room-by-room encounter.', 'Deux salles, un couloir, des portes et des couverts. Pour progresser de salle en salle.'],
+    min: 32, size: 'large', seed: 17,
+    recipe: {
+      bio: 'donjon',
+      add: [{ k: 'room', pos: 'north', w: 10, h: 8, entrance: 'south' }, { k: 'room', pos: 'south', w: 12, h: 9, entrance: 'north' }],
+      links: [{ from: 1, to: 2, width: 2 }],
+      objs: [{ k: 'brazier', n: 2, place: 1 }, { k: 'crate', n: 3, place: 2 }],
+    },
+  },
+  shrine: {
+    name: ['Ruined shrine', 'Sanctuaire en ruine'],
+    description: ['An altar among broken walls and columns. Suitable for defending a ritual or exploring ruins.', 'Un autel entouré de murs brisés et de colonnes. Pour défendre un rituel ou explorer des ruines.'],
+    min: 24, size: 'large', seed: 62,
+    recipe: { bio: 'foret', add: ['temple'], ruin: 0.28 },
+  },
+  market: {
+    name: ['Market square', 'Place du marché'],
+    description: ['A central square, stalls and several approaches for a crowded encounter or chase.', 'Une place centrale, des étals et plusieurs accès pour une rencontre ou une poursuite en ville.'],
+    min: 24, size: 'large', seed: 44,
+    recipe: { bio: 'prairie', add: ['market'] },
+  },
+};
+let mapPresetKey = 'ambush', mapPresetSeed = MAP_PRESETS.ambush.seed, mapPresetContext, mapPresetCandidate = null;
+
+function mapPresetLabels() {
+  const preset = MAP_PRESETS[mapPresetKey];
+  $('map_preset_choices').setAttribute('aria-label', L2('Map templates', 'Modèles de cartes'));
+  $('map_preset_choices').innerHTML = Object.entries(MAP_PRESETS).map(([key, template]) =>
+    `<button type="button" data-map-preset="${key}" aria-pressed="${key === mapPresetKey}">${tr(template.name)}</button>`).join('');
+  $('map_preset_name').textContent = tr(preset.name);
+  $('map_preset_description').textContent = tr(preset.description);
+  $('map_preset_size_label').textContent = L2('Size', 'Taille');
+  $('map_preset_variant').textContent = L2('New variant', 'Nouvelle variante');
+  $('map_preset_apply').textContent = L2('Replace the map', 'Remplacer la carte');
+  $('map_preset_canvas').setAttribute('aria-label', L2('Map preview', 'Aperçu de la carte'));
+}
+
+function previewMapPreset() {
+  if (MP.role === 'player' || TABLE_DISPLAY) return;
+  const preset = MAP_PRESETS[mapPresetKey],
+    status = $('map_preset_status'),
+    apply = $('map_preset_apply'),
+    canvas = $('map_preset_canvas');
+  const { span, taken, warnings, missing, access } = MG;
+  try {
+    mapPresetCandidate = mgBuild({ ...preset.recipe, size: $('map_preset_size').value }, mapPresetSeed, true);
+    mapPresetContext = CTX;
+    paintMapPreview(JSON.parse(mapPresetCandidate.state), canvas);
+    canvas.hidden = false;
+    apply.disabled = false;
+    const issues = mapPresetCandidate.issues;
+    status.textContent = issues.length
+      ? L2('Could not place: ', 'Éléments non placés : ') + issues.join(', ')
+      : L2('Replaces the active map. You can undo it.', 'Remplace la carte active. Tu peux annuler ensuite.');
+  } catch (error) {
+    mapPresetCandidate = null;
+    canvas.hidden = true;
+    apply.disabled = true;
+    status.textContent = error.message;
+  } finally {
+    Object.assign(MG, { span, taken, warnings, missing, access });
+  }
+  $('map_preset_preview').hidden = false;
+}
+
+function selectMapPreset(key) {
+  if (MP.role === 'player' || !Object.hasOwn(MAP_PRESETS, key)) return;
+  const preset = MAP_PRESETS[key];
+  mapPresetKey = key;
+  mapPresetSeed = preset.seed;
+  const sizes = Object.entries(MG_SIZE).filter(([, size]) => size >= preset.min);
+  $('map_preset_size').replaceChildren(...sizes.map(([value, size]) => new Option(`${size}×${size}`, value)));
+  $('map_preset_size').value = preset.size;
+  mapPresetLabels();
+  previewMapPreset();
+}
+
+$('map_preset_choices').addEventListener('click', event => {
+  const button = event.target.closest('[data-map-preset]');
+  if (!button) return;
+  const { mapPreset } = button.dataset;
+  if (mapPreset === mapPresetKey && mapPresetCandidate) return;
+  selectMapPreset(mapPreset);
+  $('map_preset_choices').querySelector(`[data-map-preset="${mapPreset}"]`)?.focus({ preventScroll: true });
+});
+$('map_preset_size').onchange = previewMapPreset;
+$('map_preset_variant').onclick = () => {
+  mapPresetSeed = (Math.random() * 4294967296) >>> 0;
+  previewMapPreset();
+};
+$('map_preset_apply').onclick = () => {
+  if (MP.role === 'player' || !mapPresetCandidate) return;
+  if (mapPresetContext !== CTX || mapPresetCandidate.before !== mgSnapshot()) {
+    previewMapPreset();
+    if (mapPresetCandidate) $('map_preset_status').textContent = L2(
+      'The map changed. Review the new preview before replacing it.',
+      'La carte a changé. Vérifie le nouvel aperçu avant de la remplacer.',
+    );
+    return;
+  }
+  if (mgCommit(mapPresetCandidate)) {
+    mapPresetCandidate = null;
+    $('map_preset_apply').disabled = true;
+    $('map_preset_status').textContent = L2('Map applied. Undo is available.', 'Carte appliquée. Annuler est disponible.');
+  }
+};
+playAux.addEventListener('play-tab-change', () => {
+  if (playAuxTab === 'maps' && $('map_preset_preview').hidden) selectMapPreset(mapPresetKey);
+});
+document.addEventListener('play-labels', mapPresetLabels);
+mapPresetLabels();
+if (playAuxTab === 'maps') selectMapPreset(mapPresetKey);
 // ---- 60-session-multiplayer.js
 // ---- session notes (GM)
 var SN = null;

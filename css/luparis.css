@@ -364,13 +364,9 @@ body.mp-player #v-bestiaire>.band:not(#pbest){display:none!important}
 /* Play / Edit modes of the map */
 .modes button[aria-pressed=true]{background:var(--acc);color:#fff}
 body.mp-player #modes{display:none!important}
-body.mode-play #tools button:is([data-t=shift],[data-t=up],[data-t=down],[data-t=flat],[data-t=surf],[data-t=obj],[data-t=pref],[data-t=mark],[data-t=hide]),body.mode-play #tools :is(#objrot,#prefrot,#prefroll),body.mode-play .szl,body.mode-play .bar label:has(#biosel),body.mode-play .bar label:has(#scene),body.mode-play #gen,body.mode-play #clear,body.mode-play #mg_f{display:none!important}
+body.mode-play #tools button:is([data-t=shift],[data-t=up],[data-t=down],[data-t=flat],[data-t=surf],[data-t=obj],[data-t=pref],[data-t=mark],[data-t=hide]),body.mode-play #tools :is(#objrot,#prefrot,#prefroll),body.mode-play .szl,body.mode-play .bar label:has(#biosel),body.mode-play .bar label:has(#scene),body.mode-play #gen,body.mode-play #clear{display:none!important}
 body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){display:none!important}
 .mppick{margin:6px 0 2px;font-weight:600}.mpwant select{outline:2px solid var(--acc);outline-offset:1px}
-
-/* each character card is a module of the Map grid */
-/* the title of a module moves it */
-/* Map grid: sheet + character box in one module */
 
 /* GM quick placement: compact toolbar controls, results float over the map. */
 #pl_bar{align-items:center;max-width:100%;box-sizing:border-box;gap:6px}
@@ -386,8 +382,7 @@ body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){dis
 body.mp-player #pl_bar{display:none!important}
 @media(max-width:600px){#pl_bar{width:100%}#pl_bar .scn{white-space:normal}#pl_bar select{max-width:44vw}#pl_bar .pl_hint{max-width:100%}}
 
-/* Wide-screen grids and local detached module windows. */
-body.mp-player #g_public,body.mp-player [data-gpre=dual]{display:none}
+/* Legacy map displays opened by older versions. */
 body.table-display{padding:0;overflow:hidden}
 body.table-display> *:not(#v-carte):not(.table-fullscreen){display:none!important}
 body.table-display #v-carte{display:block!important}
@@ -396,34 +391,57 @@ body.table-display.table-ready .stage{visibility:visible}
 .table-fullscreen{position:fixed;right:12px;top:12px;z-index:90;background:var(--panel);opacity:.6}
 .table-fullscreen:hover,.table-fullscreen:focus-visible{opacity:1}
 
-/* Presets prioritize the scene without hiding modules. */
-
 #mg_preview{flex:1 1 100%;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--panel)}#mg_preview[hidden],#mg_cancel[hidden]{display:none!important}#mg_preview p{margin:5px 0;white-space:pre-wrap}#mg_preview label{display:inline-flex;gap:5px;align-items:center;margin-right:8px}#mg_preview button{min-height:32px}
 
 /* Real top-down preview of the generated candidate, not the active battle map. */
-.mgpreviewbody{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}.mgpreviewbody canvas{width:min(240px,100%);height:auto;aspect-ratio:1;image-rendering:pixelated;border:1px solid var(--line);border-radius:5px}.mgpreviewbody canvas[hidden]{display:none}.mgpreviewbody>div{flex:1;min-width:min(240px,100%)}
+.mgpreviewbody{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}.mgpreviewbody canvas{position:static;height:auto;touch-action:auto;cursor:default;width:min(240px,100%);height:auto;aspect-ratio:1;image-rendering:pixelated;border:1px solid var(--line);border-radius:5px}.mgpreviewbody canvas[hidden]{display:none}.mgpreviewbody>div{flex:1;min-width:min(240px,100%)}
 
-/* Integrated play surface: map and sheet share one viewport; tabs take natural height. */
+/* The map is present in every layout. Optional panels share the same game state. */
 #v-carte>.bar{padding-inline:max(1vw,8px);gap:5px}
-body.mode-play #map_size_controls,#pl_toggle{display:none}
-.play-display-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;position:relative;z-index:2}
-.play-display-bar button,.play-display-bar select,.play-displays summary{min-height:32px;font-size:14px;padding:3px 8px}
-.play-display-bar #play_map_label{font-weight:700;margin-right:auto}
-.play-zoom{display:flex;gap:2px;align-items:center;background:var(--bg);border-radius:8px}
-.play-zoom button{justify-content:center;min-width:30px}
-.play-displays{position:relative;margin:0;padding:0;border:0}
-.play-displays summary{cursor:pointer;border:1px solid var(--line);border-radius:8px;gap:4px}
-.play-displays summary::after,.play-weapon-options summary::after{content:"▾";color:var(--muted)}
-.play-displays[open] summary::after,.play-weapon-options[open] summary::after{content:"▴"}
-.play-display-menu{position:absolute;right:0;top:100%;width:max-content;max-width:min(280px,90vw);padding:6px;display:grid;gap:3px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 18px #0003}
-.play-display-menu button{white-space:normal;text-align:left}
-#g_display_msg:empty{display:none}
+#pl_toggle,#play_preset_select,#map_fields_toggle,.mode-play #map_fields{display:none}
+#map_fields{display:contents}
+#save_msg:empty{display:none}
+.play-layout-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:5px max(1vw,8px) 2px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.play-presets{display:flex;gap:3px;overflow:auto;flex:1 1 auto;padding:3px;scrollbar-width:thin}
+.play-presets button,#play_customize,.play-jumps button{min-height:34px;padding:3px 10px;font-weight:700;white-space:nowrap}
+.play-presets button{flex:none}
+.play-presets button[aria-pressed=true]{background:var(--ink);color:var(--panel)}
+.play-presets button[hidden],.play-jumps button[hidden]{display:none!important}
+#play_customize{border:1px solid var(--line);margin-right:2px}
+.play-jumps{display:none;gap:3px}
 .play-jump{display:none}
-.play-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(368px,clamp(368px,36vw,590px));gap:10px;margin:6px max(1vw,8px) 0;height:var(--play-height,68vh);min-height:470px;align-items:stretch}
-.play-map-column{display:flex;flex-direction:column;min-height:0;gap:6px;min-width:0}
-#play_workspace #stage{flex:1;min-height:200px;height:auto!important;width:100%!important;aspect-ratio:auto!important;margin:0;border-radius:10px}
-#play_workspace .rsz{display:none!important}
-.play-aux{display:flex;flex-direction:column;min-height:0;flex:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.play-jumps button{color:var(--acc2);font-size:13px}
+#play_layout_dialog{width:min(390px,calc(100vw - 24px));padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink)}
+#play_layout_dialog::backdrop{background:#0007}
+#play_layout_dialog form{display:grid;gap:10px}
+#play_layout_dialog h2{margin:0;font:600 19px Cinzel,serif}
+#play_layout_dialog label{justify-content:space-between;padding:0;gap:8px}
+#play_layout_dialog select{flex:1;min-height:36px}
+#play_layout_dialog fieldset{display:flex;flex-wrap:wrap;gap:10px;border:1px solid var(--line);border-radius:8px}
+#play_layout_dialog .row{justify-content:space-between}
+.play-workspace{
+  --play-side:clamp(350px,36vw,570px);
+  display:grid;grid-template-columns:minmax(0,1fr) var(--play-side);
+  grid-template-areas:"map sheet" "tools sheet";
+  grid-template-rows:minmax(250px,1fr) auto;
+  gap:8px;margin:6px max(1vw,8px) 0;height:var(--play-height,68vh);min-height:425px;
+}
+.play-workspace[data-width=map]{--play-side:clamp(340px,31vw,490px)}
+.play-workspace[data-width=panel]{--play-side:clamp(350px,45vw,655px)}
+.play-workspace[data-position=rail]{grid-template-areas:"map tools" "map sheet";grid-template-rows:auto minmax(260px,1fr)}
+.play-workspace[data-position=sheet]{grid-template-columns:var(--play-side) minmax(0,1fr);grid-template-areas:"sheet map" "sheet tools"}
+.play-workspace[data-tools=false]{grid-template-areas:"map sheet";grid-template-rows:minmax(0,1fr)}
+.play-workspace[data-position=sheet][data-tools=false]{grid-template-areas:"sheet map"}
+.play-workspace[data-sheet=false]{grid-template-columns:minmax(0,1fr);grid-template-areas:"map" "tools";grid-template-rows:minmax(250px,1fr) auto}
+.play-workspace[data-position=rail][data-sheet=false][data-tools=true]{grid-template-columns:minmax(0,1fr) var(--play-side);grid-template-areas:"map tools";grid-template-rows:minmax(0,1fr)}
+.play-workspace[data-sheet=false][data-tools=false]{grid-template-areas:"map";grid-template-rows:minmax(0,1fr)}
+.play-workspace[data-position=stack]{display:flex;flex-direction:column;height:auto;min-height:0}
+.play-workspace[data-position=stack] .play-map-column{height:clamp(360px,62vh,760px);flex:none}
+.play-map-column{grid-area:map;display:flex;flex-direction:column;min-height:0}
+#play_workspace #stage{flex:1;min-height:0;height:auto!important;width:100%!important;aspect-ratio:auto!important;margin:0;border-radius:12px;box-shadow:inset 0 0 0 1px var(--line)}
+#play_workspace :is(#hand,#play_aux)[hidden]{display:none!important}
+.play-aux{grid-area:tools;display:flex;flex-direction:column;min-height:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.play-workspace[data-position=rail][data-sheet=false] .play-aux-body{flex:1;min-height:0;max-height:none}
 .play-aux-head{display:flex;align-items:center;gap:6px;padding:4px 8px;border-bottom:1px solid var(--line)}
 .play-aux-head>span{white-space:nowrap;font-weight:600}
 #play_last_roll{min-height:26px;flex:1;display:block;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
@@ -431,7 +449,8 @@ body.mode-play #map_size_controls,#pl_toggle{display:none}
 .play-aux-tabs button,.play-sheet-tabs button{min-height:30px;white-space:nowrap;padding:4px 9px;font-size:14px;flex:none}
 .play-aux-tabs button[aria-selected=true],.play-sheet-tabs button[aria-selected=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
 .play-aux-body{max-height:min(20vh,165px);overflow:auto;overscroll-behavior:contain;padding:5px 9px}
-.play-aux-pane[hidden],.play-sheet-pane[hidden],.play-aux-tabs button[hidden]{display:none!important}
+.play-workspace[data-preset=explore] .play-aux-body{max-height:min(13vh,105px)}
+.play-aux-pane[hidden],.play-sheet-pane[hidden],.play-aux-tabs button[hidden],.map-preset-preview[hidden]{display:none!important}
 .play-aux-pane>.card{border:0;border-radius:0;padding:2px 0;background:transparent;margin:0}
 .play-aux-pane>.card>h3{font-size:15px;margin:0 0 5px}
 #play_pane_in>.card{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px}
@@ -442,12 +461,35 @@ body.mode-play #map_size_controls,#pl_toggle{display:none}
 .play-aux-pane #in_list:empty{display:none}
 .play-aux-pane #in_list{display:flex;flex-wrap:wrap;gap:4px 10px;padding:0;list-style:none;margin:4px 0}
 .play-aux-pane #in_list li{min-width:130px;flex:1 1 140px}
-#play_workspace #hand{display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden;padding:0;margin:0;border-radius:12px;background:var(--panel);box-shadow:0 3px 14px #0001}
+.map-preset-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:5px;margin-bottom:8px}
+.map-preset-choices button{border:1px solid var(--line);justify-content:center;min-height:36px;padding:3px 7px;font-weight:700;text-align:center}
+.map-preset-choices button[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
+.map-preset-preview{display:grid;grid-template-columns:minmax(0,1fr) minmax(145px,1fr);gap:9px;align-items:start}
+.map-preset-preview canvas{position:static;height:auto;touch-action:auto;cursor:default;width:100%;max-width:290px;aspect-ratio:1;border-radius:8px;border:1px solid var(--line);image-rendering:pixelated}
+.map-preset-options h3,.map-preset-options p{margin:0 0 6px}
+.map-preset-options label{justify-content:space-between;padding:0}
+.map-preset-options select{min-height:34px}
+.map-preset-options .row{flex-wrap:wrap;margin-top:6px}
+.map-preset-options button{min-height:34px;padding:3px 8px}
+.map-preset-options [role=status]{margin-top:5px}
+#map_custom{margin:8px 0 0;padding:3px 8px;border-radius:8px}
+#map_custom summary{gap:6px}
+#map_custom summary::after{content:"▾";color:var(--muted)}
+#map_custom[open] summary::after{content:"▴"}
+#map_custom .mgf{margin-bottom:5px}
+#map_custom #mg_engine{width:auto}
+.play-aux:has(#play_pane_maps:not([hidden])) .play-aux-body{max-height:min(40vh,380px)}
+.play-workspace[data-position=rail][data-sheet=false] .play-aux:has(#play_pane_maps:not([hidden])) .play-aux-body{max-height:none}
+@media(max-width:900px){
+  .play-workspace[data-position=rail][data-sheet=false] .play-aux-body{max-height:min(58vh,520px)}
+}
+#play_workspace #hand{grid-area:sheet;container-type:inline-size;display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden;padding:0;margin:0;border-radius:12px;background:var(--panel);box-shadow:0 3px 14px #0001}
 #play_workspace .htop{display:block;flex:none;margin:0}
 #play_workspace .hside{display:grid;gap:8px;padding:10px;width:auto;border:0;border-radius:0;background:linear-gradient(145deg,color-mix(in oklab,var(--panel) 89%,var(--acc)),var(--panel) 78%)}
 .play-identity{display:flex;gap:9px;align-items:center}
 .play-identity h3{font:600 clamp(18px,1.65vw,25px)/1.2 Cinzel,serif;overflow-wrap:anywhere}
 .play-identity p{margin:3px 0 0;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+#play_workspace[data-preset=combat] .hside{gap:5px;padding-block:7px}
 .play-portrait{width:42px;height:42px;object-fit:cover;border-radius:8px;border:1px solid var(--line);flex:none}
 .play-sheet-links{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:3px;margin-left:auto;align-self:flex-start;flex:none}
 .play-sheet-links button,.play-jump{min-height:30px;padding:2px 7px;font-size:13px;border:1px solid var(--line);border-radius:7px;white-space:nowrap}
@@ -483,7 +525,7 @@ button.play-stat{border-color:var(--acc)}
 .play-sheet-pane .hbt button:not(.go){border:1px solid var(--line)}
 .play-sheet-pane .wpn{border-color:var(--line);padding-bottom:0}
 .play-weapon-options{margin:0;padding:0;border:0;font-size:13px;color:var(--muted)}
-.play-weapon-options summary{cursor:pointer;padding:2px 0;gap:4px;min-height:26px;width:fit-content}
+.play-weapon-options summary{cursor:pointer;padding:2px 0;gap:4px;min-height:26px;width:fit-content}.play-weapon-options summary::after{content:"▾";color:var(--muted)}.play-weapon-options[open] summary::after{content:"▴"}
 .play-weapon-options .inf{margin-top:4px}
 .play-masteries{list-style:none;display:flex;flex-wrap:wrap;gap:4px;margin:0;padding:0}
 .play-masteries li{padding:3px 7px;border:1px solid var(--line);border-radius:6px}
@@ -496,17 +538,20 @@ button.play-stat{border-color:var(--acc)}
 #play_roll_pane #rolls{position:static;width:100%;max-height:none;box-shadow:none;border:0;background:transparent;border-radius:0}
 #play_roll_pane #rolls ol{max-height:none;overflow:visible}
 #play_roll_pane #rolls .rlh{padding:0}
-body.mp-player #g_public,body.mp-player #play_tab_sn{display:none!important}
-body.mp-spec .play-workspace{grid-template-columns:minmax(0,1fr)}
-body.mp-spec #play_workspace #hand{display:none!important}
-@media(min-width:1600px){.play-sheet-pane{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.play-sheet-pane>.pf,.play-sheet-pane>.k-atk,.play-sheet-pane>.k-inv,.play-sheet-pane>.k-note,.play-sheet-pane>.play-empty-sheet{grid-column:1/-1}}
+@container(min-width:570px){.play-sheet-pane{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.play-sheet-pane>.pf,.play-sheet-pane>.k-atk,.play-sheet-pane>.k-inv,.play-sheet-pane>.k-note,.play-sheet-pane>.play-empty-sheet{grid-column:1/-1}}
 @media(max-width:900px){
   .play-workspace{display:flex;flex-direction:column;height:auto;min-height:0}
-  #play_workspace #stage{flex:none;height:clamp(300px,55vh,560px)!important}
-  #play_workspace #hand{min-height:300px}
-  .play-jump{display:inline-flex}
-  body.mp-spec #play_jump_sheet{display:none!important}
-  .play-sheet-body{overflow:visible;flex:none}
+  .play-workspace[data-position=stack] .play-map-column,.play-map-column{flex:none;height:clamp(300px,55vh,620px)}
+  .play-workspace[data-position=sheet] #hand{order:-1}
+  #play_workspace #hand{min-height:260px;max-height:75vh}
+  .play-jump,.play-jumps{display:inline-flex}
+  .play-jump[hidden]{display:none}
+  .play-layout-bar .play-presets{flex:1 1 64%;padding:1px}
+  #v-carte #modes{order:-2}
+  #pl_toggle{order:-1;display:inline-flex;min-height:34px;padding:2px 8px;background:var(--panel);border:1px solid var(--line)}
+  body.mp-player #pl_toggle,#pl_bar:not(.open){display:none!important}
+  .mode-edit #map_fields_toggle{display:inline-flex}
+  .mode-edit #map_fields:not(.open){display:none}
 }
 @media(max-width:600px){
   body:has(#v-carte:not([hidden])) header{padding:8px 8px 4px;gap:3px 8px}
@@ -518,15 +563,12 @@ body.mp-spec #play_workspace #hand{display:none!important}
   body:has(#v-carte:not([hidden])) nav.tabs{padding-inline:8px;gap:4px;flex-wrap:wrap}
   body:has(#v-carte:not([hidden])) nav.tabs a{min-height:34px;padding:4px 8px;font-size:13px}
   #v-carte>.bar .grp>button{min-height:34px;padding-inline:8px;font-size:14px}
-  #v-carte #thint{display:none}
-  #v-carte #modes{order:-2}
-  #pl_toggle{order:-1;display:inline-flex;min-height:34px;padding:2px 8px;background:var(--panel);border:1px solid var(--line)}
-  body.mp-player #pl_toggle,#pl_bar:not(.open){display:none!important}
+  #v-carte #thint,#play_presets{display:none}
+  #play_preset_select{display:block;flex:1 1 0;width:auto;min-height:36px}
+  .play-jumps{width:100%}
 }
 @media(max-width:420px){
-  .play-display-bar{gap:4px;padding-inline:5px}
-  .play-display-bar #play_map_label{font-size:14px}
-  .play-zoom button,.play-display-bar button,.play-displays summary{padding-inline:5px}
+  .play-presets button,#play_customize,.play-jumps button{padding-inline:6px;font-size:13px}
   .play-stat span{font-size:11px}
   #play_workspace .play-resources .htrk{gap:2px;padding-inline:4px}
   #play_workspace .htrk button{width:24px}
@@ -534,12 +576,13 @@ body.mp-spec #play_workspace #hand{display:none!important}
 }
 @media(max-width:360px){
   body:has(#v-carte:not([hidden])) header .usb .us-label{display:none}
-  body:has(#v-carte:not([hidden])) nav.tabs a{padding-inline:5px}
-  #v-carte>.bar #tools>button{padding-inline:5px}
+  body:has(#v-carte:not([hidden])) nav.tabs{padding-inline:7px;gap:3px}
+  body:has(#v-carte:not([hidden])) nav.tabs a{padding-inline:4px;font-size:12px}
+  #v-carte>.bar #tools>button{padding-inline:4px;font-size:13px}
 }
 body.table-display #v-carte>*:not(#play_workspace){display:none!important}
 body.table-display #play_workspace{display:block!important;margin:0;width:100vw;height:100dvh;min-height:0}
 body.table-display .play-map-column{height:100%;display:block;pointer-events:none}
 body.table-display #play_workspace #stage{width:100%!important;height:100%!important;min-height:0;border-radius:0;visibility:hidden}
 body.table-display.table-ready #play_workspace #stage{visibility:visible}
-body.table-display #play_aux,body.table-display #play_display_bar,body.table-display #play_workspace #hand,body.table-display #info{display:none!important}
+body.table-display #play_aux,body.table-display #play_workspace #hand,body.table-display #info{display:none!important}
