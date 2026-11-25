@@ -272,11 +272,12 @@ const ARM = {
 };
 const SHD = {
   none: [['None', 'Aucun'], 0],
-  bocle: [['Buckler', 'Bocle'], 0],
+  // [name, Evasion bonus, Finesse cap for Evasion (heavy shields, like armor)]
+  bocle: [['Buckler', 'Bocle'], 1],
   rond: [['Small shield', 'Rondache'], 1],
-  ecu: [['Heater shield', 'Écu'], 1],
-  grand: [['Large shield', 'Grand bouclier'], 2],
-  pavois: [['Tower shield', 'Pavois'], 2],
+  ecu: [['Heater shield', 'Écu'], 2],
+  grand: [['Large shield', 'Grand bouclier'], 3, 2],
+  pavois: [['Tower shield', 'Pavois'], 3, 1],
 };
 const blankC = () => ({
   id: tid(),
@@ -415,10 +416,11 @@ function derived(c = C) {
     pr = c.prof || { arm: 0, shd: 0 },
     armOk = armNeed(c.armor) <= (pr.arm || 0),
     shdOk = c.shield === 'none' || !!pr.shd,
-    cap = a[2] === 'l' ? 5 : a[2] === 'm' ? 2 : 1,
+    sh = shdOk ? SHD[c.shield] || SHD.none : SHD.none,
+    cap = Math.min(a[2] === 'l' ? 5 : a[2] === 'm' ? 2 : 1, sh[2] ?? 99),
     nat = Math.max(2 * (c.apex || 0), (c.tal || {}).pact && c.patron === 'dragon' ? 2 : 0),
     av = Math.max(armOk ? a[1] : 0, nat);
-  const eva = 10 + Math.min(cl.F_phy, cap) + (shdOk ? (SHD[c.shield] || SHD.none)[1] : 0) - (armOk ? 0 : 2),
+  const eva = 10 + Math.min(cl.F_phy, cap) + sh[1] - (armOk ? 0 : 2),
     base = c.dv + L + cl.R_phy,
     ts = Object.values(c.sch),
     maxT = Math.max(0, ...ts);

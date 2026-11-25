@@ -757,7 +757,11 @@ const MAN = [
   [2, ['Disarm, trip', 'Désarmer, renverser'], ['Disarm, knock prone, immobilize', 'Désarmer, renverser, immobiliser']],
   [2, ['Stance', 'Posture tenue'], ['One effect held 1 minute', 'Un effet maintenu 1 minute']],
   [3, ['Whirlwind', 'Tourbillon'], ['All adjacent foes', 'Tous les ennemis adjacents']],
-  [1, ['Extra parry', 'Parade supplémentaire'], ['Parry again this round', 'Parer encore ce round']],
+  [
+    1,
+    ['Extra intercept', 'Interception supplémentaire'],
+    ['Intercept again this round', 'Intercepter encore ce round'],
+  ],
   [3, ['Extra action', 'Action supplémentaire'], ['One more action this turn', 'Une action de plus ce tour']],
 ];
 const handSel = {};
@@ -928,7 +932,7 @@ function renderHand() {
   const cards = [];
   const shd = SHD[c.shield] || SHD.none;
   cards.push(
-    `<div class="hc k-def"><div class="ht">${L2('Defense', 'Défense')}</div><div class="hn">${L2('Evasion', 'Esquive')} ${D.eva}</div><div class="hb">${L2('Armor', 'Armure')} ${esc(tr((ARM[c.armor] || ARM.none)[0]))} (${D.av})${D.armOk ? '' : ' ⚠'}<br>${L2('Thresholds', 'Seuils')} ${D.minor} / ${D.major} / ${D.severe}<br>${c.shield !== 'none' ? `${L2('Shield', 'Bouclier')} ${esc(tr(shd[0]))}${shd[1] ? ` (+${shd[1]} ${L2('Evasion', 'Esquive')})` : ''}${D.shdOk ? '' : ` · <span class="ko">${L2('untrained: no Parry', 'sans entraînement : pas de Parade')}</span>`}` : `${L2('No shield', 'Pas de bouclier')}`}</div>${c.shield !== 'none' && D.shdOk ? `<div class="hbt"><button type="button" class="go" data-hpar="1">${L2('Parry', 'Parer')} (${sgn((c.cells.R_phy || 0) + shd[1])})</button></div>` : ''}</div>`,
+    `<div class="hc k-def"><div class="ht">${L2('Defense', 'Défense')}</div><div class="hn">${L2('Evasion', 'Esquive')} ${D.eva}</div><div class="hb">${L2('Armor', 'Armure')} ${esc(tr((ARM[c.armor] || ARM.none)[0]))} (${D.av})${D.armOk ? '' : ' ⚠'}<br>${L2('Thresholds', 'Seuils')} ${D.minor} / ${D.major} / ${D.severe}<br>${c.shield !== 'none' ? `${L2('Shield', 'Bouclier')} ${esc(tr(shd[0]))}${shd[1] ? ` (+${shd[1]} ${L2('Evasion', 'Esquive')})` : ''}${shd[2] != null ? ` · ${L2('Finesse capped at', 'Finesse plafonnée à')} +${shd[2]}` : ''}${c.shield === 'grand' || c.shield === 'pavois' ? `<br>${L2('Intercept: an attack on an adjacent ally targets your Evasion instead', 'Interception : une attaque contre un allié adjacent vise ton Esquive à la place')}` : ''}${D.shdOk ? '' : ` · <span class="ko">${L2('untrained: no bonus', 'sans entraînement : aucun bonus')}</span>`}` : `${L2('No shield', 'Pas de bouclier')}`}</div></div>`,
   );
   const WL = [];
   (c.weapons || []).forEach((w, i) => {
@@ -1231,17 +1235,6 @@ document.getElementById('hand').addEventListener('click', e => {
   if (ds.hinv) {
     invAct(c, ds);
     renderHand();
-    return;
-  }
-  if (ds.hpar) {
-    const sb = (SHD[c.shield] || SHD.none)[1];
-    hRoll(
-      hAtk(
-        L2('Parry', 'Parade') + ' · ' + cellName('R_phy') + (sb ? ' + ' + L2('shield', 'bouclier') : ''),
-        (c.cells.R_phy || 0) + sb,
-      ) +
-        ` · ${L2('beats the attack roll? the blow costs 1 box less', "égale ou bat le jet d'attaque ? le coup coûte 1 case de moins")}`,
-    );
     return;
   }
   if (ds.pfi) {

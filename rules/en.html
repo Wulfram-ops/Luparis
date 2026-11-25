@@ -2,14 +2,14 @@
 <div class="cheat">
 <div class="ch"><h4>Attacks and DCs</h4><p><b>Attack</b>: d20 + mod + Mastery (Tier + 1) against Evasion. Natural 20: double the Mastery dice.</p><p><b>DC</b>: 8 + mod + Mastery. 10 easy, 15 medium, 20 hard, 25 very hard, 30 nearly impossible.</p><p><b>Save</b>: the threat sets the domain, the story sets the intent (Resilience by default).</p></div>
 <div class="ch"><h4>Damage and boxes</h4><p>Below Minor: 0 boxes, but 1 Stamina (wear). Minor to Major: 1. Major: 2. Severe: 3.</p><p>At 0 boxes: unconscious, death saves. Resistance and vulnerability apply before thresholds.</p></div>
-<div class="ch"><h4>Defense</h4><p><b>Evasion</b> = 10 + Physical Finesse (armor cap) + shield.</p><p><b>Parry</b> (reaction): d20 + Physical Resilience + shield ≥ the attack roll, and the blow costs 1 box less. Each extra Parry in the round: 1 Stamina.</p></div>
+<div class="ch"><h4>Defense</h4><p><b>Evasion</b> = 10 + Physical Finesse (armor cap) + shield.</p><p><b>Shield</b>: +1 to +3 Evasion depending on its size, no roll. Large shields cap Finesse like armor and allow Intercept.</p></div>
 <div class="ch"><h4>Effects and maneuvers</h4><p>Total value ≤ Tier. Paid in Mana (spell) or Stamina (weapon).</p><p>1: heavy blow, offset, movement, light control, heal (per box). 2: heavy control, persistence, extra target (each). 3: major control, area or whirlwind (successful save = half), extra action.</p></div>
 <div class="ch"><h4>Rest</h4><p><b>Short (1 h)</b>: half the missing boxes and Mana, all Stamina.</p><p><b>Long (8 h)</b>: everything, and one less level of exhaustion.</p></div>
 <div class="ch"><h4>Distance and terrain</h4><p>1 tile = 5 ft (1.5 m), diagonals included; +5 ft per height level.</p><p>+1 half cover, +2 cover, +3 impassable; −1 difficult, −2 impassable.</p></div>
 <div class="ch wide"><h4>Conditions</h4><dl class="cond">
 <dt>Blinded</dt><dd>Disadvantage on its attacks, advantage against it.</dd><dt>Charmed</dt><dd>Can't attack the charmer.</dd><dt>Deafened</dt><dd>Can't hear.</dd>
 <dt>Exhaustion</dt><dd>−2 to d20s and −5 ft per level; death at 6.</dd><dt>Frightened</dt><dd>Disadvantage while it sees the source; can't approach it.</dd><dt>Grappled</dt><dd>Speed 0.</dd>
-<dt>Incapacitated</dt><dd>No actions or reactions, so no Parry.</dd><dt>Invisible</dt><dd>Advantage on its attacks, disadvantage against it.</dd><dt>Paralyzed</dt><dd>Incapacitated; a melee hit is a critical.</dd>
+<dt>Incapacitated</dt><dd>No actions or reactions, so no Intercept.</dd><dt>Invisible</dt><dd>Advantage on its attacks, disadvantage against it.</dd><dt>Paralyzed</dt><dd>Incapacitated; a melee hit is a critical.</dd>
 <dt>Petrified</dt><dd>Incapacitated, resistance to all damage.</dd><dt>Poisoned</dt><dd>Disadvantage on attacks and checks.</dd><dt>Prone</dt><dd>Crawls; disadvantage on its attacks; advantage on melee against it.</dd>
 <dt>Restrained</dt><dd>Speed 0; disadvantage on attacks and Physical saves; advantage against it.</dd><dt>Stunned</dt><dd>Incapacitated, fails Physical saves; advantage against it.</dd><dt>Unconscious</dt><dd>Incapacitated, prone; a melee hit is a critical.</dd></dl></div>
 </div>
@@ -33,7 +33,7 @@
 <tr><td>Stat (intent or domain), each +1</td><td>20, 40, 80, 160, 320… (−1 gives back 20)</td><td>+3: 140, +5: 620</td></tr><tr><td>Talent (chapter 7), per rank</td><td>40, 80, 160 (Expertise: 20, 40, 80)</td><td>—</td></tr><tr><td>Armor training: light, medium, heavy</td><td>20, 40, 80</td><td>140</td></tr><tr><td>Shield training</td><td>40</td><td>40</td></tr>
 <tr><td>Tier in a discipline (school, weapon family or Apex), 1 to 5</td><td>40, 80, 160, 240, 320</td><td>840</td></tr>
 <tr><td>Hit die d8, d10, d12</td><td>80, 160, 240</td><td>480</td></tr></tbody></table>
-<p><b>Armor and shield training:</b> like proficiencies in D&D. Wearing armor you are not trained for gives no armor value (your thresholds are those of an unarmored body) and −2 Evasion. A shield without training gives no bonus and no Parry. Medium armor needs light training first, heavy armor needs medium.</p>
+<p><b>Armor and shield training:</b> like proficiencies in D&D. Wearing armor you are not trained for gives no armor value (your thresholds are those of an unarmored body) and −2 Evasion. A shield without training gives no bonus. Medium armor needs light training first, heavy armor needs medium.</p>
 <p><b>Specialization:</b> your disciplines are ranked by Tier. The highest costs normal price, the 2nd ×1.5, the 3rd ×2, every further one ×3. At level 20 (2,000 XP), that buys one discipline at Tier 5 and a second at Tier 4, with the matrix and a d8; a tank who takes the d12 settles for Tier 5 and Tier 3.</p>
 <p><b>Tier gates:</b> Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17, like D&D's major tiers.</p>
 <h2 id="r-defense">3. Defense: Evasion and armor</h2>
@@ -45,14 +45,14 @@
 <tr><td>Chain shirt</td><td>Medium</td><td>max +2</td><td class="r">3</td></tr><tr><td>Breastplate, scale mail</td><td>Medium</td><td>max +2</td><td class="r">4</td></tr><tr><td>Half plate</td><td>Medium</td><td>max +2</td><td class="r">5</td></tr>
 <tr><td>Chain mail</td><td>Heavy</td><td>max +1</td><td class="r">6</td></tr><tr><td>Splint</td><td>Heavy</td><td>max +1</td><td class="r">7</td></tr><tr><td>Plate</td><td>Heavy</td><td>max +1</td><td class="r">8</td></tr></tbody></table>
 <h3>Shields</h3>
-<p><b>Parry (reaction):</b> when you are hit, roll d20 + Physical Resilience + the shield's Evasion bonus. If you match or beat the attack roll, the blow costs one box less (2 becomes 1, 1 becomes 0). The first Parry of the round is free; each extra one costs 1 Stamina.</p>
-<table><thead><tr><th>Shield</th><th class="r">Evasion</th><th>Parry</th><th>Special</th></tr></thead><tbody>
-<tr><td>Buckler</td><td class="r">+0</td><td>Melee only</td><td>Hand almost free: you can cast or hold an item</td></tr>
-<tr><td>Small shield</td><td class="r">+1</td><td>Yes</td><td>Light, no drawback</td></tr>
-<tr><td>Heater shield</td><td class="r">+1</td><td>Yes, also against missiles</td><td>The standard shield</td></tr>
-<tr><td>Large shield</td><td class="r">+2</td><td>Yes + Intercept</td><td>Disadvantage on Stealth</td></tr>
-<tr><td>Tower shield</td><td class="r">+2</td><td>Yes + Intercept</td><td>Plant it (bonus action): cover for you and one ally behind; speed −10 ft (3 m) while carried</td></tr></tbody></table>
-<p><b>Intercept:</b> you can use your Parry to protect an adjacent ally instead.</p>
+<p>A shield adds its bonus to Evasion, with no roll. The bigger it is, the more it protects and the more it gets in the way: large shields cap the Physical Finesse that counts toward Evasion, like armor (keep the lower of the two caps). Someone in heavy armor loses nothing: it is the armored tank's natural pick; the nimble duelist keeps a small shield.</p>
+<table><thead><tr><th>Shield</th><th class="r">Evasion</th><th>Finesse cap</th><th>Special</th></tr></thead><tbody>
+<tr><td>Buckler</td><td class="r">+1</td><td>—</td><td>Against melee only. Hand almost free: you can cast or hold an item</td></tr>
+<tr><td>Small shield</td><td class="r">+1</td><td>—</td><td>Light: no drawback, even to swim, climb or hide</td></tr>
+<tr><td>Heater shield</td><td class="r">+2</td><td>—</td><td>The standard shield</td></tr>
+<tr><td>Large shield</td><td class="r">+3</td><td>+2</td><td>Intercept; disadvantage on Stealth</td></tr>
+<tr><td>Tower shield</td><td class="r">+3</td><td>+1</td><td>Intercept; Plant it (bonus action): cover for you and one ally behind; speed −10 ft (3 m) while carried</td></tr></tbody></table>
+<p><b>Intercept (reaction):</b> when an adjacent ally is attacked, the attack targets your Evasion instead of theirs; if it hits, you take the blow. Once per round; each extra Intercept costs 1 Stamina.</p>
 <h2 id="r-vitalite">4. Damage and Vitality</h2>
 <p>There are no more hit points to subtract. Compare a blow's damage to the target's thresholds:</p>
 <table><thead><tr><th>Damage of the blow</th><th class="r">Boxes lost</th></tr></thead><tbody>
@@ -95,11 +95,11 @@
 <p>Stamina is the body's exhaustion, as Mana is the mind's. It refills completely on a short rest.</p>
 <p><b>Pool = the Stamina gained from each weapon family you master + Physical Resilience modifier.</b> A pure mage only has their modifier.</p>
 <table><thead><tr><th>Tier in the family</th><th class="r">1</th><th class="r">2</th><th class="r">3</th><th class="r">4</th><th class="r">5</th></tr></thead><tbody><tr><td>Stamina gained (total)</td><td class="r">1</td><td class="r">3</td><td class="r">7</td><td class="r">12</td><td class="r">18</td></tr></tbody></table>
-<p><b>Stamina pays for:</b> martial maneuvers, Parries beyond the first, wear, and an extra action on your turn (3 Stamina, for everyone). <b>It never pays</b> for spell effects.</p>
+<p><b>Stamina pays for:</b> martial maneuvers, Intercepts beyond the first, wear, and an extra action on your turn (3 Stamina, for everyone). <b>It never pays</b> for spell effects.</p>
 <table><thead><tr><th>Maneuver</th><th class="r">Value</th></tr></thead><tbody>
 <tr><td>Heavy blow: if the attack hits, +1 box</td><td class="r">1</td></tr><tr><td>Cleave: one more adjacent enemy</td><td class="r">2 per target</td></tr><tr><td>Charge or leap: move before striking</td><td class="r">1</td></tr>
 <tr><td>Throw or reach: strike farther</td><td class="r">1</td></tr><tr><td>Shove, guard break</td><td class="r">1</td></tr><tr><td>Disarm, trip, grapple</td><td class="r">2</td></tr>
-<tr><td>Held stance: an effect kept for 1 minute</td><td class="r">2</td></tr><tr><td>Whirlwind: every adjacent enemy</td><td class="r">3</td></tr><tr><td>Extra Parry this round</td><td class="r">1</td></tr><tr><td>Extra action this turn</td><td class="r">3</td></tr></tbody></table>
+<tr><td>Held stance: an effect kept for 1 minute</td><td class="r">2</td></tr><tr><td>Whirlwind: every adjacent enemy</td><td class="r">3</td></tr><tr><td>Extra Intercept this round</td><td class="r">1</td></tr><tr><td>Extra action this turn</td><td class="r">3</td></tr></tbody></table>
 <p class="ex">At level 5, a fighter at Tier 3 in cutting weapons and Tier 1 in ranged weapons, with +3 Physical Resilience, has 11 Stamina per fight, 33 over a day with two short rests. A mage has 19 Mana for the whole day: the mage hits hard once, the fighter goes the distance.</p>
 <h3>Apex</h3><p>The Apex is abnormal physical power: it is not magic, but it is not normal either. It is bought by Tier like a weapon family (same XP costs and Tier gates).</p><ul><li><b>Breath:</b> each Apex Tier adds Breath exactly like a weapon family (1, 3, 7, 12, 18 cumulative).</li><li><b>Natural armor = 2 × Apex Tier</b> (2 to 10). It does not stack with worn armor: keep the better value. Natural armor never limits Evasion.</li><li><b>Infusion:</b> the Apex can infuse a weapon strike (see below).</li></ul>
 <h3>Infusion (v0.3)</h3><p>A character who masters both a weapon family and a source of power can infuse the strike: the strike deals extra damage. The infusion has a value from 1 up to your Tier in the source, and <b>each point costs 1 Mana</b> (a school) <b>or 1 Breath</b> (the Apex) and adds <b>one die</b>: the school's damage die (d8) for a school, the weapon's die for the Apex. Paid when the attack is declared, even on a miss; the extra dice are added to that strike's damage. The source is a magic school (a Crucible adept sharpens or densifies a cutting blade, an Aegis adept wraps a mace in solidified energy) or the Apex (a blow struck with outrageous strength). One infusion per strike.</p><p><b>Damage types come from the story.</b> At character creation, the player and the GM agree on what the character's school can produce: Aegis, being solidified energy, will hardly deal anything but force, bludgeoning or physical damage; a Surge adept may deal force, fire or radiant damage, depending on their lore and what they know how to do. The scene can tighten or widen those limits.</p>
@@ -141,7 +141,7 @@
 <tr><td>Exhaustion</td><td>Levels 1 to 6: each level gives −2 to every d20 and −5 ft speed. Level 6 is death. A long rest removes one level.</td></tr>
 <tr><td>Frightened</td><td>Disadvantage on its rolls while it sees the source; can't willingly move closer to it.</td></tr>
 <tr><td>Grappled</td><td>Speed 0. Disadvantage on attacks against anyone but the grappler. Escape: action, Physical check against the DC.</td></tr>
-<tr><td>Incapacitated</td><td>No action, bonus action or reaction, so it can't Parry.</td></tr>
+<tr><td>Incapacitated</td><td>No action, bonus action or reaction, so it can't Intercept.</td></tr>
 <tr><td>Invisible</td><td>Advantage on its attacks, disadvantage on attacks against it, as long as it isn't located.</td></tr>
 <tr><td>Paralyzed</td><td>Incapacitated, speed 0. Fails Physical saves; advantage against it, and a melee hit is a critical.</td></tr>
 <tr><td>Petrified</td><td>Turned to stone and incapacitated; resistance to all damage.</td></tr>

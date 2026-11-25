@@ -5992,11 +5992,12 @@ const ARM = {
 };
 const SHD = {
   none: [['None', 'Aucun'], 0],
-  bocle: [['Buckler', 'Bocle'], 0],
+  // [name, Evasion bonus, Finesse cap for Evasion (heavy shields, like armor)]
+  bocle: [['Buckler', 'Bocle'], 1],
   rond: [['Small shield', 'Rondache'], 1],
-  ecu: [['Heater shield', 'Écu'], 1],
-  grand: [['Large shield', 'Grand bouclier'], 2],
-  pavois: [['Tower shield', 'Pavois'], 2],
+  ecu: [['Heater shield', 'Écu'], 2],
+  grand: [['Large shield', 'Grand bouclier'], 3, 2],
+  pavois: [['Tower shield', 'Pavois'], 3, 1],
 };
 const blankC = () => ({
   id: tid(),
@@ -6135,10 +6136,11 @@ function derived(c = C) {
     pr = c.prof || { arm: 0, shd: 0 },
     armOk = armNeed(c.armor) <= (pr.arm || 0),
     shdOk = c.shield === 'none' || !!pr.shd,
-    cap = a[2] === 'l' ? 5 : a[2] === 'm' ? 2 : 1,
+    sh = shdOk ? SHD[c.shield] || SHD.none : SHD.none,
+    cap = Math.min(a[2] === 'l' ? 5 : a[2] === 'm' ? 2 : 1, sh[2] ?? 99),
     nat = Math.max(2 * (c.apex || 0), (c.tal || {}).pact && c.patron === 'dragon' ? 2 : 0),
     av = Math.max(armOk ? a[1] : 0, nat);
-  const eva = 10 + Math.min(cl.F_phy, cap) + (shdOk ? (SHD[c.shield] || SHD.none)[1] : 0) - (armOk ? 0 : 2),
+  const eva = 10 + Math.min(cl.F_phy, cap) + sh[1] - (armOk ? 0 : 2),
     base = c.dv + L + cl.R_phy,
     ts = Object.values(c.sch),
     maxT = Math.max(0, ...ts);
@@ -7802,7 +7804,11 @@ const MAN = [
   [2, ['Disarm, trip', 'Désarmer, renverser'], ['Disarm, knock prone, immobilize', 'Désarmer, renverser, immobiliser']],
   [2, ['Stance', 'Posture tenue'], ['One effect held 1 minute', 'Un effet maintenu 1 minute']],
   [3, ['Whirlwind', 'Tourbillon'], ['All adjacent foes', 'Tous les ennemis adjacents']],
-  [1, ['Extra parry', 'Parade supplémentaire'], ['Parry again this round', 'Parer encore ce round']],
+  [
+    1,
+    ['Extra intercept', 'Interception supplémentaire'],
+    ['Intercept again this round', 'Intercepter encore ce round'],
+  ],
   [3, ['Extra action', 'Action supplémentaire'], ['One more action this turn', 'Une action de plus ce tour']],
 ];
 const handSel = {};
@@ -7973,7 +7979,7 @@ function renderHand() {
   const cards = [];
   const shd = SHD[c.shield] || SHD.none;
   cards.push(
-    `<div class="hc k-def"><div class="ht">${L2('Defense', 'Défense')}</div><div class="hn">${L2('Evasion', 'Esquive')} ${D.eva}</div><div class="hb">${L2('Armor', 'Armure')} ${esc(tr((ARM[c.armor] || ARM.none)[0]))} (${D.av})${D.armOk ? '' : ' ⚠'}<br>${L2('Thresholds', 'Seuils')} ${D.minor} / ${D.major} / ${D.severe}<br>${c.shield !== 'none' ? `${L2('Shield', 'Bouclier')} ${esc(tr(shd[0]))}${shd[1] ? ` (+${shd[1]} ${L2('Evasion', 'Esquive')})` : ''}${D.shdOk ? '' : ` · <span class="ko">${L2('untrained: no Parry', 'sans entraînement : pas de Parade')}</span>`}` : `${L2('No shield', 'Pas de bouclier')}`}</div>${c.shield !== 'none' && D.shdOk ? `<div class="hbt"><button type="button" class="go" data-hpar="1">${L2('Parry', 'Parer')} (${sgn((c.cells.R_phy || 0) + shd[1])})</button></div>` : ''}</div>`,
+    `<div class="hc k-def"><div class="ht">${L2('Defense', 'Défense')}</div><div class="hn">${L2('Evasion', 'Esquive')} ${D.eva}</div><div class="hb">${L2('Armor', 'Armure')} ${esc(tr((ARM[c.armor] || ARM.none)[0]))} (${D.av})${D.armOk ? '' : ' ⚠'}<br>${L2('Thresholds', 'Seuils')} ${D.minor} / ${D.major} / ${D.severe}<br>${c.shield !== 'none' ? `${L2('Shield', 'Bouclier')} ${esc(tr(shd[0]))}${shd[1] ? ` (+${shd[1]} ${L2('Evasion', 'Esquive')})` : ''}${shd[2] != null ? ` · ${L2('Finesse capped at', 'Finesse plafonnée à')} +${shd[2]}` : ''}${c.shield === 'grand' || c.shield === 'pavois' ? `<br>${L2('Intercept: an attack on an adjacent ally targets your Evasion instead', 'Interception : une attaque contre un allié adjacent vise ton Esquive à la place')}` : ''}${D.shdOk ? '' : ` · <span class="ko">${L2('untrained: no bonus', 'sans entraînement : aucun bonus')}</span>`}` : `${L2('No shield', 'Pas de bouclier')}`}</div></div>`,
   );
   const WL = [];
   (c.weapons || []).forEach((w, i) => {
@@ -8276,17 +8282,6 @@ document.getElementById('hand').addEventListener('click', e => {
   if (ds.hinv) {
     invAct(c, ds);
     renderHand();
-    return;
-  }
-  if (ds.hpar) {
-    const sb = (SHD[c.shield] || SHD.none)[1];
-    hRoll(
-      hAtk(
-        L2('Parry', 'Parade') + ' · ' + cellName('R_phy') + (sb ? ' + ' + L2('shield', 'bouclier') : ''),
-        (c.cells.R_phy || 0) + sb,
-      ) +
-        ` · ${L2('beats the attack roll? the blow costs 1 box less', "égale ou bat le jet d'attaque ? le coup coûte 1 case de moins")}`,
-    );
     return;
   }
   if (ds.pfi) {
