@@ -305,12 +305,11 @@ document.getElementById('img_card').addEventListener('contextmenu', e => {
   ]);
 });
 
-// ---- map and world views: 16:9 by default; drag the bottom edge, the right edge or the corner to resize,
+// ---- world view: 16:9 by default; drag the bottom edge, the right edge or the corner to resize,
 // double-click a handle to go back to 16:9 and full width
-for (const id of ['stage', 'w_stage']) {
-  const el = document.getElementById(id);
-  if (!el) continue;
-  const key = 'luparis-view-' + id,
+{
+  const el = $('w_stage');
+  const key = 'luparis-view-w_stage',
     apply = () => {
       const v = lsGet(key, null) || {},
         r = +v.r,
@@ -362,13 +361,13 @@ const MODE_T = {
   play: ['move', 'measure', 'tpl', 'env'],
   edit: ['shift', 'up', 'down', 'flat', 'surf', 'env', 'obj', 'pref', 'mark', 'hide'],
 };
-function setMode(m) {
+function setMode(m, savePreference = true) {
   if (MP.role === 'player') m = 'play';
   m = m === 'edit' ? 'edit' : 'play';
   document.body.classList.toggle('mode-edit', m === 'edit');
   document.body.classList.toggle('mode-play', m === 'play');
   for (const b of document.querySelectorAll('#modes [data-mode]')) b.setAttribute('aria-pressed', b.dataset.mode === m);
-  lsSet('luparis-mode', m);
+  if (savePreference) lsSet('luparis-mode', m);
   if (!MODE_T[m].includes(tool) && tool !== 'place') setTool(m === 'edit' ? 'shift' : 'move');
 }
 {

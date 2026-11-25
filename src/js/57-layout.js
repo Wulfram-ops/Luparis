@@ -1,17 +1,116 @@
-// Integrated play workspace: fixed responsive columns, no movable modules.
-const PLAY_AUX={in:['Initiative','Initiative'],tk:['Token','Pion'],mk:['Markers / zones','Repères / zones'],mp:['Session','Session'],img:['Illustrations','Illustrations'],sn:['GM notes','Notes MJ'],roll:['Rolls','Jets']};
+const PLAY_AUX={in:['Initiative','Initiative'],tk:['Token','Pion'],mk:['Markers / zones','Repères / zones'],maps:['Maps','Cartes'],mp:['Session','Session'],img:['Illustrations','Illustrations'],sn:['GM notes','Notes MJ'],roll:['Rolls','Jets']};
 const PLAY_SHEET={actions:['Combat','Combat'],checks:['Checks','Tests'],magic:['Magic','Magie'],gear:['Equipment','Équipement'],profile:['Profile','Profil']};
+const PLAY_LAYOUT_LABELS={
+  play_presets:['Play layouts','Dispositions de jeu'],
+  play_customize:['Customize','Personnaliser'],
+  play_map_short:['Map','Carte'],
+  play_map:['Battle map','Carte tactique'],
+  play_character:['Character','Personnage'],
+  play_tools:['Table tools','Outils de table'],
+  play_position:['Arrangement','Disposition'],
+  play_width:['Column width','Largeur des colonnes'],
+  play_panels:['Visible panels','Panneaux visibles'],
+  play_restore:['Reset layout','Rétablir le preset'],
+  play_done:['Done','Terminer'],
+  play_custom_map:['Generate from a description','Générer à partir d’une description'],
+  play_terrain:['Terrain','Terrain'],
+};
+const PLAY_PRESETS = {
+  table: {label:['Table','Table'],hint:['Map, character and table tools','Carte, personnage et outils de table'],position:'table',width:'balanced',sheet:true,tools:true,aux:'in',tab:'actions'},
+  combat: {label:['Combat','Combat'],hint:['Initiative above your combat sheet','Initiative au-dessus de la fiche de combat'],position:'rail',width:'map',sheet:true,tools:true,aux:'in',tab:'actions'},
+  explore: {label:['Exploration','Exploration'],hint:['Full-width map with markers and zones','Carte pleine largeur avec repères et zones'],position:'table',width:'map',sheet:false,tools:true,aux:'mk',tab:'checks'},
+  sheet: {label:['Character','Fiche'],hint:['Wide character sheet with the map in view','Fiche au premier plan, carte à portée'],position:'sheet',width:'panel',sheet:true,tools:true,aux:'roll',tab:'checks'},
+  prepare: {label:['Preparation','Préparation'],hint:['Map editor and scenario presets','Éditeur et modèles de cartes'],position:'rail',width:'panel',sheet:false,tools:true,aux:'maps',tab:'profile',gm:true},
+};
+const PLAY_POSITIONS = {
+  table:['Map left, tools below','Carte à gauche, outils en dessous'],
+  rail:['Map left, tools in the right column','Carte à gauche, outils dans la colonne droite'],
+  sheet:['Character sheet first','Fiche au premier plan'],
+  stack:['Stacked panels','Panneaux empilés'],
+};
+const PLAY_WIDTHS = {balanced:['Balanced','Équilibrée'],map:['Wider map','Carte plus large'],panel:['Wider panels','Panneaux plus larges']};
 let playAuxTab='in',playSheetTab='actions',playClaimState='',playLastToken=null,playSizeQ=0;
 const playWorkspace=$('play_workspace'),playAux=$('play_aux'),playHand=$('hand');
+const PLAY_LAYOUT_KEY = 'luparis-play-layout-v1';
+let playRole = '', playPreset = 'table', playOverrides = {}, playModeBeforePrep = null;
+
+function playPresetAllowed(key) {
+  if (!Object.hasOwn(PLAY_PRESETS,key)) return false;
+  if (playRole === 'spectator') return key === 'explore';
+  return !(playRole === 'player' && PLAY_PRESETS[key].gm);
+}
+function playSettings() {
+  const base = PLAY_PRESETS[playPreset], saved = playOverrides[playPreset] || {};
+  return {
+    position: Object.hasOwn(PLAY_POSITIONS,saved.position) ? saved.position : base.position,
+    width: Object.hasOwn(PLAY_WIDTHS,saved.width) ? saved.width : base.width,
+    sheet: typeof saved.sheet === 'boolean' ? saved.sheet : base.sheet,
+    tools: typeof saved.tools === 'boolean' ? saved.tools : base.tools,
+  };
+}
+function playStoreLayout() {
+  const all = lsGet(PLAY_LAYOUT_KEY,{}) || {};
+  lsSet(PLAY_LAYOUT_KEY,{...all,[playRole]:{preset:playPreset,overrides:playOverrides}});
+}
+function playApplyLayout() {
+  const {position,width,sheet,tools} = playSettings(),
+    canReadSheet = playRole !== 'spectator',
+    sessionNeeded = playClaimState === 'unclaimed';
+  playHand.hidden = !canReadSheet || !sheet;
+  playAux.hidden = !tools && !sessionNeeded;
+  playWorkspace.dataset.preset = playPreset;
+  playWorkspace.dataset.position = position;
+  playWorkspace.dataset.width = width;
+  playWorkspace.dataset.sheet = String(!playHand.hidden);
+  playWorkspace.dataset.tools = String(!playAux.hidden);
+  for (const button of $('play_presets').querySelectorAll('[data-play-preset]')) {
+    button.hidden = !playPresetAllowed(button.dataset.playPreset);
+    button.setAttribute('aria-pressed',String(button.dataset.playPreset === playPreset));
+  }
+  for (const option of $('play_preset_select').options) {
+    option.hidden = !playPresetAllowed(option.value);
+    option.disabled = option.hidden;
+  }
+  $('play_preset_select').value = playPreset;
+  $('play_position').value = position;
+  $('play_width').value = width;
+  $('play_width').disabled = position === 'stack';
+  $('play_sheet_visible').checked = !playHand.hidden;
+  $('play_sheet_visible').disabled = !canReadSheet;
+  $('play_tools_visible').checked = !playAux.hidden;
+  $('play_tools_visible').disabled = sessionNeeded;
+  for (const button of document.querySelectorAll('#v-carte [data-play-jump]')) button.hidden = $(button.dataset.playJump).hidden;
+  playFit();
+}
+function playUsePreset(key) {
+  if (!playPresetAllowed(key)) return;
+  if (key === 'prepare' && playPreset !== 'prepare') {
+    playModeBeforePrep = document.body.classList.contains('mode-edit') ? 'edit' : 'play';
+    setMode('edit',false);
+  } else if (key !== 'prepare' && playModeBeforePrep) {
+    if (document.body.classList.contains('mode-edit')) setMode(playModeBeforePrep,false);
+    playModeBeforePrep = null;
+  }
+  playPreset = key;
+  const base = PLAY_PRESETS[key];
+  playSelectAux(playClaimState === 'unclaimed' ? 'mp' : base.aux);
+  playSelectSheet(base.tab);
+  const sheetBody = playHand.querySelector('.play-sheet-body');
+  if (sheetBody) sheetBody.scrollTop = 0;
+  playApplyLayout();
+}
 function playSelectAux(k){
-  const allowed=key=>!(key==='sn'&&MP.role==='player')&&!(key==='tk'&&$('tk_panel').hidden);
+  const allowed=key=>!(['sn','maps'].includes(key)&&MP.role==='player')&&!(key==='tk'&&$('tk_panel').hidden);
   if(!Object.hasOwn(PLAY_AUX,k)||!allowed(k))k='in';
+  const changed=playAuxTab!==k;
   playAuxTab=k;
   for(const b of playAux.querySelectorAll('[data-play-tab]')){
     const key=b.dataset.playTab,active=key===k;
     b.hidden=!allowed(key);b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;
   }
   for(const p of playAux.querySelectorAll('[data-play-pane]'))p.hidden=p.dataset.playPane!==k;
+  if (k === 'roll' && !rlOpen) {rlOpen=true;rlRender();}
+  if(changed)playAux.dispatchEvent(new Event('play-tab-change'));
 }
 function playSelectSheet(k){
   if(!Object.hasOwn(PLAY_SHEET,k))k='actions';
@@ -31,16 +130,20 @@ function playTabsKeyboard(e,selector){
 }
 function playLabels(){
   for(const b of playAux.querySelectorAll('[data-play-tab]'))b.textContent=tr(PLAY_AUX[b.dataset.playTab]);
-  const labels={play_aux_label:['Table tools','Outils de table'],play_map_label:['Battle map','Carte tactique'],play_jump_sheet:['Character','Personnage'],play_display_label:['Displays','Écrans'],g_public:['Public table','Table publique'],g_map:['Second map screen','Carte sur un second écran'],g_screens:['Detect screens','Détecter les écrans']};
-  for(const [id,p] of Object.entries(labels))$(id).textContent=tr(p);
-  $('zin').setAttribute('aria-label',L2('Zoom in','Zoom avant'));
-  $('zout').setAttribute('aria-label',L2('Zoom out','Zoom arrière'));
+  for (const node of document.querySelectorAll('[data-play-i18n]')) node.textContent=tr(PLAY_LAYOUT_LABELS[node.dataset.playI18n]);
+  $('play_presets').setAttribute('aria-label',tr(PLAY_LAYOUT_LABELS.play_presets));
+  $('play_presets').innerHTML=Object.entries(PLAY_PRESETS).map(([key,p])=>
+    `<button type="button" data-play-preset="${key}" title="${esc(tr(p.hint))}">${tr(p.label)}</button>`).join('');
+  $('play_preset_select').setAttribute('aria-label',tr(PLAY_LAYOUT_LABELS.play_presets));
+  $('play_preset_select').replaceChildren(...Object.entries(PLAY_PRESETS).map(([key,p])=>new Option(tr(p.label),key)));
+  for (const [id,choices] of [['play_position',PLAY_POSITIONS],['play_width',PLAY_WIDTHS]]) {
+    $(id).innerHTML=Object.entries(choices).map(([key,title])=>`<option value="${key}">${tr(title)}</option>`).join('');
+  }
   $('mode_play').textContent=L2('Play','Partie');
   $('mode_edit').textContent=L2('Edit','Édition');
-  $('g_screen').setAttribute('aria-label',L2('Destination screen','Écran de destination'));
-  for(const o of $('g_screen').options)if(o.dataset.screenSize)o.textContent=(o.dataset.screenLabel||L2('Screen ','Écran ')+(+o.value+1))+' · '+o.dataset.screenSize;
-  const msg=$('g_display_msg');if(msg.dataset.en!==undefined)msg.textContent=L2(msg.dataset.en,msg.dataset.fr);
   playRollPreview();
+  if (!TABLE_DISPLAY) playApplyLayout();
+  document.dispatchEvent(new Event('play-labels'));
 }
 function playFit(){
   if(TABLE_DISPLAY||$('v-carte').hidden||playSizeQ)return;
@@ -53,10 +156,20 @@ function playFit(){
 function playSync(){
   if(TABLE_DISPLAY)return;
   const claim=MP.role==='player'&&MP.prole!=='spec'?(MP.me?'claimed':'unclaimed'):'other';
+  const role=MP.role==='player'?(MP.prole==='spec'?'spectator':'player'):'table';
+  if (role !== playRole) {
+    playRole=role;
+    playClaimState=claim;
+    const saved=lsGet(PLAY_LAYOUT_KEY,{})?.[role] || {};
+    playOverrides=saved.overrides && typeof saved.overrides==='object' && !Array.isArray(saved.overrides) ? saved.overrides : {};
+    playUsePreset(playPresetAllowed(saved.preset) ? saved.preset : role==='spectator'?'explore':'table');
+    return;
+  }
   if(claim!==playClaimState){
     if(claim==='unclaimed')playAuxTab='mp';
-    else if(claim==='claimed'&&playAuxTab==='mp')playAuxTab='in';
+    else if(claim==='claimed'&&playAuxTab==='mp')playAuxTab=PLAY_PRESETS[playPreset].aux;
     playClaimState=claim;
+    playApplyLayout();
   }
   playSelectAux(playAuxTab);
 }
@@ -134,119 +247,75 @@ function playRoute(){
   rlRender=function(){const r=originalRoll.apply(this,arguments);playRollPreview();return r;};
   playAux.addEventListener('click',e=>{
     const b=e.target.closest('[data-play-tab]');if(!b)return;
-    playSelectAux(b.dataset.playTab);if(playAuxTab==='roll'&&!rlOpen){rlOpen=true;rlRender();}
+    playSelectAux(b.dataset.playTab);
   });
   playHand.addEventListener('click',e=>{
     const b=e.target.closest('[data-sheet-tab]');if(!b)return;
     playSelectSheet(b.dataset.sheetTab);const p=playHand.querySelector('.play-sheet-body');if(p)p.scrollTop=0;
   });
-  playWorkspace.addEventListener('click',e=>{
+  $('v-carte').addEventListener('click',e=>{
     const b=e.target.closest('[data-play-jump]');if(!b)return;
-    const target=$(b.dataset.playJump);target.focus({preventScroll:true});target.scrollIntoView({block:'start'});
+    const target=$(b.dataset.playJump);
+    if(target.hidden)return;
+    target.focus({preventScroll:true});target.scrollIntoView({block:'start'});
   });
+  $('play_presets').addEventListener('click',e=>{
+    const b=e.target.closest('[data-play-preset]');
+    if(!b || b.dataset.playPreset===playPreset)return;
+    playUsePreset(b.dataset.playPreset);
+    playStoreLayout();
+  });
+  $('play_preset_select').onchange=e=>{
+    playUsePreset(e.target.value);
+    playStoreLayout();
+  };
+  $('play_customize').onclick=()=>$('play_layout_dialog').showModal();
+  $('play_layout_dialog').addEventListener('change',()=>{
+    const current=playSettings();
+    playOverrides[playPreset]={
+      position:$('play_position').value,width:$('play_width').value,
+      sheet:$('play_sheet_visible').disabled?current.sheet:$('play_sheet_visible').checked,
+      tools:$('play_tools_visible').disabled?current.tools:$('play_tools_visible').checked,
+    };
+    playStoreLayout();
+    playApplyLayout();
+  });
+  $('play_restore').onclick=()=>{
+    delete playOverrides[playPreset];
+    playUsePreset(playPreset);
+    playStoreLayout();
+  };
   $('pl_toggle').onclick=()=>{
     const open=$('pl_bar').classList.toggle('open');
     $('pl_toggle').setAttribute('aria-expanded',String(open));
     if(open)$('pl_q').focus({preventScroll:true});
   };
+  $('map_fields_toggle').onclick=()=>{
+    const open=$('map_fields').classList.toggle('open');
+    $('map_fields_toggle').setAttribute('aria-expanded',String(open));
+  };
   playAux.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-play-tab]'));
   playHand.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-sheet-tab]'));
-  $('play_last_roll').onclick=()=>{playSelectAux('roll');if(!rlOpen){rlOpen=true;rlRender();}};
+  $('play_last_roll').onclick=()=>playSelectAux('roll');
   const resize=new ResizeObserver(playFit);
-  for(const e of [$('v-carte').querySelector('.bar'),$('ctxbar'),$('savebox'),$('play_display_bar'),document.querySelector('header'),document.querySelector('.tabs')])if(e)resize.observe(e);
+  for(const e of [$('v-carte').querySelector('.bar'),$('ctxbar'),$('savebox'),$('play_presets').parentNode,document.querySelector('header'),document.querySelector('.tabs')])resize.observe(e);
   window.addEventListener('resize',playFit);window.addEventListener('hashchange',playRoute);
   playWorkspace.dataset.ready='1';playLabels();playSync();playRollPreview();renderHand();playRoute();
 }
-// Second displays retain map-only and public spectator views, without module cloning.
-const gViews=new Map();
-let gTick=0,gScreenDetails=null;
-function gDisplayMsg(en, fr) {
-  const el = $('g_display_msg');
-  if (el) {el.dataset.en=en;el.dataset.fr=fr;el.textContent=L2(en,fr);}
-}
-function gPopupFeatures() {
-  const sel = $('g_screen'), s = gScreenDetails && sel && gScreenDetails.screens[+sel.value];
-  if (!s || sel.hidden) return 'popup,width=900,height=720';
-  return 'popup,left=' + Math.round(s.availLeft) + ',top=' + Math.round(s.availTop) +
-    ',width=' + Math.max(400, Math.round(s.availWidth * .9)) + ',height=' + Math.max(300, Math.round(s.availHeight * .9));
-}
-async function gDetectScreens() {
-  if (!window.getScreenDetails) return gDisplayMsg('Screen detection is unavailable. Move windows manually.', 'Détection indisponible : déplace les fenêtres manuellement.');
-  try {
-    gScreenDetails = await window.getScreenDetails();
-    const s = $('g_screen');
-    const render = () => {
-      s.replaceChildren();
-      gScreenDetails.screens.forEach((screen, i) => {
-        const o = document.createElement('option');
-        o.value = i;
-        o.dataset.screenLabel=screen.label||'';o.dataset.screenSize=screen.width+'×'+screen.height;
-        o.textContent=(screen.label||L2('Screen ','Écran ')+(i+1))+' · '+o.dataset.screenSize;
-        s.append(o);
-      });
-      const i = gScreenDetails.screens.indexOf(gScreenDetails.currentScreen);
-      if (gScreenDetails.screens.length > 1) s.value = String(i === 0 ? 1 : 0);
-      s.hidden = false;
-    };
-    render();
-    gScreenDetails.addEventListener('screenschange', render);
-    gDisplayMsg('Choose a screen, then open a window.', 'Choisis un écran, puis ouvre une fenêtre.');
-  } catch (e) {
-    gDisplayMsg('Screen permission refused. Move windows manually.', 'Autorisation refusée : déplace les fenêtres manuellement.');
-  }
-}
-function gOpenView(kind) {
-  if (TABLE_DISPLAY || (kind==='public' && MP.role==='player')) return;
-  if (gViews.has(kind) && !gViews.get(kind).win.closed) return gViews.get(kind).win.focus();
-  const url = new URL(location.pathname,location.href);
-  url.searchParams.set('table-display',kind);
-  url.hash='carte';
-  const win = window.open(url.href,'_blank',gPopupFeatures());
-  if(!win) return gDisplayMsg('Popup blocked. Allow popups for Luparis.','Fenêtre bloquée : autorise les pop-ups pour Luparis.');
-  gViews.set(kind,{win,signature:'',ready:false});
-  gStartTick();
-}
-function gViewState(kind) {
-  const state = memStateNow();
-  // A public display receives the same visibility-filtered map as spectators, never the GM state.
-  return kind==='public' ? mpView(state,[]) : state;
-}
-
-function gStartTick(){
-  if(gTick)return;
-  gTick=setInterval(()=>{
-    let full=null,publicState=null;
-    for(const [kind,p] of gViews){
-      if(p.win.closed){gViews.delete(kind);continue;}
-      if(!p.ready)continue;
-      if(kind==='public'&&MP.role==='player'){p.win.close();gViews.delete(kind);continue;}
-      full ||= memStateNow();
-      const state=kind==='public'?(publicState||=mpView(full,[])):full,signature=JSON.stringify(state);
-      if(signature!==p.signature){p.signature=signature;p.win.postMessage({type:'luparis-table-state',state},location.origin);}
-    }
-    if(!gViews.size){clearInterval(gTick);gTick=0;}
-  },300);
-}
+// Keep receiving map updates in a display opened by an older version.
 function gDisplayBoot(){
-  if(TABLE_DISPLAY){
-    document.body.classList.add('mp-player','mp-spec');
-    const button=document.createElement('button');button.className='table-fullscreen';button.textContent=L2('Fullscreen','Plein écran');
-    button.onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.().catch(()=>{});};
-    document.body.append(button);
-    document.addEventListener('keydown',e=>{if(!['Escape','F11','Tab'].includes(e.key)){e.stopImmediatePropagation();e.preventDefault();}},true);
-    window.addEventListener('message',e=>{
-      if(e.origin!==location.origin||e.source!==window.opener||e.data?.type!=='luparis-table-state')return;
-      const n=N,first=!document.body.classList.contains('table-ready');
-      if(!applyState(e.data.state))return;
-      document.body.classList.add('table-ready');
-      if(first||n!==N){CAM.z=1;CAM.px=0;CAM.py=0;}layout();
-    });
-    if(window.opener)window.opener.postMessage({type:'luparis-table-ready'},location.origin);return;
-  }
+  if(!TABLE_DISPLAY)return;
+  document.body.classList.add('mp-player','mp-spec');
+  const button=document.createElement('button');button.className='table-fullscreen';button.textContent=L2('Fullscreen','Plein écran');
+  button.onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen?.().catch(()=>{});};
+  document.body.append(button);
+  document.addEventListener('keydown',e=>{if(!['Escape','F11','Tab'].includes(e.key)){e.stopImmediatePropagation();e.preventDefault();}},true);
   window.addEventListener('message',e=>{
-    if(e.origin!==location.origin||e.data?.type!=='luparis-table-ready')return;
-    for(const p of gViews.values())if(e.source===p.win){p.ready=true;p.signature='';}
+    if(e.origin!==location.origin||e.source!==window.opener||e.data?.type!=='luparis-table-state')return;
+    const n=N,first=!document.body.classList.contains('table-ready');
+    if(!applyState(e.data.state))return;
+    document.body.classList.add('table-ready');
+    if(first||n!==N){CAM.z=1;CAM.px=0;CAM.py=0;}layout();
   });
-  $('g_public').onclick=()=>gOpenView('public');$('g_map').onclick=()=>gOpenView('gm');$('g_screens').onclick=gDetectScreens;
-  window.addEventListener('pagehide',()=>{for(const p of gViews.values())if(!p.win.closed)p.win.close();clearInterval(gTick);});
+  if(window.opener)window.opener.postMessage({type:'luparis-table-ready'},location.origin);
 }

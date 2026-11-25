@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Cinzel:wght@600&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%236b7a3a'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' font-weight='700' text-anchor='middle' fill='%23f4efe2'%3EL%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/luparis.css?v=d72fda2e39">
+<link rel="stylesheet" href="css/luparis.css?v=ac4453de1d">
 </head>
 <body>
 <header><h1 data-i18n="title"></h1>
@@ -33,6 +33,28 @@
 <p class="small band" style="padding-top:8px" data-i18n="w_note"></p>
 </section>
 <section id="v-carte" class="view">
+<div class="play-layout-bar">
+  <div class="play-presets" id="play_presets" role="group"></div>
+  <select id="play_preset_select"></select>
+  <button type="button" id="play_customize" data-play-i18n="play_customize"></button>
+  <div class="play-jumps" id="play_jumps">
+    <button type="button" data-play-jump="stage" data-play-i18n="play_map_short"></button>
+    <button type="button" data-play-jump="hand" data-play-i18n="play_character"></button>
+    <button type="button" data-play-jump="play_aux" data-play-i18n="play_tools"></button>
+  </div>
+</div>
+<dialog id="play_layout_dialog" aria-labelledby="play_layout_title">
+  <form method="dialog">
+    <h2 id="play_layout_title" data-play-i18n="play_customize"></h2>
+    <label><span data-play-i18n="play_position"></span><select id="play_position"></select></label>
+    <label><span data-play-i18n="play_width"></span><select id="play_width"></select></label>
+    <fieldset><legend data-play-i18n="play_panels"></legend>
+      <label><input type="checkbox" id="play_sheet_visible"><span data-play-i18n="play_character"></span></label>
+      <label><input type="checkbox" id="play_tools_visible"><span data-play-i18n="play_tools"></span></label>
+    </fieldset>
+    <div class="row"><button type="button" id="play_restore" data-play-i18n="play_restore"></button><button type="submit" class="go" data-play-i18n="play_done"></button></div>
+  </form>
+</dialog>
 <div class="bar">
   <div class="grp modes" id="modes" role="group"><button type="button" data-mode="play" id="mode_play"></button><button type="button" data-mode="edit" id="mode_edit"></button></div>
   <div class="grp" id="tools" data-tool="move">
@@ -57,15 +79,16 @@
     <label class="scn" data-for="pref"><span class="vh" data-i18n="t_pref"></span><select id="prefk"></select></label><button type="button" data-for="pref" id="prefrot" class="rotb"></button><button type="button" data-for="pref" id="prefroll"></button>
     <span class="small thint" id="thint" aria-live="polite"></span>
   </div>
-  <div class="grp" id="map_size_controls">
-    <label for="size" class="szl"><span data-i18n="size"></span> <input id="size" type="range" min="0" max="5" step="1" value="1"> <span id="sv">16×16</span></label>
-  </div>
   <div class="grp">
-    <label class="scn"><span data-i18n="decor"></span> <select id="biosel"></select></label>
     <button id="undo" data-i18n="undo"></button>
-    <label class="scn"><span class="vh" data-i18n="scene"></span><select id="scene"></select></label><button id="gen" data-i18n="gen"></button>
-    <button id="clear" data-i18n="clear"></button>
     <button id="savemap" class="go" data-i18n="savemap"></button><span class="small" id="save_msg" aria-live="polite"></span>
+    <button type="button" id="map_fields_toggle" aria-expanded="false" aria-controls="map_fields" data-play-i18n="play_terrain"></button>
+    <div id="map_fields">
+      <label for="size" class="szl"><span data-i18n="size"></span> <input id="size" type="range" min="0" max="5" step="1" value="1"> <span id="sv">16×16</span></label>
+      <label class="scn"><span data-i18n="decor"></span> <select id="biosel"></select></label>
+      <label class="scn"><span class="vh" data-i18n="scene"></span><select id="scene"></select></label><button id="gen" data-i18n="gen"></button>
+      <button id="clear" data-i18n="clear"></button>
+    </div>
   </div>
   <button type="button" id="pl_toggle" aria-expanded="false" aria-controls="pl_bar" data-i18n="pl_title"></button>
   <div class="grp" id="pl_bar" role="group" aria-labelledby="pl_title">
@@ -81,28 +104,37 @@
 <div class="grp" id="biomes" hidden></div>
 <div id="play_workspace" class="play-workspace">
   <div class="play-map-column">
-    <div class="play-display-bar" id="play_display_bar">
-      <span id="play_map_label"></span>
-      <div class="play-zoom" role="group" aria-labelledby="play_map_label"><button type="button" id="zout">−</button><button type="button" id="zfit" data-i18n="z_fit"></button><button type="button" id="zin">+</button></div>
-      <button type="button" class="play-jump" id="play_jump_sheet" data-play-jump="hand"></button>
-      <details class="play-displays"><summary id="play_display_label"></summary><div class="play-display-menu"><button type="button" id="g_public"></button><button type="button" id="g_map"></button><button type="button" id="g_screens"></button><select id="g_screen" hidden></select><span class="small" id="g_display_msg" aria-live="polite"></span></div></details>
-    </div>
     <div class="stage" id="stage" tabindex="-1" aria-labelledby="play_map_label"><canvas id="cv"></canvas><div id="info"></div></div>
-    <div id="play_aux" class="play-aux">
-      <div class="play-aux-head"><span id="play_aux_label" class="small"></span><button type="button" id="play_last_roll" aria-live="polite"></button></div>
-      <div class="play-aux-tabs" role="tablist" aria-labelledby="play_aux_label"><button type="button" id="play_tab_in" role="tab" data-play-tab="in" aria-controls="play_pane_in" aria-selected="true"></button><button type="button" id="play_tab_tk" role="tab" data-play-tab="tk" aria-controls="play_pane_tk" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_mk" role="tab" data-play-tab="mk" aria-controls="play_pane_mk" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_mp" role="tab" data-play-tab="mp" aria-controls="play_pane_mp" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_img" role="tab" data-play-tab="img" aria-controls="play_pane_img" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_sn" role="tab" data-play-tab="sn" aria-controls="play_pane_sn" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_roll" role="tab" data-play-tab="roll" aria-controls="play_pane_roll" aria-selected="false" tabindex="-1"></button></div>
+    <h2 id="play_map_label" class="vh" data-play-i18n="play_map"></h2>
+  </div>
+    <div id="play_aux" class="play-aux" tabindex="-1" aria-labelledby="play_aux_label">
+      <div class="play-aux-head"><span id="play_aux_label" class="small" data-play-i18n="play_tools"></span><button type="button" id="play_last_roll" aria-live="polite"></button></div>
+      <div class="play-aux-tabs" role="tablist" aria-labelledby="play_aux_label"><button type="button" id="play_tab_in" role="tab" data-play-tab="in" aria-controls="play_pane_in" aria-selected="true"></button><button type="button" id="play_tab_tk" role="tab" data-play-tab="tk" aria-controls="play_pane_tk" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_mk" role="tab" data-play-tab="mk" aria-controls="play_pane_mk" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_maps" role="tab" data-play-tab="maps" aria-controls="play_pane_maps" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_mp" role="tab" data-play-tab="mp" aria-controls="play_pane_mp" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_img" role="tab" data-play-tab="img" aria-controls="play_pane_img" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_sn" role="tab" data-play-tab="sn" aria-controls="play_pane_sn" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_roll" role="tab" data-play-tab="roll" aria-controls="play_pane_roll" aria-selected="false" tabindex="-1"></button></div>
       <div class="play-aux-body"><div class="play-aux-pane" id="play_pane_in" data-play-pane="in" role="tabpanel" aria-labelledby="play_tab_in"><section class="card"><h3 data-i18n="in_title"></h3>
     <div class="row"><button type="button" class="go" id="in_roll" data-i18n="in_roll"></button><button type="button" id="in_next" data-i18n="in_next"></button><button type="button" id="in_end" data-i18n="in_end"></button></div>
     <p class="small" id="in_round"></p><div id="in_xp" hidden></div><ol class="ini" id="in_list"></ol></section>
 </div>
 <div class="play-aux-pane" id="play_pane_tk" data-play-pane="tk" role="tabpanel" aria-labelledby="play_tab_tk" hidden><section class="card" id="tk_panel" hidden></section></div>
 <div class="play-aux-pane" id="play_pane_mk" data-play-pane="mk" role="tabpanel" aria-labelledby="play_tab_mk" hidden><section class="card" id="mk_card"><h3 data-i18n="mk_title"></h3><ol class="mks" id="mk_list"></ol><p class="small" data-i18n="mk_hint"></p><h4 class="tplh" data-i18n="tpl_zones"></h4><ul class="tpls" id="tpl_list"></ul></section></div>
+<div class="play-aux-pane" id="play_pane_maps" data-play-pane="maps" role="tabpanel" aria-labelledby="play_tab_maps" hidden>
+  <div id="map_preset_choices" class="map-preset-choices" role="group"></div>
+  <div id="map_preset_preview" class="map-preset-preview" hidden>
+    <canvas width="256" height="256" id="map_preset_canvas"></canvas>
+    <div class="map-preset-options">
+      <h3 id="map_preset_name"></h3>
+      <p id="map_preset_description"></p>
+      <label><span id="map_preset_size_label"></span><select id="map_preset_size"></select></label>
+      <div class="row"><button type="button" id="map_preset_variant"></button><button type="button" id="map_preset_apply" class="go"></button></div>
+      <p id="map_preset_status" class="small" role="status"></p>
+    </div>
+  </div>
+  <details id="map_custom"><summary data-play-i18n="play_custom_map"></summary></details>
+</div>
 <div class="play-aux-pane" id="play_pane_mp" data-play-pane="mp" role="tabpanel" aria-labelledby="play_tab_mp" hidden><section class="card" id="mp_card"><h3 data-i18n="mp_title"></h3><div id="mp_box"></div></section></div>
 <div class="play-aux-pane" id="play_pane_img" data-play-pane="img" role="tabpanel" aria-labelledby="play_tab_img" hidden><section class="card" id="img_card"><h3 data-i18n="img_title"></h3><div id="img_box"></div></section></div>
 <div class="play-aux-pane" id="play_pane_sn" data-play-pane="sn" role="tabpanel" aria-labelledby="play_tab_sn" hidden><section class="card" id="sn_card"><h3 data-i18n="sn_title"></h3><div id="sn_box"></div></section></div>
 <div class="play-aux-pane" id="play_pane_roll" data-play-pane="roll" role="tabpanel" aria-labelledby="play_tab_roll" hidden><div id="play_roll_pane"></div></div></div>
     </div>
-  </div>
   <section class="hand" id="hand" tabindex="-1"></section>
 </div>
 <div class="help">
@@ -197,6 +229,6 @@
 </section>
 
 <aside class="rolls" id="rolls" aria-label="Jets"><div class="rlh"><button type="button" class="rlt" id="rl_tog" aria-expanded="true"><span id="rl_ttl"></span> <span class="rlc" id="rl_cnt"></span></button><button type="button" id="rl_clr" class="rlx"></button></div><ol id="rl_list" aria-live="polite"></ol></aside>
-<script src="app.js?v=c993f22dc9"></script>
+<script src="app.js?v=4c049f3261"></script>
 </body>
 </html>
