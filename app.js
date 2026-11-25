@@ -7050,6 +7050,7 @@ Object.assign(T.en, {
   t_tpl: 'Zone',
   tpl_zones: 'Effect zones',
   mp_title: 'Multiplayer (test)',
+  img_title: 'Images',
   m_desc: 'Description',
   m_traits: 'Traits (one per line, “Name: what it does”)',
   m_traits_ph: 'Pack Tactics: advantage when an ally is adjacent to the target',
@@ -7109,6 +7110,7 @@ Object.assign(T.fr, {
   t_tpl: 'Zone',
   tpl_zones: "Zones d'effet",
   mp_title: 'Partie à plusieurs (test)',
+  img_title: 'Images',
   m_desc: 'Description',
   m_traits: "Capacités (une par ligne, « Nom : ce qu'elle fait »)",
   m_traits_ph: 'Tactique de meute : avantage quand un allié est au contact de la cible',
@@ -11224,6 +11226,7 @@ function mpHostMsg(m, conn) {
     conn.me = conn.prole === 'player' && id && CH.list.some(c => c.id === id) && !mpTaken(id, conn) ? id : null;
     mpSend(mpState(), conn);
     mpYou(conn);
+    if (IMGSHOW) mpSend({ type: 'img', n: IMGSHOW.n, d: IMGSHOW.d }, conn);
     mpRender();
     return;
   }
@@ -11296,6 +11299,11 @@ function mpClientMsg(m) {
     mpRemember();
     renderHand();
     mpRender(m.msg || undefined);
+    imgRender();
+    return;
+  }
+  if (m.type === 'img') {
+    imgReceive(m);
     return;
   }
   if (m.type !== 'state') return;
@@ -11647,6 +11655,149 @@ mpRender();
   else if (s && s.code) setTimeout(() => mpJoin(s.code, s), 300);
   else if (h && h.code && !!h.local === MP.local) setTimeout(() => mpHost(h.code), 300);
 }
+
+// ---- images shown to the players: the GM keeps a gallery (IndexedDB, on this computer) and shows one at a time
+var IMGSHOW = null,
+  IMGS = [];
+function imgDB() {
+  return new Promise((ok, ko) => {
+    const r = indexedDB.open('luparis-images', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('img', { keyPath: 'id' });
+    r.onsuccess = () => ok(r.result);
+    r.onerror = () => ko(r.error);
+  });
+}
+async function imgTx(mode, f) {
+  try {
+    const d = await imgDB();
+    return await new Promise(ok => {
+      const tx = d.transaction('img', mode),
+        q = f(tx.objectStore('img'));
+      tx.oncomplete = () => ok(q && 'result' in q ? q.result : true);
+      tx.onerror = () => ok(null);
+    });
+  } catch (e) {
+    return null;
+  }
+}
+async function imgLoad() {
+  IMGS = ((await imgTx('readonly', s => s.getAll())) || []).sort((a, b) => b.t - a.t);
+  imgRender();
+}
+// shrink before storing and sending: 1600 px on the long side is plenty for a screen
+async function imgFit(file, max = 1600) {
+  const bm = await createImageBitmap(file),
+    k = Math.min(1, max / Math.max(bm.width, bm.height)),
+    c = document.createElement('canvas');
+  c.width = Math.round(bm.width * k);
+  c.height = Math.round(bm.height * k);
+  c.getContext('2d').drawImage(bm, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.85);
+}
+async function imgAdd(files) {
+  for (const f of files) {
+    if (!/^image\//.test(f.type)) continue;
+    try {
+      const d = await imgFit(f);
+      await imgTx('readwrite', s =>
+        s.put({ id: tid(), n: f.name.replace(/\.[^.]+$/, '').slice(0, 80), d, t: Date.now() }),
+      );
+    } catch (e) {}
+  }
+  imgLoad();
+}
+const imgOk = d =>
+  typeof d === 'string' && d.length < 8e6 && /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(d);
+function imgShow(x) {
+  IMGSHOW = x ? { id: x.id, n: x.n, d: x.d } : null;
+  if (MP.role === 'host') mpSend(x ? { type: 'img', n: x.n, d: x.d } : { type: 'img', d: null });
+  imgRender();
+}
+function imgReceive(m) {
+  IMGSHOW = m.d && imgOk(m.d) ? { n: String(m.n || '').slice(0, 80), d: m.d } : null;
+  const card = document.getElementById('img_card');
+  if (IMGSHOW && card && card.classList.contains('fold') && typeof foldToggle === 'function') foldToggle(card);
+  imgRender();
+  if (IMGSHOW) imgZoom(IMGSHOW);
+  else {
+    const dl = document.getElementById('imgdlg');
+    if (dl && dl.open) dl.close();
+  }
+}
+function imgZoom(x) {
+  let dl = document.getElementById('imgdlg');
+  if (!dl) {
+    dl = document.createElement('dialog');
+    dl.id = 'imgdlg';
+    dl.addEventListener('click', () => dl.close());
+    document.body.append(dl);
+  }
+  dl.innerHTML = `<img alt="${esc(x.n || '')}"><p class="small">${esc(x.n || '')} · ${L2('click to close', 'clic pour fermer')}</p>`;
+  dl.querySelector('img').src = x.d;
+  if (!dl.open) dl.showModal();
+}
+function imgRender() {
+  const B = document.getElementById('img_box');
+  if (!B) return;
+  const cur = IMGSHOW
+    ? `<figure class="imgcur"><img src="" alt="${esc(IMGSHOW.n || '')}" data-imgz="1"><figcaption class="small">${esc(IMGSHOW.n || '')}</figcaption></figure>`
+    : '';
+  if (MP.role === 'player') {
+    B.innerHTML =
+      cur ||
+      `<p class="small">${L2('The game master shows no image right now.', "Le MJ n'affiche aucune image pour l'instant.")}</p>`;
+  } else {
+    B.innerHTML = `<p class="small">${L2('Add pictures (or drop them here), then show one to the players. They stay on this computer.', 'Ajoute des images (ou dépose-les ici), puis montres-en une aux joueurs. Elles restent sur cet ordinateur.')}</p>
+<label class="imgadd"><input type="file" accept="image/*" multiple id="img_file" hidden><span>${L2('Add images', 'Ajouter des images')}</span></label>
+${IMGSHOW ? `<div class="imgon">${cur}<button type="button" id="img_hide">${L2('Hide from the players', 'Masquer aux joueurs')}</button></div>` : ''}
+${
+  IMGS.length
+    ? `<ul class="imgg">${IMGS.map(
+        x =>
+          `<li class="${IMGSHOW && IMGSHOW.id === x.id ? 'on' : ''}"><img src="" data-imgi="${esc(x.id)}" alt="${esc(x.n)}" title="${esc(x.n)}"><div class="row"><button type="button" class="go" data-imgs="${esc(x.id)}">${IMGSHOW && IMGSHOW.id === x.id ? L2('Shown', 'Affichée') : L2('Show', 'Montrer')}</button><button type="button" data-imgd="${esc(x.id)}" aria-label="${L2('Delete', 'Supprimer')} ${esc(x.n)}">×</button></div></li>`,
+      ).join('')}</ul>`
+    : ''
+}`;
+    for (const im of B.querySelectorAll('[data-imgi]')) {
+      const x = IMGS.find(y => y.id === im.dataset.imgi);
+      if (x) im.src = x.d;
+    }
+  }
+  const ci = B.querySelector('.imgcur img');
+  if (ci && IMGSHOW) ci.src = IMGSHOW.d;
+}
+{
+  const card = document.getElementById('img_card');
+  card.addEventListener('click', e => {
+    const b = e.target.closest('button,[data-imgz],[data-imgi]');
+    if (!b) return;
+    if (b.dataset.imgz != null && IMGSHOW) imgZoom(IMGSHOW);
+    else if (b.dataset.imgi) {
+      const x = IMGS.find(y => y.id === b.dataset.imgi);
+      if (x) imgZoom(x);
+    } else if (b.id === 'img_hide') imgShow(null);
+    else if (b.dataset.imgs) {
+      const x = IMGS.find(y => y.id === b.dataset.imgs);
+      if (x) imgShow(IMGSHOW && IMGSHOW.id === x.id ? null : x);
+    } else if (b.dataset.imgd) {
+      const id = b.dataset.imgd;
+      if (IMGSHOW && IMGSHOW.id === id) imgShow(null);
+      imgTx('readwrite', s => s.delete(id)).then(imgLoad);
+    }
+  });
+  card.addEventListener('change', e => {
+    if (e.target.id === 'img_file' && e.target.files.length) imgAdd([...e.target.files]);
+  });
+  card.addEventListener('dragover', e => {
+    if (MP.role !== 'player') e.preventDefault();
+  });
+  card.addEventListener('drop', e => {
+    if (MP.role === 'player') return;
+    e.preventDefault();
+    imgAdd([...(e.dataTransfer.files || [])]);
+  });
+}
+imgLoad();
 // ---- 65-boot.js
 // ---- foldable panels and cards
 function foldKey(sec) {

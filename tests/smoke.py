@@ -154,6 +154,13 @@ def run(chrome: str | None) -> None:
             "spectators watch without acting",
             spec.evaluate("DBG('MP.prole')") == "spec" and not host.evaluate("DBG('RL.some(r=>r.s===\\'Spec\\')')"),
         )
+        pix = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+        host.evaluate(f"DBG(`imgShow({{id:'i1',n:'Carte',d:'{pix}'}})`)")
+        player.wait_for_timeout(500)
+        check(
+            "an image shown by the GM reaches the players",
+            player.evaluate("DBG('IMGSHOW&&IMGSHOW.n')") == "Carte" and player.evaluate("!!document.querySelector('#imgdlg[open]')"),
+        )
         player.evaluate("""DBG(`pushRoll('<b>18</b><img src=x onerror="window.PWN=1">','Test')`)""")
         host.wait_for_timeout(500)
         got = host.evaluate("DBG('RL[0].h')")

@@ -103,6 +103,7 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
+- Carte « Images » sur l'onglet Carte (25 novembre) : le MJ garde une galerie sur son ordinateur, montre une image aux joueurs (elle s'ouvre en grand chez eux), la masque d'un clic.
 
 - **Performance de la carte** (novembre 2026)
   - Scène mise en cache avec marge hors écran : survol, déplacement, zoom et glisser de token sans redessin complet.
