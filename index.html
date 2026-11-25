@@ -155,8 +155,13 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 .sum{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .pill{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:15px;white-space:nowrap}
 .pill b{font-variant-numeric:tabular-nums}.pill.bad{border-color:#c0392b;color:#c0392b}
-.sgrid{display:block;column-width:340px;column-gap:14px;margin-top:8px}.sgrid.c1{columns:1}.sgrid.c2{columns:2}.sgrid.c3{columns:3}.sgrid.c4{columns:4}
-.sgrid>.mod{break-inside:avoid;margin:0 0 14px;display:block}.sgrid>.mod.dragging{opacity:.45;outline:2px dashed var(--acc)}.sgrid>.mod{position:relative}.grip{position:absolute;top:8px;right:12px;cursor:grab;opacity:.55;user-select:none;touch-action:none;font-size:18px;line-height:1;padding:4px}.prof{margin-top:10px;display:flex;flex-direction:column;gap:6px}.prof .warn{color:#b0453a;font-size:14px;margin:0}.prof label.ck{display:flex;flex-direction:row;gap:8px;align-items:center;text-align:left}.prof label.ck input{width:20px;height:20px;min-height:0;margin:0;flex:none}
+.sgrid{display:block;column-width:340px;column-gap:14px;margin-top:8px}
+.sgrid.sfix{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;column-width:auto}
+.sfix .scol{display:flex;flex-direction:column;gap:14px;min-width:0}.sfix .mod{margin:0}.sfix .scolh{font:600 12px/1 var(--sans,inherit);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:2px 2px 0}
+.sfix .gone,.sfix .grip{display:none!important}.sfix .tgt{display:none}.sfix .atk .ab button[data-roll]{display:none}
+@media (max-width:1100px){.sgrid.sfix{grid-template-columns:repeat(2,minmax(0,1fr))}.sfix .scol:nth-child(3){grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.sfix .scol:nth-child(3) .scolh{grid-column:1/-1}}
+@media (max-width:720px){.sgrid.sfix,.sfix .scol:nth-child(3){grid-template-columns:1fr}}.sgrid.c1{columns:1}.sgrid.c2{columns:2}.sgrid.c3{columns:3}.sgrid.c4{columns:4}
+.sgrid>.mod{break-inside:avoid;margin:0 0 14px;display:block}.sfix .gone{display:none!important}.sgrid>.mod.dragging{opacity:.45;outline:2px dashed var(--acc)}.sgrid>.mod{position:relative}.grip{position:absolute;top:8px;right:12px;cursor:grab;opacity:.55;user-select:none;touch-action:none;font-size:18px;line-height:1;padding:4px}.prof{margin-top:10px;display:flex;flex-direction:column;gap:6px}.prof .warn{color:#b0453a;font-size:14px;margin:0}.prof label.ck{display:flex;flex-direction:row;gap:8px;align-items:center;text-align:left}.prof label.ck input{width:20px;height:20px;min-height:0;margin:0;flex:none}
 [data-kb]{position:relative}[data-kb]::after{content:attr(data-kb);position:absolute;top:-6px;right:-5px;font:700 10px/1 "Alegreya Sans",sans-serif;padding:2px 4px;border-radius:5px;background:var(--ink);color:var(--panel);opacity:.72;pointer-events:none}
 .envdc input{width:64px;min-height:38px}.envdc{display:flex;gap:4px;align-items:center}.rmod{position:relative}
 .grp[hidden]{display:none!important}.scn{display:inline-flex;gap:6px;align-items:center;white-space:nowrap}.scn>span{flex:none}
@@ -410,20 +415,9 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
     <div class="sum" id="c_sum" aria-live="polite"></div>
   </div>
   <p class="small" id="c_demo"></p>
-  <div class="row slay"><span class="small" data-i18n="sk_lay"></span><label><span class="vh" data-i18n="sk_cols"></span><select id="c_cols"></select></label><button type="button" id="c_layreset" data-i18n="sk_layreset"></button></div>
-  <div class="sgrid" id="c_mods">
-      <section class="card mod" data-mod="mx"><h3 data-i18n="sk_matrix"></h3><div id="c_mx"></div></section>
-      <section class="card mod" data-mod="dv"><h3 data-i18n="sk_dv"></h3><div class="seg" id="c_dv"></div></section>
-      <section class="card mod" data-mod="don"><h3 data-i18n="sk_don"></h3><div id="c_don" class="tiers"></div></section>
-      <section class="card mod" data-mod="sch"><h3 data-i18n="sk_schools"></h3><div id="c_sch" class="tiers"></div></section>
-      <section class="card mod" data-mod="fam"><h3 data-i18n="sk_fams"></h3><div id="c_fam" class="tiers"></div></section>
-      <section class="card mod" data-mod="apx"><h3>Apex</h3><p class="small" id="c_apxn"></p><div id="c_apx" class="tiers"></div></section>
-      <section class="card mod" data-mod="def"><h3 data-i18n="sk_def"></h3>
+  <div class="sgrid sfix" id="c_mods"><div class="scol"><div class="scolh" data-en="1 · Abilities" data-fr="1 · Caractéristiques"></div><section class="card mod" data-mod="mx"><h3 data-i18n="sk_matrix"></h3><div id="c_mx"></div></section><section class="card mod" data-mod="dv"><h3 data-i18n="sk_dv"></h3><div class="seg" id="c_dv"></div></section><section class="card mod" data-mod="def"><h3 data-i18n="sk_def"></h3>
         <div class="two"><label><span data-i18n="sk_armor"></span><select id="c_armor"></select></label><label><span data-i18n="sk_shield"></span><select id="c_shield"></select></label></div>
-        <div class="stats" id="c_def"></div><div id="c_prof"></div></section>
-      <section class="card mod" data-mod="res"><h3 data-i18n="sk_res"></h3><div id="c_trk"></div>
-        <div class="row"><button type="button" id="c_short" data-i18n="sk_short"></button><button type="button" id="c_long" data-i18n="sk_long"></button></div></section>
-      <section class="card mod" data-mod="atk"><h3 data-i18n="sk_atk"></h3>
+        <div class="stats" id="c_def"></div><div id="c_prof"></div></section></div><div class="scol"><div class="scolh" data-en="2 · Talents and weapons" data-fr="2 · Talents et armes"></div><section class="card mod" data-mod="don"><h3 data-i18n="sk_don"></h3><div id="c_don" class="tiers"></div></section><section class="card mod" data-mod="atk"><h3 data-i18n="sk_atk"></h3>
         <label class="tgt"><span data-i18n="sk_target"></span><input id="c_tgt" type="number" min="0" max="40" placeholder="—"></label>
         <div id="c_atk"></div>
         <details><summary data-i18n="sk_addw"></summary><form id="c_wf" class="two">
@@ -431,10 +425,8 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
           <label><span data-i18n="sk_fam"></span><select id="c_wfam"></select></label>
           <label><span data-i18n="sk_size"></span><select id="c_wsz"></select></label>
           <div class="row"><button class="go" type="submit" data-i18n="sk_add"></button></div></form></details>
-      </section>
-  <section class="card mod" data-mod="inv"><div id="c_inv"></div></section>
-  <section class="card mod" data-mod="notes"><h3 data-i18n="sk_notes"></h3><label><span class="vh" data-i18n="sk_notes"></span><textarea id="c_notes" rows="3"></textarea></label></section>
-  </div>
+      </section></div><div class="scol"><div class="scolh" data-en="3 · Masteries" data-fr="3 · Maîtrises"></div><section class="card mod" data-mod="fam"><h3 data-i18n="sk_fams"></h3><div id="c_fam" class="tiers"></div></section><section class="card mod" data-mod="sch"><h3 data-i18n="sk_schools"></h3><div id="c_sch" class="tiers"></div></section><section class="card mod" data-mod="apx"><h3>Apex</h3><p class="small" id="c_apxn"></p><div id="c_apx" class="tiers"></div></section></div><div class="gone"><section class="card mod" data-mod="res"><h3 data-i18n="sk_res"></h3><div id="c_trk"></div>
+        <div class="row"><button type="button" id="c_short" data-i18n="sk_short"></button><button type="button" id="c_long" data-i18n="sk_long"></button></div></section><section class="card mod" data-mod="inv"><div id="c_inv"></div></section><section class="card mod" data-mod="notes"><h3 data-i18n="sk_notes"></h3><label><span class="vh" data-i18n="sk_notes"></span><textarea id="c_notes" rows="3"></textarea></label></section></div></div>
   <details><summary data-i18n="sk_io"></summary>
     <p class="small" data-i18n="sk_costs"></p>
     <div class="row"><button type="button" id="c_copy" data-i18n="sk_copy"></button><button type="button" id="c_imp" data-i18n="sk_import"></button><button type="button" id="c_del" data-i18n="sk_del"></button><span class="small" id="c_msg"></span></div>
@@ -1692,17 +1684,7 @@ $('c_wfam').addEventListener('change',renderSheet);
 const MODS0=['mx','dv','sch','fam','apx','def','res','atk','log','inv','notes'];
 function layGet(){try{return JSON.parse(localStorage.getItem('luparis-sheet-layout'))||{}}catch(e){return{}}}
 function laySave(o){try{localStorage.setItem('luparis-sheet-layout',JSON.stringify(o))}catch(e){}}
-function layApply(){const o=layGet(),box=$('c_mods'),order=Array.isArray(o.order)?o.order:MODS0;const seen=new Set();
- for(const m of[...order,...MODS0]){if(seen.has(m))continue;seen.add(m);const el=box.querySelector(`[data-mod="${m}"]`);if(el)box.append(el)}
- const c=o.cols||'auto';box.className='sgrid'+(c==='auto'?'':' c'+c);$('c_cols').innerHTML=['auto','1','2','3','4'].map(v=>opt(v,v==='auto'?L2('Columns: auto','Colonnes : auto'):L2(`${v} column${v>1?'s':''}`,`${v} colonne${v>1?'s':''}`),v===c)).join('')}
-$('c_cols').addEventListener('change',e=>{const o=layGet();o.cols=e.target.value;laySave(o);layApply()});
-$('c_layreset').addEventListener('click',()=>{laySave({});layApply()});
-{const box=$('c_mods');let dragEl=null;
- for(const sec of box.querySelectorAll('.mod')){const g=document.createElement('span');g.className='grip';g.textContent='⠿';g.title=L2('Drag to move this module','Glisser pour déplacer ce module');g.setAttribute('aria-hidden','true');sec.prepend(g)}
- box.addEventListener('pointerdown',e=>{const g=e.target.closest('.grip');if(g){const sec=g.closest('.mod');sec.draggable=true}});
- box.addEventListener('dragstart',e=>{dragEl=e.target.closest('.mod');if(!dragEl)return;dragEl.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',dragEl.dataset.mod)}catch(x){}});
- box.addEventListener('dragover',e=>{if(!dragEl)return;e.preventDefault();const tgt=e.target.closest('.mod');if(!tgt||tgt===dragEl)return;const r=tgt.getBoundingClientRect();tgt.parentNode.insertBefore(dragEl,e.clientY<r.top+r.height/2?tgt:tgt.nextSibling)});
- box.addEventListener('dragend',()=>{if(!dragEl)return;dragEl.classList.remove('dragging');dragEl.draggable=false;dragEl=null;const o=layGet();o.order=[...box.querySelectorAll('.mod')].map(x=>x.dataset.mod);laySave(o)});}
+function layApply(){document.querySelectorAll('#c_mods .scolh').forEach(h=>{h.textContent=lang==='fr'?h.dataset.fr:h.dataset.en})}
 layApply();
 
 fiche.addEventListener('submit',e=>{if(e.target.dataset&&e.target.dataset.cxf!=null){e.preventDefault();const [a,b]=e.target.querySelectorAll('input'),x=Math.round(+a.value||0);if(x)campAward(e.target.dataset.cxf,x,b.value.trim()||L2('Manual','Manuel'));return}if(e.target.id!=='c_nf')return;e.preventDefault();const n=$('c_nn').value.trim();if(!n)return;const c=blankC();c.name=n;c.camp=$('c_nc').value.trim();{const r=c.camp&&campsGet()[c.camp];if(r)c.xp=r.xp}CH.list.push(c);CH.active=c.id;C=c;saveC();renderSheet();window.scrollTo(0,0)});
@@ -2079,7 +2061,7 @@ new ResizeObserver(()=>{if(WS&&!$('v-monde').hidden)wApply()}).observe(wst);
 
 function nm0(m){return tr(m.n)}
 function applyLang(){document.documentElement.lang=lang;document.title='Luparis';
- for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof fillTpl==='function'&&TPLK)fillTpl();if(typeof toolHint==='function'&&TPLK)toolHint();if(typeof usBtn==='function'&&TPLK)usBtn();if(typeof perfUI==='function')perfUI();if(typeof snRender==='function'&&typeof SN!=='undefined'&&SN)snRender();if(typeof aiUI==='function'&&typeof AIC!=='undefined')aiUI();if(typeof fillBio==='function')fillBio();
+ for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof fillTpl==='function'&&TPLK)fillTpl();if(typeof toolHint==='function'&&TPLK)toolHint();if(typeof usBtn==='function'&&TPLK)usBtn();if(typeof perfUI==='function')perfUI();if(typeof layApply==='function')layApply();if(typeof snRender==='function'&&typeof SN!=='undefined'&&SN)snRender();if(typeof aiUI==='function'&&typeof AIC!=='undefined')aiUI();if(typeof fillBio==='function')fillBio();
  for(const e of document.querySelectorAll('[data-i18n-html]'))e.innerHTML=t(e.dataset.i18nHtml);
  for(const e of document.querySelectorAll('[data-i18n-ph]'))e.placeholder=t(e.dataset.i18nPh);
  for(const b of bz.querySelectorAll('button[data-b]'))b.querySelector('.bn').textContent=tr(B[b.dataset.b].n);
@@ -2327,7 +2309,7 @@ document.getElementById('mp_card').addEventListener('change',e=>{if(e.target.id!
 mpRender();{const j=/[?&]join=([A-Z0-9]+)/i.exec(location.search);if(j)setTimeout(()=>mpJoin(j[1]),300)}
 // ---- foldable panels and cards
 function foldKey(sec){const h=sec.querySelector('h3');return'p:'+(sec.dataset.mod||sec.id||(h&&(h.dataset.i18n||h.textContent.trim().slice(0,30)))||'')}
-function foldApply(root){(root||document).querySelectorAll('section.card').forEach(sec=>{const h=sec.querySelector('h3');if(!h)return;let w=h;while(w.parentNode&&w.parentNode!==sec)w=w.parentNode;if(w!==h)w.classList.add('foldwrap');
+function foldApply(root){(root||document).querySelectorAll('section.card').forEach(sec=>{const h=sec.querySelector('h3');if(!h||sec.closest('#c_mods'))return;let w=h;while(w.parentNode&&w.parentNode!==sec)w=w.parentNode;if(w!==h)w.classList.add('foldwrap');
  const k=foldKey(sec),on=!!FOLD[k];sec.classList.toggle('fold',on);h.classList.add('foldh');h.setAttribute('role','button');h.tabIndex=0;if(sec.classList.contains('rmod')&&!h.title)h.title=L2('Click to fold · hold and drag to move','Clic pour réduire · maintenir et glisser pour déplacer');h.setAttribute('aria-expanded',String(!on))})}
 function foldToggle(sec){const k=foldKey(sec);FOLD[k]=!FOLD[k];if(!FOLD[k])delete FOLD[k];foldSave();foldApply(sec.parentNode)}
 document.addEventListener('click',e=>{const h=e.target.closest('h3.foldh');if(!h||e.target.closest('button,a,input,select,textarea,label'))return;const sec=h.closest('section.card');if(sec)foldToggle(sec)});
