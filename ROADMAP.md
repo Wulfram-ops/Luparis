@@ -17,7 +17,11 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 - **Décidé :** la **Maîtrise** donne le nombre de dés de dégâts, pour les armes comme pour la magie.
   - Une partie vient du niveau, gratuitement : 1 au niveau 1, 2 au 5, 3 au 10, 4 au 15, 5 au 20.
   - Le reste s'achète en XP, jusqu'à +5 au niveau 20, soit 10 dés au maximum.
-- **Décidé :** les écoles de magie et les familles d'armes coûtent moins cher et gardent leurs passifs. Exemples : l'Afflux a le plus gros dé ; le Creuset paie moins cher ses soins ; les armes contondantes ignorent une partie de l'armure. Se spécialiser garde de vrais avantages : budget d'effets plus haut, passifs, affinité.
+- **Décidé :** les écoles de magie et les familles d'armes coûtent moins cher et gardent leurs passifs. Se spécialiser garde de vrais avantages : budget d'effets plus haut, passifs, affinité.
+- **Décidé (25 novembre) : Luparis reste sans classes.** Tous les effets (dégâts, soin, protection, tank, contrôle, renfort, affaiblissement, placement, invocation) sont ouverts à toutes les écoles au même prix ; le récit dit comment chacune s'y prend. Chaque école garde un seul petit plus.
+  - **Fait :** toutes les écoles lancent le d8 ; l'affinité de l'Afflux devient « ignore 2 points d'armure ».
+  - **À écrire (v0.6) :** compléter le menu commun (renfort, affaiblissement, invocation, protection sur soi), et revoir les petits plus : Égide, une case absorbée de plus ; Creuset, une case soignée de plus ; Horizon, Déport gratuit et téléportation ; Mirage, une cible de contrôle de plus ; Harmonie, un allié de plus sur les effets d'aide ; Eidolon, voir les fils et malédictions qui durent d'elles-mêmes.
+  - **Pistes issues des simulations :** le sort de base ajoute la Puissance mentale comme une arme ajoute son modificateur ; manœuvres martiales Garde, Premiers soins et Cri de ralliement pour que les martiaux puissent aussi protéger et soigner.
 - **À chiffrer :**
   - le prix des crans de Maîtrise et leur plafond par niveau ;
   - le nouveau prix des écoles et des familles, et ce que chaque rang y apporte ;

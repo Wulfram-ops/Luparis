@@ -5881,7 +5881,7 @@ function stFromCells(cl) {
   for (const d of DOM) S[d] = cl3(INT.reduce((a, i) => a + g(i + '_' + d), 0) / 3 - m / 2);
   return S;
 }
-const SDIE = { afflux: 12, creuset: 8, mirage: 8, horizon: 6, eidolon: 8, egide: 8, harmonie: 6 };
+const SDIE = { afflux: 8, creuset: 8, mirage: 8, horizon: 8, eidolon: 8, egide: 8, harmonie: 8 };
 const SCH = {
   afflux: ['Surge', 'Afflux'],
   creuset: ['Crucible', 'Creuset'],
