@@ -41,7 +41,7 @@ function drawTok(a, ...r) {
 }
 function drawTok0(k, vx, vy, h, sc = 1) {
   const [cx, cy] = scr(vx, vy, h);
-  const y = cy + hexCenterY(),
+  const y = cy + TW / 4,
     r = TW * 0.24 * (sc > 1 ? sc * 0.82 : sc);
   ctx.fillStyle = 'rgba(0,0,0,.28)';
   ctx.beginPath();
@@ -345,21 +345,34 @@ function inPoly(p, x, y) {
   }
   return s;
 }
-function shape(c){
-  const h=H[c.x][c.y],t=dia(c.vx,c.vy,Math.max(0,h));if(h<=0)return t;
-  const g=dia(c.vx,c.vy,0);return [t[0],t[1],t[2],g[2],g[3],g[4],t[4],t[5]];
+function shape(c) {
+  const h = H[c.x][c.y];
+  if (h <= 0) return dia(c.vx, c.vy, 0);
+  const t = dia(c.vx, c.vy, h),
+    g = dia(c.vx, c.vy, 0);
+  return [t[0], t[1], g[1], g[2], g[3], t[3]];
 }
-function pick(mx,my){
-  if(!TW)return null;let best=null,bs=-Infinity;const seen=new Set();
-  for(let h=0;h<=3;h++){
-    const vr=(my-oy-hexCenterY()+h*LH)/(TW*HEX_STEP),vq=(mx-ox)/TW-vr/2,[x0,y0]=unview(vq,vr);
-    for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){
-      const x=x0+dx,y=y0+dy,key=x+','+y;
-      if(x<0||y<0||x>=N||y>=N||seen.has(key))continue;seen.add(key);
-      const [vx,vy]=view(x,y),c={x,y,vx,vy};
-      if(inPoly(shape(c),mx,my)){const sc=vy*10000+vx;if(sc>bs){bs=sc;best=c;}}
+function pick(mx, my) {
+  const S0 = (my - oy) / (TW / 4),
+    D0 = (mx - ox) / (TW / 2);
+  let best = null,
+    bs = -1e9;
+  for (let S = Math.floor(S0 - 5); S <= Math.ceil(S0 + (3 * LH) / (TW / 4) + 2); S++)
+    for (let D = Math.floor(D0 - 2); D <= Math.ceil(D0 + 2); D++) {
+      if ((S + D) & 1) continue;
+      const vx = (S + D) / 2,
+        vy = (S - D) / 2;
+      if (vx < 0 || vy < 0 || vx >= N || vy >= N) continue;
+      const [x, y] = unview(vx, vy),
+        c = { x, y, vx, vy };
+      if (inPoly(shape(c), mx, my)) {
+        const sc = S * 1000 + vx;
+        if (sc > bs) {
+          bs = sc;
+          best = c;
+        }
+      }
     }
-  }
   return best;
 }
 function pos(e) {
@@ -381,7 +394,7 @@ function fits(x, y, n, id) {
   if (!Number.isInteger(x)||!Number.isInteger(y)||x < 0 || y < 0 || x + n > N || y + n > N) return false;
   for (let i = x; i < x + n; i++)
     for (let j = y; j < y + n; j++) {
-      if (H[i][j] <= -2||H[i][j]>=3) return false;
+      if (H[i][j] <= -2) return false;
       if (tokens.some(k => k.id !== id && covers(k, i, j))) return false;
     }
   return true;
@@ -397,11 +410,11 @@ function tokAnchor(k) {
   if (n === 1) return [k.x, k.y];
   let bx = k.x,
     by = k.y,
-    bs = -Infinity;
+    bs = -1;
   for (let i = k.x; i < k.x + n; i++)
     for (let j = k.y; j < k.y + n; j++) {
       const [vx, vy] = view(i, j),
-        sc = vy * 10000 + vx;
+        sc = (vx + vy) * 1000 + vx;
       if (sc > bs) {
         bs = sc;
         bx = i;
@@ -415,11 +428,11 @@ function tokCell(k, c) {
   if (n === 1) return k.x === c.x && k.y === c.y;
   let bx = -1,
     by = -1,
-    bs = -Infinity;
+    bs = -1;
   for (let i = k.x; i < k.x + n; i++)
     for (let j = k.y; j < k.y + n; j++) {
       const [vx, vy] = view(i, j),
-        sc = vy * 10000 + vx;
+        sc = (vx + vy) * 1000 + vx;
       if (sc > bs) {
         bs = sc;
         bx = i;
@@ -986,8 +999,7 @@ bz.addEventListener('click', e => {
   draw();
 });
 document.getElementById('rot').onclick = () => {
-  rot = (rot + 1) % 6;
-  camSet();
+  rot = (rot + 1) % 4;
   save();
   draw();
 };

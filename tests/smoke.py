@@ -125,17 +125,11 @@ def run(chrome: str | None) -> None:
             D("(()=>{const o={type:'state',x:'a'.repeat(200000)},P=mpPieces(o),st={};let r=null;for(const p of P.reverse())r=mpJoinPiece(st,p)||r;return P.length>3&&r&&r.x.length===200000})()"),
         )
 
-        # Hex geometry uses offset storage and axial distances.
-        check("six equal hex neighbours", D("[0,1].every(y=>hexNeighbours(5,y).length===6&&hexNeighbours(5,y).every(([x,r])=>hexDist({x,y:r},{x:5,y})===1))&&hexDist({x:1,y:1},{x:0,y:0})===2"))
-        check("hex radius two has 19 cells", D("tplCells({k:'circle',x:5,y:5,s:10,a:0}).length===19"))
-        check("hex line follows one of six directions", D("JSON.stringify(tplCells({k:'line',x:5,y:5,s:15,a:Math.PI/3}))==='[[6,6],[6,7],[7,8]]'"))
-        check("six rotations round trip", D("(()=>{const old=rot;try{for(rot=0;rot<6;rot++){const p=unview(...view(3,5));if(p[0]!==3||p[1]!==5)return false;}return true;}finally{rot=old}})()"))
-        check("all tactical cells have six vertices", D("dia(0,0,0).length===6"))
-        # Camera is steeper, the default outline compact, and picking matches rendering.
-        check("default hex board is nearly square", D("(()=>{const [l,t,r,b]=hexBounds(N,0);return Math.abs((r-l)/(b-t)-1)<.03&&HEX_LIFT<.28&&Math.abs(hexView(0,0,N,0)[0])<1e-9&&Math.abs(hexView(N-1,0,N,0)[1])<1e-9})()"))
-        check("staggered rows have horizontal and vertical outer edges", D("(()=>{const a=hexView(0,0,N,0),b=hexView(0,1,N,0),c=hexView(0,2,N,0),x=p=>p[0]+p[1]/2;return Math.abs(x(a)-x(c))<1e-9&&Math.abs(x(b)-x(a)-.5)<1e-9})()"))
-        check("offset grid saved explicitly", D("memStateNow().grid==='hex-offset'"))
-        check("all six orientations fit and pick tile centers", D("""(()=>{const oldH=H,oldRot=rot,oldCam={...CAM};try{H=H.map(row=>row.map(()=>0));CAM.z=1;CAM.px=0;CAM.py=0;for(rot=0;rot<6;rot++){camSet();for(const [x,y] of [[0,0],[0,N-1],[N-1,0],[N-1,N-1],[3,5]]){const v=view(x,y),p=dia(...v,0);if(!p.every(([a,b])=>a>=0&&a<=W&&b>=0&&b<=Hc))return false;const [a,b]=scr(...v,0),hit=pick(a,b+hexCenterY());if(!hit||hit.x!==x||hit.y!==y)return false;}}return true;}finally{H=oldH;rot=oldRot;Object.assign(CAM,oldCam);camSet();draw();}})()"""))
+        # Restored square geometry and migration of hex-era saves.
+        check("square cells have four vertices", D("dia(0,0,0).length===4"))
+        check("square radius two has 13 cells", D("tplCells({k:'circle',x:5,y:5,s:10,a:0}).length===13"))
+        check("four rotations round trip", D("(()=>{const old=rot;try{for(rot=0;rot<4;rot++){const p=unview(...view(3,5));if(p[0]!==3||p[1]!==5)return false;}return true;}finally{rot=old}})()"))
+        check("hex-era saves retain cells and entities", D("""(()=>{const original=JSON.parse(JSON.stringify(memStateNow()));try{for(const grid of ['hex','hex-offset']){const d={...original,grid,rot:5};if(!applyState(d))return false;const s=memStateNow();if(s.grid!=='square'||rot<0||rot>3)return false;for(const k of ['N','H','F','tokens','marks','objs','env','ini'])if(JSON.stringify(s[k])!==JSON.stringify(original[k]))return false;}return true;}finally{applyState(original);layout();}})()"""))
         # Layout presets fit the entire map in the viewport and reset an old zoom/pan.
         page.click('.tabs a[data-v="carte"]')
         for width, height in ((1400, 900), (1280, 720)):

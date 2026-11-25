@@ -480,18 +480,6 @@ let N = 16,
   bio = 'gen',
   t0 = performance.now();
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-// Odd-row offset storage gives the board a rectangular outline. Convert to
-// axial coordinates for distances, directions and rotation; keep every saved
-// cell, token and object at its original array index.
-const HEX_DIRS=Object.freeze([[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]].map(Object.freeze));
-function hexAxial(x,y){return [x-Math.floor(y/2),y];}
-function hexOffset(q,r){return [q+Math.floor(r/2),r];}
-function hexNeighbours(x,y){const [q,r]=hexAxial(x,y);return HEX_DIRS.map(([a,b])=>hexOffset(q+a,r+b));}
-function hexDelta(a,b){const [q,r]=hexAxial(a.x,a.y),[u,v]=hexAxial(b.x,b.y);return [u-q,v-r];}
-function hexDist(a,b){const [q,r]=hexDelta(a,b);return Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r));}
-function hexVector(q,r){return [q+r/2,r*Math.sqrt(3)/2];}
-function hexAngle(a,b){const [x,y]=hexVector(...hexDelta(a,b));return Math.atan2(y,x);}
-function hexRotate(q,r,steps){for(let i=0;i<((steps%6)+6)%6;i++)[q,r]=[-r,q+r];return [q,r];}
 function blank(n) {
   return Array.from({ length: n }, () => Array(n).fill(0));
 }
@@ -536,7 +524,7 @@ function saveNow() {
   if (MP.role === 'player') return;
   const st = {
     v: 2,
-    grid: 'hex-offset',
+    grid: 'square',
     N,
     H: encG(H, 1),
     F: encG(F, 0),
@@ -585,15 +573,21 @@ function applyState(d) {
   F = Array.isArray(d.F) && d.F.length === d.N ? decG(d.F, 0) : blank(d.N);
   if (d.scene) scene = d.scene;
   tokens = d.tokens || [];
-  rot=d.grid==='hex-offset'?((Math.round(+d.rot||0)%6)+6)%6:0;
+  // Maps from the short-lived hex renderer use the same array indices.
+  // Only the camera bearing needs conversion; preserve every cell and entity.
+  const hex=d.grid==='hex'||d.grid==='hex-offset';
+  const bearing=Math.round(Number(d.rot)||0);
+  rot=((Math.round(hex?bearing*2/3:bearing)%4)+4)%4;
   bio = B[d.bio] ? d.bio : 'gen';
   INI = d.ini && Array.isArray(d.ini.o) ? d.ini : { o: [], cur: 0, round: 0 };
   MARKS = Array.isArray(d.marks) ? d.marks : [];
   ENV = d.env && typeof d.env === 'object' ? d.env : {};
   OBJS = Array.isArray(d.objs) ? d.objs.filter(o => o && OBJT[o.k]) : [];
   TPLS=Array.isArray(d.tpls)?d.tpls.map(t=>{
-    if(d.grid==='hex-offset'||d.grid==='hex')return t;
-    const [x,y]=hexVector(Math.cos(t.a||0),Math.sin(t.a||0));return {...t,a:Math.atan2(y,x)};
+    if(!hex||!t||!Number.isFinite(t.a))return t;
+    // Hex aiming used a 60-degree axial basis. Convert back to square axes.
+    const dy=2*Math.sin(t.a)/Math.sqrt(3),dx=Math.cos(t.a)-dy/2;
+    return {...t,a:Math.atan2(dy,dx)};
   }):[];
   return true;
 }
@@ -669,27 +663,7 @@ function mul(hex, f) {
   const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.max(0, Math.min(255, Math.round(v * f))));
   return `rgb(${c})`;
 }
-// Square-footprint, staggered rows. Slight vertical stretch keeps the
-// projected board square while retaining the low visual elevation.
-const HEX_H=4/3,HEX_LIFT=.16,HEX_STEP=HEX_H*.75;
 let TW, LH, ox, oy, W, Hc, TW0;
-function hexPivot(n){
-  const r=(n-1)/2;
-  return [(n-1)/2+(n>1?.25:0)-r/2,r];
-}
-function hexView(x,y,n,rotation){
-  const [cq,cr]=hexPivot(n),[a,b]=hexAxial(x,y),[q,r]=hexRotate(a-cq,b-cr,rotation);
-  return [q+cq,r+cr];
-}
-function hexBounds(n,rotation,ratio=HEX_H){
-  // Both row parities must be considered at each edge.
-  const p=[0,n-1].flatMap(x=>[0,Math.min(1,n-1),Math.max(0,n-2),n-1].map(y=>{
-    const [q,r]=hexView(x,y,n,rotation);return [q+r/2,r*ratio*.75];
-  }));
-  return [Math.min(...p.map(v=>v[0]))-.5,Math.min(...p.map(v=>v[1])),
-    Math.max(...p.map(v=>v[0]))+.5,Math.max(...p.map(v=>v[1]))+ratio];
-}
-function hexCenterY(){return TW*HEX_H/2;}
 function layout() {
   const r = stage.getBoundingClientRect(),
     dpr = PERF.low ? 1 : Math.min(2, window.devicePixelRatio || 1);
@@ -698,17 +672,15 @@ function layout() {
   cv.width = W * dpr;
   cv.height = Hc * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  TW0 = Math.min((W * 0.94) / N, (Hc * 0.78) / (N / 2 + 2));
   camSet();
   draw();
 }
 function camSet() {
-  const [left,groundTop,right,bottom]=hexBounds(N,rot),top=groundTop-3*HEX_LIFT;
-  // Fit the actual rotated outline, including the highest terrain.
-  TW0=Math.min(W*.94/(right-left+.2),Hc*.90/(bottom-top+.65));
-  TW=TW0*CAM.z;
-  LH=TW*HEX_LIFT;
-  ox=W/2-(left+right)/2*TW+CAM.px;
-  oy=Hc/2-(top+bottom)/2*TW+CAM.py;
+  TW = TW0 * CAM.z;
+  LH = TW * 0.28;
+  ox = W / 2 + CAM.px;
+  oy = (Hc - (N * TW) / 2) / 2 + LH * 2.6 + CAM.py;
 }
 function zoomAt(k, mx, my) {
   const z = Math.max(1, Math.min(N > 32 ? 16 : 6, CAM.z * k));
@@ -727,10 +699,30 @@ function zoomAt(k, mx, my) {
   camSet();
   drawMove();
 }
-function view(x,y){return hexView(x,y,N,rot);}
-function scr(vx,vy,h){return [ox+(vx+vy/2)*TW,oy+vy*TW*HEX_STEP-h*LH];}
-function hexPoly(cx,cy,w,hh=w*HEX_H){return [[cx,cy],[cx+w/2,cy+hh/4],[cx+w/2,cy+3*hh/4],[cx,cy+hh],[cx-w/2,cy+3*hh/4],[cx-w/2,cy+hh/4]];}
-function dia(vx,vy,h){const [cx,cy]=scr(vx,vy,h);return hexPoly(cx,cy,TW);}
+function view(x, y) {
+  switch (rot) {
+    case 1:
+      return [N - 1 - y, x];
+    case 2:
+      return [N - 1 - x, N - 1 - y];
+    case 3:
+      return [y, N - 1 - x];
+    default:
+      return [x, y];
+  }
+}
+function scr(vx, vy, h) {
+  return [ox + ((vx - vy) * TW) / 2, oy + ((vx + vy) * TW) / 4 - h * LH];
+}
+function dia(vx, vy, h) {
+  const [cx, cy] = scr(vx, vy, h);
+  return [
+    [cx, cy],
+    [cx + TW / 2, cy + TW / 4],
+    [cx, cy + TW / 2],
+    [cx - TW / 2, cy + TW / 4],
+  ];
+}
 function poly(p, fill, stroke, lw) {
   ctx.beginPath();
   p.forEach((q, i) => (i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])));
@@ -746,8 +738,7 @@ function poly(p, fill, stroke, lw) {
   }
 }
 function inD(cx, cy, u, v) {
-  // Furniture and textures stay inside the hexagonal top, centered on it.
-  return [cx+((u-v)*TW)*.42,cy+hexCenterY()+(u+v-1)*TW*HEX_H*.32];
+  return [cx + ((u - v) * TW) / 2, cy + ((u + v) * TW) / 4];
 }
 let CC = null,
   CCk = '';
@@ -760,16 +751,44 @@ function cells() {
         const [vx, vy] = view(x, y);
         a.push({ x, y, vx, vy });
       }
-    CC = a.sort((a,b)=>a.vy-b.vy||a.vx-b.vx);
+    CC = a.sort((a, b) => a.vx + a.vy - (b.vx + b.vy) || a.vx - b.vx);
     CCk = k;
   }
   return CC;
 }
-function unview(vx,vy){
-  const [cq,cr]=hexPivot(N),[a,b]=hexRotate(vx-cq,vy-cr,-rot);
-  return hexOffset(Math.round(a+cq),Math.round(b+cr));
+function unview(vx, vy) {
+  switch (rot) {
+    case 1:
+      return [vy, N - 1 - vx];
+    case 2:
+      return [N - 1 - vx, N - 1 - vy];
+    case 3:
+      return [N - 1 - vy, vx];
+    default:
+      return [vx, vy];
+  }
 }
-function gv(vx,vy){const [x,y]=unview(vx,vy);return x>=0&&y>=0&&x<N&&y<N?H[x][y]:null;}
+function gv(vx, vy) {
+  let x, y;
+  switch (rot) {
+    case 1:
+      x = vy;
+      y = N - 1 - vx;
+      break;
+    case 2:
+      x = N - 1 - vx;
+      y = N - 1 - vy;
+      break;
+    case 3:
+      x = N - 1 - vy;
+      y = vx;
+      break;
+    default:
+      x = vx;
+      y = vy;
+  }
+  return x >= 0 && y >= 0 && x < N && y < N ? H[x][y] : null;
+}
 function hasAnim() {
   if (reduce || N > 40 || PERF.low) return false;
   if (Object.values(ENV).some(v => ['fire', 'fog', 'dark'].includes(v.k || v))) return true;
@@ -823,7 +842,7 @@ function deco(kind, cx, cy, h, x, y) {
   if (!kind) return;
   const s = TW / 64,
     bx = cx,
-    by = cy + hexCenterY();
+    by = cy + TW / 4;
   ctx.lineWidth = Math.max(1, s * 1.5);
   if (kind === 'bush') {
     for (const [dx, dy, r] of [
@@ -990,15 +1009,103 @@ function deco(kind, cx, cy, h, x, y) {
     ctx.fill();
   }
 }
-function pit(c,h){
-  const b=B[bio],g=dia(c.vx,c.vy,0),colors={chasm:['#4a423b','#2b2622'],water:['#3f7fb0','#2c5f8c'],lava:['#e98220','#b84316'],sand:['#c79a5a','#a77e48'],ice:['#9ccbe6','#3d6f93'],swamp:['#5a6b43','#364425']};
-  const cs=colors[b.pit]||colors.water;
-  poly(g,cs[h===-2?1:0],'rgba(0,0,0,.22)');
-  if(TW>=9&&!PERF.low){
-    const [cx,cy]=scr(c.vx,c.vy,0),t=reduce?0:performance.now()/1000;
-    ctx.save();poly(g);ctx.clip();ctx.strokeStyle=b.pit==='lava'?'rgba(255,225,120,.65)':'rgba(255,255,255,.28)';
-    ctx.beginPath();const x=cx+(rnd(c.x,c.y,5)-.5)*TW*.3,y=cy+hexCenterY()+TW*.06*Math.sin(t+c.x);
-    ctx.moveTo(x-TW*.12,y);ctx.lineTo(x+TW*.12,y);ctx.stroke();ctx.restore();
+function pit(c, h) {
+  const { vx, vy, x, y } = c,
+    b = B[bio],
+    g = dia(vx, vy, 0),
+    t = (performance.now() - t0) / 1000;
+  ctx.save();
+  poly(g);
+  ctx.clip();
+  const liquid = b.pit !== 'chasm';
+  const d = liquid ? LH * (h === -1 ? 0.35 : 0.6) : -h * LH * 1.1;
+  const cols = {
+    chasm: ['#2b2622', '#4a423b', '#3a332e'],
+    water: ['#3f7fb0', '#5a7e64', '#4b6c55'],
+    lava: ['#ff6a1a', '#2a1d1a', '#1f1513'],
+    sand: ['#c79a5a', '#a77e48', '#8f6b3c'],
+    ice: ['#9ccbe6', '#b7c7d3', '#9fb2c0'],
+    swamp: ['#4b5a32', '#3f3a29', '#353123'],
+  }[b.pit];
+  let floor = cols[0];
+  if (b.pit === 'water' && h === -2) floor = '#2c5f8c';
+  if (b.pit === 'ice' && h === -2) floor = '#3d6f93';
+  if (b.pit === 'swamp' && h === -2) floor = '#364425';
+  if (b.pit === 'lava') {
+    const k = 0.85 + 0.15 * Math.sin(t * 2 + x * 0.7 + y * 0.5);
+    floor =
+      h === -2
+        ? `rgb(${Math.round(255 * k)},${Math.round(80 * k)},20)`
+        : `rgb(${Math.round(240 * k)},${Math.round(120 * k)},40)`;
+  }
+  const nb = [gv(vx - 1, vy), gv(vx, vy - 1), gv(vx + 1, vy), gv(vx, vy + 1)].map(
+    v => v !== null && (liquid ? v < 0 : v === h),
+  );
+  poly(liquid || nb.some(Boolean) ? g : g.map(p => [p[0], p[1] + d]), floor);
+  if (liquid && b.pit !== 'sand') {
+    ctx.strokeStyle = b.pit === 'lava' ? 'rgba(255,230,120,.7)' : 'rgba(255,255,255,.45)';
+    ctx.lineWidth = Math.max(1, TW / 60);
+    ctx.beginPath();
+    const o = (t * 0.15 + rnd(x, y, 5)) % 1;
+    const [a1, b1] = inD(g[0][0], g[0][1] + d, 0.25 + o * 0.3, 0.35),
+      [a2, b2] = inD(g[0][0], g[0][1] + d, 0.45 + o * 0.3, 0.35);
+    ctx.moveTo(a1, b1);
+    ctx.lineTo(a2, b2);
+    ctx.stroke();
+  }
+  if (b.pit === 'sand') {
+    ctx.strokeStyle = 'rgba(120,80,40,.5)';
+    ctx.lineWidth = 1;
+    const [cx2, cy2] = [g[0][0], g[0][1] + d + TW / 4];
+    ctx.beginPath();
+    ctx.ellipse(cx2, cy2, TW * 0.22, TW * 0.09, 0, 0, 7);
+    ctx.ellipse(cx2, cy2, TW * 0.11, TW * 0.045, 0, 0, 7);
+    ctx.stroke();
+  }
+  if (!nb[0]) poly([g[3], g[0], [g[0][0], g[0][1] + d], [g[3][0], g[3][1] + d]], cols[1]);
+  if (!nb[1]) poly([g[0], g[1], [g[1][0], g[1][1] + d], [g[0][0], g[0][1] + d]], cols[2]);
+  {
+    const dv = gv(vx - 1, vy - 1),
+      dOk = dv !== null && (liquid ? dv < 0 : dv === h);
+    if (!dOk) {
+      if (nb[1]) {
+        const A = dia(vx, vy - 1, 0);
+        poly([A[3], A[0], [A[0][0], A[0][1] + d], [A[3][0], A[3][1] + d]], cols[1]);
+      }
+      if (nb[0]) {
+        const A = dia(vx - 1, vy, 0);
+        poly([A[0], A[1], [A[1][0], A[1][1] + d], [A[0][0], A[0][1] + d]], cols[2]);
+      }
+    }
+  }
+  ctx.restore();
+  if (!nb.some(Boolean)) poly(g, null, 'rgba(0,0,0,.4)');
+  else {
+    ctx.strokeStyle = 'rgba(0,0,0,.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const [i, a, b2] of [
+      [0, 3, 0],
+      [1, 0, 1],
+      [2, 1, 2],
+      [3, 2, 3],
+    ])
+      if (!nb[i]) {
+        ctx.moveTo(...g[a]);
+        ctx.lineTo(...g[b2]);
+      }
+    ctx.stroke();
+  }
+  if (b.pit === 'lava') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const [cx, cy] = scr(vx, vy, 0);
+    const gr = ctx.createRadialGradient(cx, cy + TW / 4, 0, cx, cy + TW / 4, TW * 0.7);
+    gr.addColorStop(0, 'rgba(255,110,30,.28)');
+    gr.addColorStop(1, 'rgba(255,110,30,0)');
+    ctx.fillStyle = gr;
+    ctx.fillRect(cx - TW * 0.7, cy - TW * 0.5, TW * 1.4, TW * 1.4);
+    ctx.restore();
   }
 }
 const FC = {
@@ -1200,7 +1307,7 @@ function drawDirty(c) {
       r[0] = Math.min(r[0], cx - TW / 2 - 3);
       r[2] = Math.max(r[2], cx + TW / 2 + 3);
       r[1] = Math.min(r[1], cy - LH * 4 - TW * 0.6);
-      r[3]=Math.max(r[3],cy+TW*HEX_H+LH*3+3);
+      r[3] = Math.max(r[3], cy + TW / 2 + LH * 3 + 3);
     }
   DIRTY = DIRTY
     ? [Math.min(DIRTY[0], r[0]), Math.min(DIRTY[1], r[1]), Math.max(DIRTY[2], r[2]), Math.max(DIRTY[3], r[3])]
@@ -1277,7 +1384,10 @@ function drawOverlay() {
       for (let y = y0; y <= y1; y++) {
         const [vx, vy] = view(x, y),
           p = dia(vx, vy, Math.max(H[x][y], 0));
-        p.forEach(([px,py],i)=>i?ctx.lineTo(px,py):ctx.moveTo(px,py));
+        ctx.moveTo(p[0][0], p[0][1]);
+        ctx.lineTo(p[1][0], p[1][1]);
+        ctx.lineTo(p[2][0], p[2][1]);
+        ctx.lineTo(p[3][0], p[3][1]);
         ctx.closePath();
       }
     ctx.fillStyle = 'rgba(192,112,58,.35)';
@@ -2146,7 +2256,7 @@ function tile(fc, line, tx, f, v, cx, cy) {
   if (!sp) {
     sp = document.createElement('canvas');
     sp.width = Math.ceil((TW + 4) * dpr);
-    sp.height=Math.ceil((TW*HEX_H+pad+2)*dpr);
+    sp.height = Math.ceil((TW / 2 + pad + 2) * dpr);
     const g = sp.getContext('2d'),
       keep = ctx;
     ctx = g;
@@ -2154,12 +2264,15 @@ function tile(fc, line, tx, f, v, cx, cy) {
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       const x0 = TW / 2 + 2,
         y0 = pad,
-        t = hexPoly(x0,y0,TW);
+        t = [
+          [x0, y0],
+          [x0 + TW / 2, y0 + TW / 4],
+          [x0, y0 + TW / 2],
+          [x0 - TW / 2, y0 + TW / 4],
+        ];
       poly(t, fc, line ? 'rgba(0,0,0,.14)' : null);
-      g.save();poly(t);g.clip();
       if (tx === 1) ftex(f, t, v, 0);
       else if (tx === 2) specks(x0, y0, v, 1);
-      g.restore();
     } finally {
       ctx = keep;
     }
@@ -2246,7 +2359,8 @@ function drawNow(partOk) {
     const h = H[c.x][c.y],
       { vx, vy } = c;
     {
-      const [sx,sy]=scr(vx,vy,0);
+      const sx = ox + ((vx - vy) * TW) / 2,
+        sy = oy + ((vx + vy) * TW) / 4;
       if (sx < CL - TW || sx > CR + TW || sy < CT - TW - LH * 4 || sy > CB + TW + LH * 3) continue;
     }
     if (h < 0) pit(c, h);
@@ -2256,17 +2370,17 @@ function drawNow(partOk) {
       if (h > 0) {
         const g = dia(vx, vy, 0),
           sc = f === 4 ? FW.side[h - 1] : f === 5 ? '#6a4a2e' : FSIDE[f] ? FSIDE[f] : b.side[h - 1];
-        poly([t[4],t[3],g[3],g[4]],mul(sc,.9),'rgba(0,0,0,.25)');
-        poly([t[3],t[2],g[2],g[3]],mul(sc,.72),'rgba(0,0,0,.25)');
+        poly([t[3], t[2], g[2], g[3]], mul(sc, 0.9), 'rgba(0,0,0,.25)');
+        poly([t[2], t[1], g[1], g[2]], mul(sc, 0.72), 'rgba(0,0,0,.25)');
         if (b.brick && !lq) {
           ctx.strokeStyle = 'rgba(0,0,0,.25)';
           ctx.lineWidth = 1;
           for (let i = 1; i <= h * 2; i++) {
             const f = i / (h * 2 + 1);
             ctx.beginPath();
-            ctx.moveTo(t[4][0],t[4][1]+(g[4][1]-t[4][1])*f);
-            ctx.lineTo(t[3][0],t[3][1]+(g[3][1]-t[3][1])*f);
-            ctx.lineTo(t[2][0],t[2][1]+(g[2][1]-t[2][1])*f);
+            ctx.moveTo(t[3][0], t[3][1] + (g[3][1] - t[3][1]) * f);
+            ctx.lineTo(t[2][0], t[2][1] + (g[2][1] - t[2][1]) * f);
+            ctx.lineTo(t[1][0], t[1][1] + (g[1][1] - t[1][1]) * f);
             ctx.stroke();
           }
         }
@@ -2284,7 +2398,7 @@ function drawNow(partOk) {
         ctx.strokeStyle = 'rgba(255,255,255,.3)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(...t[5]);
+        ctx.moveTo(...t[3]);
         ctx.lineTo(...t[0]);
         ctx.lineTo(...t[1]);
         ctx.stroke();
@@ -2323,7 +2437,7 @@ function ctr(c) {
   const [vx, vy] = view(c.x, c.y),
     h = Math.max(H[c.x][c.y], 0);
   const [cx, cy] = scr(vx, vy, h);
-  return [cx, cy + hexCenterY()];
+  return [cx, cy + TW / 4];
 }
 const ENVT = {
   fire: {
@@ -2410,7 +2524,7 @@ function drawFloat() {
   for (const [vx, vy, h, x, y, k] of FLOATQ) {
     const lift = LH * (k === 'fog' ? 1.1 : 1.5),
       [cx, cy] = scr(vx, vy, Math.max(h, 0));
-    const by = cy + hexCenterY() - lift;
+    const by = cy + TW / 4 - lift;
     for (let i = 0; i < 4; i++) {
       const dx = (rnd(x, y, i) - 0.5) * TW * 0.55 + (reduce ? 0 : Math.sin(tm * 0.6 + i + x) * TW * 0.06),
         dy = (rnd(x, y, i + 9) - 0.5) * TW * 0.25 + (reduce ? 0 : Math.cos(tm * 0.5 + i + y) * TW * 0.03),
@@ -2649,7 +2763,7 @@ function drawMeas() {
     [x1, y1] = ctr(a),
     [x2, y2] = ctr(b),
     dh = H[b.x][b.y] - H[a.x][a.y],
-    d = hexDist(a,b) + Math.abs(dh);
+    d = Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) + Math.abs(dh);
   ctx.save();
   ctx.strokeStyle = '#c0703a';
   ctx.lineWidth = 3;
@@ -2745,7 +2859,7 @@ function drawTok(a, ...r) {
 }
 function drawTok0(k, vx, vy, h, sc = 1) {
   const [cx, cy] = scr(vx, vy, h);
-  const y = cy + hexCenterY(),
+  const y = cy + TW / 4,
     r = TW * 0.24 * (sc > 1 ? sc * 0.82 : sc);
   ctx.fillStyle = 'rgba(0,0,0,.28)';
   ctx.beginPath();
@@ -3049,21 +3163,34 @@ function inPoly(p, x, y) {
   }
   return s;
 }
-function shape(c){
-  const h=H[c.x][c.y],t=dia(c.vx,c.vy,Math.max(0,h));if(h<=0)return t;
-  const g=dia(c.vx,c.vy,0);return [t[0],t[1],t[2],g[2],g[3],g[4],t[4],t[5]];
+function shape(c) {
+  const h = H[c.x][c.y];
+  if (h <= 0) return dia(c.vx, c.vy, 0);
+  const t = dia(c.vx, c.vy, h),
+    g = dia(c.vx, c.vy, 0);
+  return [t[0], t[1], g[1], g[2], g[3], t[3]];
 }
-function pick(mx,my){
-  if(!TW)return null;let best=null,bs=-Infinity;const seen=new Set();
-  for(let h=0;h<=3;h++){
-    const vr=(my-oy-hexCenterY()+h*LH)/(TW*HEX_STEP),vq=(mx-ox)/TW-vr/2,[x0,y0]=unview(vq,vr);
-    for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){
-      const x=x0+dx,y=y0+dy,key=x+','+y;
-      if(x<0||y<0||x>=N||y>=N||seen.has(key))continue;seen.add(key);
-      const [vx,vy]=view(x,y),c={x,y,vx,vy};
-      if(inPoly(shape(c),mx,my)){const sc=vy*10000+vx;if(sc>bs){bs=sc;best=c;}}
+function pick(mx, my) {
+  const S0 = (my - oy) / (TW / 4),
+    D0 = (mx - ox) / (TW / 2);
+  let best = null,
+    bs = -1e9;
+  for (let S = Math.floor(S0 - 5); S <= Math.ceil(S0 + (3 * LH) / (TW / 4) + 2); S++)
+    for (let D = Math.floor(D0 - 2); D <= Math.ceil(D0 + 2); D++) {
+      if ((S + D) & 1) continue;
+      const vx = (S + D) / 2,
+        vy = (S - D) / 2;
+      if (vx < 0 || vy < 0 || vx >= N || vy >= N) continue;
+      const [x, y] = unview(vx, vy),
+        c = { x, y, vx, vy };
+      if (inPoly(shape(c), mx, my)) {
+        const sc = S * 1000 + vx;
+        if (sc > bs) {
+          bs = sc;
+          best = c;
+        }
+      }
     }
-  }
   return best;
 }
 function pos(e) {
@@ -3085,7 +3212,7 @@ function fits(x, y, n, id) {
   if (!Number.isInteger(x)||!Number.isInteger(y)||x < 0 || y < 0 || x + n > N || y + n > N) return false;
   for (let i = x; i < x + n; i++)
     for (let j = y; j < y + n; j++) {
-      if (H[i][j] <= -2||H[i][j]>=3) return false;
+      if (H[i][j] <= -2) return false;
       if (tokens.some(k => k.id !== id && covers(k, i, j))) return false;
     }
   return true;
@@ -3101,11 +3228,11 @@ function tokAnchor(k) {
   if (n === 1) return [k.x, k.y];
   let bx = k.x,
     by = k.y,
-    bs = -Infinity;
+    bs = -1;
   for (let i = k.x; i < k.x + n; i++)
     for (let j = k.y; j < k.y + n; j++) {
       const [vx, vy] = view(i, j),
-        sc = vy * 10000 + vx;
+        sc = (vx + vy) * 1000 + vx;
       if (sc > bs) {
         bs = sc;
         bx = i;
@@ -3119,11 +3246,11 @@ function tokCell(k, c) {
   if (n === 1) return k.x === c.x && k.y === c.y;
   let bx = -1,
     by = -1,
-    bs = -Infinity;
+    bs = -1;
   for (let i = k.x; i < k.x + n; i++)
     for (let j = k.y; j < k.y + n; j++) {
       const [vx, vy] = view(i, j),
-        sc = vy * 10000 + vx;
+        sc = (vx + vy) * 1000 + vx;
       if (sc > bs) {
         bs = sc;
         bx = i;
@@ -3690,8 +3817,7 @@ bz.addEventListener('click', e => {
   draw();
 });
 document.getElementById('rot').onclick = () => {
-  rot = (rot + 1) % 6;
-  camSet();
+  rot = (rot + 1) % 4;
   save();
   draw();
 };
@@ -3876,7 +4002,10 @@ function distMap(src) {
     }
   while (qi < q.length) {
     const [x, y] = q[qi++];
-    for (const [a,b] of hexNeighbours(x,y)) {
+    for (let dx = -1; dx <= 1; dx++)
+      for (let dy = -1; dy <= 1; dy++) {
+        const a = x + dx,
+          b = y + dy;
         if (ok(a, b) && D[a][b] > D[x][y] + 1) {
           D[a][b] = D[x][y] + 1;
           q.push([a, b]);
@@ -5290,7 +5419,7 @@ function memThumb() {
 function memStateNow() {
   return {
     v: 2,
-    grid: 'hex-offset',
+    grid: 'square',
     N,
     H: encG(H, 1),
     F: encG(F, 0),
@@ -11367,18 +11496,28 @@ function fillTpl() {
 function tplSize() {
   return Math.max(5, Math.min(300, Math.round((+document.getElementById('tplsz').value || 20) / 5) * 5));
 }
-function tplCells(T){
-  const L=T.s/5,out=[],a=T.a||0;
-  if(T.k==='line'){
-    const [dq,dr]=HEX_DIRS[((Math.round(a/(Math.PI/3))%6)+6)%6];
-    const [q,r]=hexAxial(T.x,T.y);
-    for(let i=1;i<=L;i++){const [x,y]=hexOffset(q+dq*i,r+dr*i);if(ok(x,y))out.push([x,y]);}return out;
-  }
-  for(let x=Math.max(0,Math.floor(T.x-L-1));x<=Math.min(N-1,Math.ceil(T.x+L+1));x++)
-    for(let y=Math.max(0,Math.floor(T.y-L-1));y<=Math.min(N-1,Math.ceil(T.y+L+1));y++){
-      const d=hexDist({x,y},T),[dx,dy]=hexVector(...hexDelta(T,{x,y}));
-      const al=dx*Math.cos(a)+dy*Math.sin(a),pe=Math.abs(-dx*Math.sin(a)+dy*Math.cos(a));
-      if(T.k==='circle'||T.k==='sphere'?d<=L:T.k==='cube'?Math.abs(dx)<=L/2+.01&&Math.abs(dy)<=L/2+.01:d>0&&d<=L&&al>0&&pe<=al/Math.sqrt(3)+.01)out.push([x,y]);
+function tplCells(T) {
+  const L = T.s / 5,
+    out = [],
+    ox = T.x + 0.5,
+    oy = T.y + 0.5,
+    ca = Math.cos(T.a || 0),
+    sa = Math.sin(T.a || 0);
+  for (let x = Math.max(0, Math.floor(T.x - L - 1)); x <= Math.min(N - 1, Math.ceil(T.x + L + 1)); x++)
+    for (let y = Math.max(0, Math.floor(T.y - L - 1)); y <= Math.min(N - 1, Math.ceil(T.y + L + 1)); y++) {
+      const dx = x + 0.5 - ox,
+        dy = y + 0.5 - oy,
+        d = Math.hypot(dx, dy);
+      let ok = false;
+      if (T.k === 'circle' || T.k === 'sphere') ok = d <= L + 0.01;
+      else if (T.k === 'cube') ok = Math.abs(dx) <= L / 2 + 0.01 && Math.abs(dy) <= L / 2 + 0.01;
+      else {
+        const al = dx * ca + dy * sa,
+          pe = Math.abs(-dx * sa + dy * ca);
+        if (T.k === 'line') ok = al > 0.01 && al <= L + 0.01 && pe <= 0.5;
+        else ok = d > 0.01 && al > 0 && d <= L + 0.01 && pe <= al * 0.5 + 0.01;
+      }
+      if (ok) out.push([x, y]);
     }
   return out;
 }
@@ -11415,13 +11554,13 @@ function drawTpl0(T, ghost) {
     [cx, cy] = scr(vx, vy, Math.max(H[T.x][T.y], 0));
   if (T.k === 'sphere') {
     const r = (T.s / 5) * TW * 0.72;
-    const g = ctx.createRadialGradient(cx - r * 0.3, cy + hexCenterY() - r * 0.6, r * 0.1, cx, cy + hexCenterY() - r * 0.3, r);
+    const g = ctx.createRadialGradient(cx - r * 0.3, cy + TW / 4 - r * 0.6, r * 0.1, cx, cy + TW / 4 - r * 0.3, r);
     g.addColorStop(0, `rgba(${col},.05)`);
     g.addColorStop(1, `rgba(${col},.28)`);
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.ellipse(cx, cy + hexCenterY() - r * 0.25, r, r * 0.75, 0, Math.PI, 0);
-    ctx.ellipse(cx, cy + hexCenterY() - r * 0.25, r, r * 0.32, 0, 0, Math.PI);
+    ctx.ellipse(cx, cy + TW / 4 - r * 0.25, r, r * 0.75, 0, Math.PI, 0);
+    ctx.ellipse(cx, cy + TW / 4 - r * 0.25, r, r * 0.32, 0, 0, Math.PI);
     ctx.fill();
     ctx.strokeStyle = `rgba(${col},.7)`;
     ctx.lineWidth = 1.2;
@@ -11429,7 +11568,7 @@ function drawTpl0(T, ghost) {
   }
   ctx.fillStyle = `rgb(${col})`;
   ctx.beginPath();
-  ctx.arc(cx, cy + hexCenterY(), Math.max(3, TW * 0.08), 0, 7);
+  ctx.arc(cx, cy + TW / 4, Math.max(3, TW * 0.08), 0, 7);
   ctx.fill();
   if (!ghost || 1) {
     ctx.font = `700 ${Math.max(11, Math.min(15, TW * 0.3))}px "Alegreya Sans",sans-serif`;
@@ -11437,9 +11576,9 @@ function drawTpl0(T, ghost) {
     const tx = tplLabel(T);
     ctx.lineWidth = 3;
     ctx.strokeStyle = 'rgba(255,255,255,.9)';
-    ctx.strokeText(tx, cx, cy + hexCenterY() - Math.max(8, TW * 0.25));
+    ctx.strokeText(tx, cx, cy + TW / 4 - Math.max(8, TW * 0.25));
     ctx.fillStyle = '#1d1a17';
-    ctx.fillText(tx, cx, cy + hexCenterY() - Math.max(8, TW * 0.25));
+    ctx.fillText(tx, cx, cy + TW / 4 - Math.max(8, TW * 0.25));
   }
 }
 function drawTpls() {
@@ -11450,7 +11589,7 @@ function drawTplGhost() {
     const k = tplSel,
       needAim = k === 'cone' || k === 'line';
     if (needAim && TPLA) {
-      const a = hexAngle(TPLA,hover);
+      const a = Math.atan2(hover.y - TPLA.y, hover.x - TPLA.x);
       drawTpl({ k, x: TPLA.x, y: TPLA.y, a, s: tplSize() }, true);
     } else if (!needAim) drawTpl({ k, x: hover.x, y: hover.y, a: 0, s: tplSize() }, true);
     else drawTpl({ k, x: hover.x, y: hover.y, a: 0, s: tplSize() }, true);
@@ -11467,7 +11606,7 @@ function tplClick(c) {
   if (needAim && c.x === TPLA.x && c.y === TPLA.y) return;
   snap();
   const T = needAim
-    ? { k, x: TPLA.x, y: TPLA.y, a: hexAngle(TPLA,c), s: tplSize(), id: tid() }
+    ? { k, x: TPLA.x, y: TPLA.y, a: Math.atan2(c.y - TPLA.y, c.x - TPLA.x), s: tplSize(), id: tid() }
     : { k, x: c.x, y: c.y, a: 0, s: tplSize(), id: tid() };
   TPLA = null;
   if (MP.role === 'player') {
@@ -13330,6 +13469,7 @@ function mgTerrain(t) {
   }
 }
 // Weighted Dijkstra with a binary heap and precomputed protected structure mask.
+const MG_DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
 function mgPath(sx,sy,avoid,target=null){
   if(!ok(sx,sy)||target&&!ok(target.x,target.y))return [];
   const d=new Float64Array(N*N).fill(Infinity),prev=new Int32Array(N*N).fill(-1),blocked=new Uint8Array(N*N),heap=[];
@@ -13345,8 +13485,8 @@ function mgPath(sx,sy,avoid,target=null){
     if(goal>=0?id===goal:x===0||y===0||x===N-1||y===N-1){
       const out=[];for(let k=id;k>=0;k=prev[k])out.push([(k/N)|0,k%N]);return out.reverse();
     }
-    for(const [nx,ny] of hexNeighbours(x,y)){
-      if(!ok(nx,ny))continue;
+    for(const [ax,ay] of MG_DIRS){
+      const nx=x+ax,ny=y+ay;if(!ok(nx,ny))continue;
       const ni=nx*N+ny;if(blocked[ni])continue;
       const h=H[nx][ny],cost=MG.access.has(nx+','+ny)?1:h>=2?7:h===1?2:h===-1?4:h<0?9:2,nd=dc+cost;
       if(nd<d[ni]){d[ni]=nd;prev[ni]=id;push([nd,ni]);}
@@ -13386,7 +13526,7 @@ function mgAccess(places,road,links=[]){
   for(const l of links)if(!connect(l.from-1,l.to-1,l.width))MG.warnings.push(L2('Connection ','Liaison ')+l.from+'–'+l.to);
   if(bio==='donjon'||links.length){
     const pairs=[];
-    for(let a=0;a<exits.length;a++)for(let b=a+1;b<exits.length;b++)if(exits[a]&&exits[b])pairs.push([a,b,hexDist(exits[a],exits[b])]);
+    for(let a=0;a<exits.length;a++)for(let b=a+1;b<exits.length;b++)if(exits[a]&&exits[b])pairs.push([a,b,Math.hypot(exits[a].x-exits[b].x,exits[a].y-exits[b].y)]);
     pairs.sort((a,b)=>a[2]-b[2]);
     for(const [a,b] of pairs)if(root(a)!==root(b))connect(a,b,1);
   }
@@ -13484,7 +13624,7 @@ function mgNear(near, ctxs, place) {
   else if(near==='altar'||near==='entrance'){const o=OBJS.find(o=>o.k===(near==='altar'?'altar':'door'));if(o)ref=o;}
   const pool=c;
   if (!ref) return pool;
-  return pool.sort((a, b) => hexDist(a,ref)-hexDist(b,ref));
+  return pool.sort((a, b) => Math.hypot(a.x - ref.x, a.y - ref.y) - Math.hypot(b.x - ref.x, b.y - ref.y));
 }
 // creatures from the bestiary, by name (French or English, approximate)
 function mgMonster(q) {
@@ -13630,12 +13770,12 @@ function mgBuild(r,seed=(Math.random()*4294967296)>>>0,preview=false) {
     if(c.length<e.n)MG.warnings.push((e.n-c.length)+' × '+tr(ENVT[e.k].n));
     if (!c.length) continue;
     const s = e.near && e.near !== 'anywhere' ? c[0] : c[R(c.length)],
-      near = c.sort((a, b) => hexDist(a,s)-hexDist(b,s));
+      near = c.sort((a, b) => Math.hypot(a.x - s.x, a.y - s.y) - Math.hypot(b.x - s.x, b.y - s.y));
     for (let i = 0; i < Math.min(e.n, near.length); i++) ENV[near[i].x + ',' + near[i].y] = { k:e.k,dc:e.dc,...(e.hidden?{hid:true}:{}) };
   }
   mgFixDoors();
   for(const k of allies){
-    const candidates=mgFree(null).sort((a,b)=>hexDist(a,k)-hexDist(b,k));
+    const candidates=mgFree(null).sort((a,b)=>Math.hypot(a.x-k.x,a.y-k.y)-Math.hypot(b.x-k.x,b.y-k.y));
     const p=candidates.find(p=>{const sz=tfp(k);if(!fits(p.x,p.y,sz))return false;for(let x=p.x;x<p.x+sz;x++)for(let y=p.y;y<p.y+sz;y++)if(H[x][y]<0||H[x][y]>1||objAt(x,y)>=0)return false;return true;});
     if(!p)throw Error(L2('No safe position for every player token.','Pas assez de place pour tous les pions joueurs.'));
     tokens.push({...k,...p});
@@ -13941,7 +14081,7 @@ function mgPrompt(text) {
     obj = MG_OBJ.map(k => `${k} (${OBJT[k].n[0]})`).join(', '),
     env = MG_ENV.map(k => `${k} (${ENVT[k].n[0]})`).join(', '),
     mons = [...new Set(MON.map(m => [].concat(m.n)[0]))].slice(0, 400).join(', ');
-  return `You are the map designer of a tabletop RPG. Turn the game master's description into a JSON recipe that a map generator will draw on a rectangular staggered-row hex grid (1 hex = 5 ft, six equal-distance neighbours; room dimensions describe columns and rows). Answer with JSON only.
+  return `You are the map designer of a tabletop RPG. Turn the game master's description into a JSON recipe that a map generator will draw on a square grid of tiles (1 tile = 5 ft). Answer with JSON only.
 
 Fields (all optional; leave out what the description does not imply):
 - "plan": write this first: 2 or 3 sentences on the layout (what is where, how one gets in, what the terrain does), so that the rest is coherent.
@@ -13968,17 +14108,16 @@ function mgMsg(m) {
   if (el) el.textContent = m;
 }
 function mgRenderCandidate(candidate){
-  const d=JSON.parse(candidate.state),cv=$('mg_thumb'),ctx=cv.getContext('2d'),n=d.N,
-    [left,top,right,bottom]=hexBounds(n,0),t=Math.min((cv.width-8)/(right-left),(cv.height-8)/(bottom-top)),hh=t*HEX_H,
-    ox0=cv.width/2-(left+right)*t/2,oy0=cv.height/2-(top+bottom)*t/2;
-  const center=(x,y)=>{const [q,r]=hexView(x,y,n,0);return [ox0+(q+r/2)*t,oy0+r*hh*.75];};
-  const fill=(x,y,color,line=true)=>{const [cx,cy]=center(x,y);ctx.beginPath();hexPoly(cx,cy,t,hh).forEach(([a,b],i)=>i?ctx.lineTo(a,b):ctx.moveTo(a,b));ctx.closePath();ctx.fillStyle=color;ctx.fill();if(line){ctx.strokeStyle='#0002';ctx.lineWidth=.5;ctx.stroke();}};
-  ctx.clearRect(0,0,cv.width,cv.height);
+  const d=JSON.parse(candidate.state),cv=$('mg_thumb'),ctx=cv.getContext('2d'),n=d.N,t=cv.width/n;
   const floors=['#7d9564','#ad9570','#a9a5a0','#b1855f','#494b50','#6f6a65','#6b9b5d','#b8b4aa','#9d9d88','#c7b288','#888f8c','#99744e','#9b8f76','#8a8176'];
-  for(let x=0;x<n;x++)for(let y=0;y<n;y++){const h=d.H[x][y],f=d.F[x][y];fill(x,y,h<0?(h===-1?'#6da3bd':'#32668b'):h>=2?'#42434b':h===1?'#a1967e':floors[f]||floors[0]);}
-  for(const key in d.env){const [x,y]=key.split(',').map(Number);fill(x,y,'#dc9d3b99',false);}
-  for(const o of d.objs){const [x,y]=center(o.x,o.y);ctx.fillStyle=o.k==='door'?'#f2d19a':o.hid?'#b47ed6':'#5b4734';ctx.fillRect(x-t*.3,y+hh/2-t*.3,t*.6,t*.6);}
-  for(const k of d.tokens){const [x,y]=center(k.x,k.y);ctx.fillStyle=k.cid?'#4e9ee9':k.hid?'#b47ed6':'#e06055';ctx.beginPath();ctx.arc(x,y+hh/2,Math.max(2,t*.4),0,Math.PI*2);ctx.fill();}
+  for(let x=0;x<n;x++)for(let y=0;y<n;y++){
+    const h=d.H[x][y],f=d.F[x][y];
+    ctx.fillStyle=h<0?(h===-1?'#6da3bd':'#32668b'):h>=2?'#42434b':h===1?'#a1967e':floors[f]||floors[0];
+    ctx.fillRect(x*t,y*t,t+.5,t+.5);
+  }
+  for(const key in d.env){const [x,y]=key.split(',').map(Number);ctx.fillStyle='#dc9d3b99';ctx.fillRect(x*t,y*t,t,t);}
+  for(const o of d.objs){ctx.fillStyle=o.k==='door'?'#f2d19a':o.hid?'#b47ed6':'#5b4734';ctx.fillRect((o.x+.2)*t,(o.y+.2)*t,t*.6,t*.6);}
+  for(const k of d.tokens){ctx.fillStyle=k.cid?'#4e9ee9':k.hid?'#b47ed6':'#e06055';ctx.beginPath();ctx.arc((k.x+.5)*t,(k.y+.5)*t,Math.max(2,t*.4),0,Math.PI*2);ctx.fill();}
   $('mg_details').textContent=d.N+'×'+d.N+' · '+d.objs.length+' '+L2('objects','objets')+' · '+d.tokens.length+' '+L2('tokens','pions')+' · '+L2('Seed','Graine')+' '+candidate.seed+(candidate.issues.length?' · '+L2('Not placed: ','Non placés : ')+candidate.issues.join(', '):'');
 }
 function mgCandidate(newSeed=false){

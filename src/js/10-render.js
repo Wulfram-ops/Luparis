@@ -9,27 +9,7 @@ function mul(hex, f) {
   const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.max(0, Math.min(255, Math.round(v * f))));
   return `rgb(${c})`;
 }
-// Square-footprint, staggered rows. Slight vertical stretch keeps the
-// projected board square while retaining the low visual elevation.
-const HEX_H=4/3,HEX_LIFT=.16,HEX_STEP=HEX_H*.75;
 let TW, LH, ox, oy, W, Hc, TW0;
-function hexPivot(n){
-  const r=(n-1)/2;
-  return [(n-1)/2+(n>1?.25:0)-r/2,r];
-}
-function hexView(x,y,n,rotation){
-  const [cq,cr]=hexPivot(n),[a,b]=hexAxial(x,y),[q,r]=hexRotate(a-cq,b-cr,rotation);
-  return [q+cq,r+cr];
-}
-function hexBounds(n,rotation,ratio=HEX_H){
-  // Both row parities must be considered at each edge.
-  const p=[0,n-1].flatMap(x=>[0,Math.min(1,n-1),Math.max(0,n-2),n-1].map(y=>{
-    const [q,r]=hexView(x,y,n,rotation);return [q+r/2,r*ratio*.75];
-  }));
-  return [Math.min(...p.map(v=>v[0]))-.5,Math.min(...p.map(v=>v[1])),
-    Math.max(...p.map(v=>v[0]))+.5,Math.max(...p.map(v=>v[1]))+ratio];
-}
-function hexCenterY(){return TW*HEX_H/2;}
 function layout() {
   const r = stage.getBoundingClientRect(),
     dpr = PERF.low ? 1 : Math.min(2, window.devicePixelRatio || 1);
@@ -38,17 +18,15 @@ function layout() {
   cv.width = W * dpr;
   cv.height = Hc * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  TW0 = Math.min((W * 0.94) / N, (Hc * 0.78) / (N / 2 + 2));
   camSet();
   draw();
 }
 function camSet() {
-  const [left,groundTop,right,bottom]=hexBounds(N,rot),top=groundTop-3*HEX_LIFT;
-  // Fit the actual rotated outline, including the highest terrain.
-  TW0=Math.min(W*.94/(right-left+.2),Hc*.90/(bottom-top+.65));
-  TW=TW0*CAM.z;
-  LH=TW*HEX_LIFT;
-  ox=W/2-(left+right)/2*TW+CAM.px;
-  oy=Hc/2-(top+bottom)/2*TW+CAM.py;
+  TW = TW0 * CAM.z;
+  LH = TW * 0.28;
+  ox = W / 2 + CAM.px;
+  oy = (Hc - (N * TW) / 2) / 2 + LH * 2.6 + CAM.py;
 }
 function zoomAt(k, mx, my) {
   const z = Math.max(1, Math.min(N > 32 ? 16 : 6, CAM.z * k));
@@ -67,10 +45,30 @@ function zoomAt(k, mx, my) {
   camSet();
   drawMove();
 }
-function view(x,y){return hexView(x,y,N,rot);}
-function scr(vx,vy,h){return [ox+(vx+vy/2)*TW,oy+vy*TW*HEX_STEP-h*LH];}
-function hexPoly(cx,cy,w,hh=w*HEX_H){return [[cx,cy],[cx+w/2,cy+hh/4],[cx+w/2,cy+3*hh/4],[cx,cy+hh],[cx-w/2,cy+3*hh/4],[cx-w/2,cy+hh/4]];}
-function dia(vx,vy,h){const [cx,cy]=scr(vx,vy,h);return hexPoly(cx,cy,TW);}
+function view(x, y) {
+  switch (rot) {
+    case 1:
+      return [N - 1 - y, x];
+    case 2:
+      return [N - 1 - x, N - 1 - y];
+    case 3:
+      return [y, N - 1 - x];
+    default:
+      return [x, y];
+  }
+}
+function scr(vx, vy, h) {
+  return [ox + ((vx - vy) * TW) / 2, oy + ((vx + vy) * TW) / 4 - h * LH];
+}
+function dia(vx, vy, h) {
+  const [cx, cy] = scr(vx, vy, h);
+  return [
+    [cx, cy],
+    [cx + TW / 2, cy + TW / 4],
+    [cx, cy + TW / 2],
+    [cx - TW / 2, cy + TW / 4],
+  ];
+}
 function poly(p, fill, stroke, lw) {
   ctx.beginPath();
   p.forEach((q, i) => (i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1])));
@@ -86,8 +84,7 @@ function poly(p, fill, stroke, lw) {
   }
 }
 function inD(cx, cy, u, v) {
-  // Furniture and textures stay inside the hexagonal top, centered on it.
-  return [cx+((u-v)*TW)*.42,cy+hexCenterY()+(u+v-1)*TW*HEX_H*.32];
+  return [cx + ((u - v) * TW) / 2, cy + ((u + v) * TW) / 4];
 }
 let CC = null,
   CCk = '';
@@ -100,16 +97,44 @@ function cells() {
         const [vx, vy] = view(x, y);
         a.push({ x, y, vx, vy });
       }
-    CC = a.sort((a,b)=>a.vy-b.vy||a.vx-b.vx);
+    CC = a.sort((a, b) => a.vx + a.vy - (b.vx + b.vy) || a.vx - b.vx);
     CCk = k;
   }
   return CC;
 }
-function unview(vx,vy){
-  const [cq,cr]=hexPivot(N),[a,b]=hexRotate(vx-cq,vy-cr,-rot);
-  return hexOffset(Math.round(a+cq),Math.round(b+cr));
+function unview(vx, vy) {
+  switch (rot) {
+    case 1:
+      return [vy, N - 1 - vx];
+    case 2:
+      return [N - 1 - vx, N - 1 - vy];
+    case 3:
+      return [N - 1 - vy, vx];
+    default:
+      return [vx, vy];
+  }
 }
-function gv(vx,vy){const [x,y]=unview(vx,vy);return x>=0&&y>=0&&x<N&&y<N?H[x][y]:null;}
+function gv(vx, vy) {
+  let x, y;
+  switch (rot) {
+    case 1:
+      x = vy;
+      y = N - 1 - vx;
+      break;
+    case 2:
+      x = N - 1 - vx;
+      y = N - 1 - vy;
+      break;
+    case 3:
+      x = N - 1 - vy;
+      y = vx;
+      break;
+    default:
+      x = vx;
+      y = vy;
+  }
+  return x >= 0 && y >= 0 && x < N && y < N ? H[x][y] : null;
+}
 function hasAnim() {
   if (reduce || N > 40 || PERF.low) return false;
   if (Object.values(ENV).some(v => ['fire', 'fog', 'dark'].includes(v.k || v))) return true;
@@ -163,7 +188,7 @@ function deco(kind, cx, cy, h, x, y) {
   if (!kind) return;
   const s = TW / 64,
     bx = cx,
-    by = cy + hexCenterY();
+    by = cy + TW / 4;
   ctx.lineWidth = Math.max(1, s * 1.5);
   if (kind === 'bush') {
     for (const [dx, dy, r] of [
@@ -330,15 +355,103 @@ function deco(kind, cx, cy, h, x, y) {
     ctx.fill();
   }
 }
-function pit(c,h){
-  const b=B[bio],g=dia(c.vx,c.vy,0),colors={chasm:['#4a423b','#2b2622'],water:['#3f7fb0','#2c5f8c'],lava:['#e98220','#b84316'],sand:['#c79a5a','#a77e48'],ice:['#9ccbe6','#3d6f93'],swamp:['#5a6b43','#364425']};
-  const cs=colors[b.pit]||colors.water;
-  poly(g,cs[h===-2?1:0],'rgba(0,0,0,.22)');
-  if(TW>=9&&!PERF.low){
-    const [cx,cy]=scr(c.vx,c.vy,0),t=reduce?0:performance.now()/1000;
-    ctx.save();poly(g);ctx.clip();ctx.strokeStyle=b.pit==='lava'?'rgba(255,225,120,.65)':'rgba(255,255,255,.28)';
-    ctx.beginPath();const x=cx+(rnd(c.x,c.y,5)-.5)*TW*.3,y=cy+hexCenterY()+TW*.06*Math.sin(t+c.x);
-    ctx.moveTo(x-TW*.12,y);ctx.lineTo(x+TW*.12,y);ctx.stroke();ctx.restore();
+function pit(c, h) {
+  const { vx, vy, x, y } = c,
+    b = B[bio],
+    g = dia(vx, vy, 0),
+    t = (performance.now() - t0) / 1000;
+  ctx.save();
+  poly(g);
+  ctx.clip();
+  const liquid = b.pit !== 'chasm';
+  const d = liquid ? LH * (h === -1 ? 0.35 : 0.6) : -h * LH * 1.1;
+  const cols = {
+    chasm: ['#2b2622', '#4a423b', '#3a332e'],
+    water: ['#3f7fb0', '#5a7e64', '#4b6c55'],
+    lava: ['#ff6a1a', '#2a1d1a', '#1f1513'],
+    sand: ['#c79a5a', '#a77e48', '#8f6b3c'],
+    ice: ['#9ccbe6', '#b7c7d3', '#9fb2c0'],
+    swamp: ['#4b5a32', '#3f3a29', '#353123'],
+  }[b.pit];
+  let floor = cols[0];
+  if (b.pit === 'water' && h === -2) floor = '#2c5f8c';
+  if (b.pit === 'ice' && h === -2) floor = '#3d6f93';
+  if (b.pit === 'swamp' && h === -2) floor = '#364425';
+  if (b.pit === 'lava') {
+    const k = 0.85 + 0.15 * Math.sin(t * 2 + x * 0.7 + y * 0.5);
+    floor =
+      h === -2
+        ? `rgb(${Math.round(255 * k)},${Math.round(80 * k)},20)`
+        : `rgb(${Math.round(240 * k)},${Math.round(120 * k)},40)`;
+  }
+  const nb = [gv(vx - 1, vy), gv(vx, vy - 1), gv(vx + 1, vy), gv(vx, vy + 1)].map(
+    v => v !== null && (liquid ? v < 0 : v === h),
+  );
+  poly(liquid || nb.some(Boolean) ? g : g.map(p => [p[0], p[1] + d]), floor);
+  if (liquid && b.pit !== 'sand') {
+    ctx.strokeStyle = b.pit === 'lava' ? 'rgba(255,230,120,.7)' : 'rgba(255,255,255,.45)';
+    ctx.lineWidth = Math.max(1, TW / 60);
+    ctx.beginPath();
+    const o = (t * 0.15 + rnd(x, y, 5)) % 1;
+    const [a1, b1] = inD(g[0][0], g[0][1] + d, 0.25 + o * 0.3, 0.35),
+      [a2, b2] = inD(g[0][0], g[0][1] + d, 0.45 + o * 0.3, 0.35);
+    ctx.moveTo(a1, b1);
+    ctx.lineTo(a2, b2);
+    ctx.stroke();
+  }
+  if (b.pit === 'sand') {
+    ctx.strokeStyle = 'rgba(120,80,40,.5)';
+    ctx.lineWidth = 1;
+    const [cx2, cy2] = [g[0][0], g[0][1] + d + TW / 4];
+    ctx.beginPath();
+    ctx.ellipse(cx2, cy2, TW * 0.22, TW * 0.09, 0, 0, 7);
+    ctx.ellipse(cx2, cy2, TW * 0.11, TW * 0.045, 0, 0, 7);
+    ctx.stroke();
+  }
+  if (!nb[0]) poly([g[3], g[0], [g[0][0], g[0][1] + d], [g[3][0], g[3][1] + d]], cols[1]);
+  if (!nb[1]) poly([g[0], g[1], [g[1][0], g[1][1] + d], [g[0][0], g[0][1] + d]], cols[2]);
+  {
+    const dv = gv(vx - 1, vy - 1),
+      dOk = dv !== null && (liquid ? dv < 0 : dv === h);
+    if (!dOk) {
+      if (nb[1]) {
+        const A = dia(vx, vy - 1, 0);
+        poly([A[3], A[0], [A[0][0], A[0][1] + d], [A[3][0], A[3][1] + d]], cols[1]);
+      }
+      if (nb[0]) {
+        const A = dia(vx - 1, vy, 0);
+        poly([A[0], A[1], [A[1][0], A[1][1] + d], [A[0][0], A[0][1] + d]], cols[2]);
+      }
+    }
+  }
+  ctx.restore();
+  if (!nb.some(Boolean)) poly(g, null, 'rgba(0,0,0,.4)');
+  else {
+    ctx.strokeStyle = 'rgba(0,0,0,.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const [i, a, b2] of [
+      [0, 3, 0],
+      [1, 0, 1],
+      [2, 1, 2],
+      [3, 2, 3],
+    ])
+      if (!nb[i]) {
+        ctx.moveTo(...g[a]);
+        ctx.lineTo(...g[b2]);
+      }
+    ctx.stroke();
+  }
+  if (b.pit === 'lava') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const [cx, cy] = scr(vx, vy, 0);
+    const gr = ctx.createRadialGradient(cx, cy + TW / 4, 0, cx, cy + TW / 4, TW * 0.7);
+    gr.addColorStop(0, 'rgba(255,110,30,.28)');
+    gr.addColorStop(1, 'rgba(255,110,30,0)');
+    ctx.fillStyle = gr;
+    ctx.fillRect(cx - TW * 0.7, cy - TW * 0.5, TW * 1.4, TW * 1.4);
+    ctx.restore();
   }
 }
 const FC = {
@@ -540,7 +653,7 @@ function drawDirty(c) {
       r[0] = Math.min(r[0], cx - TW / 2 - 3);
       r[2] = Math.max(r[2], cx + TW / 2 + 3);
       r[1] = Math.min(r[1], cy - LH * 4 - TW * 0.6);
-      r[3]=Math.max(r[3],cy+TW*HEX_H+LH*3+3);
+      r[3] = Math.max(r[3], cy + TW / 2 + LH * 3 + 3);
     }
   DIRTY = DIRTY
     ? [Math.min(DIRTY[0], r[0]), Math.min(DIRTY[1], r[1]), Math.max(DIRTY[2], r[2]), Math.max(DIRTY[3], r[3])]
@@ -617,7 +730,10 @@ function drawOverlay() {
       for (let y = y0; y <= y1; y++) {
         const [vx, vy] = view(x, y),
           p = dia(vx, vy, Math.max(H[x][y], 0));
-        p.forEach(([px,py],i)=>i?ctx.lineTo(px,py):ctx.moveTo(px,py));
+        ctx.moveTo(p[0][0], p[0][1]);
+        ctx.lineTo(p[1][0], p[1][1]);
+        ctx.lineTo(p[2][0], p[2][1]);
+        ctx.lineTo(p[3][0], p[3][1]);
         ctx.closePath();
       }
     ctx.fillStyle = 'rgba(192,112,58,.35)';
@@ -1486,7 +1602,7 @@ function tile(fc, line, tx, f, v, cx, cy) {
   if (!sp) {
     sp = document.createElement('canvas');
     sp.width = Math.ceil((TW + 4) * dpr);
-    sp.height=Math.ceil((TW*HEX_H+pad+2)*dpr);
+    sp.height = Math.ceil((TW / 2 + pad + 2) * dpr);
     const g = sp.getContext('2d'),
       keep = ctx;
     ctx = g;
@@ -1494,12 +1610,15 @@ function tile(fc, line, tx, f, v, cx, cy) {
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       const x0 = TW / 2 + 2,
         y0 = pad,
-        t = hexPoly(x0,y0,TW);
+        t = [
+          [x0, y0],
+          [x0 + TW / 2, y0 + TW / 4],
+          [x0, y0 + TW / 2],
+          [x0 - TW / 2, y0 + TW / 4],
+        ];
       poly(t, fc, line ? 'rgba(0,0,0,.14)' : null);
-      g.save();poly(t);g.clip();
       if (tx === 1) ftex(f, t, v, 0);
       else if (tx === 2) specks(x0, y0, v, 1);
-      g.restore();
     } finally {
       ctx = keep;
     }
@@ -1586,7 +1705,8 @@ function drawNow(partOk) {
     const h = H[c.x][c.y],
       { vx, vy } = c;
     {
-      const [sx,sy]=scr(vx,vy,0);
+      const sx = ox + ((vx - vy) * TW) / 2,
+        sy = oy + ((vx + vy) * TW) / 4;
       if (sx < CL - TW || sx > CR + TW || sy < CT - TW - LH * 4 || sy > CB + TW + LH * 3) continue;
     }
     if (h < 0) pit(c, h);
@@ -1596,17 +1716,17 @@ function drawNow(partOk) {
       if (h > 0) {
         const g = dia(vx, vy, 0),
           sc = f === 4 ? FW.side[h - 1] : f === 5 ? '#6a4a2e' : FSIDE[f] ? FSIDE[f] : b.side[h - 1];
-        poly([t[4],t[3],g[3],g[4]],mul(sc,.9),'rgba(0,0,0,.25)');
-        poly([t[3],t[2],g[2],g[3]],mul(sc,.72),'rgba(0,0,0,.25)');
+        poly([t[3], t[2], g[2], g[3]], mul(sc, 0.9), 'rgba(0,0,0,.25)');
+        poly([t[2], t[1], g[1], g[2]], mul(sc, 0.72), 'rgba(0,0,0,.25)');
         if (b.brick && !lq) {
           ctx.strokeStyle = 'rgba(0,0,0,.25)';
           ctx.lineWidth = 1;
           for (let i = 1; i <= h * 2; i++) {
             const f = i / (h * 2 + 1);
             ctx.beginPath();
-            ctx.moveTo(t[4][0],t[4][1]+(g[4][1]-t[4][1])*f);
-            ctx.lineTo(t[3][0],t[3][1]+(g[3][1]-t[3][1])*f);
-            ctx.lineTo(t[2][0],t[2][1]+(g[2][1]-t[2][1])*f);
+            ctx.moveTo(t[3][0], t[3][1] + (g[3][1] - t[3][1]) * f);
+            ctx.lineTo(t[2][0], t[2][1] + (g[2][1] - t[2][1]) * f);
+            ctx.lineTo(t[1][0], t[1][1] + (g[1][1] - t[1][1]) * f);
             ctx.stroke();
           }
         }
@@ -1624,7 +1744,7 @@ function drawNow(partOk) {
         ctx.strokeStyle = 'rgba(255,255,255,.3)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(...t[5]);
+        ctx.moveTo(...t[3]);
         ctx.lineTo(...t[0]);
         ctx.lineTo(...t[1]);
         ctx.stroke();
@@ -1663,7 +1783,7 @@ function ctr(c) {
   const [vx, vy] = view(c.x, c.y),
     h = Math.max(H[c.x][c.y], 0);
   const [cx, cy] = scr(vx, vy, h);
-  return [cx, cy + hexCenterY()];
+  return [cx, cy + TW / 4];
 }
 const ENVT = {
   fire: {
@@ -1750,7 +1870,7 @@ function drawFloat() {
   for (const [vx, vy, h, x, y, k] of FLOATQ) {
     const lift = LH * (k === 'fog' ? 1.1 : 1.5),
       [cx, cy] = scr(vx, vy, Math.max(h, 0));
-    const by = cy + hexCenterY() - lift;
+    const by = cy + TW / 4 - lift;
     for (let i = 0; i < 4; i++) {
       const dx = (rnd(x, y, i) - 0.5) * TW * 0.55 + (reduce ? 0 : Math.sin(tm * 0.6 + i + x) * TW * 0.06),
         dy = (rnd(x, y, i + 9) - 0.5) * TW * 0.25 + (reduce ? 0 : Math.cos(tm * 0.5 + i + y) * TW * 0.03),
@@ -1989,7 +2109,7 @@ function drawMeas() {
     [x1, y1] = ctr(a),
     [x2, y2] = ctr(b),
     dh = H[b.x][b.y] - H[a.x][a.y],
-    d = hexDist(a,b) + Math.abs(dh);
+    d = Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) + Math.abs(dh);
   ctx.save();
   ctx.strokeStyle = '#c0703a';
   ctx.lineWidth = 3;

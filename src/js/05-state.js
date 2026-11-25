@@ -417,18 +417,6 @@ let N = 16,
   bio = 'gen',
   t0 = performance.now();
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-// Odd-row offset storage gives the board a rectangular outline. Convert to
-// axial coordinates for distances, directions and rotation; keep every saved
-// cell, token and object at its original array index.
-const HEX_DIRS=Object.freeze([[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]].map(Object.freeze));
-function hexAxial(x,y){return [x-Math.floor(y/2),y];}
-function hexOffset(q,r){return [q+Math.floor(r/2),r];}
-function hexNeighbours(x,y){const [q,r]=hexAxial(x,y);return HEX_DIRS.map(([a,b])=>hexOffset(q+a,r+b));}
-function hexDelta(a,b){const [q,r]=hexAxial(a.x,a.y),[u,v]=hexAxial(b.x,b.y);return [u-q,v-r];}
-function hexDist(a,b){const [q,r]=hexDelta(a,b);return Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r));}
-function hexVector(q,r){return [q+r/2,r*Math.sqrt(3)/2];}
-function hexAngle(a,b){const [x,y]=hexVector(...hexDelta(a,b));return Math.atan2(y,x);}
-function hexRotate(q,r,steps){for(let i=0;i<((steps%6)+6)%6;i++)[q,r]=[-r,q+r];return [q,r];}
 function blank(n) {
   return Array.from({ length: n }, () => Array(n).fill(0));
 }
@@ -473,7 +461,7 @@ function saveNow() {
   if (MP.role === 'player') return;
   const st = {
     v: 2,
-    grid: 'hex-offset',
+    grid: 'square',
     N,
     H: encG(H, 1),
     F: encG(F, 0),
@@ -522,15 +510,21 @@ function applyState(d) {
   F = Array.isArray(d.F) && d.F.length === d.N ? decG(d.F, 0) : blank(d.N);
   if (d.scene) scene = d.scene;
   tokens = d.tokens || [];
-  rot=d.grid==='hex-offset'?((Math.round(+d.rot||0)%6)+6)%6:0;
+  // Maps from the short-lived hex renderer use the same array indices.
+  // Only the camera bearing needs conversion; preserve every cell and entity.
+  const hex=d.grid==='hex'||d.grid==='hex-offset';
+  const bearing=Math.round(Number(d.rot)||0);
+  rot=((Math.round(hex?bearing*2/3:bearing)%4)+4)%4;
   bio = B[d.bio] ? d.bio : 'gen';
   INI = d.ini && Array.isArray(d.ini.o) ? d.ini : { o: [], cur: 0, round: 0 };
   MARKS = Array.isArray(d.marks) ? d.marks : [];
   ENV = d.env && typeof d.env === 'object' ? d.env : {};
   OBJS = Array.isArray(d.objs) ? d.objs.filter(o => o && OBJT[o.k]) : [];
   TPLS=Array.isArray(d.tpls)?d.tpls.map(t=>{
-    if(d.grid==='hex-offset'||d.grid==='hex')return t;
-    const [x,y]=hexVector(Math.cos(t.a||0),Math.sin(t.a||0));return {...t,a:Math.atan2(y,x)};
+    if(!hex||!t||!Number.isFinite(t.a))return t;
+    // Hex aiming used a 60-degree axial basis. Convert back to square axes.
+    const dy=2*Math.sin(t.a)/Math.sqrt(3),dx=Math.cos(t.a)-dy/2;
+    return {...t,a:Math.atan2(dy,dx)};
   }):[];
   return true;
 }
