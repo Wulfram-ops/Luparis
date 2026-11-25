@@ -851,7 +851,7 @@ function pfSheet(c, D) {
       }).join('')}</tr>`,
   ).join('')}</table>`;
   const sfs = (c.sf || []).filter(f => f.r > 0 && f.n);
-  const mods = `<div class="pfmods">${Q.sf >= 0 && c.sf[Q.sf] ? `<span class="pflab">${L2('Expertise', 'Savoir-faire')}</span><button type="button" class="chip on" data-pfs="${Q.sf}" aria-pressed="true">${esc(c.sf[Q.sf].n)} +${2 * c.sf[Q.sf].r}</button>` : ''}<span class="pflab">${L2('Roll', 'Jet')}</span><button type="button" class="chip${Q.adv === 1 ? ' on' : ''}" data-pfa="1" aria-pressed="${Q.adv === 1}">${L2('Advantage', 'Avantage')}</button><button type="button" class="chip${Q.adv === -1 ? ' on' : ''}" data-pfa="-1" aria-pressed="${Q.adv === -1}">${L2('Disadvantage', 'Désavantage')}</button></div><p class="small pfhint">${L2('Click a cell of the matrix to roll d20 + that cell (+ the chosen expertise).', 'Clique une case de la matrice pour lancer d20 + la case (+ le savoir-faire choisi).')}</p>`;
+  const mods = `<div class="pfmods">${Q.sf >= 0 && c.sf[Q.sf] ? `<span class="pflab">${L2('Expertise', 'Savoir-faire')}</span><button type="button" class="chip on" data-pfs="${Q.sf}" aria-pressed="true">${esc(c.sf[Q.sf].n)} +${2 * c.sf[Q.sf].r}</button>` : ''}<span class="pflab">${L2('Roll', 'Jet')}</span><button type="button" class="chip${Q.adv === 1 ? ' on' : ''}" data-pfa="1" aria-pressed="${Q.adv === 1}">${L2('Advantage', 'Avantage')}</button><button type="button" class="chip${Q.adv === -1 ? ' on' : ''}" data-pfa="-1" aria-pressed="${Q.adv === -1}">${L2('Disadvantage', 'Désavantage')}</button></div>`;
   const tk0 = tokens.find(k => k.cid === c.id),
     io = tk0 && INI.o.find(o => o.id === tk0.id),
     ip = io ? io.v : INIP[c.id],
