@@ -807,7 +807,7 @@ var TPLK=null,TPLC=null,tplSel='circle',FOLD={},INIP={},MP={role:null,me:null,co
 function foldSave(){try{localStorage.setItem('luparis-fold',JSON.stringify(FOLD))}catch(e){}}
 
 {
-const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),stage=document.getElementById('stage'),info=document.getElementById('info');
+const cv=document.getElementById('cv');let ctx=cv.getContext('2d');const stage=document.getElementById('stage'),info=document.getElementById('info');
 const B={
  gen:{n:['Generic','Générique'],g:['#a9b28f','#a2ab88'],top:['#b9b4a8','#9a958a','#7d786f'],side:['#b9b4a8','#9a958a','#7d786f'],pit:'chasm',sp:{c:['#8d9775','#b7bf9c'],k:'tuft',d:.5},deco:[0,0,'rock'],bg:['#f3f4ec','#d7dccb'],
   L:{1:['Low wall','Muret'],2:['Boulder','Rocher'],3:['Wall','Mur'],m1:['Ditch','Fossé'],m2:['Chasm','Gouffre']},gen:{walls:1,scatter:.02,pits:1}},
@@ -890,7 +890,7 @@ let TW,LH,ox,oy,W,Hc,TW0;
 function layout(){const r=stage.getBoundingClientRect(),dpr=PERF.low?1:Math.min(2,window.devicePixelRatio||1);W=r.width;Hc=r.height;cv.width=W*dpr;cv.height=Hc*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
 TW0=Math.min((W*0.94)/N,(Hc*0.78)/(N/2+2));camSet();draw()}
 function camSet(){TW=TW0*CAM.z;LH=TW*0.28;ox=W/2+CAM.px;oy=(Hc-(N*TW/2))/2+LH*2.6+CAM.py}
-function zoomAt(k,mx,my){const z=Math.max(1,Math.min(N>32?16:6,CAM.z*k));if(z===CAM.z)return;const f=z/CAM.z,nox=mx-(mx-ox)*f,noy=my-(my-oy)*f;CAM.z=z;camSet();CAM.px+=nox-ox;CAM.py+=noy-oy;if(z===1){CAM.px=0;CAM.py=0}camSet();draw()}
+function zoomAt(k,mx,my){const z=Math.max(1,Math.min(N>32?16:6,CAM.z*k));if(z===CAM.z)return;const f=z/CAM.z,nox=mx-(mx-ox)*f,noy=my-(my-oy)*f;CAM.z=z;camSet();CAM.px+=nox-ox;CAM.py+=noy-oy;if(z===1){CAM.px=0;CAM.py=0}camSet();drawMove()}
 function view(x,y){switch(rot){case 1:return[N-1-y,x];case 2:return[N-1-x,N-1-y];case 3:return[y,N-1-x];default:return[x,y]}}
 function scr(vx,vy,h){return[ox+(vx-vy)*TW/2,oy+(vx+vy)*TW/4-h*LH]}
 function dia(vx,vy,h){const[cx,cy]=scr(vx,vy,h);return[[cx,cy],[cx+TW/2,cy+TW/4],[cx,cy+TW/2],[cx-TW/2,cy+TW/4]]}
@@ -954,12 +954,15 @@ function ftex(f,t,x,y){const[cx,cy]=t[0];ctx.save();poly(t);ctx.clip();ctx.lineW
  ctx.restore()}
 let drawQ=false;function draw(){if(drawQ)return;drawQ=true;requestAnimationFrame(()=>{drawQ=false;drawNow()})}
 // ---- render cache: the scene is drawn once, hover/preview overlays are drawn on a copy
-const BC=document.createElement('canvas'),BX=BC.getContext('2d');let BOK=false,liteQ=false;
+const BC=document.createElement('canvas'),BX=BC.getContext('2d');let BOK=false,liteQ=false,BCAM=null,BHIDE=null,fullT=0;
 var PERF={mode:'auto',low:false,hist:[],warned:false};try{const m=localStorage.getItem('luparis-perf');if(m==='low'||m==='high')PERF.mode=m;PERF.low=m==='low'}catch(e){}
-function baseSave(){if(!cv.width||!cv.height){BOK=false;return}if(BC.width!==cv.width||BC.height!==cv.height){BC.width=cv.width;BC.height=cv.height}BX.setTransform(1,0,0,1,0,0);BX.clearRect(0,0,BC.width,BC.height);BX.drawImage(cv,0,0);BOK=true}
-function drawOverlay(){if(hover&&hover.x>=0&&hover.y>=0&&hover.x<N&&hover.y<N&&!(painting&&painting.area)){const[vx,vy]=view(hover.x,hover.y);poly(dia(vx,vy,Math.max(H[hover.x][hover.y],0)),'rgba(192,112,58,.32)','#c0703a',2)}
+function baseSave(){if(!cv.width||!cv.height){BOK=false;return}BCAM={ox,oy,TW,W,Hc,N,rot,hide:BHIDE};if(BC.width!==cv.width||BC.height!==cv.height){BC.width=cv.width;BC.height=cv.height}BX.setTransform(1,0,0,1,0,0);BX.clearRect(0,0,BC.width,BC.height);BX.drawImage(cv,0,0);BOK=true}
+function drawOverlay(){if(BHIDE&&BCAM&&BCAM.hide===BHIDE){const k=tokens.find(x=>x.id===BHIDE);if(k)drawTokAt(k)}if(hover&&hover.x>=0&&hover.y>=0&&hover.x<N&&hover.y<N&&!(painting&&painting.area)){const[vx,vy]=view(hover.x,hover.y);poly(dia(vx,vy,Math.max(H[hover.x][hover.y],0)),'rgba(192,112,58,.32)','#c0703a',2)}
  if(typeof drawTplGhost==='function')drawTplGhost();if(typeof drawPlacePreview==='function')drawPlacePreview();if(meas)drawMeas()}
-function drawLiteNow(){if(!BOK||BC.width!==cv.width||BC.height!==cv.height)return drawNow();hoverInfo();ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(BC,0,0);ctx.restore();drawOverlay()}
+function baseFits(){return BOK&&BCAM&&BC.width===cv.width&&BC.height===cv.height&&BCAM.N===N&&BCAM.rot===rot}
+function drawLiteNow(){if(!baseFits())return drawNow();if(BCAM.ox!==ox||BCAM.oy!==oy||BCAM.TW!==TW)return drawMoveNow();hoverInfo();ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(BC,0,0);ctx.restore();drawOverlay()}
+function drawMoveNow(){if(!baseFits())return drawNow();const f=TW/BCAM.TW,dx=ox-BCAM.ox*f,dy=oy-BCAM.oy*f;hoverInfo();ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.restore();ctx.imageSmoothingEnabled=f<1;ctx.drawImage(BC,0,0,BC.width,BC.height,dx,dy,BCAM.W*f,BCAM.Hc*f);ctx.imageSmoothingEnabled=true;drawOverlay()}
+let moveQ=false;function drawMove(){clearTimeout(fullT);fullT=setTimeout(draw,PERF.low?220:140);if(drawQ||moveQ)return;moveQ=true;requestAnimationFrame(()=>{moveQ=false;if(!drawQ)drawMoveNow()})}
 function drawLite(){if(drawQ||liteQ)return;liteQ=true;requestAnimationFrame(()=>{liteQ=false;if(!drawQ)drawLiteNow()})}
 function perfNote(ms){if(PERF.mode!=='auto'||PERF.low)return;PERF.hist.push(ms);if(PERF.hist.length>12)PERF.hist.shift();if(PERF.hist.length<8)return;const a=[...PERF.hist].sort((x,y)=>x-y)[4];if(a>40){PERF.low=true;PERF.hist=[];perfUI();layout();const m=document.getElementById('save_msg');if(m)m.textContent=L2('Slow display detected: light quality on.','Affichage lent détecté : qualité allégée activée.')}}
 function perfSet(m){PERF.mode=m;PERF.low=m==='low';PERF.hist=[];try{localStorage.setItem('luparis-perf',m)}catch(e){}perfUI();layout();if(typeof wApply==='function'&&WS)wApply()}
@@ -1026,21 +1029,30 @@ function prefPlace(c,k,quiet,pend){const rr=Math.random,P=pend?pend.P:prefGen(k,
  tokens=tokens.filter(t=>{const n=tfp(t);for(let i=t.x;i<t.x+n;i++)for(let j=t.y;j<t.y+n;j++)if(ok(i,j)&&F[i][j]===4)return false;return true});if(!quiet){save();draw()}return{x0,y0,W,Hh}}
 
 function fillObj(){const a=document.getElementById('objk'),b=document.getElementById('prefk');if(a)a.innerHTML=Object.keys(OBJT).map(k=>`<option value="${k}"${k===objSel?' selected':''}>${esc(tr(OBJT[k].n))}</option>`).join('');if(b)b.innerHTML=Object.keys(PREF).map(k=>`<option value="${k}"${k===prefSel?' selected':''}>${esc(tr(PREF[k]))}</option>`).join('')}
+// ---- tile sprites: each tile top (colour, grid line, texture) is drawn once per zoom level, then stamped
+const TVAR=6,TILES=new Map();let TILEK='';
+function tile(fc,line,tx,f,v,cx,cy){const dpr=cv.width/Math.max(1,W),k=TW.toFixed(2)+'|'+dpr+'|'+bio;if(k!==TILEK){TILES.clear();TILEK=k}
+ const key=fc+'|'+(line?1:0)+'|'+tx+'|'+(tx===1?f:0)+'|'+v,pad=Math.ceil(TW*.12)+2;let sp=TILES.get(key);
+ if(!sp){sp=document.createElement('canvas');sp.width=Math.ceil((TW+4)*dpr);sp.height=Math.ceil((TW/2+pad+2)*dpr);const g=sp.getContext('2d'),keep=ctx;ctx=g;
+  try{g.setTransform(dpr,0,0,dpr,0,0);const x0=TW/2+2,y0=pad,t=[[x0,y0],[x0+TW/2,y0+TW/4],[x0,y0+TW/2],[x0-TW/2,y0+TW/4]];poly(t,fc,line?'rgba(0,0,0,.14)':null);if(tx===1)ftex(f,t,v,0);else if(tx===2)specks(x0,y0,v,1)}finally{ctx=keep}
+  if(TILES.size>600)TILES.clear();TILES.set(key,sp)}
+ ctx.drawImage(sp,cx-TW/2-2,cy-pad,sp.width/dpr,sp.height/dpr)}
 function hoverInfo(){const b=B[bio];if(hover){const ti=tokAt(hover),tk=ti>=0?tokens[ti]:null;
   const mk=MARKS.findIndex(m=>m.x===hover.x&&m.y===hover.y);if(mk>=0&&!(tokAt(hover)>=0)){info.textContent=`${t("t_mark")} ${mk+1} · ${MARKS[mk].l||t('mk_ph')}`}else
   info.textContent=(tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)} (${t('stop')}) · `:'')+(tk&&tk.nm?`${tr(tk.nm)} ${tk.num||''} · ${t('esq')} ${tk.esq} · ${t('thr')} ${tk.maj}/${tk.sev} · ${t('box')} ${tk.hp}/${tk.hpMax}`:`${tr(b.n)} · ${t('tile')} ${hover.x+1}, ${hover.y+1} — ${label(H[hover.x][hover.y],F[hover.x][hover.y])}${H[hover.x][hover.y]>0?' · '+tr(ELEV[H[hover.x][hover.y]]):''}${objAt(hover.x,hover.y)>=0?' · '+objName(OBJS[objAt(hover.x,hover.y)]):''}${envOf(hover.x+','+hover.y)?` · ${tr(ENVT[envOf(hover.x+','+hover.y).k].n)} : ${envRule(envOf(hover.x+','+hover.y))}`:''}`)}
  else info.textContent=tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)}. ${t('click_tile')}`:tool==='measure'?t('meas_hint'):t('hover')}
 let STBG='';
 function drawNow(){const T0=performance.now(),b=B[bio],lq=PERF.low,lod=TW>=9&&!lq,lodS=TW>=5;hoverInfo();{const bg=`radial-gradient(ellipse at 50% 40%,${mul(b.bg[0],.36)},${mul(b.bg[1],.24)})`;if(bg!==STBG){STBG=bg;stage.style.background=bg}}ctx.clearRect(0,0,W,Hc);
- const TKM=new Map();for(const k of tokens){const a=tokAnchor(k),kk=a[0]+','+a[1];if(!TKM.has(kk))TKM.set(kk,[]);TKM.get(kk).push(k)}
+ const spAnim=b.sp&&b.sp.k==='ember';BHIDE=drag!==null&&tokens[drag]?tokens[drag].id:null;const TKM=new Map();for(const k of tokens){if(k.id===BHIDE)continue;const a=tokAnchor(k),kk=a[0]+','+a[1];if(!TKM.has(kk))TKM.set(kk,[]);TKM.get(kk).push(k)}
  const OM=new Map();for(const o of OBJS)OM.set(o.x+','+o.y,o);
  for(const c of cells()){const h=H[c.x][c.y],{vx,vy}=c;{const sx=ox+(vx-vy)*TW/2,sy=oy+(vx+vy)*TW/4;if(sx<-TW||sx>W+TW||sy<-TW-LH*4||sy>Hc+TW+LH*3)continue}
   if(h<0)pit(c,h);
   else{const f=F[c.x][c.y],t=dia(vx,vy,h);if(h>0){const g=dia(vx,vy,0),sc=f===4?FW.side[h-1]:f===5?'#6a4a2e':FSIDE[f]?FSIDE[f]:b.side[h-1];
     poly([t[3],t[2],g[2],g[3]],mul(sc,.9),'rgba(0,0,0,.25)');poly([t[2],t[1],g[1],g[2]],mul(sc,.72),'rgba(0,0,0,.25)');
     if(b.brick&&!lq){ctx.strokeStyle='rgba(0,0,0,.25)';ctx.lineWidth=1;for(let i=1;i<=h*2;i++){const f=i/(h*2+1);ctx.beginPath();ctx.moveTo(t[3][0],t[3][1]+(g[3][1]-t[3][1])*f);ctx.lineTo(t[2][0],t[2][1]+(g[2][1]-t[2][1])*f);ctx.lineTo(t[1][0],t[1][1]+(g[1][1]-t[1][1])*f);ctx.stroke()}}}
-   const chk=(c.x+c.y)%2;poly(t,f?FC[f][chk]:h>0?b.top[h-1]:b.g[chk],lodS?'rgba(0,0,0,.14)':null);
-   if(lod){if(f)ftex(f,t,c.x,c.y);else if(h===0)specks(t[0][0],t[0][1],c.x,c.y)}
+   const chk=(c.x+c.y)%2,fc=f?FC[f][chk]:h>0?b.top[h-1]:b.g[chk],tx=lod?(f?1:(h===0&&!spAnim?2:0)):0;
+   if(f||h>0||!lod||!spAnim)tile(fc,lodS,tx,f,tx?(rnd(c.x,c.y,77)*TVAR|0):0,t[0][0],t[0][1]);
+   else{poly(t,fc,lodS?'rgba(0,0,0,.14)':null);specks(t[0][0],t[0][1],c.x,c.y)}
    if(h>0){ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(...t[3]);ctx.lineTo(...t[0]);ctx.lineTo(...t[1]);ctx.stroke()}}
   if(painting&&painting.area&&inArea(c,painting.area))poly(dia(vx,vy,Math.max(h,0)),'rgba(192,112,58,.35)','#c0703a',1);
   if(h>0&&!F[c.x][c.y]&&TW>=7&&!lq){const[cx,cy]=scr(vx,vy,h);deco(b.deco[h-1],cx,cy,h,c.x,c.y)}
@@ -1178,13 +1190,13 @@ cv.addEventListener('pointerdown',e=>{const[mx,my]=pos(e),c=pick(mx,my);
  if(tool==='measure'){meas={a:c,b:c,live:true};draw();return}
  if(AREA_T.has(tool)&&!inv){painting={inv,area:{a:c,b:c}};draw();return}
  painting={inv};lastPainted='';apply(c,inv);draw()});
-cv.addEventListener('pointermove',e=>{if(pan){CAM.px+=e.clientX-pan.x;CAM.py+=e.clientY-pan.y;pan={x:e.clientX,y:e.clientY};camSet();draw();return}const[mx,my]=pos(e),c=pick(mx,my);hover=c;
+cv.addEventListener('pointermove',e=>{if(pan){CAM.px+=e.clientX-pan.x;CAM.py+=e.clientY-pan.y;pan={x:e.clientX,y:e.clientY};camSet();drawMove();return}const[mx,my]=pos(e),c=pick(mx,my);hover=c;
  if(c&&held.size){const k=[...held].pop();setH(c,KH[k]);save()}
  if(meas&&meas.live&&c)meas.b=c;
  if(drag!==null&&c&&tokens[drag]){const k=tokens[drag],n=tfp(k),a=anchor(c,n);if((a.x!==k.x||a.y!==k.y)&&fits(a.x,a.y,n,k.id)){k.x=a.x;k.y=a.y;if(meas&&meas.drag)meas.b={x:c.x,y:c.y}}}
  else if(painting&&painting.area&&c)painting.area.b=c;
- else if(painting&&c&&(tool==='up'||tool==='down'||tool==='flat'||tool==='env'))apply(c,painting.inv);if(drag===null&&!painting&&!held.size)drawLite();else draw()});
-const end=()=>{if(painting&&painting.area){areaApply(painting.area);painting=null;save();draw();return}if(pan){pan=null;cv.style.cursor=tool==='move'?'grab':'crosshair';return}if(drag!==null&&meas&&meas.drag&&meas.a.x===meas.b.x&&meas.a.y===meas.b.y&&tokens[drag]){selTok=tokens[drag].id;renderTok()}if(painting||drag!==null)save();painting=null;drag=null;if(meas){meas.live=false;if(meas.drag){meas=null;draw()}}};
+ else if(painting&&c&&(tool==='up'||tool==='down'||tool==='flat'||tool==='env'))apply(c,painting.inv);if(!painting&&!held.size&&(drag===null||(BCAM&&tokens[drag]&&BCAM.hide===tokens[drag].id)))drawLite();else draw()});
+const end=()=>{if(drag!==null)setTimeout(draw,0);if(painting&&painting.area){areaApply(painting.area);painting=null;save();draw();return}if(pan){pan=null;cv.style.cursor=tool==='move'?'grab':'crosshair';return}if(drag!==null&&meas&&meas.drag&&meas.a.x===meas.b.x&&meas.a.y===meas.b.y&&tokens[drag]){selTok=tokens[drag].id;renderTok()}if(painting||drag!==null)save();painting=null;drag=null;if(meas){meas.live=false;if(meas.drag){meas=null;draw()}}};
 cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
 cv.addEventListener('pointerleave',()=>{hover=null;drawLite()});
 cv.addEventListener('dblclick',e=>{const[mx,my]=pos(e),c=pick(mx,my);if(!c)return;const i=tokAt(c);if(i<0)return;const k=tokens[i],m=k.mid&&MON.find(x=>x.id===k.mid);if(m&&!(MP.role==='player'))monSheet(m,k)});
