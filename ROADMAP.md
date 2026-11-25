@@ -12,6 +12,12 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 - Refaire les calculs et les simulations de combat sur les personnages (niveaux 1, 5, 10, 15, 20) : coûts d'XP, plafonds de stats, Esquive et armures, seuils, Parade, talents, pactes.
 - Vérifier aussi les monstres convertis du SRD, et le nouveau souffle à recharge (Tier dés par tour de recharge).
 - Sortie attendue : un tableau des écarts (combien de coups pour tomber, dégâts par round) et les corrections proposées.
+- **Recherche des répartitions d'XP (25 novembre, règles actuelles)** : meilleur build de chaque voie aux niveaux 1, 5, 10, 20.
+  - La Parade rend le bouclier obligatoire à bas niveau (2 mains, tir et mages à 35-45 % au niveau 1). Piste retenue à valider : la Parade ne réduit qu'un coup Majeur ou Sévère (jamais 1 → 0) ; les voies martiales restent alors entre 73 et 100 % à tous les niveaux. Variante plus simple : bouclier +2 Esquive sans Parade.
+  - La stat de domaine physique sert à la fois au toucher, aux dégâts, à l'Esquive et aux seuils : tout martial la monte au maximum. Les mages doivent la monter pour se défendre et payer en plus la mentale pour attaquer : 65-80 % de l'optimum. Pistes : sort de base + Puissance mentale, Maîtrise par niveau (0.2).
+  - Les Tiers sont moins rentables que les stats : l'optimum reste au Tier 2 au niveau 10. La Maîtrise par niveau (0.2) corrige ça.
+  - Second achat (école pour l'infusion, Apex, 2e famille) : ±5 %, les hybrides ne sont ni punis ni favorisés.
+  - Achats « au feeling » : 25 à 45 % de la puissance optimale en médiane, l'écart vient surtout des stats dispersées sur des cases inutilisées. Piste : une aide sur la fiche qui montre quelles stats servent à quoi.
 
 ### 0.2 Maîtrise façon Daggerheart (décidé le 25 novembre, chiffres à valider)
 - **Décidé :** la **Maîtrise** donne le nombre de dés de dégâts, pour les armes comme pour la magie.
