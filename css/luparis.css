@@ -388,13 +388,10 @@ body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){dis
 #cgrid>#hand>p.small{display:none}
 #cgrid .gitem:hover>.ggrip,#cgrid .gitem:hover>.gsz,#cgrid .gitem.gdrag>.ggrip,#cgrid .gitem.gdrag>.gsz{opacity:.9}
 #cgrid .gitem.gdrag{outline:2px dashed var(--acc);outline-offset:2px;z-index:5}
-/* lock a module of the Map grid */
-.glock{position:absolute;top:4px;right:34px;z-index:7;min-height:0;padding:0 5px;font-size:12px;line-height:20px;opacity:0;transition:opacity .15s;background:var(--panel);border:1px solid var(--line);border-radius:6px;cursor:pointer}
-#cgrid [data-gk]:hover>.glock,.glock:focus-visible{opacity:.9}
-#cgrid .glocked>.glock{opacity:.55;right:4px}
-#cgrid .glocked:hover>.glock{opacity:.95}
-#cgrid .glocked>.ggrip,#cgrid .glocked>.gsz{display:none}
-@media(max-width:900px){.glock{display:none}}
+/* the title of a module moves it */
+#cgrid .gttl{cursor:grab;user-select:none;touch-action:none}
+#cgrid .gdrag .gttl{cursor:grabbing}
+@media(max-width:900px){#cgrid .gttl{cursor:auto}}
 /* Map grid: sheet + character box in one module */
 #cgrid .pfbox{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:6px 10px;overflow:auto}
 #cgrid .pfbox>.pf{border:0;padding:0;margin:0;background:none;flex:none}

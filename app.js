@@ -12097,8 +12097,7 @@ const GNAME = {
   img: ['Images', 'Images'],
   sn: ['Session notes', 'Notes de séance'],
 };
-let GL = {},
-  GLK = new Set(lsGet('luparis-grid2-lock', []) || []);
+let GL = {};
 // a character card (defense, weapons, a school…) gets its own place, under the map by default
 function gDefault(k) {
   if (GDEF[k]) return [...GDEF[k]];
@@ -12128,48 +12127,19 @@ function gShown(k) {
   const m = gEl(k);
   return !!m && getComputedStyle(m).display !== 'none';
 }
-// locked modules never move; the module just moved keeps its place (below a locked one if it lands on it);
-// the others rise as high as they can without overlapping
-function gSettle(fixed) {
-  const keys = Object.keys(GL).filter(gShown),
-    locked = keys.filter(k => GLK.has(k)),
-    done = [...locked];
-  if (fixed && keys.includes(fixed) && !GLK.has(fixed)) {
-    const r = GL[fixed];
-    while (done.some(d => gHit(r, GL[d]))) r[1]++;
-    done.push(fixed);
-  }
-  for (const k of keys.filter(k => !done.includes(k)).sort((a, b) => GL[a][1] - GL[b][1] || GL[a][0] - GL[b][0])) {
+// modules stay where they are put; only one that would overlap another (a new card, an old layout) goes down
+function gFix() {
+  const keys = Object.keys(GL)
+      .filter(k => gEl(k))
+      .sort((a, b) => GL[a][1] - GL[b][1] || GL[a][0] - GL[b][0]),
+    done = [];
+  for (const k of keys) {
     const r = GL[k];
-    r[1] = 1;
     while (done.some(d => gHit(r, GL[d]))) r[1]++;
     done.push(k);
   }
 }
-function gLockSync(el, k) {
-  const on = GLK.has(k),
-    b = el.querySelector(':scope > .glock');
-  el.classList.toggle('glocked', on);
-  if (!b) return;
-  b.textContent = on ? '🔒' : '🔓';
-  b.title = on
-    ? L2(
-        'Locked: other modules flow around it. Click to unlock',
-        'Verrouillé : les autres modules passent autour. Clic pour déverrouiller',
-      )
-    : L2('Lock in place', 'Verrouiller à sa place');
-  b.setAttribute('aria-pressed', on ? 'true' : 'false');
-}
-function gLockToggle(k) {
-  if (GLK.has(k)) GLK.delete(k);
-  else GLK.add(k);
-  lsSet('luparis-grid2-lock', [...GLK]);
-  const m = gEl(k);
-  if (m) gLockSync(m, k);
-  gSettle(null);
-  gApply();
-  gSave();
-}
+const gFree = (k, r) => Object.keys(GL).every(o => o === k || !gEl(o) || !gHit(r, GL[o]));
 function gApply() {
   for (const k in GL) {
     const m = gEl(k);
@@ -12182,17 +12152,24 @@ function gApply() {
 function gSave() {
   lsSet('luparis-grid2', GL);
 }
-// move and resize handles, added to any element that becomes a module
+// the title of a module is its move handle (the map, without a title, keeps a small grip); a corner resizes it
 function gHandles(el, k) {
   el.dataset.gk = k;
   el.classList.add('gitem');
-  if (el.querySelector(':scope > .ggrip')) return gLockSync(el, k);
-  const nm = GNAME[k] ? L2(...GNAME[k]) : (el.querySelector('.ht') || el).textContent.trim().slice(0, 30);
-  el.insertAdjacentHTML(
-    'beforeend',
-    `<button type="button" class="glock"></button><button type="button" class="ggrip" title="${L2('Drag to move', 'Glisse pour déplacer')} · ${esc(nm)}" aria-label="${L2('Move', 'Déplacer')} ${esc(nm)}">⠿</button><div class="gsz" title="${L2('Drag to resize', 'Glisse pour redimensionner')}" aria-hidden="true"></div>`,
-  );
-  gLockSync(el, k);
+  const t = el.querySelector('.hside > h3, .ht, h3, h2');
+  if (t) {
+    t.classList.add('gttl');
+    t.title = L2('Drag the title to move', 'Glisse le titre pour déplacer');
+  } else if (!el.querySelector(':scope > .ggrip'))
+    el.insertAdjacentHTML(
+      'beforeend',
+      `<button type="button" class="ggrip" title="${L2('Drag to move', 'Glisse pour déplacer')}" aria-label="${L2('Move', 'Déplacer')}">⠿</button>`,
+    );
+  if (!el.querySelector(':scope > .gsz'))
+    el.insertAdjacentHTML(
+      'beforeend',
+      `<div class="gsz" title="${L2('Drag to resize', 'Glisse pour redimensionner')}" aria-hidden="true"></div>`,
+    );
 }
 // the sheet and the character box (name, picker, Vitality, Mana, Breath) make one module
 function gPfBox(hand) {
@@ -12231,7 +12208,7 @@ function gHandSync() {
       added = true;
     }
   }
-  gSettle(null);
+  gFix();
   gApply();
   if (added) gSave();
 }
@@ -12275,9 +12252,6 @@ function gHandSync() {
   grid.after(reset);
   reset.onclick = () => {
     lsSet('luparis-grid2', null);
-    lsSet('luparis-grid2-lock', []);
-    GLK.clear();
-    grid.querySelectorAll('[data-gk]').forEach(m => gLockSync(m, m.dataset.gk));
     GL = gLoad();
     gHandSync();
   };
@@ -12303,17 +12277,18 @@ function gHandSync() {
   grid.addEventListener(
     'pointerdown',
     e => {
-      if (e.target.closest('.glock')) return e.stopPropagation();
-      const g = e.target.closest('.ggrip, .gsz');
+      const g = e.target.closest('.ggrip, .gsz, .gttl');
+      if (!g || (g.classList.contains('gttl') && e.target.closest('button, input, select, textarea, a, label'))) return;
+      if (e.button || getComputedStyle(grid).display !== 'grid') return;
       if (!g) return;
       const m = g.closest('[data-gk]'),
         k = m.dataset.gk,
         p = cell(e.clientX, e.clientY);
-      if (!GL[k] || GLK.has(k)) return;
+      if (!GL[k]) return;
       e.preventDefault();
       e.stopPropagation();
       g.setPointerCapture(e.pointerId);
-      act = { k, m, move: g.classList.contains('ggrip'), p0: p, r0: [...GL[k]], g };
+      act = { k, m, move: !g.classList.contains('gsz'), p0: p, r0: [...GL[k]], g };
       m.classList.add('gdrag');
       grid.style.setProperty('--gcw', p.cw + GGAP + 'px');
       grid.classList.add('gon');
@@ -12325,16 +12300,13 @@ function gHandSync() {
     const p = cell(e.clientX, e.clientY),
       dc = p.c - act.p0.c,
       dr = p.r - act.p0.r,
-      r = GL[act.k],
-      [c0, r0, w0, h0] = act.r0;
-    if (act.move) {
-      r[0] = Math.max(1, Math.min(GCOLS - w0 + 1, c0 + dc));
-      r[1] = Math.max(1, r0 + dr);
-    } else {
-      r[2] = Math.max(2, Math.min(GCOLS - c0 + 1, w0 + dc));
-      r[3] = Math.max(2, h0 + dr);
-    }
-    gSettle(act.k);
+      [c0, r0, w0, h0] = act.r0,
+      n = act.move
+        ? [Math.max(1, Math.min(GCOLS - w0 + 1, c0 + dc)), Math.max(1, r0 + dr), w0, h0]
+        : [c0, r0, Math.max(2, Math.min(GCOLS - c0 + 1, w0 + dc)), Math.max(2, h0 + dr)];
+    // a module never goes over another: it stops at the last free place
+    if (!gFree(act.k, n)) return;
+    GL[act.k] = n;
     gApply();
   });
   const end = () => {
@@ -12342,29 +12314,10 @@ function gHandSync() {
     act.m.classList.remove('gdrag');
     grid.classList.remove('gon');
     act = null;
-    gSettle(null);
-    gApply();
     gSave();
   };
-  grid.addEventListener(
-    'click',
-    e => {
-      const lk = e.target.closest('.glock');
-      if (!lk) return;
-      e.preventDefault();
-      e.stopPropagation();
-      gLockToggle(lk.closest('[data-gk]').dataset.gk);
-    },
-    true,
-  );
   grid.addEventListener('pointerup', end);
   grid.addEventListener('pointercancel', end);
-  // a card that appears or disappears (selected token, GM-only cards) lets the others settle again
-  new MutationObserver(() => {
-    if (act) return;
-    gSettle(null);
-    gApply();
-  }).observe(grid, { attributes: true, subtree: true, attributeFilter: ['hidden'] });
 }
 // ---- 58-mapgen.js
 // ---- a map from a sentence ("temple en ruines dans la forêt")
