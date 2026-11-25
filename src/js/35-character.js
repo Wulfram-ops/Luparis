@@ -622,11 +622,13 @@ function camps() {
 }
 function renderList() {
   const groups = [...camps(), ''].filter(g => CH.list.some(c => (c.camp || '') === g)),
-    nn = $('c_nn') ? $('c_nn').value : '',
-    nc = $('c_nc') ? $('c_nc').value : '';
+    pending = MP.role === 'player' ? MP.createPending : null,
+    nn = pending ? pending.c.name : $('c_nn') ? $('c_nn').value : '',
+    nc = pending ? pending.c.camp : $('c_nc') ? $('c_nc').value : '',
+    blocked = MP.role === 'player' && (!MP.got || MP.prole === 'spec' || !!pending);
   $('c_listv').innerHTML =
     `<div class="bhead"><h2>${t('sk_chars')}</h2><span class="small">${t('sk_nchars')(CH.list.length)}</span></div>
- <form class="newc" id="c_nf"><label>${t('sk_name')}<input id="c_nn" required></label><label>${t('sk_camp')}<input id="c_nc" list="c_camps"></label><div class="row"><button class="go" type="submit">${t('sk_create')}</button></div></form>` +
+ <form class="newc" id="c_nf"><label>${t('sk_name')}<input id="c_nn" maxlength="60" required></label><label>${t('sk_camp')}<input id="c_nc" maxlength="60" list="c_camps"></label><div class="row"><button class="go" type="submit"${blocked ? ' disabled' : ''}>${t('sk_create')}</button></div></form><p class="small" id="c_create_msg" aria-live="polite">${MP.role === 'player' ? esc(pending ? L2('Registering the character with the GM…', 'Enregistrement du personnage auprès du MJ…') : MP.createMessage || '') : ''}</p>` +
     campPanel() +
     groups
       .map(
@@ -675,6 +677,7 @@ function renderSheet() {
   {
     const cr = C.camp && campsGet()[C.camp],
       e = $('c_xp');
+    $('c_camp').readOnly = MP.role === 'player';
     e.readOnly = MP.role === 'player' || !!cr;
     e.title = e.readOnly
       ? L2(
@@ -1136,6 +1139,10 @@ fiche.addEventListener('click', e => {
         .filter(w => w && FAM[w.f] && SZ[w.s])
         .map(w => ({ n: String(w.n || '?'), f: w.f, s: w.s }));
       c.camp = String(o.camp || '');
+      if (MP.role === 'player') {
+        mpCreateCharacter(c, true);
+        return;
+      }
       CH.list.push(c);
       CH.active = c.id;
       C = c;
@@ -1144,6 +1151,7 @@ fiche.addEventListener('click', e => {
       $('c_msg').textContent = t('sk_bad');
     }
   } else if (b.id === 'c_del') {
+    if (MP.role === 'player') return;
     if (!b.dataset.armed) {
       b.dataset.armed = '1';
       b.textContent = t('sk_confirm2');
@@ -1182,6 +1190,7 @@ for (const [id, key] of [
 ])
   $(id).addEventListener('input', e => {
     if (C) {
+      if (MP.role === 'player' && (key === 'camp' || MP.me !== C.id || MP.prole === 'spec')) return;
       C[key] = e.target.value;
       saveC();
       if (key === 'camp') {
@@ -1356,6 +1365,10 @@ fiche.addEventListener('submit', e => {
   const c = blankC();
   c.name = n;
   c.camp = $('c_nc').value.trim();
+  if (MP.role === 'player') {
+    mpCreateCharacter(c);
+    return;
+  }
   {
     const r = c.camp && campsGet()[c.camp];
     if (r) c.xp = r.xp;

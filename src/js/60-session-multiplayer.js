@@ -243,6 +243,19 @@ function mpPlayerSave() {
     t: tokens.filter(k => k.cid === MP.me).map(k => ({ id: k.id, x: k.x, y: k.y, hp: k.hp })),
   });
 }
+// Create on the authoritative host before letting the player edit. Keep the request
+// across reconnects so a lost acknowledgement can be retried without duplicating a sheet.
+const MPC = 'luparis-mp-create';
+function mpCreateCharacter(c, imported = false) {
+  if (MP.role !== 'player' || MP.prole !== 'player' || !MP.got || MP.createPending) return;
+  const request = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : tid() + tid();
+  MP.createPending = { code: MP.code, request, c, imported };
+  MP.createMessage = '';
+  ssSet(MPC, MP.createPending);
+  mpSend({ type: 'create-char', ...MP.createPending });
+  if (CH.active) $('c_msg').textContent = L2('Registering the character with the GM…', 'Enregistrement du personnage auprès du MJ…');
+  else renderList();
+}
 function mpSendChar() {
   if (MP.prole === 'spec') return;
   const c = CH.list.find(x => x.id === MP.me);
@@ -273,6 +286,15 @@ function cleanCharPatch(c) {
     for (const k of Object.keys(p).slice(0, 40)) if (/^\w{1,20}$/.test(k)) o.inv.pot[k] = N(p[k], 0, 999);
   }
   if (c.notes != null) o.notes = S(c.notes, 5000);
+  if (typeof c.name === 'string' && c.name.trim()) o.name = S(c.name, 60);
+  if (typeof c.people === 'string') o.people = S(c.people, 60);
+  if (typeof c.armor === 'string' && Object.hasOwn(ARM, c.armor)) o.armor = c.armor;
+  if (typeof c.shield === 'string' && Object.hasOwn(SHD, c.shield)) o.shield = c.shield;
+  if (Array.isArray(c.weapons))
+    o.weapons = c.weapons.slice(0, 50).filter(w => w && Object.hasOwn(FAM, w.f) && szKeys(w.f).includes(w.s))
+      .map(w => ({ n: S(w.n, 60) || '?', f: w.f, s: w.s }));
+  if (typeof c.patron === 'string' && (!c.patron || Object.hasOwn(PATR, c.patron))) o.patron = c.patron;
+  if (typeof c.patronN === 'string') o.patronN = S(c.patronN, 60);
   if (Array.isArray(c.corder)) o.corder = c.corder.slice(0, 40).map(x => S(x, 40));
   return o;
 }
@@ -335,7 +357,7 @@ function cleanProgression(incoming, current) {
   return patch;
 }
 function mpTaken(id, conn) {
-  return MP.conns.some(c => c !== conn && c.open && c.me === id);
+  return MP.conns.some(c => c !== conn && (c.open || MP.local) && c.me === id);
 }
 function mpYou(conn, msg) {
   mpSend({ type: 'you', role: conn.prole, me: conn.me || null, msg: msg || '' }, conn);
@@ -363,6 +385,49 @@ function mpHostMsg(m, conn) {
     return;
   }
   if (conn.prole === 'spec') return;
+  if (m.type === 'create-char') {
+    if (conn.prole !== 'player' || typeof m.request !== 'string' || !/^[a-zA-Z0-9_-]{8,100}$/.test(m.request)) return;
+    const reply = (me, msg = '') => mpSend({ type: 'created-char', request: m.request, me, msg }, conn);
+    // Request IDs are private to the creating client and are not included in shared character data.
+    const requests = MP.createdChars || (MP.createdChars = new Map());
+    const known = requests.get(m.request);
+    if (known && CH.list.some(c => c.id === known)) {
+      if (mpTaken(known, conn)) return reply(null, L2('Character already claimed.', 'Personnage déjà attribué.'));
+      conn.me = known;
+      mpSend(mpState(), conn);
+      reply(known);
+      mpRender();
+      return;
+    }
+    const source = m.c;
+    if (!source || typeof source.name !== 'string' || !source.name.trim())
+      return reply(null, L2('A character needs a name.', 'Un personnage doit avoir un nom.'));
+    const c = blankC();
+    c.name = source.name.trim().slice(0, 60);
+    c.camp = typeof source.camp === 'string' ? source.camp.trim().slice(0, 60) : '';
+    if (['__proto__', 'constructor', 'prototype'].includes(c.camp)) return reply(null, L2('Invalid campaign.', 'Campagne invalide.'));
+    const campaigns = campsGet(), record = c.camp && Object.hasOwn(campaigns, c.camp) ? campaigns[c.camp] : null;
+    const existing = CH.list.filter(x => x.camp && x.camp === c.camp);
+    if (record && Number.isFinite(record.xp)) c.xp = Math.max(0, record.xp);
+    else if (existing.length) c.xp = Math.max(0, ...existing.map(x => +x.xp || 0));
+    if (m.imported) {
+      const progression = cleanProgression(source, c);
+      if (!progression) return reply(null, L2('Imported character exceeds the available XP or prerequisites.', 'Le personnage importé dépasse les XP disponibles ou ne respecte pas les prérequis.'));
+      Object.assign(c, cleanCharPatch(source), progression);
+      syncCells(c);
+    }
+    CH.list.push(c);
+    conn.me = c.id;
+    requests.set(m.request, c.id);
+    saveCNow(); // durable on the GM before the client receives confirmation
+    saveC();
+    mpSend(mpState(), conn);
+    reply(c.id);
+    mpRender();
+    if (CH.active) renderSheet();
+    else renderList();
+    return;
+  }
   if (m.type === 'claim') {
     const id = String(m.me || '');
     if (!id) conn.me = null;
@@ -448,10 +513,33 @@ function mpClientMsg(m) {
     mpSetRole(m.role);
     MP.me = MP.prole === 'spec' ? null : m.me || null;
     handId = MP.me;
+    if (MP.createPending && MP.prole === 'player') mpSend({ type: 'create-char', ...MP.createPending });
     mpRemember();
     renderHand();
     mpRender(m.msg || undefined);
     imgRender();
+    return;
+  }
+  if (m.type === 'created-char') {
+    if (!MP.createPending || m.request !== MP.createPending.request) return;
+    if (m.me && !CH.list.some(c => c.id === m.me)) return;
+    MP.createPending = null;
+    ssSet(MPC, null);
+    MP.createMessage = m.msg || '';
+    if (m.me) {
+      MP.me = m.me;
+      CH.active = m.me;
+      C = CH.list.find(c => c.id === m.me);
+      handId = MP.me;
+      selTok = null;
+      mpRemember();
+      renderSheet();
+      $('c_msg').textContent = L2('Character saved by the GM.', 'Personnage enregistré chez le MJ.');
+      renderHand();
+      window.scrollTo(0, 0);
+    } else if (CH.active) $('c_msg').textContent = MP.createMessage;
+    else renderList();
+    mpRender(MP.createMessage);
     return;
   }
   if (m.type === 'img') {
@@ -463,6 +551,7 @@ function mpClientMsg(m) {
   MP.got = true;
   applyState(m.map);
   CH.list = m.chars || [];
+  if (CH.active && !CH.list.some(c => c.id === CH.active)) CH.active = null;
   C = CH.list.find(c => c.id === CH.active) || CH.list[0] || null;
   RL = (Array.isArray(m.rolls) ? m.rolls : [])
     .slice(0, 40)
@@ -663,6 +752,9 @@ async function mpJoin(code, opt) {
   opt = opt || {};
   MP.code = code;
   MP.role = 'player';
+  const pending = ssGet(MPC);
+  MP.createPending = pending && pending.code === code ? pending : null;
+  MP.createMessage = '';
   MP.name = String(opt.name || '').slice(0, 30);
   MP.me = opt.me || null;
   MP.got = false;
@@ -788,7 +880,7 @@ document.getElementById('mp_card').addEventListener('change', e => {
     mpRender();
     return;
   }
-  if (e.target.id !== 'mp_me') return;
+  if (e.target.id !== 'mp_me' || MP.createPending) return;
   MP.me = e.target.value || null;
   handId = MP.me;
   selTok = null;
