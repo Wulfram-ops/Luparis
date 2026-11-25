@@ -466,3 +466,6 @@ body.table-display .ggrip,body.table-display .gsz,body.table-display #info,body.
 @media(max-width:900px){.gpresets{display:flex}.gpres-main{width:100%}#g_module_list{left:0;right:auto}.gdisplaytools{font-size:12px}#g_preset_hint{display:none}}
 
 #mg_preview{flex:1 1 100%;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--panel)}#mg_preview[hidden],#mg_cancel[hidden]{display:none!important}#mg_preview p{margin:5px 0;white-space:pre-wrap}#mg_preview label{display:inline-flex;gap:5px;align-items:center;margin-right:8px}#mg_preview button{min-height:32px}
+
+/* Real top-down preview of the generated candidate, not the active battle map. */
+.mgpreviewbody{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}.mgpreviewbody canvas{width:min(240px,100%);height:auto;aspect-ratio:1;image-rendering:pixelated;border:1px solid var(--line);border-radius:5px}.mgpreviewbody canvas[hidden]{display:none}.mgpreviewbody>div{flex:1;min-width:min(240px,100%)}

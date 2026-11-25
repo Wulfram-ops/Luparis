@@ -117,7 +117,7 @@ const MG_NUM = {
   five: 5,
 };
 function mgParse(text) {
-  const s = mgNorm(text),
+  const s = mgNorm(text).replace(/\b(feu de camp|feux de camp|campfires?)\b/g,'campfire'),
     r = { bio: null, scene: null, size: null, add: [], ruin: 0, objs: [], env: [], foes: [], marks: [], terrain: {} };
   for (const [re, f] of MG_WORDS) if (re.test(s)) f(r);
   // creatures of the bestiary named in the sentence ("trois gobelins gardent l'autel")
@@ -162,6 +162,13 @@ function mgParse(text) {
     const m = w && new RegExp(`\\b(\\d+|${Object.keys(MG_NUM).join('|')})\\s+(${w})\\b`).exec(s);
     if (m) o.n = Math.min(12, +m[1] || MG_NUM[m[1]] || o.n);
   }
+  // Basic explicit exclusions in local mode; not a full natural-language parser.
+  if(/\b(sans (?:eau|riviere|lac)|no (?:water|river|lake))\b/.test(s))r.terrain.water='none';
+  if(/\b(sans (?:arbres|vegetation)|no (?:trees|vegetation))\b/.test(s)){r.terrain.veg=0;r.objs=r.objs.filter(o=>o.k!=='tree');}
+  if(/\b(sans (?:pieges|ennemis|monstres)|no (?:traps|enemies|monsters))\b/.test(s)){
+    if(/sans pieges|no traps/.test(s))r.objs=r.objs.filter(o=>o.k!=='trap');
+    if(/sans (?:ennemis|monstres)|no (?:enemies|monsters)/.test(s))r.foes=[];
+  }
   return mgClean(r);
 }
 // whatever wrote the recipe (keywords or AI), only known values go through
@@ -172,7 +179,7 @@ const mgBound = (v,a,b,d) => typeof v !== 'boolean' && v != null && v !== '' && 
 function mgClean(r) {
   r = r && typeof r === 'object' ? r : {};
   const n = mgBound,
-    place = v => n(v,1,6,null),
+    place = v => typeof v!=='boolean' && v!=null && v!=='' && Number.isInteger(Number(v)) && +v>=1 && +v<=6 ? +v : null,
     near = v => (MG_NEAR.includes(v) ? v : null),
     arr = v => (Array.isArray(v) ? v : []),
     t = r.terrain && typeof r.terrain === 'object' ? r.terrain : {},
@@ -185,6 +192,7 @@ function mgClean(r) {
         .filter(a => a && MG_STRUCT.includes(a.k))
         .slice(0,6)
         .map(a=>({k:a.k,pos:MG_POS.includes(a.pos)?a.pos:null,w:n(a.w,5,26,null),h:n(a.h,5,26,null),entrance:MG_SIDES.includes(a.entrance)?a.entrance:null,floor:typeof a.floor==='string'&&Object.hasOwn(MG_FLOORS,a.floor)?a.floor:null,label:typeof a.label==='string'?a.label.trim().slice(0,40):''})),
+      links: arr(r.links).filter(x=>x&&place(x.from)&&place(x.to)&&+x.from!==+x.to).slice(0,12).map(x=>({from:place(x.from),to:place(x.to),width:n(x.width,1,2,1)})),
       ruin: isFinite(+r.ruin) ? Math.max(0, Math.min(1, +r.ruin)) : 0,
       objs: arr(r.objs)
         .filter(x => x && MG_OBJ.includes(x.k))
@@ -213,6 +221,7 @@ function mgClean(r) {
     };
   for(const a of o.add)if(a.k==='room'){a.w=a.w||7;a.h=a.h||7;}
   for(const list of [o.objs,o.env,o.foes,o.marks])for(const x of list)if(x.place>o.add.length)x.place=null;
+  const seenLinks=new Set();o.links=o.links.filter(x=>{const k=[x.from,x.to].sort().join(':');if(x.from>o.add.length||x.to>o.add.length||seenLinks.has(k))return false;seenLinks.add(k);return true;});
   if (o.terrain.veg === null) delete o.terrain.veg;
   if (!o.bio && o.scene && SCN[o.scene].bio) o.bio = typeof SCN[o.scene].bio === 'function' ? null : SCN[o.scene].bio;
   return o;
@@ -231,6 +240,7 @@ function mgSummary(r) {
   if (r.bio) P.push(tr(B[r.bio].n));
   if (r.scene) P.push(t('scn')[r.scene] || r.scene);
   for (const a of r.add) P.push((a.label||tr(MG_PLN[a.k]||PREF[a.k]))+(a.k==='room'?' '+a.w+'×'+a.h:'')+(a.pos?' · '+a.pos:''));
+  if(r.links.length)P.push(r.links.length+' '+L2('room connections','liaisons entre salles'));
   if (r.ruin >= 0.5) P.push(L2('in ruins', 'en ruines'));
   else if (r.ruin > 0) P.push(L2('abandoned', 'abandonné'));
   const T = r.terrain || {};
@@ -281,20 +291,19 @@ function mgRect(pos, w, h) {
     taken = MG.taken || [];
   let best = null,
     bp = 1e12;
-  const span = N;
-  for (let dx = -span; dx <= span; dx++)
-    for (let dy = -span; dy <= span; dy++) {
-      const x0 = bx + dx,
-        y0 = by + dy;
-      if (x0 < 1 || y0 < 1 || x0 + w > N - 1 || y0 + h > N - 1) continue;
-      let p = Math.hypot(dx, dy) * 2;
+  // Summed-area water mask: score each candidate rectangle in constant time.
+  const water=Array.from({length:N+1},()=>new Int32Array(N+1));
+  for(let x=0;x<N;x++)for(let y=0;y<N;y++)water[x+1][y+1]=(H[x][y]<0?1:0)+water[x][y+1]+water[x+1][y]-water[x][y];
+  for(let x0=1;x0+w<=N-1;x0++)
+    for(let y0=1;y0+h<=N-1;y0++){
+      let p=Math.hypot(x0-bx,y0-by)*2;
       for (const [a0, b0, a1, b1] of taken) {
         const ox = Math.min(x0 + w - 1, a1 + 1) - Math.max(x0, a0 - 1) + 1,
           oy = Math.min(y0 + h - 1, b1 + 1) - Math.max(y0, b0 - 1) + 1;
         if (ox > 0 && oy > 0) {p=Infinity;break;}
       }
       if (p >= bp) continue;
-      for (let x = x0; x < x0 + w; x++) for (let y = y0; y < y0 + h; y++) if (H[x][y] < 0) p += 6;
+      p+=6*(water[x0+w][y0+h]-water[x0][y0+h]-water[x0+w][y0]+water[x0][y0]);
       if (p < bp) ((bp = p), (best = [x0, y0]));
     }
   if(!best)throw new Error(L2('Not enough space for all structures. Choose a larger map or smaller rooms.','Pas assez de place pour toutes les structures. Choisis une carte plus grande ou des salles plus petites.'));
@@ -339,7 +348,7 @@ const MG_PLACES = {
     const rect=mgRect(pos,a.w||7,a.h||7),[x0,y0,x1,y1]=rect;
     mgClear(rect,MG_FLOORS[a.floor]||2);
     const ent=mgWalls(rect,a.entrance||'south');
-    return {rect,spots:{entrance:ent,center:{x:(x0+x1)>>1,y:(y0+y1)>>1}}};
+    return {rect,custom:true,spots:{entrance:ent,center:{x:(x0+x1)>>1,y:(y0+y1)>>1}}};
   },
   temple(pos) {
     const w = Math.max(7, Math.min(N - 4, Math.round(MG.span * 0.45))) | 1,
@@ -556,75 +565,83 @@ function mgTerrain(t) {
     }
   }
 }
-// the cheapest way from a cell to the edge of the map: around buildings, over low ground, through water if needed
-function mgPath(sx, sy, avoid) {
-  const INF = 1e9,
-    d = new Float64Array(N * N).fill(INF),
-    prev = new Int32Array(N * N).fill(-1),
-    cost = (x, y) => {
-      if (avoid.some(([a0, b0, a1, b1]) => x >= a0 && x <= a1 && y >= b0 && y <= b1)) return INF;
-      const h = H[x][y];
-      return h >= 2 ? 6 : h === 1 ? 2 : h === -1 ? 4 : h <= -2 ? 8 : 1;
-    },
-    Q = [[0, sx * N + sy]];
-  d[sx * N + sy] = 0;
-  while (Q.length) {
-    let bi = 0;
-    for (let i = 1; i < Q.length; i++) if (Q[i][0] < Q[bi][0]) bi = i;
-    const [dc, id] = Q.splice(bi, 1)[0];
-    if (dc > d[id]) continue;
-    const x = (id / N) | 0,
-      y = id % N;
-    if (x === 0 || y === 0 || x === N - 1 || y === N - 1) {
-      const out = [];
-      for (let k = id; k >= 0; k = prev[k]) out.push([(k / N) | 0, k % N]);
-      return out;
+// Weighted Dijkstra with a binary heap and precomputed protected structure mask.
+const MG_DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+function mgPath(sx,sy,avoid,target=null){
+  if(!ok(sx,sy)||target&&!ok(target.x,target.y))return [];
+  const d=new Float64Array(N*N).fill(Infinity),prev=new Int32Array(N*N).fill(-1),blocked=new Uint8Array(N*N),heap=[];
+  for(const [x0,y0,x1,y1] of avoid)for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)if(ok(x,y))blocked[x*N+y]=1;
+  const start=sx*N+sy,goal=target?target.x*N+target.y:-1;
+  if(blocked[start]||goal>=0&&blocked[goal])return [];
+  const push=v=>{let i=heap.length;heap.push(v);while(i){const p=(i-1)>>1;if(heap[p][0]<=v[0])break;heap[i]=heap[p];i=p;}heap[i]=v;};
+  const pop=()=>{const v=heap[0],last=heap.pop();if(heap.length){let i=0;while(i*2+1<heap.length){let j=i*2+1;if(j+1<heap.length&&heap[j+1][0]<heap[j][0])j++;if(heap[j][0]>=last[0])break;heap[i]=heap[j];i=j;}heap[i]=last;}return v;};
+  d[start]=0;push([0,start]);
+  while(heap.length){
+    const [dc,id]=pop();if(dc!==d[id])continue;
+    const x=(id/N)|0,y=id%N;
+    if(goal>=0?id===goal:x===0||y===0||x===N-1||y===N-1){
+      const out=[];for(let k=id;k>=0;k=prev[k])out.push([(k/N)|0,k%N]);return out.reverse();
     }
-    for (const [ax, ay] of [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1],
-    ]) {
-      const nx = x + ax,
-        ny = y + ay;
-      if (!ok(nx, ny)) continue;
-      const c = cost(nx, ny);
-      if (c >= INF) continue;
-      const nd = dc + c,
-        ni = nx * N + ny;
-      if (nd < d[ni]) {
-        d[ni] = nd;
-        prev[ni] = id;
-        Q.push([nd, ni]);
-      }
+    for(const [ax,ay] of MG_DIRS){
+      const nx=x+ax,ny=y+ay;if(!ok(nx,ny))continue;
+      const ni=nx*N+ny;if(blocked[ni])continue;
+      const h=H[nx][ny],cost=MG.access.has(nx+','+ny)?1:h>=2?7:h===1?2:h===-1?4:h<0?9:2,nd=dc+cost;
+      if(nd<d[ni]){d[ni]=nd;prev[ni]=id;push([nd,ni]);}
     }
   }
   return [];
 }
-// every place can be reached from the edge of the map; with a road, the way is paved and bridged
-function mgAccess(places, road) {
-  const rects = places.map(p => p.rect);
-  for (const p of places) {
-    const e = p.spots && p.spots.entrance;
-    if (!e) continue;
-    const [x0, y0, x1, y1] = p.rect,
-      sx = e.x <= x0 ? e.x - 1 : e.x >= x1 ? e.x + 1 : e.x,
-      sy = e.y >= y1 ? e.y + 1 : e.y <= y0 ? e.y - 1 : e.y;
-    if (!ok(sx, sy)) continue;
-    const path = [[sx, sy], ...mgPath(sx, sy, rects)];
-    for (const [x, y] of path) {
-      if (H[x][y] < 0) {
-        H[x][y] = 0;
-        F[x][y] = 3;
-      } else {
-        if (H[x][y] > 0) H[x][y] = 0;
-        if (road) F[x][y] = 1;
-      }
-      MG.access.add(x+','+y);
-      const oi = objAt(x, y);
-      if (oi >= 0 && OBJS[oi].k !== 'door') OBJS.splice(oi, 1);
-      delete ENV[x + ',' + y];
+function mgExit(p){
+  const e=p.spots?.entrance;if(!e)return null;
+  const [x0,y0,x1,y1]=p.rect;
+  return {x:e.x<=x0?e.x-1:e.x>=x1?e.x+1:e.x,y:e.y<=y0?e.y-1:e.y>=y1?e.y+1:e.y};
+}
+function mgCarve(path,road,rects=[],width=1){
+  const cells=new Set(path.map(([x,y])=>x+','+y));
+  if(width===2)for(let i=0;i<path.length;i++){
+    const [x,y]=path[i],next=path[i+1]||path[i-1]||[x+1,y];
+    for(const [a,b] of next[0]!==x?[[0,1],[0,-1]]:[[1,0],[-1,0]]){
+      const nx=x+a,ny=y+b;
+      if(ok(nx,ny)&&!rects.some(r=>nx>=r[0]&&nx<=r[2]&&ny>=r[1]&&ny<=r[3])){cells.add(nx+','+ny);break;}
+    }
+  }
+  for(const key of cells){
+    const [x,y]=key.split(',').map(Number);
+    if(H[x][y]<0)F[x][y]=3;else if(road||F[x][y]===4)F[x][y]=bio==='donjon'?2:1;
+    H[x][y]=0;MG.access.add(key);delete ENV[key];
+  }
+  OBJS=OBJS.filter(o=>o.k==='door'||!cells.has(o.x+','+o.y));
+}
+function mgAccess(places,road,links=[]){
+  const rects=places.map(p=>p.rect),exits=places.map(mgExit);
+  const parent=places.map((_,i)=>i),root=i=>{while(parent[i]!==i)i=parent[i];return i;};
+  const connect=(a,b,w)=>{
+    const s=exits[a],t=exits[b];if(!s||!t)return false;
+    const path=mgPath(s.x,s.y,rects,t);if(!path.length)return false;
+    mgCarve(path,true,rects,w);parent[root(a)]=root(b);return true;
+  };
+  for(const l of links)if(!connect(l.from-1,l.to-1,l.width))MG.warnings.push(L2('Connection ','Liaison ')+l.from+'–'+l.to);
+  if(bio==='donjon'||links.length){
+    const pairs=[];
+    for(let a=0;a<exits.length;a++)for(let b=a+1;b<exits.length;b++)if(exits[a]&&exits[b])pairs.push([a,b,Math.hypot(exits[a].x-exits[b].x,exits[a].y-exits[b].y)]);
+    pairs.sort((a,b)=>a[2]-b[2]);
+    for(const [a,b] of pairs)if(root(a)!==root(b))connect(a,b,1);
+  }
+  for(let i=0;i<places.length;i++){
+    const p=places[i],e=exits[i];if(!e)continue;
+    if(bio!=='donjon'||i===0||root(i)!==root(0)){
+      const path=mgPath(e.x,e.y,rects);
+      if(path.length)mgCarve(path,road||bio==='donjon',rects);
+      else MG.warnings.push(L2('Blocked entrance ','Entrée inaccessible ')+(i+1));
+    }
+    const door=p.spots.entrance,center=p.spots.center;
+    MG.access.add(door.x+','+door.y);
+    const ix=door.x-(e.x-door.x),iy=door.y-(e.y-door.y);
+    if(ok(ix,iy))MG.access.add(ix+','+iy);
+    if(p.custom&&center&&ok(ix,iy)){
+      let x=ix,y=iy;
+      while(x!==center.x||y!==center.y){MG.access.add(x+','+y);if(x!==center.x)x+=Math.sign(center.x-x);else y+=Math.sign(center.y-y);}
+      MG.access.add(center.x+','+center.y);
     }
   }
 }
@@ -689,24 +706,20 @@ function mgAddDoors(n) {
 }
 // free cells sorted by distance to a spot ("near the altar", "at the entrance", "on the edges"…)
 function mgNear(near, ctxs, place) {
-  const main = ctxs[(place||1)-1],
-    sp = main && main.spots,
-    c = mgFree(null);
+  const main=ctxs[(place||1)-1],sp=main?.spots,
+    c=mgFree(place&&main&&near!=='entrance'?main.rect:null);
   let ref = null;
   if (near === 'inside' && main) {
     const [x0, y0, x1, y1] = main.rect;
     return c.filter(p => p.x > x0 && p.x < x1 && p.y > y0 && p.y < y1);
   }
-  if (near === 'edges')
-    return c.sort(
-      (a, b) => Math.min(a.x, a.y, N - 1 - a.x, N - 1 - a.y) - Math.min(b.x, b.y, N - 1 - b.x, N - 1 - b.y),
-    );
+  if(near==='edges'){const r=place&&main?main.rect:[0,0,N-1,N-1],dist=p=>Math.min(p.x-r[0],p.y-r[1],r[2]-p.x,r[3]-p.y);return c.sort((a,b)=>dist(a)-dist(b));}
   if ((near === 'anywhere' || !near)&&!place) return c;
   if (near === 'center') ref = (sp && sp.center) || { x: N >> 1, y: N >> 1 };
   else if (sp && sp[near]) ref = sp[near];
   else if(MG_POS.includes(near)){const b=main?.rect||[0,0,N-1,N-1];ref={x:near.includes('west')?b[0]:near.includes('east')?b[2]:(b[0]+b[2])/2,y:near.includes('north')?b[1]:near.includes('south')?b[3]:(b[1]+b[3])/2};}
   else if(near==='altar'||near==='entrance'){const o=OBJS.find(o=>o.k===(near==='altar'?'altar':'door'));if(o)ref=o;}
-  const pool=place&&main&&near!=='entrance'?c.filter(p=>p.x>main.rect[0]&&p.x<main.rect[2]&&p.y>main.rect[1]&&p.y<main.rect[3]):c;
+  const pool=c;
   if (!ref) return pool;
   return pool.sort((a, b) => Math.hypot(a.x - ref.x, a.y - ref.y) - Math.hypot(b.x - ref.x, b.y - ref.y));
 }
@@ -756,9 +769,11 @@ function mgFoe(m, p) {
   });
   return true;
 }
-function mgBuild(r,seed=(Math.random()*4294967296)>>>0) {
+function mgSnapshot(){return JSON.stringify({H,F,tokens,marks:MARKS,env:ENV,objs:OBJS,tpls:TPLS,N,bio,scene,ini:INI,rot});}
+function mgRestore(s){const d=JSON.parse(s);N=d.N;H=d.H;F=d.F;tokens=d.tokens;MARKS=d.marks;ENV=d.env;OBJS=d.objs;TPLS=d.tpls;bio=d.bio;scene=d.scene;INI=d.ini;rot=d.rot;}
+function mgBuild(r,seed=(Math.random()*4294967296)>>>0,preview=false) {
   if(MP.role==='player')return false;
-  const before=JSON.stringify({H,F,tokens,marks:MARKS,env:ENV,objs:OBJS,tpls:TPLS,N,bio,scene,ini:INI,rot}), camera={...CAM}, oldRng=RNG, oldNZ=NZ;
+  const before=mgSnapshot(), camera={...CAM}, oldRng=RNG, oldNZ=NZ;
   r=mgClean(r);
   MG.warnings=[];MG.missing=[];MG.access=new Set();
   try {
@@ -821,7 +836,7 @@ function mgBuild(r,seed=(Math.random()*4294967296)>>>0) {
   }
   OBJS=OBJS.filter(o=>ok(o.x,o.y)&&H[o.x][o.y]>=0);
   if(r.ruin>0)mgRuin(r.ruin);
-  mgAccess(places,T.road==='carve');
+  mgAccess(places,T.road==='carve',r.links);
   mgFixDoors();
   for (const o of r.objs) {
     if (o.k === 'door') {
@@ -831,7 +846,7 @@ function mgBuild(r,seed=(Math.random()*4294967296)>>>0) {
       continue;
     }
     const rect=o.place&&places[o.place-1]?.rect;
-    const have = OBJS.filter(x => x.k === o.k && (!rect||(x.x>=rect[0]&&x.x<=rect[2]&&x.y>=rect[1]&&x.y<=rect[3]))).length;
+    const have = OBJS.filter(x => x.k === o.k && (!o.hidden||x.hid) && (!rect||(x.x>=rect[0]&&x.x<=rect[2]&&x.y>=rect[1]&&x.y<=rect[3]))).length;
     if (
       places.length &&
       ['altar', 'statue', 'brazier', 'sarco', 'throne', 'well', 'campfire'].includes(o.k) &&
@@ -883,11 +898,17 @@ function mgBuild(r,seed=(Math.random()*4294967296)>>>0) {
   }
   MG.missing=missing;
   }catch(e){
-    const d=JSON.parse(before);N=d.N;H=d.H;F=d.F;tokens=d.tokens;MARKS=d.marks;ENV=d.env;OBJS=d.objs;TPLS=d.tpls;bio=d.bio;scene=d.scene;INI=d.ini;rot=d.rot;NZ=oldNZ;Object.assign(CAM,camera);
+    mgRestore(before);NZ=oldNZ;Object.assign(CAM,camera);
     throw e;
   }finally{RNG=oldRng;}
-  hist.push(before);if(hist.length>60)hist.shift();
-  MG.seed=seed>>>0;
+  if(preview){const candidate={state:mgSnapshot(),before,seed:seed>>>0,issues:[...MG.missing,...MG.warnings]};mgRestore(before);NZ=oldNZ;Object.assign(CAM,camera);return candidate;}
+  return mgCommit({state:mgSnapshot(),before,seed:seed>>>0});
+}
+function mgCommit(candidate){
+  if(MP.role==='player')return false;
+  mgRestore(candidate.state);NZ=null;
+  hist.push(candidate.before);if(hist.length>60)hist.shift();
+  MG.seed=candidate.seed;
   CAM.z=1;CAM.px=0;CAM.py=0;
   for (const x of document.querySelectorAll('#biomes button')) x.setAttribute('aria-pressed', x.dataset.b === bio);
   legend();
@@ -1165,6 +1186,7 @@ Fields (all optional; leave out what the description does not imply):
 - "bio": setting, one of ${JSON.stringify(ORDER)} (gen = generic stone, foret = forest, prairie = plains, montagne = mountain, volcan = volcano, desert, neige = snow, marais = swamp, donjon = dungeon / underground).
 - "scene": a ready-made whole map, one of: ${scn}. Use a scene ONLY when the description is mainly that kind of place and asks for no building below. Never combine "ruins" with a building: use "ruin" instead.
 - "add": up to 6 buildings or custom rooms drawn on top, each {"k": one of ${JSON.stringify(MG_STRUCT)}, "pos": one of ${JSON.stringify(MG_POS)}}. temple = nave with altar, statues, pillars, benches; crypt = burial vault with sarcophagi; camp = palisade ring with tents and a campfire; stone_circle = ring of standing stones around an altar; throne_room = hall with a throne on a dais; market = square with stalls and a well; the others are small buildings. The first building is the main place: put it in "center" unless told otherwise. For a specific layout use k=room with w and h (5–26 tiles including walls), entrance north/south/east/west, floor stone/wood/earth/grass/marble, label. Repeat room or building types for distinct places. Each entry in objs/env/foes/marks may include place (1-based index into add) and hidden (true only if explicitly secret). near supports compass directions. Env may include dc (5–30).
+- "links": optional list of {"from": 1-based building index, "to": another building index, "width": 1 or 2}. Use for requested corridors/paths between rooms. Underground rooms are connected automatically; specify direct links for important routes.
 - "ruin": 0 (intact) to 1 (collapsed). "abandoned" ≈ 0.3, "in ruins" ≈ 0.6–0.8.
 - "terrain": {"water": "none"|"river"|"lake"|"pools", "relief": "flat"|"hills"|"cliffs", "veg": 0 to 1 (trees and grass density), "road": true|false}.
 - "objs": extra objects, list of {"k": one of: ${obj}; "n": count; "near": one of ${JSON.stringify(MG_NEAR)}}. Buildings already contain their usual furniture: only add what the description adds. Doors ("door") are only ever put in existing walls: ask for them only when there are walls.
@@ -1182,16 +1204,43 @@ function mgMsg(m) {
   const el = document.getElementById('mg_msg');
   if (el) el.textContent = m;
 }
+function mgRenderCandidate(candidate){
+  const d=JSON.parse(candidate.state),cv=$('mg_thumb'),ctx=cv.getContext('2d'),n=d.N,t=cv.width/n;
+  const floors=['#7d9564','#ad9570','#a9a5a0','#b1855f','#494b50','#6f6a65','#6b9b5d','#b8b4aa','#9d9d88','#c7b288','#888f8c','#99744e','#9b8f76','#8a8176'];
+  for(let x=0;x<n;x++)for(let y=0;y<n;y++){
+    const h=d.H[x][y],f=d.F[x][y];
+    ctx.fillStyle=h<0?(h===-1?'#6da3bd':'#32668b'):h>=2?'#42434b':h===1?'#a1967e':floors[f]||floors[0];
+    ctx.fillRect(x*t,y*t,t+.5,t+.5);
+  }
+  for(const key in d.env){const [x,y]=key.split(',').map(Number);ctx.fillStyle='#dc9d3b99';ctx.fillRect(x*t,y*t,t,t);}
+  for(const o of d.objs){ctx.fillStyle=o.k==='door'?'#f2d19a':o.hid?'#b47ed6':'#5b4734';ctx.fillRect((o.x+.2)*t,(o.y+.2)*t,t*.6,t*.6);}
+  for(const k of d.tokens){ctx.fillStyle=k.cid?'#4e9ee9':k.hid?'#b47ed6':'#e06055';ctx.beginPath();ctx.arc((k.x+.5)*t,(k.y+.5)*t,Math.max(2,t*.4),0,Math.PI*2);ctx.fill();}
+  $('mg_details').textContent=d.N+'×'+d.N+' · '+d.objs.length+' '+L2('objects','objets')+' · '+d.tokens.length+' '+L2('tokens','pions')+' · '+L2('Seed','Graine')+' '+candidate.seed+(candidate.issues.length?' · '+L2('Not placed: ','Non placés : ')+candidate.issues.join(', '):'');
+}
+function mgCandidate(newSeed=false){
+  const p=MG.pending;if(!p||MP.role==='player')return;
+  if(p.ctx!==CTX){$('mg_apply').disabled=true;mgMsg(L2('Map context changed. Prepare again.','La carte active a changé. Prépare une nouvelle recette.'));return;}
+  if(newSeed||p.seed==null)p.seed=(Math.random()*4294967296)>>>0;
+  p.candidate=null;$('mg_apply').disabled=true;$('mg_thumb').hidden=true;
+  try{
+    const r={...p.r,size:$('mg_size').value||p.r.size};
+    p.candidate=mgBuild(r,p.seed,true);p.appliedRecipe=r;
+    mgRenderCandidate(p.candidate);$('mg_thumb').hidden=false;$('mg_apply').disabled=false;
+    mgMsg(L2('Preview ready. The current map is unchanged.','Aperçu prêt. La carte actuelle est intacte.'));
+  }catch(e){$('mg_details').textContent=e.message;mgMsg(L2('Preview failed; try a larger size.','Aperçu impossible ; essaie une taille supérieure.'));}
+}
 function mgPreview(r,via,text){
-  MG.pending={r,via,text,ctx:CTX};
-  const p=$('mg_preview');p.hidden=false;
+  MG.pending={r,via,text,ctx:CTX,seed:null};
+  $('mg_preview').hidden=false;
   $('mg_plan').textContent=[r.title,r.plan,mgSummary(r)].filter(Boolean).join(' — ')||L2('No recognized details; current setting.','Aucun détail reconnu ; décor actuel.');
   $('mg_source').textContent=via+(MG.aiErr?' · '+L2('AI unavailable: ','IA indisponible : ')+MG.aiErr:'');
-  mgMsg(L2('Review the recipe before replacing the map.','Vérifie la recette avant de remplacer la carte.'));
+  mgCandidate(true);
 }
 async function mgGo(again){
   if(MP.role==='player'||MG.job)return;
+  if(again&&MG.pending){mgCandidate(true);return;}
   const text=$('mg_q').value.trim();
+  const ctx=CTX;
   if(!text&&!(again&&(MG.pending||MG.last)))return;
   let r=again?(MG.pending?.r||MG.last):null,via=r?.via||L2('keywords','mots-clés');
   MG.aiErr='';
@@ -1204,6 +1253,7 @@ async function mgGo(again){
     }
     if(job.signal.aborted)return;
     if(!r)r=mgParse(text);
+    if(ctx!==CTX){mgMsg(L2('Map context changed; prepare again.','La carte active a changé ; prépare une nouvelle recette.'));return;}
     mgPreview(r,via,text);
   }finally{
     clearTimeout(timer);MG.job=null;form.querySelector('[type=submit]').disabled=false;$('mg_again').disabled=false;$('mg_cancel').hidden=true;
@@ -1214,11 +1264,13 @@ function mgApplyPreview(){
   const p=MG.pending;
   if(!p||MG.job||MP.role==='player')return;
   if(p.ctx!==CTX){mgMsg(L2('Map context changed. Prepare a new recipe.','La carte active a changé. Prépare une nouvelle recette.'));return;}
-  const r={...p.r,size:$('mg_size').value||p.r.size};
+  if(!p.candidate)return;
+  if(p.candidate.before!==mgSnapshot()){mgCandidate();mgMsg(L2('Map changed since preview. Review the updated preview before applying.','La carte a changé depuis l’aperçu. Vérifie le nouvel aperçu avant de l’appliquer.'));return;}
+  const r=p.appliedRecipe;
   try{
-    if(!mgBuild(r))return;
+    if(!mgCommit(p.candidate))return;
+    const issues=p.candidate.issues;
     MG.last={...r,via:p.via};MG.pending=null;$('mg_preview').hidden=true;
-    const issues=[...(MG.missing||[]),...(MG.warnings||[])];
     mgMsg((r.title?r.title+' — ':'')+L2('Map generated','Carte générée')+' · '+N+'×'+N+' · '+p.via+(issues.length?' · '+L2('Not placed: ','Non placés : ')+issues.join(', '):''));
   }catch(e){mgMsg(L2('Generation failed; map unchanged: ','Échec de génération ; carte inchangée : ')+e.message);}
 }
@@ -1226,13 +1278,14 @@ function mgApplyPreview(){
   const g = document.getElementById('gen').parentNode;
   g.insertAdjacentHTML(
     'beforeend',
-    `<form id="mg_f" class="mgf"><input id="mg_q" type="text" maxlength="1800" autocomplete="off" placeholder="${L2('Describe the scene: ruined temple in the forest…', 'Décris la scène : temple en ruines dans la forêt…')}" aria-label="${L2('Describe the scene', 'Décris la scène')}"><button type="submit" class="go">${L2('Prepare', 'Préparer')}</button><select id="mg_engine" aria-label="Mode"><option value="auto">${L2('AI / auto','IA / auto')}</option><option value="local">${L2('Local','Local')}</option></select><button type="button" id="mg_cancel" hidden>${L2('Cancel','Annuler')}</button><button type="button" id="mg_again" title="${L2('Another version of the same recipe', 'Une autre version de la même recette')}">↻</button><button type="button" id="mg_set" title="${L2('AI key', 'Clé IA')}" aria-label="${L2('AI key', 'Clé IA')}">⚙</button><span class="small" id="mg_msg" aria-live="polite"></span><div id="mg_preview" hidden><strong id="mg_source"></strong><p id="mg_plan"></p><label>${L2('Size','Taille')} <select id="mg_size"><option value="">${L2('Automatic','Automatique')}</option><option value="small">16×16</option><option value="medium">24×24</option><option value="large">32×32</option><option value="huge">64×64</option></select></label><button type="button" class="go" id="mg_apply">${L2('Apply / replace map','Appliquer / remplacer la carte')}</button><button type="button" id="mg_discard">${L2('Discard','Abandonner')}</button></div></form>`,
+    `<form id="mg_f" class="mgf"><input id="mg_q" type="text" maxlength="1800" autocomplete="off" placeholder="${L2('Describe the scene: ruined temple in the forest…', 'Décris la scène : temple en ruines dans la forêt…')}" aria-label="${L2('Describe the scene', 'Décris la scène')}"><button type="submit" class="go">${L2('Prepare', 'Préparer')}</button><select id="mg_engine" aria-label="Mode"><option value="auto">${L2('AI / auto','IA / auto')}</option><option value="local">${L2('Local','Local')}</option></select><button type="button" id="mg_cancel" hidden>${L2('Cancel','Annuler')}</button><button type="button" id="mg_again" title="${L2('Another version of the same recipe', 'Une autre version de la même recette')}">↻</button><button type="button" id="mg_set" title="${L2('AI key', 'Clé IA')}" aria-label="${L2('AI key', 'Clé IA')}">⚙</button><span class="small" id="mg_msg" aria-live="polite"></span><div id="mg_preview" hidden><strong id="mg_source"></strong><div class="mgpreviewbody"><canvas id="mg_thumb" width="320" height="320" aria-label="${L2('Generated map preview','Aperçu de la carte générée')}"></canvas><div><p id="mg_plan"></p><p id="mg_details" class="small" aria-live="polite"></p><p class="small">${L2('Top view: grey walls, blue water, brown objects, red enemies, purple hidden, blue allies.','Vue du dessus : murs gris, eau bleue, objets bruns, ennemis rouges, secrets violets, alliés bleus.')}</p></div></div><label>${L2('Size','Taille')} <select id="mg_size"><option value="">${L2('Automatic','Automatique')}</option><option value="small">16×16</option><option value="medium">24×24</option><option value="large">32×32</option><option value="huge">64×64</option></select></label><button type="button" class="go" id="mg_apply">${L2('Apply / replace map','Appliquer / remplacer la carte')}</button><button type="button" id="mg_discard">${L2('Discard','Abandonner')}</button></div></form>`,
   );
   document.getElementById('mg_f').addEventListener('submit', e => {
     e.preventDefault();
     mgGo(false);
   });
   document.getElementById('mg_again').onclick = () => mgGo(true);
+  $('mg_size').onchange=()=>mgCandidate();
   $('mg_apply').onclick=mgApplyPreview;$('mg_cancel').onclick=()=>MG.job?.abort();$('mg_discard').onclick=()=>{MG.pending=null;$('mg_preview').hidden=true;};
   document.getElementById('mg_set').onclick = () => {
     let d = document.getElementById('mgdlg');
