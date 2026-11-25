@@ -247,9 +247,14 @@ def run(chrome: str | None) -> None:
             "deleting a campaign keeps its characters",
             D("CH.list.some(c=>c.id==='z1'&&!c.camp) && !campaignFolders().includes('Temp')"),
         )
-        page.evaluate("DBG(`ctxMenu(10,10,[{label:'x',fn:()=>{}}])`)")
-        check("context menu opens", page.locator(".ctxm").count() == 1)
+        page.click('.tabs a[data-v="fiche"]')
+        card = page.locator("#v-fiche .cc").first
+        card.scroll_into_view_if_needed()
+        page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
+        card.click(button="right")
+        check("character context menu opens", page.locator(".ctxm").is_visible())
         page.keyboard.press("Escape")
+        page.click('.tabs a[data-v="carte"]')
 
         # AI recipes are validated and custom rooms retain their individual dimensions.
         check("AI rejects empty recipes", D("(()=>{try{mgRecipe('{}');return false}catch(e){return true}})()"))

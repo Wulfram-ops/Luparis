@@ -43,8 +43,7 @@ function ctxMenu(x, y, items) {
   m.style.left = Math.max(4, Math.min(x, innerWidth - r.width - 4)) + 'px';
   m.style.top = Math.max(4, Math.min(y, innerHeight - r.height - 4)) + 'px';
   MENU = m;
-  const first = m.querySelector('button');
-  if (first) first.focus();
+  m.querySelector('button')?.focus({ preventScroll: true });
 }
 addEventListener('pointerdown', e => {
   if (MENU && !MENU.contains(e.target)) menuClose();
