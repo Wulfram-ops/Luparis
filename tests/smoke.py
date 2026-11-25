@@ -131,6 +131,9 @@ def run(chrome: str | None) -> None:
         check("hex line follows one of six directions", D("JSON.stringify(tplCells({k:'line',x:5,y:5,s:15,a:Math.PI/3}))==='[[5,6],[5,7],[5,8]]'"))
         check("six rotations round trip", D("(()=>{const old=rot;try{for(rot=0;rot<6;rot++){const p=unview(...view(3,5));if(p[0]!==3||p[1]!==5)return false;}return true;}finally{rot=old}})()"))
         check("all tactical cells have six vertices", D("dia(0,0,0).length===6"))
+        # Camera is steeper, the default outline compact, and picking matches rendering.
+        check("default hex board is nearly square", D("(()=>{const [l,t,r,b]=hexBounds(N,0);return (r-l)/(b-t)>.8&&(r-l)/(b-t)<1.2&&HEX_H>.5&&HEX_LIFT<.28})()"))
+        check("all six orientations fit and pick tile centers", D("""(()=>{const oldH=H,oldRot=rot,oldCam={...CAM};try{H=H.map(row=>row.map(()=>0));CAM.z=1;CAM.px=0;CAM.py=0;for(rot=0;rot<6;rot++){camSet();for(const [x,y] of [[0,0],[0,N-1],[N-1,0],[N-1,N-1],[3,5]]){const v=view(x,y),p=dia(...v,0);if(!p.every(([a,b])=>a>=0&&a<=W&&b>=0&&b<=Hc))return false;const [a,b]=scr(...v,0),hit=pick(a,b+hexCenterY());if(!hit||hit.x!==x||hit.y!==y)return false;}}return true;}finally{H=oldH;rot=oldRot;Object.assign(CAM,oldCam);camSet();draw();}})()"""))
         # Layout presets fit the entire map in the viewport and reset an old zoom/pan.
         page.click('.tabs a[data-v="carte"]')
         for width, height in ((1400, 900), (1280, 720)):
@@ -145,7 +148,7 @@ def run(chrome: str | None) -> None:
                 bounds = page.locator("#stage").bounding_box()
                 check(f"{preset} map fits {width}x{height}", bool(bounds and bounds["y"] >= 0 and bounds["y"] + bounds["height"] <= height + 1), str(bounds))
                 check(f"{preset} resets camera", D("CAM.z===1 && CAM.px===0 && CAM.py===0"))
-                check(f"{preset} board corners visible", D("""[dia(0,0,0),dia(0,N-1,0),dia(N-1,0,0),dia(N-1,N-1,0)].flat().every(([x,y])=>x>=0&&x<=W&&y>=0&&y<=Hc)"""))
+                check(f"{preset} board corners visible", D("""[[0,0],[0,N-1],[N-1,0],[N-1,N-1]].flatMap(p=>dia(...view(...p),0)).every(([x,y])=>x>=0&&x<=W&&y>=0&&y<=Hc)"""))
         page.set_viewport_size({"width": 1400, "height": 900})
         page.locator(".greset").click()
         # Every preset retains all available modules, including legacy hidden panels.

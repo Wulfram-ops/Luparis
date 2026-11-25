@@ -41,7 +41,7 @@ function drawTok(a, ...r) {
 }
 function drawTok0(k, vx, vy, h, sc = 1) {
   const [cx, cy] = scr(vx, vy, h);
-  const y = cy + TW / 4,
+  const y = cy + hexCenterY(),
     r = TW * 0.24 * (sc > 1 ? sc * 0.82 : sc);
   ctx.fillStyle = 'rgba(0,0,0,.28)';
   ctx.beginPath();
@@ -352,7 +352,7 @@ function shape(c){
 function pick(mx,my){
   if(!TW)return null;let best=null,bs=-Infinity;const seen=new Set();
   for(let h=0;h<=3;h++){
-    const vr=(my-oy-TW/4+h*LH)/(TW*.375),vq=(mx-ox)/TW-vr/2,[x0,y0]=unview(vq,vr);
+    const vr=(my-oy-hexCenterY()+h*LH)/(TW*HEX_STEP),vq=(mx-ox)/TW-vr/2,[x0,y0]=unview(vq,vr);
     for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){
       const x=x0+dx,y=y0+dy,key=x+','+y;
       if(x<0||y<0||x>=N||y>=N||seen.has(key))continue;seen.add(key);
@@ -987,6 +987,7 @@ bz.addEventListener('click', e => {
 });
 document.getElementById('rot').onclick = () => {
   rot = (rot + 1) % 6;
+  camSet();
   save();
   draw();
 };

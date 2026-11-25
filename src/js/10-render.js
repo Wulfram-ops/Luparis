@@ -9,7 +9,22 @@ function mul(hex, f) {
   const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.max(0, Math.min(255, Math.round(v * f))));
   return `rgb(${c})`;
 }
+// A steeper 2.5D camera. Projection only: world coordinates, elevation
+// rules and saved maps are unchanged. The initial bearing is compact.
+const HEX_H=.8,HEX_LIFT=.16,HEX_STEP=HEX_H*.75,HEX_BEARING=1;
 let TW, LH, ox, oy, W, Hc, TW0;
+function hexView(x,y,n,rotation){
+  const c=(n-1)/2,[q,r]=hexRotate(x-c,y-c,rotation+HEX_BEARING);
+  return [q+c,r+c];
+}
+function hexBounds(n,rotation,ratio=HEX_H){
+  const p=[[0,0],[n-1,0],[0,n-1],[n-1,n-1]].map(([x,y])=>{
+    const [q,r]=hexView(x,y,n,rotation);return [q+r/2,r*ratio*.75];
+  });
+  return [Math.min(...p.map(v=>v[0]))-.5,Math.min(...p.map(v=>v[1])),
+    Math.max(...p.map(v=>v[0]))+.5,Math.max(...p.map(v=>v[1]))+ratio];
+}
+function hexCenterY(){return TW*HEX_H/2;}
 function layout() {
   const r = stage.getBoundingClientRect(),
     dpr = PERF.low ? 1 : Math.min(2, window.devicePixelRatio || 1);
@@ -18,16 +33,17 @@ function layout() {
   cv.width = W * dpr;
   cv.height = Hc * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  TW0=Math.min(W*.94/(1.5*(N-1)+1),Hc*.88/(.75*(N-1)+.5+3*.28));
   camSet();
   draw();
 }
 function camSet() {
-  TW = TW0 * CAM.z;
-  LH = TW * 0.28;
-  const c=(N-1)/2;
-  ox=W/2-1.5*c*TW+CAM.px;
-  oy=Hc/2-(.375*c+.25)*TW+1.5*LH+CAM.py;
+  const [left,groundTop,right,bottom]=hexBounds(N,rot),top=groundTop-3*HEX_LIFT;
+  // Fit the actual rotated outline, including the highest terrain.
+  TW0=Math.min(W*.94/(right-left+.2),Hc*.90/(bottom-top+.65));
+  TW=TW0*CAM.z;
+  LH=TW*HEX_LIFT;
+  ox=W/2-(left+right)/2*TW+CAM.px;
+  oy=Hc/2-(top+bottom)/2*TW+CAM.py;
 }
 function zoomAt(k, mx, my) {
   const z = Math.max(1, Math.min(N > 32 ? 16 : 6, CAM.z * k));
@@ -46,9 +62,9 @@ function zoomAt(k, mx, my) {
   camSet();
   drawMove();
 }
-function view(x,y){const c=(N-1)/2,[q,r]=hexRotate(x-c,y-c,rot);return [q+c,r+c];}
-function scr(vx,vy,h){return [ox+(vx+vy/2)*TW,oy+vy*TW*.375-h*LH];}
-function hexPoly(cx,cy,w,hh=w/2){return [[cx,cy],[cx+w/2,cy+hh/4],[cx+w/2,cy+3*hh/4],[cx,cy+hh],[cx-w/2,cy+3*hh/4],[cx-w/2,cy+hh/4]];}
+function view(x,y){return hexView(x,y,N,rot);}
+function scr(vx,vy,h){return [ox+(vx+vy/2)*TW,oy+vy*TW*HEX_STEP-h*LH];}
+function hexPoly(cx,cy,w,hh=w*HEX_H){return [[cx,cy],[cx+w/2,cy+hh/4],[cx+w/2,cy+3*hh/4],[cx,cy+hh],[cx-w/2,cy+3*hh/4],[cx-w/2,cy+hh/4]];}
 function dia(vx,vy,h){const [cx,cy]=scr(vx,vy,h);return hexPoly(cx,cy,TW);}
 function poly(p, fill, stroke, lw) {
   ctx.beginPath();
@@ -65,7 +81,7 @@ function poly(p, fill, stroke, lw) {
   }
 }
 function inD(cx, cy, u, v) {
-  return [cx + ((u - v) * TW) / 2, cy + ((u + v) * TW) / 4];
+  return [cx+((u-v)*TW)/2,cy+(u+v)*hexCenterY()];
 }
 let CC = null,
   CCk = '';
@@ -83,7 +99,7 @@ function cells() {
   }
   return CC;
 }
-function unview(vx,vy){const c=(N-1)/2,[q,r]=hexRotate(vx-c,vy-c,-rot);return [Math.round(q+c),Math.round(r+c)];}
+function unview(vx,vy){const c=(N-1)/2,[q,r]=hexRotate(vx-c,vy-c,-rot-HEX_BEARING);return [Math.round(q+c),Math.round(r+c)];}
 function gv(vx,vy){const [x,y]=unview(vx,vy);return x>=0&&y>=0&&x<N&&y<N?H[x][y]:null;}
 function hasAnim() {
   if (reduce || N > 40 || PERF.low) return false;
@@ -138,7 +154,7 @@ function deco(kind, cx, cy, h, x, y) {
   if (!kind) return;
   const s = TW / 64,
     bx = cx,
-    by = cy + TW / 4;
+    by = cy + hexCenterY();
   ctx.lineWidth = Math.max(1, s * 1.5);
   if (kind === 'bush') {
     for (const [dx, dy, r] of [
@@ -312,7 +328,7 @@ function pit(c,h){
   if(TW>=9&&!PERF.low){
     const [cx,cy]=scr(c.vx,c.vy,0),t=reduce?0:performance.now()/1000;
     ctx.save();poly(g);ctx.clip();ctx.strokeStyle=b.pit==='lava'?'rgba(255,225,120,.65)':'rgba(255,255,255,.28)';
-    ctx.beginPath();const x=cx+(rnd(c.x,c.y,5)-.5)*TW*.3,y=cy+TW*(.2+.06*Math.sin(t+c.x));
+    ctx.beginPath();const x=cx+(rnd(c.x,c.y,5)-.5)*TW*.3,y=cy+hexCenterY()+TW*.06*Math.sin(t+c.x);
     ctx.moveTo(x-TW*.12,y);ctx.lineTo(x+TW*.12,y);ctx.stroke();ctx.restore();
   }
 }
@@ -515,7 +531,7 @@ function drawDirty(c) {
       r[0] = Math.min(r[0], cx - TW / 2 - 3);
       r[2] = Math.max(r[2], cx + TW / 2 + 3);
       r[1] = Math.min(r[1], cy - LH * 4 - TW * 0.6);
-      r[3] = Math.max(r[3], cy + TW / 2 + LH * 3 + 3);
+      r[3]=Math.max(r[3],cy+TW*HEX_H+LH*3+3);
     }
   DIRTY = DIRTY
     ? [Math.min(DIRTY[0], r[0]), Math.min(DIRTY[1], r[1]), Math.max(DIRTY[2], r[2]), Math.max(DIRTY[3], r[3])]
@@ -1461,7 +1477,7 @@ function tile(fc, line, tx, f, v, cx, cy) {
   if (!sp) {
     sp = document.createElement('canvas');
     sp.width = Math.ceil((TW + 4) * dpr);
-    sp.height = Math.ceil((TW / 2 + pad + 2) * dpr);
+    sp.height=Math.ceil((TW*HEX_H+pad+2)*dpr);
     const g = sp.getContext('2d'),
       keep = ctx;
     ctx = g;
@@ -1638,7 +1654,7 @@ function ctr(c) {
   const [vx, vy] = view(c.x, c.y),
     h = Math.max(H[c.x][c.y], 0);
   const [cx, cy] = scr(vx, vy, h);
-  return [cx, cy + TW / 4];
+  return [cx, cy + hexCenterY()];
 }
 const ENVT = {
   fire: {
@@ -1725,7 +1741,7 @@ function drawFloat() {
   for (const [vx, vy, h, x, y, k] of FLOATQ) {
     const lift = LH * (k === 'fog' ? 1.1 : 1.5),
       [cx, cy] = scr(vx, vy, Math.max(h, 0));
-    const by = cy + TW / 4 - lift;
+    const by = cy + hexCenterY() - lift;
     for (let i = 0; i < 4; i++) {
       const dx = (rnd(x, y, i) - 0.5) * TW * 0.55 + (reduce ? 0 : Math.sin(tm * 0.6 + i + x) * TW * 0.06),
         dy = (rnd(x, y, i + 9) - 0.5) * TW * 0.25 + (reduce ? 0 : Math.cos(tm * 0.5 + i + y) * TW * 0.03),

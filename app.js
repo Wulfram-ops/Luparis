@@ -660,7 +660,22 @@ function mul(hex, f) {
   const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.max(0, Math.min(255, Math.round(v * f))));
   return `rgb(${c})`;
 }
+// A steeper 2.5D camera. Projection only: world coordinates, elevation
+// rules and saved maps are unchanged. The initial bearing is compact.
+const HEX_H=.8,HEX_LIFT=.16,HEX_STEP=HEX_H*.75,HEX_BEARING=1;
 let TW, LH, ox, oy, W, Hc, TW0;
+function hexView(x,y,n,rotation){
+  const c=(n-1)/2,[q,r]=hexRotate(x-c,y-c,rotation+HEX_BEARING);
+  return [q+c,r+c];
+}
+function hexBounds(n,rotation,ratio=HEX_H){
+  const p=[[0,0],[n-1,0],[0,n-1],[n-1,n-1]].map(([x,y])=>{
+    const [q,r]=hexView(x,y,n,rotation);return [q+r/2,r*ratio*.75];
+  });
+  return [Math.min(...p.map(v=>v[0]))-.5,Math.min(...p.map(v=>v[1])),
+    Math.max(...p.map(v=>v[0]))+.5,Math.max(...p.map(v=>v[1]))+ratio];
+}
+function hexCenterY(){return TW*HEX_H/2;}
 function layout() {
   const r = stage.getBoundingClientRect(),
     dpr = PERF.low ? 1 : Math.min(2, window.devicePixelRatio || 1);
@@ -669,16 +684,17 @@ function layout() {
   cv.width = W * dpr;
   cv.height = Hc * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  TW0=Math.min(W*.94/(1.5*(N-1)+1),Hc*.88/(.75*(N-1)+.5+3*.28));
   camSet();
   draw();
 }
 function camSet() {
-  TW = TW0 * CAM.z;
-  LH = TW * 0.28;
-  const c=(N-1)/2;
-  ox=W/2-1.5*c*TW+CAM.px;
-  oy=Hc/2-(.375*c+.25)*TW+1.5*LH+CAM.py;
+  const [left,groundTop,right,bottom]=hexBounds(N,rot),top=groundTop-3*HEX_LIFT;
+  // Fit the actual rotated outline, including the highest terrain.
+  TW0=Math.min(W*.94/(right-left+.2),Hc*.90/(bottom-top+.65));
+  TW=TW0*CAM.z;
+  LH=TW*HEX_LIFT;
+  ox=W/2-(left+right)/2*TW+CAM.px;
+  oy=Hc/2-(top+bottom)/2*TW+CAM.py;
 }
 function zoomAt(k, mx, my) {
   const z = Math.max(1, Math.min(N > 32 ? 16 : 6, CAM.z * k));
@@ -697,9 +713,9 @@ function zoomAt(k, mx, my) {
   camSet();
   drawMove();
 }
-function view(x,y){const c=(N-1)/2,[q,r]=hexRotate(x-c,y-c,rot);return [q+c,r+c];}
-function scr(vx,vy,h){return [ox+(vx+vy/2)*TW,oy+vy*TW*.375-h*LH];}
-function hexPoly(cx,cy,w,hh=w/2){return [[cx,cy],[cx+w/2,cy+hh/4],[cx+w/2,cy+3*hh/4],[cx,cy+hh],[cx-w/2,cy+3*hh/4],[cx-w/2,cy+hh/4]];}
+function view(x,y){return hexView(x,y,N,rot);}
+function scr(vx,vy,h){return [ox+(vx+vy/2)*TW,oy+vy*TW*HEX_STEP-h*LH];}
+function hexPoly(cx,cy,w,hh=w*HEX_H){return [[cx,cy],[cx+w/2,cy+hh/4],[cx+w/2,cy+3*hh/4],[cx,cy+hh],[cx-w/2,cy+3*hh/4],[cx-w/2,cy+hh/4]];}
 function dia(vx,vy,h){const [cx,cy]=scr(vx,vy,h);return hexPoly(cx,cy,TW);}
 function poly(p, fill, stroke, lw) {
   ctx.beginPath();
@@ -716,7 +732,7 @@ function poly(p, fill, stroke, lw) {
   }
 }
 function inD(cx, cy, u, v) {
-  return [cx + ((u - v) * TW) / 2, cy + ((u + v) * TW) / 4];
+  return [cx+((u-v)*TW)/2,cy+(u+v)*hexCenterY()];
 }
 let CC = null,
   CCk = '';
@@ -734,7 +750,7 @@ function cells() {
   }
   return CC;
 }
-function unview(vx,vy){const c=(N-1)/2,[q,r]=hexRotate(vx-c,vy-c,-rot);return [Math.round(q+c),Math.round(r+c)];}
+function unview(vx,vy){const c=(N-1)/2,[q,r]=hexRotate(vx-c,vy-c,-rot-HEX_BEARING);return [Math.round(q+c),Math.round(r+c)];}
 function gv(vx,vy){const [x,y]=unview(vx,vy);return x>=0&&y>=0&&x<N&&y<N?H[x][y]:null;}
 function hasAnim() {
   if (reduce || N > 40 || PERF.low) return false;
@@ -789,7 +805,7 @@ function deco(kind, cx, cy, h, x, y) {
   if (!kind) return;
   const s = TW / 64,
     bx = cx,
-    by = cy + TW / 4;
+    by = cy + hexCenterY();
   ctx.lineWidth = Math.max(1, s * 1.5);
   if (kind === 'bush') {
     for (const [dx, dy, r] of [
@@ -963,7 +979,7 @@ function pit(c,h){
   if(TW>=9&&!PERF.low){
     const [cx,cy]=scr(c.vx,c.vy,0),t=reduce?0:performance.now()/1000;
     ctx.save();poly(g);ctx.clip();ctx.strokeStyle=b.pit==='lava'?'rgba(255,225,120,.65)':'rgba(255,255,255,.28)';
-    ctx.beginPath();const x=cx+(rnd(c.x,c.y,5)-.5)*TW*.3,y=cy+TW*(.2+.06*Math.sin(t+c.x));
+    ctx.beginPath();const x=cx+(rnd(c.x,c.y,5)-.5)*TW*.3,y=cy+hexCenterY()+TW*.06*Math.sin(t+c.x);
     ctx.moveTo(x-TW*.12,y);ctx.lineTo(x+TW*.12,y);ctx.stroke();ctx.restore();
   }
 }
@@ -1166,7 +1182,7 @@ function drawDirty(c) {
       r[0] = Math.min(r[0], cx - TW / 2 - 3);
       r[2] = Math.max(r[2], cx + TW / 2 + 3);
       r[1] = Math.min(r[1], cy - LH * 4 - TW * 0.6);
-      r[3] = Math.max(r[3], cy + TW / 2 + LH * 3 + 3);
+      r[3]=Math.max(r[3],cy+TW*HEX_H+LH*3+3);
     }
   DIRTY = DIRTY
     ? [Math.min(DIRTY[0], r[0]), Math.min(DIRTY[1], r[1]), Math.max(DIRTY[2], r[2]), Math.max(DIRTY[3], r[3])]
@@ -2112,7 +2128,7 @@ function tile(fc, line, tx, f, v, cx, cy) {
   if (!sp) {
     sp = document.createElement('canvas');
     sp.width = Math.ceil((TW + 4) * dpr);
-    sp.height = Math.ceil((TW / 2 + pad + 2) * dpr);
+    sp.height=Math.ceil((TW*HEX_H+pad+2)*dpr);
     const g = sp.getContext('2d'),
       keep = ctx;
     ctx = g;
@@ -2289,7 +2305,7 @@ function ctr(c) {
   const [vx, vy] = view(c.x, c.y),
     h = Math.max(H[c.x][c.y], 0);
   const [cx, cy] = scr(vx, vy, h);
-  return [cx, cy + TW / 4];
+  return [cx, cy + hexCenterY()];
 }
 const ENVT = {
   fire: {
@@ -2376,7 +2392,7 @@ function drawFloat() {
   for (const [vx, vy, h, x, y, k] of FLOATQ) {
     const lift = LH * (k === 'fog' ? 1.1 : 1.5),
       [cx, cy] = scr(vx, vy, Math.max(h, 0));
-    const by = cy + TW / 4 - lift;
+    const by = cy + hexCenterY() - lift;
     for (let i = 0; i < 4; i++) {
       const dx = (rnd(x, y, i) - 0.5) * TW * 0.55 + (reduce ? 0 : Math.sin(tm * 0.6 + i + x) * TW * 0.06),
         dy = (rnd(x, y, i + 9) - 0.5) * TW * 0.25 + (reduce ? 0 : Math.cos(tm * 0.5 + i + y) * TW * 0.03),
@@ -2711,7 +2727,7 @@ function drawTok(a, ...r) {
 }
 function drawTok0(k, vx, vy, h, sc = 1) {
   const [cx, cy] = scr(vx, vy, h);
-  const y = cy + TW / 4,
+  const y = cy + hexCenterY(),
     r = TW * 0.24 * (sc > 1 ? sc * 0.82 : sc);
   ctx.fillStyle = 'rgba(0,0,0,.28)';
   ctx.beginPath();
@@ -3022,7 +3038,7 @@ function shape(c){
 function pick(mx,my){
   if(!TW)return null;let best=null,bs=-Infinity;const seen=new Set();
   for(let h=0;h<=3;h++){
-    const vr=(my-oy-TW/4+h*LH)/(TW*.375),vq=(mx-ox)/TW-vr/2,[x0,y0]=unview(vq,vr);
+    const vr=(my-oy-hexCenterY()+h*LH)/(TW*HEX_STEP),vq=(mx-ox)/TW-vr/2,[x0,y0]=unview(vq,vr);
     for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){
       const x=x0+dx,y=y0+dy,key=x+','+y;
       if(x<0||y<0||x>=N||y>=N||seen.has(key))continue;seen.add(key);
@@ -3657,6 +3673,7 @@ bz.addEventListener('click', e => {
 });
 document.getElementById('rot').onclick = () => {
   rot = (rot + 1) % 6;
+  camSet();
   save();
   draw();
 };
@@ -11381,13 +11398,13 @@ function drawTpl0(T, ghost) {
     [cx, cy] = scr(vx, vy, Math.max(H[T.x][T.y], 0));
   if (T.k === 'sphere') {
     const r = (T.s / 5) * TW * 0.72;
-    const g = ctx.createRadialGradient(cx - r * 0.3, cy + TW / 4 - r * 0.6, r * 0.1, cx, cy + TW / 4 - r * 0.3, r);
+    const g = ctx.createRadialGradient(cx - r * 0.3, cy + hexCenterY() - r * 0.6, r * 0.1, cx, cy + hexCenterY() - r * 0.3, r);
     g.addColorStop(0, `rgba(${col},.05)`);
     g.addColorStop(1, `rgba(${col},.28)`);
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.ellipse(cx, cy + TW / 4 - r * 0.25, r, r * 0.75, 0, Math.PI, 0);
-    ctx.ellipse(cx, cy + TW / 4 - r * 0.25, r, r * 0.32, 0, 0, Math.PI);
+    ctx.ellipse(cx, cy + hexCenterY() - r * 0.25, r, r * 0.75, 0, Math.PI, 0);
+    ctx.ellipse(cx, cy + hexCenterY() - r * 0.25, r, r * 0.32, 0, 0, Math.PI);
     ctx.fill();
     ctx.strokeStyle = `rgba(${col},.7)`;
     ctx.lineWidth = 1.2;
@@ -11395,7 +11412,7 @@ function drawTpl0(T, ghost) {
   }
   ctx.fillStyle = `rgb(${col})`;
   ctx.beginPath();
-  ctx.arc(cx, cy + TW / 4, Math.max(3, TW * 0.08), 0, 7);
+  ctx.arc(cx, cy + hexCenterY(), Math.max(3, TW * 0.08), 0, 7);
   ctx.fill();
   if (!ghost || 1) {
     ctx.font = `700 ${Math.max(11, Math.min(15, TW * 0.3))}px "Alegreya Sans",sans-serif`;
@@ -11403,9 +11420,9 @@ function drawTpl0(T, ghost) {
     const tx = tplLabel(T);
     ctx.lineWidth = 3;
     ctx.strokeStyle = 'rgba(255,255,255,.9)';
-    ctx.strokeText(tx, cx, cy + TW / 4 - Math.max(8, TW * 0.25));
+    ctx.strokeText(tx, cx, cy + hexCenterY() - Math.max(8, TW * 0.25));
     ctx.fillStyle = '#1d1a17';
-    ctx.fillText(tx, cx, cy + TW / 4 - Math.max(8, TW * 0.25));
+    ctx.fillText(tx, cx, cy + hexCenterY() - Math.max(8, TW * 0.25));
   }
 }
 function drawTpls() {
@@ -13935,8 +13952,10 @@ function mgMsg(m) {
   if (el) el.textContent = m;
 }
 function mgRenderCandidate(candidate){
-  const d=JSON.parse(candidate.state),cv=$('mg_thumb'),ctx=cv.getContext('2d'),n=d.N,t=(cv.width-8)/(1.5*(n-1)+1),hh=t*2/Math.sqrt(3),off=(cv.height-(hh*.75*(n-1)+hh))/2;
-  const center=(x,y)=>[4+t/2+(x+y/2)*t,off+hh*.75*y];
+  const d=JSON.parse(candidate.state),cv=$('mg_thumb'),ctx=cv.getContext('2d'),n=d.N,
+    [left,top,right,bottom]=hexBounds(n,0),t=Math.min((cv.width-8)/(right-left),(cv.height-8)/(bottom-top)),hh=t*HEX_H,
+    ox0=cv.width/2-(left+right)*t/2,oy0=cv.height/2-(top+bottom)*t/2;
+  const center=(x,y)=>{const [q,r]=hexView(x,y,n,0);return [ox0+(q+r/2)*t,oy0+r*hh*.75];};
   const fill=(x,y,color,line=true)=>{const [cx,cy]=center(x,y);ctx.beginPath();hexPoly(cx,cy,t,hh).forEach(([a,b],i)=>i?ctx.lineTo(a,b):ctx.moveTo(a,b));ctx.closePath();ctx.fillStyle=color;ctx.fill();if(line){ctx.strokeStyle='#0002';ctx.lineWidth=.5;ctx.stroke();}};
   ctx.clearRect(0,0,cv.width,cv.height);
   const floors=['#7d9564','#ad9570','#a9a5a0','#b1855f','#494b50','#6f6a65','#6b9b5d','#b8b4aa','#9d9d88','#c7b288','#888f8c','#99744e','#9b8f76','#8a8176'];

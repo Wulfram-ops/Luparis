@@ -1205,8 +1205,10 @@ function mgMsg(m) {
   if (el) el.textContent = m;
 }
 function mgRenderCandidate(candidate){
-  const d=JSON.parse(candidate.state),cv=$('mg_thumb'),ctx=cv.getContext('2d'),n=d.N,t=(cv.width-8)/(1.5*(n-1)+1),hh=t*2/Math.sqrt(3),off=(cv.height-(hh*.75*(n-1)+hh))/2;
-  const center=(x,y)=>[4+t/2+(x+y/2)*t,off+hh*.75*y];
+  const d=JSON.parse(candidate.state),cv=$('mg_thumb'),ctx=cv.getContext('2d'),n=d.N,
+    [left,top,right,bottom]=hexBounds(n,0),t=Math.min((cv.width-8)/(right-left),(cv.height-8)/(bottom-top)),hh=t*HEX_H,
+    ox0=cv.width/2-(left+right)*t/2,oy0=cv.height/2-(top+bottom)*t/2;
+  const center=(x,y)=>{const [q,r]=hexView(x,y,n,0);return [ox0+(q+r/2)*t,oy0+r*hh*.75];};
   const fill=(x,y,color,line=true)=>{const [cx,cy]=center(x,y);ctx.beginPath();hexPoly(cx,cy,t,hh).forEach(([a,b],i)=>i?ctx.lineTo(a,b):ctx.moveTo(a,b));ctx.closePath();ctx.fillStyle=color;ctx.fill();if(line){ctx.strokeStyle='#0002';ctx.lineWidth=.5;ctx.stroke();}};
   ctx.clearRect(0,0,cv.width,cv.height);
   const floors=['#7d9564','#ad9570','#a9a5a0','#b1855f','#494b50','#6f6a65','#6b9b5d','#b8b4aa','#9d9d88','#c7b288','#888f8c','#99744e','#9b8f76','#8a8176'];
