@@ -956,13 +956,17 @@ let drawQ=false;function draw(){if(drawQ)return;drawQ=true;requestAnimationFrame
 // ---- render cache: the scene is drawn once, hover/preview overlays are drawn on a copy
 const BC=document.createElement('canvas'),BX=BC.getContext('2d');let BOK=false,liteQ=false,BCAM=null,BHIDE=null,fullT=0;
 var PERF={mode:'auto',low:false,hist:[],warned:false};try{const m=localStorage.getItem('luparis-perf');if(m==='low'||m==='high')PERF.mode=m;PERF.low=m==='low'}catch(e){}
-function baseSave(){if(!cv.width||!cv.height){BOK=false;return}BCAM={ox,oy,TW,W,Hc,N,rot,hide:BHIDE};if(BC.width!==cv.width||BC.height!==cv.height){BC.width=cv.width;BC.height=cv.height}BX.setTransform(1,0,0,1,0,0);BX.clearRect(0,0,BC.width,BC.height);BX.drawImage(cv,0,0);BOK=true}
+// overscan: the scene is rendered with a margin around the view, so panning never shows an empty edge
+function ovs(){return Math.round(Math.min(PERF.low?260:420,Math.max(W,Hc)*(PERF.low?.25:.35)))}
+function baseBegin(){const dpr=W?cv.width/W:1,M=ovs(),w=Math.max(1,Math.round((W+2*M)*dpr)),h=Math.max(1,Math.round((Hc+2*M)*dpr));if(BC.width!==w||BC.height!==h){BC.width=w;BC.height=h}
+ BX.setTransform(1,0,0,1,0,0);BX.clearRect(0,0,w,h);BX.setTransform(dpr,0,0,dpr,M*dpr,M*dpr);ctx=BX;return M}
+function baseEnd(M){const dpr=W?cv.width/W:1;BCAM={ox,oy,TW,W,Hc,N,rot,hide:BHIDE,M,dpr};BOK=!!(cv.width&&cv.height)}
 function drawOverlay(){if(BHIDE&&BCAM&&BCAM.hide===BHIDE){const k=tokens.find(x=>x.id===BHIDE);if(k)drawTokAt(k)}if(hover&&hover.x>=0&&hover.y>=0&&hover.x<N&&hover.y<N&&!(painting&&painting.area)){const[vx,vy]=view(hover.x,hover.y);poly(dia(vx,vy,Math.max(H[hover.x][hover.y],0)),'rgba(192,112,58,.32)','#c0703a',2)}
  if(typeof drawTplGhost==='function')drawTplGhost();if(typeof drawPlacePreview==='function')drawPlacePreview();if(meas)drawMeas()}
-function baseFits(){return BOK&&BCAM&&BC.width===cv.width&&BC.height===cv.height&&BCAM.N===N&&BCAM.rot===rot}
+function baseFits(){return BOK&&BCAM&&BCAM.W===W&&BCAM.Hc===Hc&&BCAM.dpr===(W?cv.width/W:1)&&BCAM.N===N&&BCAM.rot===rot}
 function drawLiteNow(){if(!baseFits())return drawNow();if(BCAM.ox!==ox||BCAM.oy!==oy||BCAM.TW!==TW)return drawMoveNow();hoverInfo();ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(BC,0,0);ctx.restore();drawOverlay()}
-function drawMoveNow(){if(!baseFits())return drawNow();const f=TW/BCAM.TW,dx=ox-BCAM.ox*f,dy=oy-BCAM.oy*f;hoverInfo();ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.restore();ctx.imageSmoothingEnabled=f<1;ctx.drawImage(BC,0,0,BC.width,BC.height,dx,dy,BCAM.W*f,BCAM.Hc*f);ctx.imageSmoothingEnabled=true;drawOverlay()}
-let moveQ=false;function drawMove(){clearTimeout(fullT);fullT=setTimeout(draw,PERF.low?220:140);if(drawQ||moveQ)return;moveQ=true;requestAnimationFrame(()=>{moveQ=false;if(!drawQ)drawMoveNow()})}
+function drawMoveNow(){if(!baseFits())return drawNow();const f=TW/BCAM.TW,dx=ox-BCAM.ox*f,dy=oy-BCAM.oy*f;hoverInfo();ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.restore();const m=BCAM.M;ctx.imageSmoothingEnabled=f!==1;ctx.drawImage(BC,0,0,BC.width,BC.height,dx-m*f,dy-m*f,(BCAM.W+2*m)*f,(BCAM.Hc+2*m)*f);ctx.imageSmoothingEnabled=true;drawOverlay()}
+let moveQ=false;function drawMove(){clearTimeout(fullT);fullT=setTimeout(draw,PERF.low?160:90);if(BCAM&&BCAM.TW===TW&&(Math.abs(ox-BCAM.ox)>BCAM.M*.8||Math.abs(oy-BCAM.oy)>BCAM.M*.8)){clearTimeout(fullT);draw();return}if(drawQ||moveQ)return;moveQ=true;requestAnimationFrame(()=>{moveQ=false;if(!drawQ)drawMoveNow()})}
 function drawLite(){if(drawQ||liteQ)return;liteQ=true;requestAnimationFrame(()=>{liteQ=false;if(!drawQ)drawLiteNow()})}
 function perfNote(ms){if(PERF.mode!=='auto'||PERF.low)return;PERF.hist.push(ms);if(PERF.hist.length>12)PERF.hist.shift();if(PERF.hist.length<8)return;const a=[...PERF.hist].sort((x,y)=>x-y)[4];if(a>40){PERF.low=true;PERF.hist=[];perfUI();layout();const m=document.getElementById('save_msg');if(m)m.textContent=L2('Slow display detected: light quality on.','Affichage lent détecté : qualité allégée activée.')}}
 function perfSet(m){PERF.mode=m;PERF.low=m==='low';PERF.hist=[];try{localStorage.setItem('luparis-perf',m)}catch(e){}perfUI();layout();if(typeof wApply==='function'&&WS)wApply()}
@@ -1042,10 +1046,10 @@ function hoverInfo(){const b=B[bio];if(hover){const ti=tokAt(hover),tk=ti>=0?tok
   info.textContent=(tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)} (${t('stop')}) · `:'')+(tk&&tk.nm?`${tr(tk.nm)} ${tk.num||''} · ${t('esq')} ${tk.esq} · ${t('thr')} ${tk.maj}/${tk.sev} · ${t('box')} ${tk.hp}/${tk.hpMax}`:`${tr(b.n)} · ${t('tile')} ${hover.x+1}, ${hover.y+1} — ${label(H[hover.x][hover.y],F[hover.x][hover.y])}${H[hover.x][hover.y]>0?' · '+tr(ELEV[H[hover.x][hover.y]]):''}${objAt(hover.x,hover.y)>=0?' · '+objName(OBJS[objAt(hover.x,hover.y)]):''}${envOf(hover.x+','+hover.y)?` · ${tr(ENVT[envOf(hover.x+','+hover.y).k].n)} : ${envRule(envOf(hover.x+','+hover.y))}`:''}`)}
  else info.textContent=tool==='place'&&placing?`${t('placing')}: ${tr(placing.n)}. ${t('click_tile')}`:tool==='measure'?t('meas_hint'):t('hover')}
 let STBG='';
-function drawNow(){const T0=performance.now(),b=B[bio],lq=PERF.low,lod=TW>=9&&!lq,lodS=TW>=5;hoverInfo();{const bg=`radial-gradient(ellipse at 50% 40%,${mul(b.bg[0],.36)},${mul(b.bg[1],.24)})`;if(bg!==STBG){STBG=bg;stage.style.background=bg}}ctx.clearRect(0,0,W,Hc);
+function drawNow(){const T0=performance.now(),b=B[bio],lq=PERF.low,lod=TW>=9&&!lq,lodS=TW>=5;hoverInfo();{const bg=`radial-gradient(ellipse at 50% 40%,${mul(b.bg[0],.36)},${mul(b.bg[1],.24)})`;if(bg!==STBG){STBG=bg;stage.style.background=bg}}const MAINX=ctx,M=baseBegin();
  const spAnim=b.sp&&b.sp.k==='ember';BHIDE=drag!==null&&tokens[drag]?tokens[drag].id:null;const TKM=new Map();for(const k of tokens){if(k.id===BHIDE)continue;const a=tokAnchor(k),kk=a[0]+','+a[1];if(!TKM.has(kk))TKM.set(kk,[]);TKM.get(kk).push(k)}
  const OM=new Map();for(const o of OBJS)OM.set(o.x+','+o.y,o);
- for(const c of cells()){const h=H[c.x][c.y],{vx,vy}=c;{const sx=ox+(vx-vy)*TW/2,sy=oy+(vx+vy)*TW/4;if(sx<-TW||sx>W+TW||sy<-TW-LH*4||sy>Hc+TW+LH*3)continue}
+ for(const c of cells()){const h=H[c.x][c.y],{vx,vy}=c;{const sx=ox+(vx-vy)*TW/2,sy=oy+(vx+vy)*TW/4;if(sx<-M-TW||sx>W+M+TW||sy<-M-TW-LH*4||sy>Hc+M+TW+LH*3)continue}
   if(h<0)pit(c,h);
   else{const f=F[c.x][c.y],t=dia(vx,vy,h);if(h>0){const g=dia(vx,vy,0),sc=f===4?FW.side[h-1]:f===5?'#6a4a2e':FSIDE[f]?FSIDE[f]:b.side[h-1];
     poly([t[3],t[2],g[2],g[3]],mul(sc,.9),'rgba(0,0,0,.25)');poly([t[2],t[1],g[1],g[2]],mul(sc,.72),'rgba(0,0,0,.25)');
@@ -1060,7 +1064,7 @@ function drawNow(){const T0=performance.now(),b=B[bio],lq=PERF.low,lod=TW>=9&&!l
   {const ob=OM.get(c.x+','+c.y);if(ob&&h>=0&&TW>=4)drawObj(ob,vx,vy,h)}
   {const tl=TKM.get(c.x+','+c.y);if(tl)for(const k of tl)drawTokAt(k)}}
  drawFloat();if(typeof drawTpls==='function')drawTpls();drawMarks();
- baseSave();drawOverlay();perfNote(performance.now()-T0);
+ ctx=MAINX;baseEnd(M);drawMoveNow();perfNote(performance.now()-T0);
  if(hasAnim()||(bio==='volcan'&&!reduce))requestAnimationFrame(tick)}
 function ctr(c){const[vx,vy]=view(c.x,c.y),h=Math.max(H[c.x][c.y],0);const[cx,cy]=scr(vx,vy,h);return[cx,cy+TW/4]}
 const ENVT={fire:{n:['Flames','Flammes'],c:'rgba(255,110,30,.5)',r:['Entering or starting a turn here: 1 box (Physical Resilience save DC 12 avoids it).','Entrer ou commencer son tour ici : 1 case (sauvegarde de Résistance physique DD 12 pour l\'éviter).']},
