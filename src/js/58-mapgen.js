@@ -645,6 +645,22 @@ function mgBuild(r) {
   NZ = null;
   RNG = Math.random;
   if (r.bio) bio = r.bio;
+  // a crowded scene (camp, village, ruins…) under one of our own places makes a mess: keep only a landscape scene
+  const LAND = [
+    'forest_road',
+    'forest_clearing',
+    'mtn_pass',
+    'mtn_bend',
+    'river_ford',
+    'marsh_walk',
+    'lava_field',
+    'snow_forest',
+    'oasis',
+    'crossroads',
+    'outskirts',
+    'cave',
+  ];
+  if (r.scene && r.add.some(a => MG_PLACES[a.k]) && !LAND.includes(r.scene)) r.scene = null;
   // a named scene draws the whole map; with buildings only, a free landscape of the setting is the base
   const sc = r.scene || (r.add.length ? 'free' : null) || (scenesFor(bio)[0] !== 'free' ? scenesFor(bio)[0] : 'free');
   scene = sc;

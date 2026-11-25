@@ -8642,7 +8642,7 @@ function renderHand() {
       ? `<div class="inf"><label><span>${L2('Infusion', 'Infusion')}</span><select data-hinf="${i}"><option value="">—</option>${srcs.map(k => `<option value="${k}"${infOn === k ? ' selected' : ''}>${esc(srcN(k))}</option>`).join('')}</select></label>${infOn ? `<div class="fx">${Array.from({ length: infT }, (_, n) => `<button type="button" class="chip${infV === n + 1 ? ' on' : ''}" data-hiv="${i}" data-v="${n + 1}">${n + 1}</button>`).join('')}</div>` : ''}</div>`
       : '';
     WL.push(
-      `<div class="wpn"><div class="wpt"><b>${esc(w.n)}</b> <span class="small">${esc(tr(FAM[w.f] ? FAM[w.f].n : ['', '']))}</span></div><div class="hb"><label class="wcell"><span class="small">${L2('Attack with', 'Attaque avec')}</span><select data-hcell="${i}" aria-label="${L2('Matrix cell for the attack', 'Case de la Matrice pour l’attaque')}">${CELLS.map(k => `<option value="${k}"${k === cellK ? ' selected' : ''}>${esc(cellName(k))} (${sgn(c.cells[k] || 0)})</option>`).join('')}</select></label> ${L2('Attack', 'Attaque')} <b>${sgn(ab)}</b> · ${L2('Damage', 'Dégâts')} <b>${nd}d${dd}${mod ? sgn(mod) : ''}</b>${infOn ? ` <b>+${infV}d${infD}</b> (${esc(srcN(infOn))}, ${infV} ${infP})` : ''}${tier ? '' : ` <span class="small">(${L2('untrained', 'sans maîtrise')})</span>`}</div>${weaponPassiveHTML(c, i, w, tier, true)}${infH}<div class="hbt"><button type="button" class="go" data-ha="atk" data-i="${i}">${L2('Attack', 'Attaque')}</button><button type="button" data-ha="dmg" data-i="${i}">${L2('Damage', 'Dégâts')}</button></div></div>`,
+      `<div class="wpn"><div class="wpt"><b>${esc(w.n)}</b> <span class="small">${esc(tr(FAM[w.f] ? FAM[w.f].n : ['', '']))}</span></div><div class="hb">${L2('Damage', 'Dégâts')} <b>${nd}d${dd}${mod ? sgn(mod) : ''}</b>${infOn ? ` <b>+${infV}d${infD}</b> (${esc(srcN(infOn))}, ${infV} ${infP})` : ''}${tier ? '' : ` <span class="small">(${L2('untrained', 'sans maîtrise')})</span>`}</div>${weaponPassiveHTML(c, i, w, tier, true)}${infH}<div class="hbt"><button type="button" class="go" data-ha="dmg" data-i="${i}">${L2('Damage', 'Dégâts')}</button></div></div>`,
     );
   });
   if (WL.length)
@@ -9015,10 +9015,23 @@ document.getElementById('hand').addEventListener('click', e => {
       hRoll(weaponAttack(c, i, null) + ex);
       return;
     }
-    const li = lastInf[key];
+    // the attack itself is a Matrix roll; the infusion is paid when the damage is rolled
+    let li = lastInf[key];
+    if (!li && ik) {
+      const pool = ik === 'apex' ? 'st' : 'mana',
+        max = pool === 'st' ? D.st : D.mana,
+        pn = pool === 'st' ? L2('Breath', 'Souffle') : 'Mana';
+      if (u[pool] + iv > max) {
+        hRoll(`${esc(w.n)} · ${L2('not enough', 'pas assez de')} ${pn} ${L2('to infuse', 'pour infuser')} (${iv})`);
+        return;
+      }
+      u[pool] += iv;
+      saveC();
+      li = { sn, iv, iD, pay: ` −${iv} ${pn}` };
+    }
     let h = weaponDamage(c, i);
     if (li) {
-      h += ' · ' + hDmg(li.sn, li.iv, li.iD, 0);
+      h += ' · ' + hDmg(li.sn, li.iv, li.iD, 0) + (li.pay || '');
       delete lastInf[key];
     }
     hRoll(h);
@@ -12596,6 +12609,22 @@ function mgBuild(r) {
   NZ = null;
   RNG = Math.random;
   if (r.bio) bio = r.bio;
+  // a crowded scene (camp, village, ruins…) under one of our own places makes a mess: keep only a landscape scene
+  const LAND = [
+    'forest_road',
+    'forest_clearing',
+    'mtn_pass',
+    'mtn_bend',
+    'river_ford',
+    'marsh_walk',
+    'lava_field',
+    'snow_forest',
+    'oasis',
+    'crossroads',
+    'outskirts',
+    'cave',
+  ];
+  if (r.scene && r.add.some(a => MG_PLACES[a.k]) && !LAND.includes(r.scene)) r.scene = null;
   // a named scene draws the whole map; with buildings only, a free landscape of the setting is the base
   const sc = r.scene || (r.add.length ? 'free' : null) || (scenesFor(bio)[0] !== 'free' ? scenesFor(bio)[0] : 'free');
   scene = sc;
