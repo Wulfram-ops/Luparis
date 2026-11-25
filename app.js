@@ -6378,18 +6378,15 @@ function campAward(name, x, label) {
   else renderList();
   if (typeof renderHand === 'function') renderHand();
 }
-function campPanel() {
-  if (MP.role === 'player') return '';
+// campaign XP, shown at the top of each campaign folder, for the GM only
+function campXP(n) {
+  if (MP.role === 'player' || !n) return '';
   const o = campsGet(),
-    names = camps();
-  if (!names.length) return '';
-  const ti = lang === 'fr' ? 1 : 0;
-  return (
-    `<section class="card campgm"><h3>${L2('Campaign XP', 'XP de campagne')} <span class="pill">${L2('GM', 'MJ')}</span></h3><p class="small">${L2('Every character of a campaign shares its XP. Only the game master awards it here, or when ending a fight.', "Tous les personnages d'une campagne partagent son XP. Seul le MJ l'attribue, ici ou à la fin d'un combat.")}</p>` +
-    names
-      .map(n => {
-        const r = o[n] || { xp: Math.max(150, ...CH.list.filter(c => c.camp === n).map(c => +c.xp || 0)), log: [] };
-        return `<div class="campx"><div class="cxh"><b>${esc(n)}</b> <span class="pill">${r.xp} XP · ${L2('level', 'niveau')} ${Math.max(1, Math.floor(r.xp / 100))}</span></div>
+    ti = lang === 'fr' ? 1 : 0;
+  return [n]
+    .map(n => {
+      const r = o[n] || { xp: Math.max(150, ...CH.list.filter(c => c.camp === n).map(c => +c.xp || 0)), log: [] };
+      return `<div class="campx"><div class="cxh"><b>${L2('Campaign XP', 'XP de campagne')}</b> <span class="pill">${L2('GM', 'MJ')}</span> <span class="pill">${r.xp} XP · ${L2('level', 'niveau')} ${Math.max(1, Math.floor(r.xp / 100))}</span></div>
   <div class="chips">${DIFF.map(d => `<button type="button" class="chip" data-cxa="${esc(n)}" data-x="${d[1]}" data-l="${d[0]}">${esc(d[2][ti])} +${d[1]}</button>`).join('')}</div>
   <form class="row cxf" data-cxf="${esc(n)}"><input type="number" step="1" placeholder="±XP" aria-label="${L2('XP to add or remove', 'XP à ajouter ou retirer')}"><input placeholder="${L2('Reason (quest, session…)', 'Raison (quête, séance…)')}" maxlength="80"><button type="submit">${L2('Apply', 'Appliquer')}</button></form>
   ${
@@ -6403,10 +6400,8 @@ function campPanel() {
           .join('')}</ul>`
       : ''
   }</div>`;
-      })
-      .join('') +
-    '</section>'
-  );
+    })
+    .join('');
 }
 function camps() {
   return [...new Set(CH.list.map(c => c.camp || ''))].filter(Boolean).sort((a, b) => a.localeCompare(b, lang));
@@ -6508,7 +6503,7 @@ function renderList() {
           .filter(c => (c.camp || '') === g)
           .sort((a, b) => (a.name || '').localeCompare(b.name || '', lang));
         return (
-          `<details class="campfolder" data-campfolder="${esc(g)}"${closedCampaignFolders.has(g) ? '' : ' open'}><summary><span class="cf-title">${esc(g || t('sk_nocamp'))}</span><span class="pill">${t('sk_nchars')(members.length)}</span>${g && MP.role !== 'player' ? `<button type="button" class="cf-del" data-campdel="${esc(g)}" title="${L2('Delete this campaign (its characters are kept, without campaign)', 'Supprimer cette campagne (ses personnages sont gardés, sans campagne)')}" aria-label="${L2('Delete the campaign', 'Supprimer la campagne')} ${esc(g)}">🗑</button>` : ''}</summary><div class="ccards">` +
+          `<details class="campfolder" data-campfolder="${esc(g)}"${closedCampaignFolders.has(g) ? '' : ' open'}><summary><span class="cf-title">${esc(g || t('sk_nocamp'))}</span><span class="pill">${t('sk_nchars')(members.length)}</span>${g && MP.role !== 'player' ? `<button type="button" class="cf-del" data-campdel="${esc(g)}" title="${L2('Delete this campaign (its characters are kept, without campaign)', 'Supprimer cette campagne (ses personnages sont gardés, sans campagne)')}" aria-label="${L2('Delete the campaign', 'Supprimer la campagne')} ${esc(g)}">🗑</button>` : ''}</summary>${campXP(g)}<div class="ccards">` +
           members
             .map(c => {
               const D = derived(c);
@@ -6520,8 +6515,7 @@ function renderList() {
         );
       })
       .join('') +
-    '</div>' +
-    campPanel();
+    '</div>';
   $('c_nn').value = nn;
   $('c_nc').value = nc;
   if ($('c_folder_name')) $('c_folder_name').value = folderName;
