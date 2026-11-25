@@ -395,3 +395,11 @@ body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){dis
 #cgrid .glocked:hover>.glock{opacity:.95}
 #cgrid .glocked>.ggrip,#cgrid .glocked>.gsz{display:none}
 @media(max-width:900px){.glock{display:none}}
+/* Map grid: sheet + character box in one module */
+#cgrid .pfbox{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:6px 10px;overflow:auto}
+#cgrid .pfbox>.pf{border:0;padding:0;margin:0;background:none;flex:none}
+#cgrid .pfbox>.hside{flex:none;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 14px;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0 0 6px;background:none}
+#cgrid .pfbox>.hside h3{margin-right:4px}
+#cgrid .pfbox>.hside .hsel{flex-direction:row;align-items:center;gap:6px}
+#cgrid .pfbox>.hside .hsel select{width:auto;min-width:150px}
+#cgrid .pfbox>.hside .htrk span{flex:none}

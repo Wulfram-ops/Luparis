@@ -5,8 +5,7 @@ const GCOLS = 12,
   GGAP = 8;
 const GDEF = {
   map: [1, 1, 9, 18],
-  pf: [1, 19, 6, 10],
-  hside: [7, 19, 3, 10],
+  pf: [1, 19, 9, 9],
   hhead: [1, 19, 9, 3],
   tk: [10, 1, 3, 7],
   pl: [10, 8, 3, 7],
@@ -19,7 +18,6 @@ const GDEF = {
 const GNAME = {
   map: ['Map', 'Carte'],
   pf: ['Character sheet', 'Fiche'],
-  hside: ['Character', 'Personnage'],
   hhead: ['Ability cards', 'Cartes de capacités'],
   tk: ['Selected token', 'Token choisi'],
   pl: ['Quick place', 'Placement rapide'],
@@ -126,13 +124,28 @@ function gHandles(el, k) {
   );
   gLockSync(el, k);
 }
+// the sheet and the character box (name, picker, Vitality, Mana, Breath) make one module
+function gPfBox(hand) {
+  const top = hand.querySelector(':scope > .htop');
+  if (!top) return null;
+  let box = top.querySelector(':scope > .pfbox');
+  const pf = top.querySelector(':scope > .pf'),
+    hs = top.querySelector(':scope > .hside');
+  if (!box && (pf || hs)) {
+    box = document.createElement('div');
+    box.className = 'pfbox';
+    top.prepend(box);
+  }
+  if (hs) box.append(hs);
+  if (pf) box.append(pf);
+  return box;
+}
 // the character cards are rebuilt often: each time, give every card its module place again
 function gHandSync() {
   const hand = document.getElementById('hand');
   if (!hand || !document.getElementById('cgrid')) return;
   const items = [
-    [hand.querySelector(':scope > .htop > .pf'), 'pf'],
-    [hand.querySelector(':scope > .htop > .hside'), 'hside'],
+    [gPfBox(hand), 'pf'],
     [hand.querySelector(':scope > .hhead'), 'hhead'],
     ...[...hand.querySelectorAll('.hcards > .hc')].map(c => [
       c,
