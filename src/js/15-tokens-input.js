@@ -1023,6 +1023,7 @@ document.getElementById('undo').onclick = () => {
   ENV = d.env || {};
   OBJS = d.objs || [];
   TPLS = d.tpls || [];
+  if(d.N){N=d.N;bio=d.bio;scene=d.scene;INI=d.ini;rot=d.rot;CAM.z=1;CAM.px=0;CAM.py=0;showSize();legend();fillScenes();layout();}
   save();
   draw();
 };

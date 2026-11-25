@@ -542,7 +542,7 @@ function snap() {
   hist.push(JSON.stringify({ H, F, tokens, marks: MARKS, env: ENV, objs: OBJS, tpls: TPLS }));
   if (hist.length > 60) hist.shift();
 }
-const SIZES = [8, 16, 32, 64, 128];
+const SIZES = [8, 16, 24, 32, 64, 128];
 function sizeIdx(n) {
   let i = SIZES.findIndex(s => s >= n);
   return i < 0 ? SIZES.length - 1 : i;

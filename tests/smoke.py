@@ -193,6 +193,11 @@ def run(chrome: str | None) -> None:
         check("context menu opens", page.locator(".ctxm").count() == 1)
         page.keyboard.press("Escape")
 
+        # AI recipes are validated and custom rooms retain their individual dimensions.
+        check("AI rejects empty recipes", D("(()=>{try{mgRecipe('{}');return false}catch(e){return true}})()"))
+        check("AI sanitizes unknown values", D("mgClean({bio:'constructor',size:'toString',objs:[{k:'unknown'}]}).bio===null && mgClean({size:'toString'}).size===null"))
+        check("custom rooms and targeted objects survive normalization", D("""(()=>{const r=mgClean({add:[{k:'room',w:7,h:9,pos:'north',entrance:'east'},{k:'room',w:8,h:5,pos:'south'}],objs:[{k:'chest',place:2,hidden:true}]});return r.add.length===2&&r.add[0].h===9&&r.objs[0].place===2&&r.objs[0].hidden})()"""))
+        check("generated map undo restores size and terrain", D("""(()=>{const before=JSON.stringify([N,H,F,bio]);mgBuild(mgClean({bio:'donjon',size:'small',add:[{k:'room',w:7,h:7,entrance:'east'}]}),42);const drawn=OBJS.some(o=>o.k==='door');$('undo').click();return drawn&&JSON.stringify([N,H,F,bio])===before})()"""))
         # a sentence becomes a map (keywords, no AI key)
         r = D("JSON.stringify(mgParse('Temple en ruines dans la forêt, trois statues'))")
         page.evaluate("DBG(`mgBuild(mgParse('temple en ruines dans la forêt'))`)")
