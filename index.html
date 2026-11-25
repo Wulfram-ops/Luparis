@@ -51,6 +51,12 @@ input[type=range]{width:96px;accent-color:var(--acc)}
 body.mp-player #tools button:not([data-t=move]):not([data-t=measure]),body.mp-player #tools label,body.mp-player #tools .scn,body.mp-player .bar>.grp:not(#tools),body.mp-player #sn_card,body.mp-player #mk_card .small{display:none!important}
 #tools [data-for]{display:none}#tools[data-tool="surf"] [data-for~="surf"]{display:inline-flex}#tools[data-tool="env"] [data-for~="env"]{display:inline-flex}#tools[data-tool="tpl"] [data-for~="tpl"]{display:inline-flex}#tools[data-tool="obj"] [data-for~="obj"]{display:inline-flex}#tools[data-tool="pref"] [data-for~="pref"]{display:inline-flex}
 #tools[data-tool="env"] .envdc{display:inline-flex}.thint{max-width:26em;line-height:1.25;align-self:center}
+.usb{display:inline-flex;align-items:center;gap:8px;min-width:15em;justify-content:space-between;color:var(--mut,#6b665e)}.usb kbd{font:600 11px/1 ui-monospace,monospace;border:1px solid var(--line);border-radius:4px;padding:2px 4px}
+#usdlg{width:min(640px,94vw);padding:0;border:1px solid var(--line);border-radius:14px;margin-top:9vh}#usdlg::backdrop{background:rgba(20,18,14,.35)}
+#usdlg input{width:100%;box-sizing:border-box;border:0;border-bottom:1px solid var(--line);padding:14px 16px;font-size:17px;border-radius:14px 14px 0 0}#usdlg input:focus{outline:none}
+#us_res{list-style:none;margin:0;padding:6px;max-height:60vh;overflow:auto}#us_res li{display:grid;grid-template-columns:7.5em 1fr auto;gap:8px;align-items:center;padding:7px 10px;border-radius:8px;cursor:pointer}
+#us_res li[aria-selected=true]{background:color-mix(in oklab,var(--acc) 16%,transparent)}#us_res .ust{font-size:12px;color:var(--mut,#6b665e)}#us_res .usd{font-size:13px;color:var(--mut,#6b665e)}#us_res .empty{display:block;color:var(--mut,#6b665e)}
+.usflash{outline:3px solid var(--acc)!important;outline-offset:2px;transition:outline-color 1s}
 .tplh{margin:10px 0 4px;font-size:14px}.tpls{list-style:none;margin:0;padding:0}.tpls li{display:grid;grid-template-columns:1fr auto;gap:2px 6px;align-items:center;padding:3px 0;border-top:1px dashed var(--line);font-size:14px}.tpls li .small{grid-column:1}.tpls li button{grid-row:1/span 2;grid-column:2}
 .hc.k-note{border-top-color:#8a7a5a}.hnote{width:100%;box-sizing:border-box;resize:vertical;font:15px/1.4 "Alegreya Sans",sans-serif;min-height:120px}
 .hc.k-tal{border-top-color:#6b7a3c}.hc.k-tal ul{margin:4px 0;padding-left:16px}.pfmx td{padding:0!important}.pfmx td button{width:100%;min-height:50px;min-width:76px;font-size:19px;justify-content:center;font-weight:700;font-variant-numeric:tabular-nums;border-radius:0}.pfmx th small{color:var(--ink);font-weight:700}.pfmods{display:flex;flex-wrap:wrap;gap:4px;align-items:center}.pflab{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 4px 0 6px}.pfhint{margin:4px 0}.pflast{font-size:15px;margin:4px 0 8px;padding:4px 8px;border-left:3px solid var(--acc);background:var(--panel)}
@@ -263,7 +269,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 </head>
 <body>
 <header><h1 data-i18n="title"></h1><p data-i18n="sub"></p>
- <div class="prefs"><div class="grp" id="langs"><button data-lang="en">English</button><button data-lang="fr">Français</button></div><div class="grp" id="units"><button data-u="ft" data-i18n="u_ft"></button><button data-u="m" data-i18n="u_m"></button></div></div></header>
+ <div class="prefs"><div class="grp" id="langs"><button data-lang="en">English</button><button data-lang="fr">Français</button></div><button type="button" id="us_open" class="usb" aria-keyshortcuts="Control+K"></button><div class="grp" id="units"><button data-u="ft" data-i18n="u_ft"></button><button data-u="m" data-i18n="u_m"></button></div></div></header>
 <nav class="tabs"><a href="#monde" data-v="monde" data-i18n="tab_world"></a><a href="#carte" data-v="carte" data-i18n="tab_map"></a><a href="#fiche" data-v="fiche" data-i18n="tab_sheet"></a><a href="#bestiaire" data-v="bestiaire" data-i18n="tab_best"></a><a href="#regles" data-v="regles" data-i18n="tab_rules"></a></nav>
 <section id="v-monde" class="view" hidden>
 <div class="bar">
@@ -2048,7 +2054,7 @@ new ResizeObserver(()=>{if(WS&&!$('v-monde').hidden)wApply()}).observe(wst);
 
 function nm0(m){return tr(m.n)}
 function applyLang(){document.documentElement.lang=lang;document.title='Luparis';
- for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof fillTpl==='function'&&TPLK)fillTpl();if(typeof toolHint==='function'&&TPLK)toolHint();if(typeof snRender==='function'&&typeof SN!=='undefined'&&SN)snRender();if(typeof aiUI==='function'&&typeof AIC!=='undefined')aiUI();if(typeof fillBio==='function')fillBio();
+ for(const e of document.querySelectorAll('[data-i18n]'))e.textContent=t(e.dataset.i18n);if(typeof fillScenes==='function')fillScenes();if(typeof fillSz==='function')fillSz();if(typeof fillEnv==='function')fillEnv();if(typeof fillSurf==='function')fillSurf();if(typeof fillObj==='function')fillObj();if(typeof fillTpl==='function'&&TPLK)fillTpl();if(typeof toolHint==='function'&&TPLK)toolHint();if(typeof usBtn==='function'&&TPLK)usBtn();if(typeof snRender==='function'&&typeof SN!=='undefined'&&SN)snRender();if(typeof aiUI==='function'&&typeof AIC!=='undefined')aiUI();if(typeof fillBio==='function')fillBio();
  for(const e of document.querySelectorAll('[data-i18n-html]'))e.innerHTML=t(e.dataset.i18nHtml);
  for(const e of document.querySelectorAll('[data-i18n-ph]'))e.placeholder=t(e.dataset.i18nPh);
  for(const b of bz.querySelectorAll('button[data-b]'))b.querySelector('.bn').textContent=tr(B[b.dataset.b].n);
@@ -2126,6 +2132,45 @@ function monSheet(m,tk){SBM=m;SBT=tk||null;let dl=document.getElementById('sbdlg
  paint(null);if(!dl.open)dl.showModal();const en=Array.isArray(m.n)?m.n[0]:String(m.n),k2=String(m.id).startsWith('s-')?m.id:'s-'+en.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');srdDetails().then(o=>{if(SBM===m&&dl.open&&o[k2])paint(o[k2])})}
 
 
+
+// ---- universal search (Ctrl+K)
+let US=[],USI=0;
+function usNorm(x){return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
+function usGo(v){if(location.hash!=='#'+v){location.hash='#'+v}}
+function usFlash(el){if(!el)return;el.scrollIntoView({block:'center',behavior:'smooth'});el.classList.add('usflash');setTimeout(()=>el.classList.remove('usflash'),1400);if(el.matches('input,select,textarea,button'))setTimeout(()=>el.focus(),60)}
+function usTool(t,sel,val){usGo('carte');setTimeout(()=>{if(sel){const e=document.getElementById(sel);if(e){e.value=val;e.dispatchEvent(new Event('change'))}}setTool(t)},30)}
+function usItems(){const gm=MP.role!=='player'&&MP.role!=='spect',I=[],ty=(en,fr)=>L2(en,fr);
+ if(gm)for(const m of MON)I.push({ty:ty('Monster','Monstre'),n:nm0(m),kw:(Array.isArray(m.n)?m.n.join(' '):''),d:`${tyName?tyName(m.type):''} · FP ${m.fp}`,go:()=>monSheet(m),alt:[L2('Place','Placer'),()=>{placing=m;usGo('carte');setTool('place')}]});
+ for(const k of tokens){if(!gm&&k.hid)continue;const nm=k.nm?tr(k.nm)+(k.num?' '+k.num:''):(k.n||'?');I.push({ty:ty('Token','Token'),n:nm,d:`${L2('tile','case')} ${k.x}, ${k.y}`,go:()=>{usGo('carte');selTok=k.id;renderTok();draw()}})}
+ for(const c of CH.list)I.push({ty:ty('Character','Personnage'),n:c.name||'?',d:c.camp||'',go:()=>{CH.active=c.id;C=c;usGo('fiche');setTimeout(()=>{renderSheet();window.scrollTo(0,0)},30)}});
+ if(gm){for(const k of Object.keys(OBJT))I.push({ty:ty('Object','Objet'),n:tr(OBJT[k].n),kw:OBJT[k].n.join(' '),go:()=>usTool('obj','objk',k)});
+  for(const k of Object.keys(PREF))I.push({ty:ty('Building','Bâtiment'),n:tr(PREF[k]),kw:PREF[k].join(' '),go:()=>usTool('pref','prefk',k)});
+  for(const k of Object.keys(ENVT))I.push({ty:ty('Effect','Effet'),n:tr(ENVT[k].n),kw:ENVT[k].n.join(' '),d:tr(ENVT[k].r),go:()=>usTool('env','envk',k)});
+  for(const k of Object.keys(TPLK))I.push({ty:ty('Zone','Zone'),n:tr(TPLK[k]),kw:TPLK[k].join(' '),d:L2('area of effect','zone d\'effet'),go:()=>usTool('tpl','tplk',k)});
+  for(const k of SURF_ORDER)if(k)I.push({ty:ty('Ground','Sol'),n:tr(FL[k]),kw:(Array.isArray(FL[k])?FL[k].join(' '):''),go:()=>usTool('surf','surfk',k)});
+  for(const m of MARKS)I.push({ty:ty('Landmark','Repère'),n:m.l||L2('(unnamed)','(sans nom)'),d:`${L2('tile','case')} ${m.x}, ${m.y}`,go:()=>{usGo('carte');selMark=m.id;renderMarks();draw();setTimeout(()=>usFlash(document.querySelector(`#mk_list input[data-id="${m.id}"]`)),60)}});
+  if(SN&&SN.txt)SN.txt.split('\n').filter(x=>x.trim()).forEach(l=>I.push({ty:ty('Note','Note'),n:l.slice(0,90),d:L2('session notes','notes de séance'),go:()=>{usGo('carte');setTimeout(()=>usFlash(document.querySelector('#sn_txt,#sn_card textarea')),60)}}));
+  for(const T of TPLS)I.push({ty:ty('Zone','Zone'),n:tplLabel(T),go:()=>{usGo('carte');setTimeout(()=>usFlash(document.getElementById('tpl_list')),60)}})}
+ // settings: labelled controls across views
+ const seen=new Set();document.querySelectorAll('.view button[id], .view select[id], .view input[id][type=checkbox], header button[data-lang], header button[data-u], .tabs a').forEach(el=>{if(el.closest('#usdlg'))return;if(!gm&&el.closest('.gmo'))return;let n=(el.getAttribute('aria-label')||el.textContent||'').trim();if(el.tagName==='SELECT'||el.type==='checkbox'){const l=el.closest('label');n=l?(l.textContent||'').trim():n;if(el.tagName==='SELECT')n=(l&&l.querySelector('span')?l.querySelector('span').textContent:n).trim()}
+  if(!n||n.length>60||seen.has(n))return;seen.add(n);const v=el.closest('.view'),vid=v?v.id.replace('v-',''):null;I.push({ty:el.matches('.tabs a')?ty('Tab','Onglet'):ty('Setting','Réglage'),n,d:vid?({monde:L2('World','Monde'),carte:L2('Map','Carte'),fiche:L2('Character','Personnage'),bestiaire:L2('Bestiary','Bestiaire'),regles:L2('Rules','Règles')})[vid]:'',go:()=>{if(el.matches('.tabs a')){location.hash=el.getAttribute('href');return}if(vid)usGo(vid);setTimeout(()=>usFlash(el.closest('label')||el),60)}})});
+ document.querySelectorAll('#v-regles h2, #v-regles h3').forEach(h=>{const n=h.textContent.trim();if(n)I.push({ty:ty('Rule','Règle'),n,go:()=>{usGo('regles');setTimeout(()=>usFlash(h),60)}})});
+ return I}
+function usRender(){const q=usNorm(document.getElementById('us_q').value).split(/\s+/).filter(Boolean),L=document.getElementById('us_res');
+ let R=US.map(it=>{const a=usNorm(it.n),b=usNorm(it.ty+' '+(it.d||'')+' '+(it.kw||''));let sc=0;for(const w of q){if(a.startsWith(w))sc+=3;else if(a.includes(w))sc+=2;else if(b.includes(w))sc+=(usNorm(it.kw||'').includes(w)?2:1);else return null}return[sc,it]}).filter(Boolean);
+ R.sort((x,y)=>y[0]-x[0]||x[1].n.length-y[1].n.length);R=R.slice(0,q.length?40:0).map(x=>x[1]);usRender.R=R;USI=Math.min(USI,Math.max(0,R.length-1));
+ L.innerHTML=R.length?R.map((it,i)=>`<li role="option" id="us_o${i}" data-usi="${i}" aria-selected="${i===USI}"><span class="ust">${esc(it.ty)}</span><span>${esc(it.n)}${it.d?` <span class="usd">· ${esc(it.d)}</span>`:''}</span>${it.alt?`<button type="button" data-usalt="${i}">${esc(it.alt[0])}</button>`:'<span></span>'}</li>`).join(''):`<li class="empty">${q.length?L2('Nothing found.','Rien trouvé.'):L2('Type a monster, object, effect, token, note or setting…','Tape un monstre, objet, effet, token, note ou réglage…')}</li>`;
+ document.getElementById('us_q').setAttribute('aria-activedescendant',R.length?'us_o'+USI:'')}
+function usOpen(){let d=document.getElementById('usdlg');if(!d){d=document.createElement('dialog');d.id='usdlg';d.innerHTML=`<input id="us_q" type="search" autocomplete="off" role="combobox" aria-controls="us_res" aria-expanded="true"><ul id="us_res" role="listbox"></ul>`;document.body.appendChild(d);
+  const q=d.querySelector('#us_q');q.addEventListener('input',()=>{USI=0;usRender()});
+  q.addEventListener('keydown',e=>{const R=usRender.R||[];if(e.key==='ArrowDown'){e.preventDefault();USI=Math.min(R.length-1,USI+1);usRender();document.getElementById('us_o'+USI)?.scrollIntoView({block:'nearest'})}else if(e.key==='ArrowUp'){e.preventDefault();USI=Math.max(0,USI-1);usRender();document.getElementById('us_o'+USI)?.scrollIntoView({block:'nearest'})}else if(e.key==='Enter'&&R[USI]){e.preventDefault();usPick(R[USI],e.shiftKey)}});
+  d.addEventListener('click',e=>{if(e.target===d){d.close();return}const a=e.target.closest('[data-usalt]');if(a){usPick(usRender.R[+a.dataset.usalt],true);return}const li=e.target.closest('[data-usi]');if(li)usPick(usRender.R[+li.dataset.usi])})}
+ US=usItems();USI=0;const q=d.querySelector('#us_q');q.placeholder=L2('Search monsters, objects, effects, tokens, notes, settings…','Rechercher monstres, objets, effets, tokens, notes, réglages…');q.setAttribute('aria-label',q.placeholder);q.value='';usRender();d.showModal();q.focus()}
+function usPick(it,alt){if(!it)return;document.getElementById('usdlg').close();if(alt&&it.alt)it.alt[1]();else it.go()}
+function usBtn(){const b=document.getElementById('us_open');if(b)b.innerHTML=`<span>🔍 ${esc(L2('Search','Rechercher'))}</span><kbd>Ctrl K</kbd>`}
+document.getElementById('us_open').addEventListener('click',usOpen);
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&!e.altKey&&(e.key==='k'||e.key==='K')){e.preventDefault();e.stopPropagation();usOpen()}},true);
+usBtn();
 // ---- contextual tool hint + placement preview
 function toolHint(){const el=document.getElementById('thint');if(!el)return;const H={
  move:['Drag a token; double-click a monster for its sheet.','Glisse un token ; double-clic sur un monstre pour sa fiche.'],
