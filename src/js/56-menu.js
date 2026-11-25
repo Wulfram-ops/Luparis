@@ -305,42 +305,54 @@ document.getElementById('img_card').addEventListener('contextmenu', e => {
   ]);
 });
 
-// ---- map and world views: 4:3 by default; drag the bottom edge to resize, double-click it to go back to 4:3
+// ---- map and world views: 16:9 by default; drag the bottom edge, the right edge or the corner to resize,
+// double-click a handle to go back to 16:9 and full width
 for (const id of ['stage', 'w_stage']) {
   const el = document.getElementById(id);
   if (!el) continue;
-  const key = 'luparis-ratio-' + id,
+  const key = 'luparis-view-' + id,
     apply = () => {
-      const r = +lsGet(key, 0);
-      el.style.aspectRatio = r > 0.2 && r < 3 ? `1 / ${r}` : '4 / 3';
-    },
-    h = document.createElement('div');
-  h.className = 'rsz';
-  h.title = L2('Drag to resize · double-click: back to 4:3', 'Glisse pour redimensionner · double-clic : retour au 4:3');
-  h.setAttribute('aria-hidden', 'true');
-  el.append(h);
+      const v = lsGet(key, null) || {},
+        r = +v.r,
+        w = +v.w;
+      el.style.aspectRatio = r > 0.2 && r < 3 ? `1 / ${r}` : '16 / 9';
+      el.style.width = w >= 320 ? `min(${w}px, 100%)` : '';
+    };
   apply();
-  let st = null;
-  h.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    e.stopPropagation();
-    h.setPointerCapture(e.pointerId);
-    st = { y: e.clientY, hgt: el.getBoundingClientRect().height };
-  });
-  h.addEventListener('pointermove', e => {
-    if (!st) return;
-    const w = el.getBoundingClientRect().width,
-      nh = Math.max(240, Math.min(innerHeight * 1.5, st.hgt + e.clientY - st.y));
-    el.style.aspectRatio = `${w} / ${nh}`;
-  });
-  h.addEventListener('pointerup', () => {
-    if (!st) return;
-    st = null;
-    const r = el.getBoundingClientRect();
-    lsSet(key, Math.round((r.height / r.width) * 1000) / 1000);
-  });
-  h.addEventListener('dblclick', () => {
-    lsSet(key, 0);
-    apply();
-  });
+  for (const dir of ['s', 'e', 'se']) {
+    const h = document.createElement('div');
+    h.className = 'rsz rsz-' + dir;
+    h.title = L2(
+      'Drag to resize · double-click: back to 16:9',
+      'Glisse pour redimensionner · double-clic : retour au 16:9',
+    );
+    h.setAttribute('aria-hidden', 'true');
+    el.append(h);
+    let st = null;
+    h.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      h.setPointerCapture(e.pointerId);
+      const r = el.getBoundingClientRect();
+      st = { x: e.clientX, y: e.clientY, w: r.width, h: r.height };
+    });
+    h.addEventListener('pointermove', e => {
+      if (!st) return;
+      const nw = dir === 's' ? st.w : Math.max(320, st.w + e.clientX - st.x),
+        nh = dir === 'e' ? st.h : Math.max(220, Math.min(innerHeight * 1.5, st.h + e.clientY - st.y));
+      el.style.width = `min(${Math.round(nw)}px, 100%)`;
+      el.style.aspectRatio = `${nw} / ${nh}`;
+    });
+    h.addEventListener('pointerup', () => {
+      if (!st) return;
+      const r = el.getBoundingClientRect(),
+        full = el.style.width === '' || r.width >= el.parentElement.getBoundingClientRect().width - 2;
+      st = null;
+      lsSet(key, { r: Math.round((r.height / r.width) * 1000) / 1000, w: full ? 0 : Math.round(r.width) });
+    });
+    h.addEventListener('dblclick', () => {
+      lsSet(key, null);
+      apply();
+    });
+  }
 }

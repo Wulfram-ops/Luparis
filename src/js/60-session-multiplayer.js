@@ -543,6 +543,16 @@ function mpHostMsg(m, conn) {
     mpPush();
     return;
   }
+  if (m.type === 'obj' && conn.prole !== 'spec') {
+    const o = OBJS[objAt(Math.round(+m.x), Math.round(+m.y))];
+    if (o && ['door', 'lever'].includes(o.k)) {
+      o.o = !o.o;
+      save();
+      draw();
+    }
+    mpPush();
+    return;
+  }
   if (m.type === 'env' && conn.me) {
     const x = Math.round(+m.x),
       y = Math.round(+m.y),

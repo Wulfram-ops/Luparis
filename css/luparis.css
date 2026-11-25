@@ -347,9 +347,14 @@ body.mp-player #v-bestiaire>.band:not(#pbest){display:none!important}
 .pbl{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:8px}.pbc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
 #bt button[data-rev].on{background:color-mix(in srgb,var(--acc) 25%,transparent)}
 
-/* map and world: 4:3 by default, resizable from the bottom edge */
-.stage,.wstage{height:auto!important;min-height:240px;max-height:none;aspect-ratio:4/3;width:100%;box-sizing:border-box}
-.rsz{position:absolute;left:0;right:0;bottom:0;height:10px;cursor:ns-resize;z-index:5;touch-action:none}
-.rsz::after{content:"";position:absolute;left:50%;bottom:3px;width:44px;height:4px;margin-left:-22px;border-radius:3px;background:rgba(255,255,255,.45);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+/* map and world: 16:9 by default, resizable from the bottom edge, the right edge and the corner */
+.stage,.wstage{height:auto!important;min-height:220px;max-height:none;aspect-ratio:16/9;width:100%;box-sizing:border-box}
+.rsz{position:absolute;z-index:5;touch-action:none}
+.rsz-s{left:0;right:14px;bottom:0;height:10px;cursor:ns-resize}
+.rsz-e{top:0;bottom:14px;right:0;width:10px;cursor:ew-resize}
+.rsz-se{right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize}
+.rsz-s::after{content:"";position:absolute;left:50%;bottom:3px;width:44px;height:4px;margin-left:-22px;border-radius:3px;background:rgba(255,255,255,.45);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.rsz-e::after{content:"";position:absolute;top:50%;right:3px;height:44px;width:4px;margin-top:-22px;border-radius:3px;background:rgba(255,255,255,.45);box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.rsz-se::after{content:"";position:absolute;right:3px;bottom:3px;width:9px;height:9px;border-right:3px solid rgba(255,255,255,.6);border-bottom:3px solid rgba(255,255,255,.6);border-radius:0 0 3px 0}
 .rsz:hover::after{background:rgba(255,255,255,.85)}
 #rl_list li.mine{border-left:3px solid var(--acc);background:color-mix(in srgb,var(--acc) 14%,transparent);padding-left:8px}

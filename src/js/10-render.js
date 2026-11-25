@@ -870,6 +870,18 @@ const OBJT = {
   brazier: { n: ['Brazier', 'Brasero'] },
   lever: { n: ['Lever', 'Levier'], tg: ['pulled', 'abaissé', 'up', 'levé'] },
   trap: { n: ['Trapdoor', 'Trappe'], tg: ['open', 'ouverte', 'closed', 'fermée'] },
+  tent: { n: ['Tent', 'Tente'] },
+  campfire: { n: ['Campfire', 'Feu de camp'] },
+  sarco: { n: ['Sarcophagus', 'Sarcophage'], tg: ['open', 'ouvert', 'closed', 'fermé'] },
+  well: { n: ['Well', 'Puits'] },
+  cart: { n: ['Cart', 'Charrette'] },
+  bones: { n: ['Bones', 'Ossements'] },
+  crystal: { n: ['Crystals', 'Cristaux'] },
+  throne: { n: ['Throne', 'Trône'] },
+  cage: { n: ['Cage', 'Cage'], tg: ['open', 'ouverte', 'closed', 'fermée'] },
+  rack: { n: ['Weapon rack', "Râtelier d'armes"] },
+  stall: { n: ['Market stall', 'Étal'] },
+  tree: { n: ['Tree', 'Arbre'] },
 };
 let objSel = 'door',
   prefSel = 'tavern',
@@ -1143,6 +1155,222 @@ function drawObj0(o, vx, vy, h) {
       ctx.lineTo(...P(0.5, 0.85));
       ctx.stroke();
     }
+    return;
+  }
+  const ax = ((o.r || 0) - rot + 8) % 2,
+    P = (u, v, z) => oP(cx, cy, u, v, z),
+    flame = (u, v, z, s) => {
+      const [x, y] = P(u, v, z),
+        tm = (performance.now() - t0) / 1000,
+        f = reduce ? 1 : 1 + 0.12 * Math.sin(tm * 9 + o.x + o.y);
+      ctx.fillStyle = '#ff8a2a';
+      ctx.beginPath();
+      ctx.moveTo(x - TW * 0.1 * s, y);
+      ctx.quadraticCurveTo(x, y - TW * 0.35 * s * f, x + TW * 0.1 * s, y);
+      ctx.fill();
+      ctx.fillStyle = '#ffd36a';
+      ctx.beginPath();
+      ctx.moveTo(x - TW * 0.05 * s, y);
+      ctx.quadraticCurveTo(x, y - TW * 0.2 * s * f, x + TW * 0.05 * s, y);
+      ctx.fill();
+    };
+  if (k === 'tent') {
+    // a ridge tent; its ridge follows the rotation
+    const c1 = '#c9b48a',
+      c2 = '#a8915f',
+      hz = Z * 1.25;
+    if (ax) {
+      poly([P(0.1, 0.1, 0), P(0.5, 0.1, hz), P(0.5, 0.9, hz), P(0.1, 0.9, 0)], c2, 'rgba(20,14,8,.5)', 0.8);
+      poly([P(0.9, 0.1, 0), P(0.5, 0.1, hz), P(0.5, 0.9, hz), P(0.9, 0.9, 0)], c1, 'rgba(20,14,8,.5)', 0.8);
+      poly([P(0.1, 0.9, 0), P(0.5, 0.9, hz), P(0.9, 0.9, 0)], '#8a7448', 'rgba(20,14,8,.5)', 0.8);
+      poly([P(0.42, 0.9, 0), P(0.5, 0.9, hz * 0.6), P(0.58, 0.9, 0)], '#2a2219');
+    } else {
+      poly([P(0.1, 0.1, 0), P(0.1, 0.5, hz), P(0.9, 0.5, hz), P(0.9, 0.1, 0)], c2, 'rgba(20,14,8,.5)', 0.8);
+      poly([P(0.1, 0.9, 0), P(0.1, 0.5, hz), P(0.9, 0.5, hz), P(0.9, 0.9, 0)], c1, 'rgba(20,14,8,.5)', 0.8);
+      poly([P(0.9, 0.1, 0), P(0.9, 0.5, hz), P(0.9, 0.9, 0)], '#8a7448', 'rgba(20,14,8,.5)', 0.8);
+      poly([P(0.9, 0.42, 0), P(0.9, 0.5, hz * 0.6), P(0.9, 0.58, 0)], '#2a2219');
+    }
+    return;
+  }
+  if (k === 'campfire') {
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2;
+      ocyl(cx, cy, 0.5 + Math.cos(a) * 0.28, 0.5 + Math.sin(a) * 0.28, 0.08, 0, Z * 0.12, '#7d776e');
+    }
+    obox(cx, cy, 0.3, 0.45, 0.7, 0.55, 0, Z * 0.1, '#5a3a1e', 0);
+    obox(cx, cy, 0.45, 0.3, 0.55, 0.7, Z * 0.1, Z * 0.2, '#6b4428', 0);
+    flame(0.5, 0.5, Z * 0.2, 1.1);
+    return;
+  }
+  if (k === 'sarco') {
+    const [u0, v0, u1, v1] = ax ? [0.28, 0.1, 0.72, 0.9] : [0.1, 0.28, 0.9, 0.72];
+    obox(cx, cy, u0, v0, u1, v1, 0, Z * 0.55, '#a7a194');
+    if (o.o) obox(cx, cy, u0 + 0.15, v0 - 0.05, u1 + 0.15, v1 - 0.05, Z * 0.55, Z * 0.68, '#c5bfb1');
+    else {
+      obox(cx, cy, u0 - 0.03, v0 - 0.03, u1 + 0.03, v1 + 0.03, Z * 0.55, Z * 0.68, '#c5bfb1');
+      const [x, y] = P(0.5, 0.5, Z * 0.7);
+      ctx.strokeStyle = 'rgba(60,50,40,.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x - TW * 0.08, y);
+      ctx.lineTo(x + TW * 0.08, y);
+      ctx.moveTo(x, y - TW * 0.05);
+      ctx.lineTo(x, y + TW * 0.05);
+      ctx.stroke();
+    }
+    return;
+  }
+  if (k === 'well') {
+    ocyl(cx, cy, 0.5, 0.5, 0.36, 0, Z * 0.55, '#8d8a83');
+    const [x, y] = inD(cx, cy, 0.5, 0.5);
+    ctx.fillStyle = '#1d3a52';
+    ctx.beginPath();
+    ctx.ellipse(x, y - Z * 0.56, TW * 0.13, TW * 0.065, 0, 0, 7);
+    ctx.fill();
+    obox(cx, cy, 0.17, 0.46, 0.23, 0.54, Z * 0.55, Z * 1.5, '#6b4428', 0);
+    obox(cx, cy, 0.77, 0.46, 0.83, 0.54, Z * 0.55, Z * 1.5, '#6b4428', 0);
+    obox(cx, cy, 0.17, 0.47, 0.83, 0.53, Z * 1.4, Z * 1.5, '#7a4f2c', 0);
+    return;
+  }
+  if (k === 'cart') {
+    const [x, y] = inD(cx, cy, 0.5, 0.5);
+    ctx.fillStyle = '#3b2a1a';
+    for (const d of [-1, 1]) {
+      ctx.beginPath();
+      if (ax) ctx.ellipse(x + d * TW * 0.2, y + d * TW * 0.1 - Z * 0.25, TW * 0.06, TW * 0.13, 0, 0, 7);
+      else ctx.ellipse(x - d * TW * 0.2, y + d * TW * 0.1 - Z * 0.25, TW * 0.06, TW * 0.13, 0, 0, 7);
+      ctx.fill();
+    }
+    if (ax) obox(cx, cy, 0.25, 0.08, 0.75, 0.92, Z * 0.3, Z * 0.75, '#a0703f');
+    else obox(cx, cy, 0.08, 0.25, 0.92, 0.75, Z * 0.3, Z * 0.75, '#a0703f');
+    return;
+  }
+  if (k === 'bones') {
+    ctx.strokeStyle = '#e9e2cf';
+    ctx.lineWidth = Math.max(1.5, TW * 0.03);
+    ctx.lineCap = 'round';
+    for (const [a, b, c2, d] of [
+      [0.25, 0.3, 0.55, 0.4],
+      [0.5, 0.6, 0.75, 0.5],
+      [0.3, 0.7, 0.45, 0.55],
+    ]) {
+      ctx.beginPath();
+      ctx.moveTo(...P(a, b, 1));
+      ctx.lineTo(...P(c2, d, 1));
+      ctx.stroke();
+    }
+    const [x, y] = P(0.62, 0.32, Z * 0.12);
+    ctx.fillStyle = '#efe8d6';
+    ctx.beginPath();
+    ctx.arc(x, y, TW * 0.07, 0, 7);
+    ctx.fill();
+    ctx.fillStyle = '#2a2219';
+    ctx.fillRect(x - TW * 0.03, y - TW * 0.01, TW * 0.02, TW * 0.02);
+    ctx.fillRect(x + TW * 0.01, y - TW * 0.01, TW * 0.02, TW * 0.02);
+    ctx.lineCap = 'butt';
+    return;
+  }
+  if (k === 'crystal') {
+    for (const [u, v, hh, w] of [
+      [0.5, 0.45, 1.6, 0.09],
+      [0.32, 0.6, 1.0, 0.07],
+      [0.66, 0.62, 1.2, 0.07],
+    ]) {
+      const b1 = P(u - w, v, 0),
+        b2 = P(u + w, v, 0),
+        b3 = P(u, v + w, 0),
+        tp = P(u, v, Z * hh);
+      poly([b1, b3, tp], '#5fc7d9', 'rgba(255,255,255,.6)', 0.8);
+      poly([b3, b2, tp], '#3a9db8', 'rgba(255,255,255,.6)', 0.8);
+    }
+    return;
+  }
+  if (k === 'throne') {
+    const r = ((o.r || 0) - rot + 8) % 4;
+    obox(cx, cy, 0.2, 0.2, 0.8, 0.8, 0, Z * 0.5, '#8a6a2a');
+    obox(cx, cy, 0.25, 0.25, 0.75, 0.75, Z * 0.5, Z * 0.6, '#9c2f25', 0);
+    const Bk = [
+      [0.2, 0.2, 0.8, 0.32],
+      [0.68, 0.2, 0.8, 0.8],
+      [0.2, 0.68, 0.8, 0.8],
+      [0.2, 0.2, 0.32, 0.8],
+    ][r];
+    obox(cx, cy, Bk[0], Bk[1], Bk[2], Bk[3], Z * 0.5, Z * 1.8, '#c9a23a');
+    return;
+  }
+  if (k === 'cage') {
+    ctx.strokeStyle = '#3d3934';
+    ctx.lineWidth = Math.max(1, TW * 0.02);
+    const hz = Z * 1.5,
+      pts = [];
+    for (let i = 0; i <= 4; i++)
+      pts.push([0.15 + i * 0.175, 0.15], [0.85, 0.15 + i * 0.175], [0.15 + i * 0.175, 0.85], [0.15, 0.15 + i * 0.175]);
+    for (const [u, v] of pts) {
+      if (o.o && v === 0.85 && u > 0.3 && u < 0.7) continue;
+      ctx.beginPath();
+      ctx.moveTo(...P(u, v, 0));
+      ctx.lineTo(...P(u, v, hz));
+      ctx.stroke();
+    }
+    poly([P(0.15, 0.15, hz), P(0.85, 0.15, hz), P(0.85, 0.85, hz), P(0.15, 0.85, hz)], null, '#3d3934', 1.5);
+    return;
+  }
+  if (k === 'rack') {
+    if (ax) obox(cx, cy, 0.44, 0.08, 0.56, 0.92, 0, Z * 1.3, '#6b4428');
+    else obox(cx, cy, 0.08, 0.44, 0.92, 0.56, 0, Z * 1.3, '#6b4428');
+    ctx.strokeStyle = '#b8bec4';
+    ctx.lineWidth = Math.max(1.5, TW * 0.025);
+    for (const s of [0.25, 0.5, 0.75]) {
+      ctx.beginPath();
+      ctx.moveTo(...(ax ? P(0.4, s, Z * 0.2) : P(s, 0.4, Z * 0.2)));
+      ctx.lineTo(...(ax ? P(0.4, s, Z * 1.7) : P(s, 0.4, Z * 1.7)));
+      ctx.stroke();
+    }
+    return;
+  }
+  if (k === 'stall') {
+    if (ax) obox(cx, cy, 0.2, 0.05, 0.8, 0.95, 0, Z * 0.8, '#8b5e34');
+    else obox(cx, cy, 0.05, 0.2, 0.95, 0.8, 0, Z * 0.8, '#8b5e34');
+    for (const [u, v, c2] of [
+      [0.35, 0.35, '#c0392b'],
+      [0.6, 0.5, '#e0a030'],
+      [0.45, 0.65, '#6a9a3a'],
+    ]) {
+      const [x, y] = P(u, v, Z * 0.85);
+      ctx.fillStyle = c2;
+      ctx.beginPath();
+      ctx.arc(x, y, TW * 0.05, 0, 7);
+      ctx.fill();
+    }
+    const hz = Z * 1.9,
+      st = ['#b8312f', '#efe6d2'];
+    for (let i = 0; i < 4; i++) {
+      const a = i / 4,
+        b = (i + 1) / 4;
+      poly(
+        ax
+          ? [P(0.15, a, hz), P(0.15, b, hz), P(0.85, b, hz * 0.85), P(0.85, a, hz * 0.85)]
+          : [P(a, 0.15, hz), P(b, 0.15, hz), P(b, 0.85, hz * 0.85), P(a, 0.85, hz * 0.85)],
+        st[i % 2],
+        'rgba(20,14,8,.35)',
+        0.6,
+      );
+    }
+    return;
+  }
+  if (k === 'tree') {
+    ocyl(cx, cy, 0.5, 0.5, 0.1, 0, Z * 1.2, '#6b4428');
+    const [x, y] = P(0.5, 0.5, Z * 2.1),
+      g = ctx.createRadialGradient(x - TW * 0.08, y - TW * 0.1, TW * 0.04, x, y, TW * 0.42);
+    g.addColorStop(0, '#7fb04f');
+    g.addColorStop(1, '#3d6a2a');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(x, y, TW * 0.4, TW * 0.34, 0, 0, 7);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(20,30,10,.4)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
     return;
   }
 }

@@ -712,6 +712,16 @@ cv.addEventListener('pointerdown', e => {
     tplClick(c);
     return;
   }
+  // a player opens or closes a door, pulls a lever
+  if (tool === 'move' && e.button === 0 && c && MP.role === 'player' && MP.prole !== 'spec' && tokAt(c) < 0) {
+    const oi = objAt(c.x, c.y);
+    if (oi >= 0 && ['door', 'lever'].includes(OBJS[oi].k)) {
+      OBJS[oi].o = !OBJS[oi].o;
+      mpSend({ type: 'obj', x: c.x, y: c.y });
+      draw();
+      return;
+    }
+  }
   // a player lays an effect (flames, ice…) on one square, or takes back one of their own
   if (tool === 'env' && e.button === 0 && c && MP.role === 'player' && MP.prole !== 'spec') {
     const key = c.x + ',' + c.y,

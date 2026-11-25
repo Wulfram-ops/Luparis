@@ -256,6 +256,11 @@ def run(chrome: str | None) -> None:
             "a player places their own token",
             host.evaluate("id => DBG('tokens.some(k=>k.cid===' + JSON.stringify(id) + '&&k.x===2&&k.y===2)')", created_id),
         )
+        host.evaluate("DBG(`OBJS.push({x:6,y:6,k:'door',o:false,r:0});save();mpPush()`)")
+        creator.wait_for_timeout(600)
+        creator.evaluate("DBG(`mpSend({type:'obj',x:6,y:6})`)")
+        host.wait_for_timeout(500)
+        check("players open doors", host.evaluate("DBG('OBJS.find(o=>o.x===6&&o.y===6).o')") is True)
         creator.evaluate("DBG(`tplSel='circle';TPLA=null;tplClick({x:3,y:3});mpSend({type:'env',x:4,y:4,k:'fire',dc:12})`)")
         host.wait_for_timeout(600)
         check(
