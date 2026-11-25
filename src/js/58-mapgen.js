@@ -1200,7 +1200,7 @@ Design for tactical play: honor explicit quantities, directions, negative requir
 
 Description: ${JSON.stringify(String(text).slice(0, 1800))}`;
 }
-// ---- description-based generator in the map library
+// ---- description-based generator
 function mgMsg(m) {
   const el = document.getElementById('mg_msg');
   if (el) el.textContent = m;
@@ -1292,15 +1292,18 @@ function mgApplyPreview(){
     if(!mgCommit(p.candidate))return;
     const issues=p.candidate.issues;
     MG.last={...r,via:p.via};MG.pending=null;$('mg_preview').hidden=true;
-    mgMsg((r.title?r.title+' — ':'')+L2('Map generated','Carte générée')+' · '+N+'×'+N+' · '+p.via+(issues.length?' · '+L2('Not placed: ','Non placés : ')+issues.join(', '):''));
+    const message = (r.title?r.title+' — ':'')+L2('Map generated','Carte générée')+' · '+N+'×'+N+' · '+p.via+(issues.length?' · '+L2('Not placed: ','Non placés : ')+issues.join(', '):'');
+    if ($('map_ai_dialog').open) {
+      $('map_ai_dialog').close();
+      $('save_msg').textContent = message;
+    } else mgMsg(message);
   }catch(e){mgMsg(L2('Generation failed; map unchanged: ','Échec de génération ; carte inchangée : ')+e.message);}
 }
 {
-  const g = $('map_custom');
-  g.insertAdjacentHTML(
-    'beforeend',
-    `<form id="mg_f" class="mgf"><input id="mg_q" type="text" maxlength="1800" autocomplete="off" placeholder="${L2('Describe the scene: ruined temple in the forest…', 'Décris la scène : temple en ruines dans la forêt…')}" aria-label="${L2('Describe the scene', 'Décris la scène')}"><button type="submit" class="go">${L2('Prepare', 'Préparer')}</button><select id="mg_engine" aria-label="Mode"><option value="auto">${L2('AI / auto','IA / auto')}</option><option value="local">${L2('Local','Local')}</option></select><button type="button" id="mg_cancel" hidden>${L2('Cancel','Annuler')}</button><button type="button" id="mg_again" title="${L2('Another version of the same recipe', 'Une autre version de la même recette')}">↻</button><button type="button" id="mg_set" title="${L2('AI key', 'Clé IA')}" aria-label="${L2('AI key', 'Clé IA')}">⚙</button><span class="small" id="mg_msg" aria-live="polite"></span><div id="mg_preview" hidden><strong id="mg_source"></strong><div class="mgpreviewbody"><canvas id="mg_thumb" width="320" height="320" aria-label="${L2('Generated map preview','Aperçu de la carte générée')}"></canvas><div><p id="mg_plan"></p><p id="mg_details" class="small" aria-live="polite"></p><p class="small">${L2('Top view: grey walls, blue water, brown objects, red enemies, purple hidden, blue allies.','Vue du dessus : murs gris, eau bleue, objets bruns, ennemis rouges, secrets violets, alliés bleus.')}</p></div></div><label>${L2('Size','Taille')} <select id="mg_size"><option value="">${L2('Automatic','Automatique')}</option><option value="small">16×16</option><option value="medium">24×24</option><option value="large">32×32</option><option value="huge">64×64</option></select></label><button type="button" class="go" id="mg_apply">${L2('Apply / replace map','Appliquer / remplacer la carte')}</button><button type="button" id="mg_discard">${L2('Discard','Abandonner')}</button></div></form>`,
-  );
+  $('map_ai_open').onclick = () => {
+    if (MP.role !== 'player' && !TABLE_DISPLAY && document.body.classList.contains('mode-edit'))
+      $('map_ai_dialog').showModal();
+  };
   document.getElementById('mg_f').addEventListener('submit', e => {
     e.preventDefault();
     mgGo(false);

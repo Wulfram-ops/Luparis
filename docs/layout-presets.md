@@ -12,6 +12,8 @@ The Play tab keeps the tactical map in every layout. Pick a layout above the map
 
 **Customize** changes the arrangement and width of the columns and the visibility of the character and table panels. Each layout remembers its changes in this browser. **Reset layout** restores the defaults for the selected layout. On narrow screens, panels stack and the jump buttons take you directly to the map, sheet or table tools.
 
-The GM can preview six map templates in the **Maps** tab. Set the size or generate another variation, then use **Replace the map** when ready. Undo restores the previous map. The description-based generator is also available in the Maps tab.
+In Edit mode, **Map templates** opens the six previews and **Generate with AI** opens the description-based generator. Set the size or generate another variation, then use **Replace the map** when ready. Undo restores the previous map.
 
-The tactical map can be zoomed with the mouse wheel or the first two keys of the bottom letter row. The third key fits the full map.
+Right-click and drag to pan the map in Play or Edit mode. Zoom with the mouse wheel or the first two keys of the bottom letter row. The third key fits the full map.
+
+Use the **Multiplayer** tab to host or join a session. The **Rolls** panel opens at the bottom right from any tab.

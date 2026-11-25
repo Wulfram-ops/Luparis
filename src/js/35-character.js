@@ -1030,7 +1030,7 @@ const LOG = [];
 let lastCrit = {};
 const dRoll = n => 1 + Math.floor(Math.random() * n);
 let RL = [],
-  rlOpen = true;
+  rlOpen = false;
 try {
   RL = lsGet('luparis-rolls', null) || [];
   RL = Array.isArray(RL)
@@ -1048,6 +1048,7 @@ function rlRender() {
   if (!el) return;
   const P = document.getElementById('rolls');
   P.classList.toggle('min', !rlOpen);
+  P.setAttribute('aria-label', L2('Rolls', 'Jets'));
   document.getElementById('rl_tog').setAttribute('aria-expanded', rlOpen);
   document.getElementById('rl_ttl').textContent = L2('Rolls', 'Jets');
   document.getElementById('rl_cnt').textContent = RL.length ? '(' + RL.length + ')' : '';

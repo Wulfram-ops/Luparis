@@ -1,4 +1,4 @@
-const PLAY_AUX={in:['Initiative','Initiative'],tk:['Token','Pion'],mk:['Markers / zones','Repères / zones'],maps:['Maps','Cartes'],mp:['Session','Session'],img:['Illustrations','Illustrations'],sn:['GM notes','Notes MJ'],roll:['Rolls','Jets']};
+const PLAY_AUX={in:['Initiative','Initiative'],tk:['Token','Pion'],mk:['Markers / zones','Repères / zones'],img:['Illustrations','Illustrations'],sn:['GM notes','Notes MJ']};
 const PLAY_SHEET={actions:['Combat','Combat'],checks:['Checks','Tests'],magic:['Magic','Magie'],gear:['Equipment','Équipement'],profile:['Profile','Profil']};
 const PLAY_LAYOUT_LABELS={
   play_presets:['Play layouts','Dispositions de jeu'],
@@ -12,15 +12,14 @@ const PLAY_LAYOUT_LABELS={
   play_panels:['Visible panels','Panneaux visibles'],
   play_restore:['Reset layout','Rétablir le preset'],
   play_done:['Done','Terminer'],
-  play_custom_map:['Generate from a description','Générer à partir d’une description'],
   play_terrain:['Terrain','Terrain'],
 };
 const PLAY_PRESETS = {
   table: {label:['Table','Table'],hint:['Map, character and table tools','Carte, personnage et outils de table'],position:'table',width:'balanced',sheet:true,tools:true,aux:'in',tab:'actions'},
   combat: {label:['Combat','Combat'],hint:['Initiative above your combat sheet','Initiative au-dessus de la fiche de combat'],position:'rail',width:'map',sheet:true,tools:true,aux:'in',tab:'actions'},
   explore: {label:['Exploration','Exploration'],hint:['Full-width map with markers and zones','Carte pleine largeur avec repères et zones'],position:'table',width:'map',sheet:false,tools:true,aux:'mk',tab:'checks'},
-  sheet: {label:['Character','Fiche'],hint:['Wide character sheet with the map in view','Fiche au premier plan, carte à portée'],position:'sheet',width:'panel',sheet:true,tools:true,aux:'roll',tab:'checks'},
-  prepare: {label:['Preparation','Préparation'],hint:['Map editor and scenario presets','Éditeur et modèles de cartes'],position:'rail',width:'panel',sheet:false,tools:true,aux:'maps',tab:'profile',gm:true},
+  sheet: {label:['Character','Fiche'],hint:['Wide character sheet with the map in view','Fiche au premier plan, carte à portée'],position:'sheet',width:'panel',sheet:true,tools:true,aux:'in',tab:'checks'},
+  prepare: {label:['Preparation','Préparation'],hint:['Map editor and scenario presets','Éditeur et modèles de cartes'],position:'rail',width:'map',sheet:false,tools:true,aux:'mk',tab:'profile',gm:true},
 };
 const PLAY_POSITIONS = {
   table:['Map left, tools below','Carte à gauche, outils en dessous'],
@@ -29,7 +28,7 @@ const PLAY_POSITIONS = {
   stack:['Stacked panels','Panneaux empilés'],
 };
 const PLAY_WIDTHS = {balanced:['Balanced','Équilibrée'],map:['Wider map','Carte plus large'],panel:['Wider panels','Panneaux plus larges']};
-let playAuxTab='in',playSheetTab='actions',playClaimState='',playLastToken=null,playSizeQ=0;
+let playAuxTab='in',playSheetTab='actions',playLastToken=null,playSizeQ=0;
 const playWorkspace=$('play_workspace'),playAux=$('play_aux'),playHand=$('hand');
 const PLAY_LAYOUT_KEY = 'luparis-play-layout-v1';
 let playRole = '', playPreset = 'table', playOverrides = {}, playModeBeforePrep = null;
@@ -54,10 +53,9 @@ function playStoreLayout() {
 }
 function playApplyLayout() {
   const {position,width,sheet,tools} = playSettings(),
-    canReadSheet = playRole !== 'spectator',
-    sessionNeeded = playClaimState === 'unclaimed';
+    canReadSheet = playRole !== 'spectator';
   playHand.hidden = !canReadSheet || !sheet;
-  playAux.hidden = !tools && !sessionNeeded;
+  playAux.hidden = !tools;
   playWorkspace.dataset.preset = playPreset;
   playWorkspace.dataset.position = position;
   playWorkspace.dataset.width = width;
@@ -78,7 +76,6 @@ function playApplyLayout() {
   $('play_sheet_visible').checked = !playHand.hidden;
   $('play_sheet_visible').disabled = !canReadSheet;
   $('play_tools_visible').checked = !playAux.hidden;
-  $('play_tools_visible').disabled = sessionNeeded;
   for (const button of document.querySelectorAll('#v-carte [data-play-jump]')) button.hidden = $(button.dataset.playJump).hidden;
   playFit();
 }
@@ -93,24 +90,21 @@ function playUsePreset(key) {
   }
   playPreset = key;
   const base = PLAY_PRESETS[key];
-  playSelectAux(playClaimState === 'unclaimed' ? 'mp' : base.aux);
+  playSelectAux(base.aux);
   playSelectSheet(base.tab);
   const sheetBody = playHand.querySelector('.play-sheet-body');
   if (sheetBody) sheetBody.scrollTop = 0;
   playApplyLayout();
 }
 function playSelectAux(k){
-  const allowed=key=>!(['sn','maps'].includes(key)&&MP.role==='player')&&!(key==='tk'&&$('tk_panel').hidden);
+  const allowed=key=>!(key==='sn'&&MP.role==='player')&&!(key==='tk'&&$('tk_panel').hidden);
   if(!Object.hasOwn(PLAY_AUX,k)||!allowed(k))k='in';
-  const changed=playAuxTab!==k;
   playAuxTab=k;
   for(const b of playAux.querySelectorAll('[data-play-tab]')){
     const key=b.dataset.playTab,active=key===k;
     b.hidden=!allowed(key);b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;
   }
   for(const p of playAux.querySelectorAll('[data-play-pane]'))p.hidden=p.dataset.playPane!==k;
-  if (k === 'roll' && !rlOpen) {rlOpen=true;rlRender();}
-  if(changed)playAux.dispatchEvent(new Event('play-tab-change'));
 }
 function playSelectSheet(k){
   if(!Object.hasOwn(PLAY_SHEET,k))k='actions';
@@ -141,7 +135,6 @@ function playLabels(){
   }
   $('mode_play').textContent=L2('Play','Partie');
   $('mode_edit').textContent=L2('Edit','Édition');
-  playRollPreview();
   if (!TABLE_DISPLAY) playApplyLayout();
   document.dispatchEvent(new Event('play-labels'));
 }
@@ -155,21 +148,13 @@ function playFit(){
 }
 function playSync(){
   if(TABLE_DISPLAY)return;
-  const claim=MP.role==='player'&&MP.prole!=='spec'?(MP.me?'claimed':'unclaimed'):'other';
   const role=MP.role==='player'?(MP.prole==='spec'?'spectator':'player'):'table';
   if (role !== playRole) {
     playRole=role;
-    playClaimState=claim;
     const saved=lsGet(PLAY_LAYOUT_KEY,{})?.[role] || {};
     playOverrides=saved.overrides && typeof saved.overrides==='object' && !Array.isArray(saved.overrides) ? saved.overrides : {};
     playUsePreset(playPresetAllowed(saved.preset) ? saved.preset : role==='spectator'?'explore':'table');
     return;
-  }
-  if(claim!==playClaimState){
-    if(claim==='unclaimed')playAuxTab='mp';
-    else if(claim==='claimed'&&playAuxTab==='mp')playAuxTab=PLAY_PRESETS[playPreset].aux;
-    playClaimState=claim;
-    playApplyLayout();
   }
   playSelectAux(playAuxTab);
 }
@@ -178,11 +163,6 @@ function playTokenSync(){
   const k=tokens.find(t=>t.id===selTok);
   if(k&&k.id!==playLastToken&&!k.cid&&MP.role!=='player'&&!$('tk_panel').hidden)playAuxTab='tk';
   playLastToken=k?.id||null;playSync();
-}
-function playRollPreview(){
-  const el=$('play_last_roll'),last=$('rl_list').lastElementChild;
-  const s=last&&RL.length?last.textContent.trim():L2('No rolls yet','Aucun jet pour le moment');
-  if(el.textContent!==s)el.textContent=s;el.title=s;
 }
 function playArrangeHand(scroll=0){
   const top=playHand.querySelector('.htop'),cards=playHand.querySelector('.hcards');
@@ -215,12 +195,6 @@ function playArrangeHand(scroll=0){
   }
   cards.replaceWith(nav,content);playSelectSheet(playSheetTab);content.scrollTop=scroll;
 }
-function playRoute(){
-  if(TABLE_DISPLAY)return;
-  const rolls=$('rolls');
-  if(!$('v-carte').hidden){$('play_roll_pane').append(rolls);playFit();}
-  else if(rolls.parentNode!==document.body)document.body.append(rolls);
-}
 {
   const originalHand=renderHand;
   renderHand=function(){
@@ -243,8 +217,6 @@ function playRoute(){
   };
   const originalTok=renderTok;
   renderTok=function(){const r=originalTok.apply(this,arguments);playTokenSync();return r;};
-  const originalRoll=rlRender;
-  rlRender=function(){const r=originalRoll.apply(this,arguments);playRollPreview();return r;};
   playAux.addEventListener('click',e=>{
     const b=e.target.closest('[data-play-tab]');if(!b)return;
     playSelectAux(b.dataset.playTab);
@@ -275,7 +247,7 @@ function playRoute(){
     playOverrides[playPreset]={
       position:$('play_position').value,width:$('play_width').value,
       sheet:$('play_sheet_visible').disabled?current.sheet:$('play_sheet_visible').checked,
-      tools:$('play_tools_visible').disabled?current.tools:$('play_tools_visible').checked,
+      tools:$('play_tools_visible').checked,
     };
     playStoreLayout();
     playApplyLayout();
@@ -296,11 +268,10 @@ function playRoute(){
   };
   playAux.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-play-tab]'));
   playHand.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-sheet-tab]'));
-  $('play_last_roll').onclick=()=>playSelectAux('roll');
   const resize=new ResizeObserver(playFit);
   for(const e of [$('v-carte').querySelector('.bar'),$('ctxbar'),$('savebox'),$('play_presets').parentNode,document.querySelector('header'),document.querySelector('.tabs')])resize.observe(e);
-  window.addEventListener('resize',playFit);window.addEventListener('hashchange',playRoute);
-  playWorkspace.dataset.ready='1';playLabels();playSync();playRollPreview();renderHand();playRoute();
+  window.addEventListener('resize',playFit);window.addEventListener('hashchange',playFit);
+  playWorkspace.dataset.ready='1';playLabels();playSync();renderHand();playFit();
 }
 // Keep receiving map updates in a display opened by an older version.
 function gDisplayBoot(){

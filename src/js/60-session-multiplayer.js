@@ -927,6 +927,7 @@ async function mpJoin(code, opt) {
   MP.closed = false;
   mpSetRole(opt.role);
   document.body.classList.add('mp-player');
+  setMode('play', false);
   mpRemember();
   mpRender(L2('Connecting…', 'Connexion…'));
   if (MP.local) {
@@ -1011,6 +1012,7 @@ document.getElementById('mp_card').addEventListener('click', e => {
     placing = { ally: ch.id, n: ch.name || '?' };
     setTool('place');
     mpRender(L2('Click a square of the map.', 'Clique sur une case de la carte.'));
+    location.hash = '#carte';
   } else if (b.dataset.mpk != null) {
     const c = mpHostPeople()[+b.dataset.mpk];
     if (!c) return;
@@ -1024,7 +1026,7 @@ document.getElementById('mp_card').addEventListener('click', e => {
     if (MP.lc) delete MP.lc[c.uid];
     mpRender();
   } else if (b.id === 'mp_link') {
-    const link = location.origin + location.pathname + '?join=' + MP.code + (MP.local ? '&local=1' : '') + '#carte';
+    const link = location.origin + location.pathname + '?join=' + MP.code + (MP.local ? '&local=1' : '') + '#multijoueur';
     navigator.clipboard.writeText(link).then(
       () => mpRender(L2('Link copied.', 'Lien copié.')),
       () => mpRender(link),
@@ -1069,7 +1071,11 @@ mpRender();
     h = ssGet(MPH);
   // a reload keeps the game going: the GM reopens the same code, players come back with the same character
   if (!TABLE_DISPLAY) {
-    if (j) setTimeout(() => mpJoin(j[1], s && s.code === j[1].toUpperCase() ? s : {}), 300);
+    if (j) {
+      const returning = s && s.code === j[1].toUpperCase();
+      if (!returning && (!location.hash || location.hash === '#carte')) location.hash = '#multijoueur';
+      setTimeout(() => mpJoin(j[1], returning ? s : {}), 300);
+    }
     else if (s && s.code) setTimeout(() => mpJoin(s.code, s), 300);
     else if (h && h.code && !!h.local === MP.local) setTimeout(() => mpHost(h.code), 300);
   }

@@ -704,7 +704,7 @@ function areaApply(ar) {
 cv.addEventListener('pointerdown', e => {
   const [mx, my] = pos(e),
     c = pick(mx, my);
-  if (tool === 'shift') return; // handled by the asset mover
+  if (tool === 'shift' && e.button === 0) return; // the asset mover handles left-button gestures
   if (tool === 'tpl' && e.button === 0 && c && !(MP.role === 'player' && MP.prole === 'spec')) {
     tplClick(c);
     return;

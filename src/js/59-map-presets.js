@@ -122,12 +122,15 @@ $('map_preset_apply').onclick = () => {
   if (mgCommit(mapPresetCandidate)) {
     mapPresetCandidate = null;
     $('map_preset_apply').disabled = true;
-    $('map_preset_status').textContent = L2('Map applied. Undo is available.', 'Carte appliquée. Annuler est disponible.');
+    $('map_templates_dialog').close();
+    $('save_msg').textContent = L2('Map applied. Undo is available.', 'Carte appliquée. Annuler est disponible.');
   }
 };
-playAux.addEventListener('play-tab-change', () => {
-  if (playAuxTab === 'maps' && $('map_preset_preview').hidden) selectMapPreset(mapPresetKey);
-});
+$('map_templates_open').onclick = () => {
+  if (MP.role === 'player' || TABLE_DISPLAY || !document.body.classList.contains('mode-edit')) return;
+  if ($('map_preset_preview').hidden) selectMapPreset(mapPresetKey);
+  else if (!mapPresetCandidate || mapPresetContext !== CTX || mapPresetCandidate.before !== mgSnapshot()) previewMapPreset();
+  $('map_templates_dialog').showModal();
+};
 document.addEventListener('play-labels', mapPresetLabels);
 mapPresetLabels();
-if (playAuxTab === 'maps') selectMapPreset(mapPresetKey);
