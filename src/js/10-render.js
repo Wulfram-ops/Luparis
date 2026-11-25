@@ -9,18 +9,23 @@ function mul(hex, f) {
   const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.max(0, Math.min(255, Math.round(v * f))));
   return `rgb(${c})`;
 }
-// A steeper 2.5D camera. Projection only: world coordinates, elevation
-// rules and saved maps are unchanged. The initial bearing is compact.
-const HEX_H=.8,HEX_LIFT=.16,HEX_STEP=HEX_H*.75,HEX_BEARING=1;
+// Square-footprint, staggered rows. Slight vertical stretch keeps the
+// projected board square while retaining the low visual elevation.
+const HEX_H=4/3,HEX_LIFT=.16,HEX_STEP=HEX_H*.75;
 let TW, LH, ox, oy, W, Hc, TW0;
+function hexPivot(n){
+  const r=(n-1)/2;
+  return [(n-1)/2+(n>1?.25:0)-r/2,r];
+}
 function hexView(x,y,n,rotation){
-  const c=(n-1)/2,[q,r]=hexRotate(x-c,y-c,rotation+HEX_BEARING);
-  return [q+c,r+c];
+  const [cq,cr]=hexPivot(n),[a,b]=hexAxial(x,y),[q,r]=hexRotate(a-cq,b-cr,rotation);
+  return [q+cq,r+cr];
 }
 function hexBounds(n,rotation,ratio=HEX_H){
-  const p=[[0,0],[n-1,0],[0,n-1],[n-1,n-1]].map(([x,y])=>{
+  // Both row parities must be considered at each edge.
+  const p=[0,n-1].flatMap(x=>[0,Math.min(1,n-1),Math.max(0,n-2),n-1].map(y=>{
     const [q,r]=hexView(x,y,n,rotation);return [q+r/2,r*ratio*.75];
-  });
+  }));
   return [Math.min(...p.map(v=>v[0]))-.5,Math.min(...p.map(v=>v[1])),
     Math.max(...p.map(v=>v[0]))+.5,Math.max(...p.map(v=>v[1]))+ratio];
 }
@@ -81,7 +86,8 @@ function poly(p, fill, stroke, lw) {
   }
 }
 function inD(cx, cy, u, v) {
-  return [cx+((u-v)*TW)/2,cy+(u+v)*hexCenterY()];
+  // Furniture and textures stay inside the hexagonal top, centered on it.
+  return [cx+((u-v)*TW)*.42,cy+hexCenterY()+(u+v-1)*TW*HEX_H*.32];
 }
 let CC = null,
   CCk = '';
@@ -99,7 +105,10 @@ function cells() {
   }
   return CC;
 }
-function unview(vx,vy){const c=(N-1)/2,[q,r]=hexRotate(vx-c,vy-c,-rot-HEX_BEARING);return [Math.round(q+c),Math.round(r+c)];}
+function unview(vx,vy){
+  const [cq,cr]=hexPivot(N),[a,b]=hexRotate(vx-cq,vy-cr,-rot);
+  return hexOffset(Math.round(a+cq),Math.round(b+cr));
+}
 function gv(vx,vy){const [x,y]=unview(vx,vy);return x>=0&&y>=0&&x<N&&y<N?H[x][y]:null;}
 function hasAnim() {
   if (reduce || N > 40 || PERF.low) return false;

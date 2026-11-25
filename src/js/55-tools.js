@@ -597,11 +597,12 @@ function tplCells(T){
   const L=T.s/5,out=[],a=T.a||0;
   if(T.k==='line'){
     const [dq,dr]=HEX_DIRS[((Math.round(a/(Math.PI/3))%6)+6)%6];
-    for(let i=1;i<=L;i++){const x=T.x+dq*i,y=T.y+dr*i;if(ok(x,y))out.push([x,y]);}return out;
+    const [q,r]=hexAxial(T.x,T.y);
+    for(let i=1;i<=L;i++){const [x,y]=hexOffset(q+dq*i,r+dr*i);if(ok(x,y))out.push([x,y]);}return out;
   }
   for(let x=Math.max(0,Math.floor(T.x-L-1));x<=Math.min(N-1,Math.ceil(T.x+L+1));x++)
     for(let y=Math.max(0,Math.floor(T.y-L-1));y<=Math.min(N-1,Math.ceil(T.y+L+1));y++){
-      const d=hexDist({x,y},T),[dx,dy]=hexVector(x-T.x,y-T.y);
+      const d=hexDist({x,y},T),[dx,dy]=hexVector(...hexDelta(T,{x,y}));
       const al=dx*Math.cos(a)+dy*Math.sin(a),pe=Math.abs(-dx*Math.sin(a)+dy*Math.cos(a));
       if(T.k==='circle'||T.k==='sphere'?d<=L:T.k==='cube'?Math.abs(dx)<=L/2+.01&&Math.abs(dy)<=L/2+.01:d>0&&d<=L&&al>0&&pe<=al/Math.sqrt(3)+.01)out.push([x,y]);
     }

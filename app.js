@@ -480,11 +480,17 @@ let N = 16,
   bio = 'gen',
   t0 = performance.now();
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-// Axial hex coordinates (x=q,y=r); preserve the N×N storage of existing maps.
+// Odd-row offset storage gives the board a rectangular outline. Convert to
+// axial coordinates for distances, directions and rotation; keep every saved
+// cell, token and object at its original array index.
 const HEX_DIRS=Object.freeze([[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]].map(Object.freeze));
-function hexDist(a,b){const q=a.x-b.x,r=a.y-b.y;return Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r));}
+function hexAxial(x,y){return [x-Math.floor(y/2),y];}
+function hexOffset(q,r){return [q+Math.floor(r/2),r];}
+function hexNeighbours(x,y){const [q,r]=hexAxial(x,y);return HEX_DIRS.map(([a,b])=>hexOffset(q+a,r+b));}
+function hexDelta(a,b){const [q,r]=hexAxial(a.x,a.y),[u,v]=hexAxial(b.x,b.y);return [u-q,v-r];}
+function hexDist(a,b){const [q,r]=hexDelta(a,b);return Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r));}
 function hexVector(q,r){return [q+r/2,r*Math.sqrt(3)/2];}
-function hexAngle(a,b){const [x,y]=hexVector(b.x-a.x,b.y-a.y);return Math.atan2(y,x);}
+function hexAngle(a,b){const [x,y]=hexVector(...hexDelta(a,b));return Math.atan2(y,x);}
 function hexRotate(q,r,steps){for(let i=0;i<((steps%6)+6)%6;i++)[q,r]=[-r,q+r];return [q,r];}
 function blank(n) {
   return Array.from({ length: n }, () => Array(n).fill(0));
@@ -530,7 +536,7 @@ function saveNow() {
   if (MP.role === 'player') return;
   const st = {
     v: 2,
-    grid: 'hex',
+    grid: 'hex-offset',
     N,
     H: encG(H, 1),
     F: encG(F, 0),
@@ -579,13 +585,16 @@ function applyState(d) {
   F = Array.isArray(d.F) && d.F.length === d.N ? decG(d.F, 0) : blank(d.N);
   if (d.scene) scene = d.scene;
   tokens = d.tokens || [];
-  rot=d.grid==='hex'?((Math.round(+d.rot||0)%6)+6)%6:Math.round((+d.rot||0)*1.5)%6;
+  rot=d.grid==='hex-offset'?((Math.round(+d.rot||0)%6)+6)%6:0;
   bio = B[d.bio] ? d.bio : 'gen';
   INI = d.ini && Array.isArray(d.ini.o) ? d.ini : { o: [], cur: 0, round: 0 };
   MARKS = Array.isArray(d.marks) ? d.marks : [];
   ENV = d.env && typeof d.env === 'object' ? d.env : {};
   OBJS = Array.isArray(d.objs) ? d.objs.filter(o => o && OBJT[o.k]) : [];
-  TPLS=Array.isArray(d.tpls)?d.tpls.map(t=>d.grid==='hex'?t:{...t,a:hexAngle({x:0,y:0},{x:Math.cos(t.a||0),y:Math.sin(t.a||0)})}):[];
+  TPLS=Array.isArray(d.tpls)?d.tpls.map(t=>{
+    if(d.grid==='hex-offset'||d.grid==='hex')return t;
+    const [x,y]=hexVector(Math.cos(t.a||0),Math.sin(t.a||0));return {...t,a:Math.atan2(y,x)};
+  }):[];
   return true;
 }
 function load() {
@@ -660,18 +669,23 @@ function mul(hex, f) {
   const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.max(0, Math.min(255, Math.round(v * f))));
   return `rgb(${c})`;
 }
-// A steeper 2.5D camera. Projection only: world coordinates, elevation
-// rules and saved maps are unchanged. The initial bearing is compact.
-const HEX_H=.8,HEX_LIFT=.16,HEX_STEP=HEX_H*.75,HEX_BEARING=1;
+// Square-footprint, staggered rows. Slight vertical stretch keeps the
+// projected board square while retaining the low visual elevation.
+const HEX_H=4/3,HEX_LIFT=.16,HEX_STEP=HEX_H*.75;
 let TW, LH, ox, oy, W, Hc, TW0;
+function hexPivot(n){
+  const r=(n-1)/2;
+  return [(n-1)/2+(n>1?.25:0)-r/2,r];
+}
 function hexView(x,y,n,rotation){
-  const c=(n-1)/2,[q,r]=hexRotate(x-c,y-c,rotation+HEX_BEARING);
-  return [q+c,r+c];
+  const [cq,cr]=hexPivot(n),[a,b]=hexAxial(x,y),[q,r]=hexRotate(a-cq,b-cr,rotation);
+  return [q+cq,r+cr];
 }
 function hexBounds(n,rotation,ratio=HEX_H){
-  const p=[[0,0],[n-1,0],[0,n-1],[n-1,n-1]].map(([x,y])=>{
+  // Both row parities must be considered at each edge.
+  const p=[0,n-1].flatMap(x=>[0,Math.min(1,n-1),Math.max(0,n-2),n-1].map(y=>{
     const [q,r]=hexView(x,y,n,rotation);return [q+r/2,r*ratio*.75];
-  });
+  }));
   return [Math.min(...p.map(v=>v[0]))-.5,Math.min(...p.map(v=>v[1])),
     Math.max(...p.map(v=>v[0]))+.5,Math.max(...p.map(v=>v[1]))+ratio];
 }
@@ -732,7 +746,8 @@ function poly(p, fill, stroke, lw) {
   }
 }
 function inD(cx, cy, u, v) {
-  return [cx+((u-v)*TW)/2,cy+(u+v)*hexCenterY()];
+  // Furniture and textures stay inside the hexagonal top, centered on it.
+  return [cx+((u-v)*TW)*.42,cy+hexCenterY()+(u+v-1)*TW*HEX_H*.32];
 }
 let CC = null,
   CCk = '';
@@ -750,7 +765,10 @@ function cells() {
   }
   return CC;
 }
-function unview(vx,vy){const c=(N-1)/2,[q,r]=hexRotate(vx-c,vy-c,-rot-HEX_BEARING);return [Math.round(q+c),Math.round(r+c)];}
+function unview(vx,vy){
+  const [cq,cr]=hexPivot(N),[a,b]=hexRotate(vx-cq,vy-cr,-rot);
+  return hexOffset(Math.round(a+cq),Math.round(b+cr));
+}
 function gv(vx,vy){const [x,y]=unview(vx,vy);return x>=0&&y>=0&&x<N&&y<N?H[x][y]:null;}
 function hasAnim() {
   if (reduce || N > 40 || PERF.low) return false;
@@ -3858,9 +3876,7 @@ function distMap(src) {
     }
   while (qi < q.length) {
     const [x, y] = q[qi++];
-    for (const [dx,dy] of HEX_DIRS) {
-        const a = x + dx,
-          b = y + dy;
+    for (const [a,b] of hexNeighbours(x,y)) {
         if (ok(a, b) && D[a][b] > D[x][y] + 1) {
           D[a][b] = D[x][y] + 1;
           q.push([a, b]);
@@ -5274,7 +5290,7 @@ function memThumb() {
 function memStateNow() {
   return {
     v: 2,
-    grid: 'hex',
+    grid: 'hex-offset',
     N,
     H: encG(H, 1),
     F: encG(F, 0),
@@ -11355,11 +11371,12 @@ function tplCells(T){
   const L=T.s/5,out=[],a=T.a||0;
   if(T.k==='line'){
     const [dq,dr]=HEX_DIRS[((Math.round(a/(Math.PI/3))%6)+6)%6];
-    for(let i=1;i<=L;i++){const x=T.x+dq*i,y=T.y+dr*i;if(ok(x,y))out.push([x,y]);}return out;
+    const [q,r]=hexAxial(T.x,T.y);
+    for(let i=1;i<=L;i++){const [x,y]=hexOffset(q+dq*i,r+dr*i);if(ok(x,y))out.push([x,y]);}return out;
   }
   for(let x=Math.max(0,Math.floor(T.x-L-1));x<=Math.min(N-1,Math.ceil(T.x+L+1));x++)
     for(let y=Math.max(0,Math.floor(T.y-L-1));y<=Math.min(N-1,Math.ceil(T.y+L+1));y++){
-      const d=hexDist({x,y},T),[dx,dy]=hexVector(x-T.x,y-T.y);
+      const d=hexDist({x,y},T),[dx,dy]=hexVector(...hexDelta(T,{x,y}));
       const al=dx*Math.cos(a)+dy*Math.sin(a),pe=Math.abs(-dx*Math.sin(a)+dy*Math.cos(a));
       if(T.k==='circle'||T.k==='sphere'?d<=L:T.k==='cube'?Math.abs(dx)<=L/2+.01&&Math.abs(dy)<=L/2+.01:d>0&&d<=L&&al>0&&pe<=al/Math.sqrt(3)+.01)out.push([x,y]);
     }
@@ -13313,7 +13330,6 @@ function mgTerrain(t) {
   }
 }
 // Weighted Dijkstra with a binary heap and precomputed protected structure mask.
-const MG_DIRS=HEX_DIRS;
 function mgPath(sx,sy,avoid,target=null){
   if(!ok(sx,sy)||target&&!ok(target.x,target.y))return [];
   const d=new Float64Array(N*N).fill(Infinity),prev=new Int32Array(N*N).fill(-1),blocked=new Uint8Array(N*N),heap=[];
@@ -13329,8 +13345,8 @@ function mgPath(sx,sy,avoid,target=null){
     if(goal>=0?id===goal:x===0||y===0||x===N-1||y===N-1){
       const out=[];for(let k=id;k>=0;k=prev[k])out.push([(k/N)|0,k%N]);return out.reverse();
     }
-    for(const [ax,ay] of MG_DIRS){
-      const nx=x+ax,ny=y+ay;if(!ok(nx,ny))continue;
+    for(const [nx,ny] of hexNeighbours(x,y)){
+      if(!ok(nx,ny))continue;
       const ni=nx*N+ny;if(blocked[ni])continue;
       const h=H[nx][ny],cost=MG.access.has(nx+','+ny)?1:h>=2?7:h===1?2:h===-1?4:h<0?9:2,nd=dc+cost;
       if(nd<d[ni]){d[ni]=nd;prev[ni]=id;push([nd,ni]);}
@@ -13925,7 +13941,7 @@ function mgPrompt(text) {
     obj = MG_OBJ.map(k => `${k} (${OBJT[k].n[0]})`).join(', '),
     env = MG_ENV.map(k => `${k} (${ENVT[k].n[0]})`).join(', '),
     mons = [...new Set(MON.map(m => [].concat(m.n)[0]))].slice(0, 400).join(', ');
-  return `You are the map designer of a tabletop RPG. Turn the game master's description into a JSON recipe that a map generator will draw on an axial hex grid (1 hex = 5 ft, six equal-distance neighbours; room dimensions describe axial spans). Answer with JSON only.
+  return `You are the map designer of a tabletop RPG. Turn the game master's description into a JSON recipe that a map generator will draw on a rectangular staggered-row hex grid (1 hex = 5 ft, six equal-distance neighbours; room dimensions describe columns and rows). Answer with JSON only.
 
 Fields (all optional; leave out what the description does not imply):
 - "plan": write this first: 2 or 3 sentences on the layout (what is where, how one gets in, what the terrain does), so that the rest is coherent.
