@@ -925,7 +925,7 @@ function hOrder(c, cards) {
   return L.map(x =>
     x.h
       // cards no longer fold: on the Map grid each one is a module, moved by its title
-      .replace(/^<div class="hc /, `<div data-ck="${esc(x.k)}" class="hc `),
+      .replace(/^<(div|form) class="hc /, `<$1 data-ck="${esc(x.k)}" class="hc `),
   );
 }
 function hSaveOrder(c) {

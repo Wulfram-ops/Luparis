@@ -34,6 +34,13 @@ function applyLang() {
   renderIni();
   renderTok();
   renderRes();
+  if (typeof gDock === 'function') {
+    for (const b of document.querySelectorAll('[data-gpre]')) {
+      const P=GPRE[b.dataset.gpre];
+      if(P){b.textContent=b.dataset.gpre==='standard'?L2('Default','Par défaut'):tr(P.n);b.title=tr(P.desc);}
+    }
+    gDock();
+  }
   if (WS) wRender();
   draw();
 }

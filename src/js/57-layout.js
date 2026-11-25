@@ -3,10 +3,21 @@
 let GCOLS = [12, 24, 36].includes(lsGet('luparis-grid-cols', 12)) ? lsGet('luparis-grid-cols', 12) : 12;
 const GROW = 36, GGAP = 8;
 const gDetached = new Map();
+// Presets are intent-based, with independently overridable secondary modules.
+// Old custom grids remain custom until the user selects a preset.
+const savedPreset = lsGet('luparis-grid-preset', null);
+let gActive = savedPreset && typeof savedPreset.id === 'string' ? savedPreset.id : '',
+  gAuto = !!savedPreset?.auto,
+  gOverrides = savedPreset?.overrides && typeof savedPreset.overrides === 'object' ? Object.assign(Object.create(null), savedPreset.overrides) : Object.create(null),
+  gLastSignature = '';
+function gRole() {
+  return MP.role === 'player' ? (MP.prole === 'spec' ? 'spec' : 'player') : 'gm';
+}
 function gScale(r, from = 12, to = GCOLS) {
   const start = Math.floor((r[0] - 1) * to / from),
     end = Math.round((r[0] - 1 + r[2]) * to / from);
-  return [start + 1, r[1], Math.max(2, end - start), r[3]];
+  const width = Math.min(to, Math.max(2, end - start));
+  return [Math.min(start + 1, to - width + 1), r[1], width, r[3]];
 }
 function gColumns(n) {
   if (![12, 24, 36].includes(n)) return;
@@ -118,167 +129,190 @@ function gPush(snap, k, n) {
   }
   return out;
 }
-// layout presets: regions (column, width, first row) filled with modules on shelves; 'k-spl*' matches every spell card
+// Each region packs explicit priorities first. Unlisted modules are parked,
+// not destroyed; the Modules drawer can restore them at any time.
+// A wildcard matches each card of that category, regardless of the character.
 const GPRE = {
-  wide: {
-    n: ['Ultrawide 21:9', 'Ultrawide 21:9'], cols: 24,
-    reg: [
-      { c: 1, w: 5, y: 1, it: [['in',5,8],['tk',5,7],['mk',5,7],['mp',5,9]] },
-      { c: 6, w: 13, y: 1, it: [['map',13,30],['img',7,10],['sn',6,10]] },
-      { c: 19, w: 6, y: 1, it: [['pf',6,9],['hhead',6,3],['c:k-atk',6,8],['c:k-def',6,7],['c:k-spl*',6,8],['c:k-man',6,7]], rest: 1 },
-    ],
-  },
-  superwide: {
-    n: ['Super Ultrawide 32:9', 'Super Ultrawide 32:9'], cols: 36,
-    reg: [
-      { c: 1, w: 7, y: 1, it: [['in',7,8],['tk',7,7],['mk',7,7],['mp',7,9]] },
-      { c: 8, w: 16, y: 1, it: [['map',16,30],['img',8,10],['sn',8,10]] },
-      { c: 24, w: 13, y: 1, it: [['pf',13,9],['hhead',13,3],['c:k-atk',6,9],['c:k-def',7,9],['c:k-spl*',6,9],['c:k-man',7,9]], rest: 1 },
-    ],
-  },
-  dual: {
-    n: ['Dual screen GM', 'Double écran MJ'], cols: 12,
-    reg: [{ c:1,w:12,y:1,it:[['map',12,30],['in',4,8],['tk',4,8],['mk',4,8],['pf',12,9],['img',6,8],['sn',6,8],['mp',6,9]],rest:1 }],
-  },
   combat: {
     n: ['Combat', 'Combat'],
+    desc: ['Map, turn order and attacks first.', 'Carte, initiative et attaques en priorité.'],
+    cols: 12,
     reg: [
-      {
-        c: 1,
-        w: 9,
-        y: 1,
-        it: [
-          ['map', 9, 20],
-          ['pf', 9, 9],
-          ['c:k-atk', 3, 10],
-          ['c:k-def', 3, 10],
-          ['c:k-spl*', 3, 10],
-          ['c:k-man', 3, 10],
-          ['c:k-tal*', 3, 10],
-        ],
-        rest: 1,
-      },
-      {
-        c: 10,
-        w: 3,
-        y: 1,
-        it: [
-          ['in', 3, 10],
-          ['tk', 3, 8],
-          ['mk', 3, 7],
-          ['mp', 3, 9],
-        ],
-      },
+      { c:1,w:8,y:1,it:[['map',8,30],['pf',8,9],['hhead',8,3],['c:k-man',4,8],['c:k-spl*',4,9],['c:k-tal*',4,8],['c:k-cus*',4,8]] },
+      { c:9,w:4,y:1,it:[['in',4,5],['tk',4,6],['c:k-atk',4,8],['c:k-def',4,5]] },
+    ],
+    player: [
+      { c:1,w:7,y:1,it:[['map',7,30],['pf',7,9],['hhead',7,3],['c:k-spl*',4,9],['c:k-tal*',3,8],['c:k-cus*',4,8]] },
+      { c:8,w:5,y:1,it:[['in',5,4],['c:k-atk',5,8],['c:k-man',5,7],['c:k-def',5,5],['tk',5,6]] },
     ],
   },
   explo: {
     n: ['Exploration', 'Exploration'],
+    desc: ['Navigation, checks, inventory and landmarks.', 'Navigation, tests, inventaire et repères.'],
+    cols:12,
     reg: [
-      {
-        c: 1,
-        w: 8,
-        y: 1,
-        it: [
-          ['map', 8, 18],
-          ['c:k-inv', 4, 10],
-          ['c:k-sf', 4, 10],
-          ['c:k-eq', 4, 10],
-          ['c:k-note', 4, 10],
-          ['pf', 8, 9],
-        ],
-        rest: 1,
-      },
-      {
-        c: 9,
-        w: 4,
-        y: 1,
-        it: [
-          ['mk', 4, 8],
-          ['img', 4, 9],
-          ['tk', 4, 8],
-          ['sn', 4, 8],
-          ['in', 4, 9],
-          ['mp', 4, 9],
-        ],
-      },
+      { c:1,w:8,y:1,it:[['map',8,30],['pf',8,9],['hhead',8,3],['c:k-inv',4,9],['c:k-eq',4,8],['c:k-note',8,8]] },
+      { c:9,w:4,y:1,it:[['mk',4,7],['tk',4,6],['c:k-sf',4,7],['sn',4,8],['img',4,8]] },
+    ],
+    player:[
+      { c:1,w:7,y:1,it:[['map',7,30],['c:k-inv',4,8],['c:k-eq',3,8],['c:k-note',7,8]] },
+      { c:8,w:5,y:1,it:[['pf',5,10],['hhead',5,3],['c:k-sf',5,7],['mk',5,6],['tk',5,6]] },
     ],
   },
   totm: {
     n: ['Theatre of the mind', "Théâtre de l'esprit"],
+    desc: ['Story notes, illustrations and checks; smaller tactical map.', 'Notes, illustrations et tests ; carte tactique secondaire.'],
+    cols:12,
+    reg:[
+      { c:1,w:8,y:1,it:[['sn',8,9],['img',8,8],['pf',8,9],['hhead',8,3],['c:k-sf',4,7],['c:k-note',4,8],['c:k-tal*',4,8]] },
+      { c:9,w:4,y:1,it:[['map',4,9],['mk',4,6],['tk',4,6]] },
+    ],
+    player:[
+      { c:1,w:8,y:1,it:[['pf',8,9],['hhead',8,3],['c:k-sf',4,7],['c:k-note',4,8],['c:k-tal*',4,8],['c:k-inv',4,8]] },
+      { c:9,w:4,y:1,it:[['map',4,9],['img',4,7],['mk',4,6]] },
+    ],
+  },
+  focus: {
+    n:['Map focus','Carte seule'],
+    desc:['Full-width tactical map without secondary panels.', 'Carte tactique pleine largeur, sans panneaux secondaires.'],
+    cols:12,
+    reg:[{c:1,w:12,y:1,it:[['map',12,40]]}],
+  },
+  wide: {
+    n: ['Ultrawide 21:9', 'Ultrawide 21:9'], cols: 24,
+    desc:['Central map, initiative left, character actions right.', 'Carte centrale, initiative à gauche, actions à droite.'],
     reg: [
-      {
-        c: 1,
-        w: 8,
-        y: 1,
-        it: [
-          ['pf', 8, 10],
-          ['c:k-sf', 4, 10],
-          ['c:k-tal*', 4, 10],
-          ['c:k-def', 4, 10],
-          ['c:k-atk', 4, 10],
-          ['c:k-spl*', 4, 10],
-          ['c:k-man', 4, 10],
-          ['c:k-inv', 4, 10],
-          ['c:k-eq', 4, 10],
-          ['c:k-note', 4, 10],
-        ],
-        rest: 1,
-      },
-      {
-        c: 9,
-        w: 4,
-        y: 1,
-        it: [
-          ['map', 4, 10],
-          ['img', 4, 11],
-          ['sn', 4, 9],
-          ['in', 4, 9],
-          ['tk', 4, 8],
-          ['mk', 4, 7],
-          ['mp', 4, 9],
-        ],
-      },
+      { c:1,w:5,y:1,it:[['in',5,5],['tk',5,6],['mk',5,7]] },
+      { c:6,w:13,y:1,it:[['map',13,40],['pf',13,9],['hhead',13,3],['img',7,8],['sn',6,8]] },
+      { c:19,w:6,y:1,it:[['c:k-atk',6,8],['c:k-man',6,7],['c:k-def',6,5],['c:k-spl*',6,8],['c:k-tal*',6,8]] },
+    ],
+  },
+  superwide: {
+    n: ['Super Ultrawide 32:9', 'Super Ultrawide 32:9'], cols:36,
+    desc:['Central map, more space for simultaneous reference and actions.', 'Carte centrale, davantage de place pour les références et actions.'],
+    reg:[
+      { c:1,w:7,y:1,it:[['in',7,5],['tk',7,6],['mk',7,7],['sn',7,8]] },
+      { c:8,w:16,y:1,it:[['map',16,40],['img',8,8],['c:k-inv',8,8]] },
+      { c:24,w:13,y:1,it:[['pf',13,8],['hhead',13,3],['c:k-atk',7,8],['c:k-def',6,8],['c:k-man',6,8],['c:k-spl*',7,9],['c:k-tal*',6,8]] },
+    ],
+  },
+  dual: {
+    n:['Dual screen GM','Double écran MJ'],
+    desc:['Map first; detach initiative, notes or cards to a second monitor.', 'Carte en priorité ; détache initiative, notes ou cartes sur un autre écran.'],
+    cols:12,
+    reg:[{c:1,w:12,y:1,it:[['map',12,40],['in',4,7],['tk',4,7],['mk',4,7],['pf',12,9],['hhead',12,3],['c:k-atk',6,8],['c:k-man',6,8],['sn',6,8],['img',6,8]]}],
+  },
+  standard: {
+    n:['Standard','Standard'],
+    desc:['Balanced map and character workspace; all modules accessible.', 'Espace équilibré carte et personnage ; tous les modules accessibles.'],
+    cols:12, all:true,
+    reg:[
+      {c:1,w:8,y:1,it:[['map',8,30],['pf',8,9],['hhead',8,3],['c:k-atk',4,9],['c:k-def',4,6],['c:k-spl*',4,9],['c:k-man',4,8]]},
+      {c:9,w:4,y:1,it:[['in',4,6],['tk',4,6],['mk',4,7],['mp',4,9],['img',4,8],['sn',4,8]]},
     ],
   },
 };
-function gPreset(id) {
-  const P = GPRE[id];
-  if (!P) return;
-  gColumns(P.cols || 12);
-  const // only the modules shown now are packed; a hidden one keeps its place and finds room when it appears
-    keys = Object.keys(GL).filter(gShown),
-    used = new Set(),
-    out = {};
-  const match = m => keys.filter(k => !used.has(k) && (m.endsWith('*') ? k.startsWith(m.slice(0, -1)) : k === m));
-  for (const R of P.reg) {
-    let x = 0,
-      y = R.y,
-      sh = 0;
-    const put = (k, w, h) => {
-      w = Math.min(w, R.w);
-      if (k === 'map') h = gMapRows(h);
-      if (x + w > R.w) {
-        y += sh;
-        x = 0;
-        sh = 0;
-      }
-      out[k] = [R.c + x, y, w, h];
-      used.add(k);
-      x += w;
-      sh = Math.max(sh, h);
-    };
-    for (const [m, w, h] of R.it) for (const k of match(m)) put(k, w, h);
-    if (R.rest)
-      for (const k of keys.filter(k => !used.has(k) && !P.reg.some(Q => Q.it.some(([m]) => match(m).includes(k)))))
-        put(k, k.startsWith('c:') ? 3 : Math.min(GL[k][2], R.w), k.startsWith('c:') ? 10 : GL[k][3]);
+const gMatches = (pattern,k) => pattern.endsWith('*') ? k.startsWith(pattern.slice(0,-1)) : pattern === k;
+function gRegions(P) {
+  return gRole()==='player' && P.player ? P.player : P.reg;
+}
+function gAllowed(k) {
+  const role=gRole();
+  return !(role!=='gm' && k==='sn') && !(role==='spec' && (k==='pf'||k==='hhead'||k.startsWith('c:')));
+}
+function gAvailable(k) {
+  const m=gEl(k);
+  return !!m && gAllowed(k) && !gDetached.has(k) && !m.hidden && !(m.classList.contains('gmod') && m.firstElementChild?.hidden);
+}
+function gIsParked(k) {
+  if (!GPRE[gActive] || k==='map' || k==='mp' && MP.role==='player' && !MP.me) return false;
+  if (Object.hasOwn(gOverrides,k)) return !gOverrides[k];
+  const P=GPRE[gActive];
+  return !P.all && !gRegions(P).some(r=>r.it.some(([m])=>gMatches(m,k)));
+}
+function gModuleName(k) {
+  const m=gEl(k);
+  return GNAME[k] ? tr(GNAME[k]) : (m?.querySelector('.hn,.ht,h3')?.textContent.trim() || k.replace(/^c:/,''));
+}
+function gDock() {
+  const list=$('g_module_list');
+  if (!list) return;
+  const keys=Object.keys(GL).filter(k=>gEl(k)&&gAllowed(k));
+  const html=keys.map(k=>{
+    const detached=gDetached.has(k), available=gAvailable(k), parked=gIsParked(k);
+    const status=detached?L2('Detached','Détaché'):!available?L2('Unavailable','Indisponible'):parked?L2('Hidden','Masqué'):L2('Visible','Visible');
+    return `<button type="button" data-gmodule="${esc(k)}"${(!available&&!detached)||k==='map'||(k==='mp'&&MP.role==='player'&&!MP.me)?' disabled':''} aria-pressed="${!parked&&available}"><span>${esc(gModuleName(k))}</span><small>${status}</small></button>`;
+  }).join('');
+  if(list.innerHTML!==html)list.innerHTML=html;
+  const count=keys.filter(k=>gAvailable(k)&&gIsParked(k)).length;
+  const summary=$('g_module_summary');
+  if(summary)summary.textContent=L2('Modules','Modules')+(count?' · '+count+' '+L2('hidden','masqués'):'');
+  const info=$('g_preset_hint'), P=GPRE[gActive];
+  if(info)info.textContent=P?tr(P.desc)+(gAuto?'':' · '+L2('customized','personnalisée')):L2('Custom layout','Disposition personnalisée');
+  document.querySelectorAll('[data-gpre]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.gpre===gActive)));
+}
+function gPark() {
+  for(const k in GL) {
+    const m=gEl(k);
+    if(m)m.classList.toggle('gparked',gIsParked(k));
   }
-  for (const k in GL) if (!out[k]) out[k] = [...GL[k]];
-  GL = out;
-  gVis = new Set();
-  gFix();
-  gApply();
+}
+function gPack() {
+  const P=GPRE[gActive];
+  if(!P)return;
+  const regions=gRegions(P), keys=Object.keys(GL).filter(k=>gAvailable(k)&&!gIsParked(k)),used=new Set(),out={};
+  const match=m=>keys.filter(k=>!used.has(k)&&gMatches(m,k));
+  let bottom=1;
+  for(const R of regions){
+    let x=0,y=R.y,sh=0;
+    const put=(k,w,h)=>{
+      w=Math.min(w,R.w);
+      if(k==='map')h=gMapRows(h);
+      if(x+w>R.w){y+=sh;x=0;sh=0;}
+      out[k]=[R.c+x,y,w,h];used.add(k);x+=w;sh=Math.max(sh,h);
+    };
+    for(const [m,w,h] of R.it)for(const k of match(m))put(k,w,h);
+    bottom=Math.max(bottom,y+sh);
+  }
+  // Do not let the catch-all steal modules reserved for later regions.
+  // Unlisted, explicitly enabled modules get a separate full-width shelf.
+  const fallback=keys.filter(k=>!used.has(k));
+  let x=0,y=bottom,sh=0;
+  for(const k of fallback){
+    const w=Math.min(GCOLS,Math.max(2,Math.round(GCOLS/3)));
+    if(x+w>GCOLS){y+=sh;x=0;sh=0;}
+    const h=GDEF[k]?.[3]||8;
+    out[k]=[x+1,y,w,h];x+=w;sh=Math.max(sh,h);
+  }
+  for(const k in GL)if(!out[k])out[k]=[...GL[k]];
+  GL=out;
+  gVis=new Set();
+}
+function gRefresh(force=false) {
+  if(TABLE_DISPLAY)return;
+  gPark();
+  const sig=JSON.stringify([gActive,gRole(),GCOLS,Object.keys(GL).filter(k=>gAvailable(k)&&!gIsParked(k)).sort()]);
+  if(gAuto&&GPRE[gActive]&&(force||sig!==gLastSignature))gPack();
+  gLastSignature=sig;
+  gFix();gApply();gDock();
+}
+function gPreset(id) {
+  const P=GPRE[id];
+  if(!P || id==='dual'&&gRole()!=='gm')return;
+  gActive=id;gAuto=true;gOverrides=Object.create(null);gLastSignature='';
+  gColumns(P.cols||12);
+  gRefresh(true);
   gSave();
   gFitMap();
+}
+function gToggleModule(k) {
+  if(gDetached.has(k)){gDetached.get(k).win.focus();return;}
+  if(!gAvailable(k)||k==='map'||(k==='mp'&&MP.role==='player'&&!MP.me))return;
+  // A user can hide modules even in an imported/custom layout.
+  if(!GPRE[gActive]){gActive='standard';gAuto=false;}
+  gOverrides[k]=gIsParked(k);
+  gRefresh(true);
+  gSave();
 }
 function gApply() {
   for (const k in GL) {
@@ -287,17 +321,20 @@ function gApply() {
     const [c, r, w, h] = GL[k];
     m.style.gridColumn = `${c} / span ${w}`;
     m.style.gridRow = `${r} / span ${h}`;
+    m.style.order = k === 'map' ? '-1' : String(r * 100 + c);
   }
 }
 function gSave() {
   lsSet('luparis-grid2', GL);
   lsSet('luparis-grid-cols', GCOLS);
+  lsSet('luparis-grid-preset',{id:gActive,auto:gAuto,overrides:gOverrides});
 }
 // the title of a module is its move handle (the map, without a title, keeps a small grip); a corner resizes it
 function gHandles(el, k) {
   el.dataset.gk = k;
   el.classList.add('gitem');
   el.classList.toggle('gdetached', gDetached.has(k));
+  el.classList.toggle('gparked', gIsParked(k));
   if (!TABLE_DISPLAY && !el.querySelector(':scope > .gwindow'))
     el.insertAdjacentHTML('beforeend', `<button type="button" class="gwindow" data-gwindow="${esc(k)}" title="${L2('Open on another screen', 'Ouvrir sur un autre écran')}" aria-label="${L2('Open on another screen', 'Ouvrir sur un autre écran')}">↗</button>`);
   const t = el.querySelector('.hside > h3, .ht, h3, h2');
@@ -352,8 +389,7 @@ function gHandSync() {
       added = true;
     }
   }
-  gFix();
-  gApply();
+  gRefresh();
   if (added) gSave();
 }
 {
@@ -391,24 +427,21 @@ function gHandSync() {
   if (!wrap.children.length) wrap.remove();
   const bar = document.createElement('div');
   bar.className = 'gpresets';
-  bar.innerHTML = `<span class="small">${L2('Layout', 'Disposition')}</span>${Object.keys(GPRE)
-    .map(id => `<button type="button" data-gpre="${id}">${L2(...GPRE[id].n)}</button>`)
-    .join('')}<button type="button" class="greset">${L2('Default', 'Par défaut')}</button><span class="gdisplaytools"><button type="button" id="g_public">${L2('Public table', 'Table publique')}</button><button type="button" id="g_screens">${L2('Detect screens', 'Détecter les écrans')}</button><select id="g_screen" aria-label="${L2('Destination screen', 'Écran de destination')}" hidden></select><button type="button" id="g_restore">${L2('Restore windows', 'Rouvrir les fenêtres')}</button><button type="button" id="g_return">${L2('Reattach all', 'Tout réintégrer')}</button><span class="small" id="g_display_msg" aria-live="polite"></span></span>`;
+  bar.innerHTML = `<div class="gpres-main"><span class="small">${L2('Layout', 'Disposition')}</span>${['combat','explo','totm','focus','wide','superwide','dual'].map(id => `<button type="button" data-gpre="${id}" title="${esc(tr(GPRE[id].desc))}" aria-pressed="false">${tr(GPRE[id].n)}</button>`).join('')}<button type="button" class="greset" data-gpre="standard">${L2('Default', 'Par défaut')}</button><details id="g_modules"><summary id="g_module_summary">${L2('Modules','Modules')}</summary><div id="g_module_list"></div></details><span id="g_preset_hint" class="small" aria-live="polite"></span></div><span class="gdisplaytools"><button type="button" id="g_public">${L2('Public table', 'Table publique')}</button><button type="button" id="g_screens">${L2('Detect screens', 'Détecter les écrans')}</button><select id="g_screen" aria-label="${L2('Destination screen', 'Écran de destination')}" hidden></select><button type="button" id="g_restore">${L2('Restore windows', 'Rouvrir les fenêtres')}</button><button type="button" id="g_return">${L2('Reattach all', 'Tout réintégrer')}</button><span class="small" id="g_display_msg" aria-live="polite"></span></span>`;
   grid.before(bar);
   bar.onclick = e => {
     const b = e.target.closest('[data-gpre]');
     if (b) gPreset(b.dataset.gpre);
+    const m=e.target.closest('[data-gmodule]');
+    if(m)gToggleModule(m.dataset.gmodule);
   };
-  const reset = bar.querySelector('.greset');
-  reset.onclick = () => {
-    lsSet('luparis-grid2', null);
-    gColumns(12);
-    GL = gLoad();
-    gHandSync();
-    gSave();
-    gFitMap();
-  };
+  document.addEventListener('pointerdown',e=>{
+    const d=$('g_modules');
+    if(d&&!d.contains(e.target))d.open=false;
+  });
   GL = gLoad();
+  if(!GPRE[gActive]){gActive='';gAuto=false;}
+  else if(gAuto)gColumns(GPRE[gActive].cols||12);
   renderHand = (f =>
     function () {
       const r = f.apply(this, arguments);
@@ -472,11 +505,13 @@ function gHandSync() {
   const end = keep => {
     if (!act) return;
     if (!keep) GL = act.snap;
+    else gAuto=false; // a manual layout must not be repacked on character selection
     gApply();
     act.m.classList.remove('gdrag');
     grid.classList.remove('gon');
     act = null;
     gVis = new Set(Object.keys(GL).filter(gShown));
+    gDock();
     gSave();
   };
   grid.addEventListener('pointerup', () => end(true));
@@ -503,14 +538,29 @@ function gHandSync() {
     if (!m || TABLE_DISPLAY) return;
     e.preventDefault();
     e.stopPropagation();
-    ctxMenu(e.clientX, e.clientY, [{label:L2('Open on another screen', 'Ouvrir sur un autre écran'),fn:()=>gOpenWindow(m.dataset.gk)}]);
+    const k=m.dataset.gk;
+    ctxMenu(e.clientX, e.clientY, [
+      {label:L2('Open on another screen', 'Ouvrir sur un autre écran'),fn:()=>gOpenWindow(k)},
+      k==='map'||(k==='mp'&&MP.role==='player'&&!MP.me)?null:{label:L2('Hide module','Masquer le module'),fn:()=>gToggleModule(k)}
+    ]);
   }, true);
   // a module that appears or disappears: make room only for the one that appears
   new MutationObserver(() => {
     if (act) return;
-    gFix();
-    gApply();
+    gRefresh();
   }).observe(grid, { attributes: true, subtree: true, attributeFilter: ['hidden'] });
+  let gResizeTimer;
+  window.addEventListener('resize',()=>{
+    clearTimeout(gResizeTimer);
+    gResizeTimer=setTimeout(()=>{
+      if(TABLE_DISPLAY||!gAuto||!GPRE[gActive]||act||view.hidden)return;
+      gRefresh(true);
+      layout();
+    },120);
+  });
+  window.addEventListener('hashchange',()=>{
+    if(location.hash==='#carte'&&gAuto)requestAnimationFrame(()=>{gRefresh(true);layout();});
+  });
 }
 
 // ---- Local multi-screen windows. The opener owns all gameplay and storage.
@@ -564,8 +614,7 @@ function gReattach(k, close = true) {
   if (close && !p.win.closed) p.win.close();
   const el = gEl(k);
   if (el) el.classList.remove('gdetached');
-  gFix();
-  gApply();
+  gRefresh();
 }
 function gSourceControls(el) {
   return [...el.querySelectorAll('button,input,select,textarea,a,summary,form')].filter(x => !x.closest('.gwindow,.ggrip,.gsz'));
@@ -585,7 +634,7 @@ function gMirrorPanel(k, p) {
   const doc = p.win.document;
   if (p.root.contains(doc.activeElement) && doc.activeElement.matches('input,textarea,select')) return;
   const copy = el.cloneNode(true);
-  copy.classList.remove('gdetached','gdrag','gitem');
+  copy.classList.remove('gdetached','gdrag','gitem','gparked');
   copy.removeAttribute('style');
   copy.querySelectorAll('.gwindow,.ggrip,.gsz').forEach(x => x.remove());
   const originals = gSourceControls(el), controls = gSourceControls(copy);
@@ -615,7 +664,7 @@ function gOpenWindow(k) {
   if (k === 'map') return gOpenView('gm');
   if (gDetached.has(k)) return gDetached.get(k).win.focus();
   const el = gEl(k);
-  if (!el || !gShown(k)) return;
+  if (!el || !gAvailable(k)) return;
   const win = window.open('', '_blank', gPopupFeatures());
   if (!win) return gDisplayMsg('Popup blocked. Allow popups for Luparis.', 'Fenêtre bloquée : autorise les pop-ups pour Luparis.');
   const doc = win.document;
@@ -670,7 +719,7 @@ function gOpenWindow(k) {
   gRememberWindows();
   el.classList.add('gdetached');
   gMirrorPanel(k,p);
-  gFix();gApply();gStartTick();
+  gRefresh();gStartTick();
 }
 function gOpenView(kind) {
   if (TABLE_DISPLAY || (kind==='public' && MP.role==='player')) return;
