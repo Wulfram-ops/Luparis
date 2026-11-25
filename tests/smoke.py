@@ -125,6 +125,12 @@ def run(chrome: str | None) -> None:
             D("(()=>{const o={type:'state',x:'a'.repeat(200000)},P=mpPieces(o),st={};let r=null;for(const p of P.reverse())r=mpJoinPiece(st,p)||r;return P.length>3&&r&&r.x.length===200000})()"),
         )
 
+        # Hex geometry, camera and spell templates share axial coordinates.
+        check("six equal hex neighbours", D("HEX_DIRS.length===6&&HEX_DIRS.every(([x,y])=>hexDist({x,y},{x:0,y:0})===1)&&hexDist({x:1,y:1},{x:0,y:0})===2"))
+        check("hex radius two has 19 cells", D("tplCells({k:'circle',x:5,y:5,s:10,a:0}).length===19"))
+        check("hex line follows one of six directions", D("JSON.stringify(tplCells({k:'line',x:5,y:5,s:15,a:Math.PI/3}))==='[[5,6],[5,7],[5,8]]'"))
+        check("six rotations round trip", D("(()=>{const old=rot;try{for(rot=0;rot<6;rot++){const p=unview(...view(3,5));if(p[0]!==3||p[1]!==5)return false;}return true;}finally{rot=old}})()"))
+        check("all tactical cells have six vertices", D("dia(0,0,0).length===6"))
         # Layout presets fit the entire map in the viewport and reset an old zoom/pan.
         page.click('.tabs a[data-v="carte"]')
         for width, height in ((1400, 900), (1280, 720)):

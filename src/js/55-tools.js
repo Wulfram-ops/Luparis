@@ -593,28 +593,17 @@ function fillTpl() {
 function tplSize() {
   return Math.max(5, Math.min(300, Math.round((+document.getElementById('tplsz').value || 20) / 5) * 5));
 }
-function tplCells(T) {
-  const L = T.s / 5,
-    out = [],
-    ox = T.x + 0.5,
-    oy = T.y + 0.5,
-    ca = Math.cos(T.a || 0),
-    sa = Math.sin(T.a || 0);
-  for (let x = Math.max(0, Math.floor(T.x - L - 1)); x <= Math.min(N - 1, Math.ceil(T.x + L + 1)); x++)
-    for (let y = Math.max(0, Math.floor(T.y - L - 1)); y <= Math.min(N - 1, Math.ceil(T.y + L + 1)); y++) {
-      const dx = x + 0.5 - ox,
-        dy = y + 0.5 - oy,
-        d = Math.hypot(dx, dy);
-      let ok = false;
-      if (T.k === 'circle' || T.k === 'sphere') ok = d <= L + 0.01;
-      else if (T.k === 'cube') ok = Math.abs(dx) <= L / 2 + 0.01 && Math.abs(dy) <= L / 2 + 0.01;
-      else {
-        const al = dx * ca + dy * sa,
-          pe = Math.abs(-dx * sa + dy * ca);
-        if (T.k === 'line') ok = al > 0.01 && al <= L + 0.01 && pe <= 0.5;
-        else ok = d > 0.01 && al > 0 && d <= L + 0.01 && pe <= al * 0.5 + 0.01;
-      }
-      if (ok) out.push([x, y]);
+function tplCells(T){
+  const L=T.s/5,out=[],a=T.a||0;
+  if(T.k==='line'){
+    const [dq,dr]=HEX_DIRS[((Math.round(a/(Math.PI/3))%6)+6)%6];
+    for(let i=1;i<=L;i++){const x=T.x+dq*i,y=T.y+dr*i;if(ok(x,y))out.push([x,y]);}return out;
+  }
+  for(let x=Math.max(0,Math.floor(T.x-L-1));x<=Math.min(N-1,Math.ceil(T.x+L+1));x++)
+    for(let y=Math.max(0,Math.floor(T.y-L-1));y<=Math.min(N-1,Math.ceil(T.y+L+1));y++){
+      const d=hexDist({x,y},T),[dx,dy]=hexVector(x-T.x,y-T.y);
+      const al=dx*Math.cos(a)+dy*Math.sin(a),pe=Math.abs(-dx*Math.sin(a)+dy*Math.cos(a));
+      if(T.k==='circle'||T.k==='sphere'?d<=L:T.k==='cube'?Math.abs(dx)<=L/2+.01&&Math.abs(dy)<=L/2+.01:d>0&&d<=L&&al>0&&pe<=al/Math.sqrt(3)+.01)out.push([x,y]);
     }
   return out;
 }
@@ -686,7 +675,7 @@ function drawTplGhost() {
     const k = tplSel,
       needAim = k === 'cone' || k === 'line';
     if (needAim && TPLA) {
-      const a = Math.atan2(hover.y - TPLA.y, hover.x - TPLA.x);
+      const a = hexAngle(TPLA,hover);
       drawTpl({ k, x: TPLA.x, y: TPLA.y, a, s: tplSize() }, true);
     } else if (!needAim) drawTpl({ k, x: hover.x, y: hover.y, a: 0, s: tplSize() }, true);
     else drawTpl({ k, x: hover.x, y: hover.y, a: 0, s: tplSize() }, true);
@@ -703,7 +692,7 @@ function tplClick(c) {
   if (needAim && c.x === TPLA.x && c.y === TPLA.y) return;
   snap();
   const T = needAim
-    ? { k, x: TPLA.x, y: TPLA.y, a: Math.atan2(c.y - TPLA.y, c.x - TPLA.x), s: tplSize(), id: tid() }
+    ? { k, x: TPLA.x, y: TPLA.y, a: hexAngle(TPLA,c), s: tplSize(), id: tid() }
     : { k, x: c.x, y: c.y, a: 0, s: tplSize(), id: tid() };
   TPLA = null;
   if (MP.role === 'player') {

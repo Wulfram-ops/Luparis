@@ -417,6 +417,12 @@ let N = 16,
   bio = 'gen',
   t0 = performance.now();
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Axial hex coordinates (x=q,y=r); preserve the N×N storage of existing maps.
+const HEX_DIRS=Object.freeze([[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1]].map(Object.freeze));
+function hexDist(a,b){const q=a.x-b.x,r=a.y-b.y;return Math.max(Math.abs(q),Math.abs(r),Math.abs(q+r));}
+function hexVector(q,r){return [q+r/2,r*Math.sqrt(3)/2];}
+function hexAngle(a,b){const [x,y]=hexVector(b.x-a.x,b.y-a.y);return Math.atan2(y,x);}
+function hexRotate(q,r,steps){for(let i=0;i<((steps%6)+6)%6;i++)[q,r]=[-r,q+r];return [q,r];}
 function blank(n) {
   return Array.from({ length: n }, () => Array(n).fill(0));
 }
@@ -461,6 +467,7 @@ function saveNow() {
   if (MP.role === 'player') return;
   const st = {
     v: 2,
+    grid: 'hex',
     N,
     H: encG(H, 1),
     F: encG(F, 0),
@@ -509,13 +516,13 @@ function applyState(d) {
   F = Array.isArray(d.F) && d.F.length === d.N ? decG(d.F, 0) : blank(d.N);
   if (d.scene) scene = d.scene;
   tokens = d.tokens || [];
-  rot = d.rot || 0;
+  rot=d.grid==='hex'?((Math.round(+d.rot||0)%6)+6)%6:Math.round((+d.rot||0)*1.5)%6;
   bio = B[d.bio] ? d.bio : 'gen';
   INI = d.ini && Array.isArray(d.ini.o) ? d.ini : { o: [], cur: 0, round: 0 };
   MARKS = Array.isArray(d.marks) ? d.marks : [];
   ENV = d.env && typeof d.env === 'object' ? d.env : {};
   OBJS = Array.isArray(d.objs) ? d.objs.filter(o => o && OBJT[o.k]) : [];
-  TPLS = Array.isArray(d.tpls) ? d.tpls : [];
+  TPLS=Array.isArray(d.tpls)?d.tpls.map(t=>d.grid==='hex'?t:{...t,a:hexAngle({x:0,y:0},{x:Math.cos(t.a||0),y:Math.sin(t.a||0)})}):[];
   return true;
 }
 function load() {

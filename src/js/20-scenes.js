@@ -90,8 +90,7 @@ function distMap(src) {
     }
   while (qi < q.length) {
     const [x, y] = q[qi++];
-    for (let dx = -1; dx <= 1; dx++)
-      for (let dy = -1; dy <= 1; dy++) {
+    for (const [dx,dy] of HEX_DIRS) {
         const a = x + dx,
           b = y + dy;
         if (ok(a, b) && D[a][b] > D[x][y] + 1) {
@@ -1507,6 +1506,7 @@ function memThumb() {
 function memStateNow() {
   return {
     v: 2,
+    grid: 'hex',
     N,
     H: encG(H, 1),
     F: encG(F, 0),
