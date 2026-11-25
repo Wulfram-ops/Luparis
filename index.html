@@ -1464,7 +1464,7 @@ $('fmin').innerHTML=FPS.map(f=>opt(f,f,f==='0')).join('');$('fmax').innerHTML=FP
 $('mfp').innerHTML=FPS.map(f=>opt(f,f,f==='1')).join('');
 function fillSz(){const v=$('msz').value||'M';if(!t('szn'))return;$('msz').innerHTML=SZK.map(k=>opt(k,t('szn')[k],k===v)).join('')}fillSz();
 
-function renderB(){const q=$('q').value.trim().toLowerCase(),ft=$('ft').value,fh=$('fh').value,lo=fpNum($('fmin').value),hi=fpNum($('fmax').value),s=$('fs').value;
+var BDIRTY=false;function renderB(){if($('v-bestiaire').hidden){BDIRTY=true;return}BDIRTY=false;const q=$('q').value.trim().toLowerCase(),ft=$('ft').value,fh=$('fh').value,lo=fpNum($('fmin').value),hi=fpNum($('fmax').value),s=$('fs').value;
  let L=MON.filter(m=>(!ft||m.type===ft)&&(!fh||m.hab.includes(fh))&&fpNum(m.fp)>=lo&&fpNum(m.fp)<=hi&&(!q||([].concat(m.n).join(' ')+' '+tyName(m.type)+' '+noT(m)).toLowerCase().includes(q)));
  const nm=m=>tr(m.n);L.sort(s==='n'?(a,b)=>nm(a).localeCompare(nm(b),lang):s==='type'?(a,b)=>tyName(a.type).localeCompare(tyName(b.type),lang)||fpNum(a.fp)-fpNum(b.fp):s==='pv'?(a,b)=>a.pv-b.pv:(a,b)=>fpNum(a.fp)-fpNum(b.fp)||nm(a).localeCompare(nm(b),lang));
  $('bcount').textContent=t('count')(L.length,MON.length);
@@ -1497,7 +1497,7 @@ $('exp').onclick=()=>{const txt=JSON.stringify(MON);navigator.clipboard.writeTex
 $('impb').onclick=()=>{try{const d=JSON.parse($('imp').value);if(!Array.isArray(d))throw 0;const L=d.filter(m=>m&&m.n&&m.type).map((m,i)=>({id:String(m.id||'i'+i+Date.now().toString(36)),n:Array.isArray(m.n)?m.n.map(String).slice(0,2):String(m.n),type:String(m.type),fp:FPS.includes(String(m.fp))?String(m.fp):'1',ca:+m.ca||10,pv:+m.pv||1,init:Math.max(-5,Math.min(15,+m.init||0)),hab:Array.isArray(m.hab)?m.hab.filter(h=>B[h]):[],no:String(m.no||'')}));
  if(!L.length)throw 0;MON=L;saveMon();fillSel();renderB();$('impmsg').textContent=T[lang].imported(L.length)}catch(e){$('impmsg').textContent=T[lang].bad}};
 $('reset').onclick=e=>{const b=e.currentTarget;if(b.dataset.armed){MON=DEF.map(m=>({...m,hab:[...m.hab]}));mergeSrd();saveMon();fillSel();renderB();b.textContent=t('reset');delete b.dataset.armed;$('impmsg').textContent=T[lang].restored}else{b.dataset.armed='1';b.textContent=t('reset_c')}};
-function route(){const v=({'#bestiaire':'bestiaire','#regles':'regles','#fiche':'fiche','#monde':'monde'})[location.hash]||'carte';if(v==='monde')initWorld();for(const x of['monde','carte','fiche','bestiaire','regles'])$('v-'+x).hidden=v!==x;
+function route(){const v=({'#bestiaire':'bestiaire','#regles':'regles','#fiche':'fiche','#monde':'monde'})[location.hash]||'carte';if(v==='monde')initWorld();for(const x of['monde','carte','fiche','bestiaire','regles'])$('v-'+x).hidden=v!==x;if(v==='bestiaire'&&BDIRTY)renderB();
  for(const a of document.querySelectorAll('.tabs a'))a.toggleAttribute('aria-current',a.dataset.v===v),a.dataset.v===v&&a.setAttribute('aria-current','page');if(v==='carte'){requestAnimationFrame(layout);if(placing)requestAnimationFrame(()=>stage.scrollIntoView({block:'center'}));else window.scrollTo(0,0)}else window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);
 Object.assign(T.en,{tab_sheet:'Character',sk_name:'Name',sk_people:'People',sk_xp:'XP earned',sk_level:'Level',sk_spent:'XP spent',sk_left:'XP left',sk_over:'Over budget by',
@@ -1633,7 +1633,12 @@ let RL=[],rlOpen=true;try{RL=JSON.parse(localStorage.getItem('luparis-rolls'))||
 function rlRender(){const el=document.getElementById('rl_list');if(!el)return;const P=document.getElementById('rolls');P.classList.toggle('min',!rlOpen);document.getElementById('rl_tog').setAttribute('aria-expanded',rlOpen);
  document.getElementById('rl_ttl').textContent=L2('Rolls','Jets');document.getElementById('rl_cnt').textContent=RL.length?'('+RL.length+')':'';document.getElementById('rl_clr').textContent=L2('Clear','Effacer');document.getElementById('rl_clr').hidden=!RL.length||!rlOpen;
  el.innerHTML=RL.length?RL.map((r,i)=>`<li class="${i===0?'new':''}"><span class="rlw">${new Date(r.t).toLocaleTimeString(lang,{hour:'2-digit',minute:'2-digit'})}${r.s?' · '+esc(r.s):''}</span>${r.h}</li>`).join(''):`<li class="small">${t('sk_nolog')}</li>`}
-function pushRoll(h,src,remote){RL.unshift({h,s:src||'',t:Date.now()});if(RL.length>40)RL.length=40;if(MP.role==='player'&&!remote&&typeof mpSend==='function')mpSend({type:'roll',h,s:src||''});if(MP.role!=='player')try{localStorage.setItem('luparis-rolls',JSON.stringify(RL))}catch(e){}if(MP.role==='host'&&typeof mpPush==='function')mpPush();if(!rlOpen){rlOpen=true;try{localStorage.setItem('luparis-rolls-open','true')}catch(e){}}rlRender();const el=document.getElementById('rl_list');if(el)el.scrollTop=0}
+// roll lines are HTML; anything that came from another computer keeps only b/i/br and span.cr|ko|small, as text
+function safeRoll(h){const t=document.createElement('template');t.innerHTML=String(h).slice(0,2000);const out=document.createElement('div');
+ (function walk(src,dst){for(const n of src.childNodes){if(n.nodeType===3){dst.append(n.textContent);continue}if(n.nodeType!==1)continue;const tg=n.tagName.toLowerCase();let e=null;
+  if(tg==='b'||tg==='i'||tg==='br')e=document.createElement(tg);else if(tg==='span'){e=document.createElement('span');const c=(n.getAttribute('class')||'').split(/\s+/).filter(x=>x==='cr'||x==='ko'||x==='small');if(c.length)e.className=c.join(' ')}
+  if(e){dst.append(e);walk(n,e)}else walk(n,dst)}})(t.content,out);return out.innerHTML}
+function pushRoll(h,src,remote){if(remote)h=safeRoll(h);RL.unshift({h,s:src||'',t:Date.now()});if(RL.length>40)RL.length=40;if(MP.role==='player'&&!remote&&typeof mpSend==='function')mpSend({type:'roll',h,s:src||''});if(MP.role!=='player')try{localStorage.setItem('luparis-rolls',JSON.stringify(RL))}catch(e){}if(MP.role==='host'&&typeof mpPush==='function')mpPush();if(!rlOpen){rlOpen=true;try{localStorage.setItem('luparis-rolls-open','true')}catch(e){}}rlRender();const el=document.getElementById('rl_list');if(el)el.scrollTop=0}
 document.getElementById('rl_tog').addEventListener('click',()=>{rlOpen=!rlOpen;try{localStorage.setItem('luparis-rolls-open',JSON.stringify(rlOpen))}catch(e){}rlRender()});
 document.getElementById('rl_clr').addEventListener('click',()=>{RL=[];try{localStorage.removeItem('luparis-rolls')}catch(e){}rlRender()});
 rlRender();
@@ -2299,11 +2304,12 @@ let mpT=null;function mpPush(){if(MP.role!=='host')return;clearTimeout(mpT);mpT=
 function mpPlayerSave(){if(!MP.me)return;mpSend({type:'tokens',me:MP.me,t:tokens.filter(k=>k.cid===MP.me).map(k=>({id:k.id,x:k.x,y:k.y,hp:k.hp}))})}
 function mpSendChar(){const c=CH.list.find(x=>x.id===MP.me);if(c)mpSend({type:'char',c})}
 function mpHostMsg(m,conn){if(m.type==='hello'){mpSend(mpState(),conn);return}
+ if(conn&&(m.type==='tokens'||m.type==='char')){const id=m.type==='tokens'?m.me:m.c&&m.c.id;if(!conn.me)conn.me=id;else if(conn.me!==id)return}
  if(m.type==='tokens'){for(const u of m.t||[]){const k=tokens.find(x=>x.id===u.id&&x.cid===m.me);if(!k)continue;const n=tfp(k);if(fits(u.x,u.y,n,k.id)){k.x=u.x;k.y=u.y}if(typeof u.hp==='number'&&k.hpMax){k.hp=Math.max(0,Math.min(k.hpMax,u.hp))}}save();draw();return}
  if(m.type==='roll'){pushRoll(String(m.h||''),String(m.s||''),true);return}
  if(m.type==='char'&&m.c&&m.c.id){const i=CH.list.findIndex(x=>x.id===m.c.id);if(i>=0){CH.list[i]=Object.assign({},CH.list[i],{used:m.c.used,inv:m.c.inv,notes:m.c.notes,corder:m.c.corder});if(C&&C.id===m.c.id)C=CH.list[i];saveC();if(CH.active)renderSheet()}}}
 function mpClientMsg(m){if(m.type==='closed'){mpRender(L2('The game master closed the game.','Le MJ a fermé la partie.'));setTimeout(mpLeave,1500);return}if(m.type!=='state')return;const first=!MP.got;MP.got=true;
- applyState(m.map);CH.list=m.chars||[];C=CH.list.find(c=>c.id===CH.active)||CH.list[0]||null;RL=m.rolls||[];rlRender();
+ applyState(m.map);CH.list=m.chars||[];C=CH.list.find(c=>c.id===CH.active)||CH.list[0]||null;RL=(Array.isArray(m.rolls)?m.rolls:[]).slice(0,40).map(r=>({h:safeRoll(r&&r.h||''),s:String(r&&r.s||''),t:+(r&&r.t)||Date.now()}));rlRender();
  if(MP.me&&!CH.list.some(c=>c.id===MP.me))MP.me=null;if(MP.me)handId=MP.me;
  for(const x of document.querySelectorAll('#biosel'))x.value=bio;showSize();legend();ctxBar&&ctxBar();layout();if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks();renderHand();renderTok&&renderTok();if(CH.active)renderSheet();else renderList();mpRender();if(first)setTool('move')}
 function mpStop(){if(MP.role!=='host')return;clearTimeout(mpT);mpSend({type:'closed'});
