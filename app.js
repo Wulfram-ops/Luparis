@@ -6370,6 +6370,11 @@ function campaignFolderOptions(current) {
   return opt('', t('sk_nocamp'), !current) + campaignFolders().map(n => opt(n, n, n === current)).join('');
 }
 function renderList() {
+  // keep what is open or closed on screen right now: the toggle event may not have fired yet
+  for (const d of document.querySelectorAll('details[data-campfolder]')) {
+    if (d.open) closedCampaignFolders.delete(d.dataset.campfolder);
+    else closedCampaignFolders.add(d.dataset.campfolder);
+  }
   const groups = [...campaignFolders(), ''],
     folderName = $('c_folder_name') ? $('c_folder_name').value : '',
     pending = MP.role === 'player' ? MP.createPending : null,
