@@ -6120,11 +6120,11 @@ function discs(c = C) {
 function discCost(c = C) {
   return discs(c).reduce((s, d, i) => s + Math.round(COST.tier[d[2]] * COST.mult[Math.min(i, 3)]), 0);
 }
-function spent() {
-  const pr = C.prof || {};
-  let s = discCost() + COST.prof.arm[pr.arm || 0] + (pr.shd ? COST.prof.shd : 0);
-  for (const k in C.st) s += stCost(C.st[k]);
-  return s + talCost(C) + COST.dv[C.dv];
+function spent(c = C) {
+  const pr = c.prof || {};
+  let s = discCost(c) + COST.prof.arm[pr.arm || 0] + (pr.shd ? COST.prof.shd : 0);
+  for (const k in c.st) s += stCost(c.st[k]);
+  return s + talCost(c) + COST.dv[c.dv];
 }
 function armNeed(k) {
   return k === 'none' ? 0 : { l: 1, m: 2, h: 3 }[(ARM[k] || ARM.none)[2]];
@@ -6205,7 +6205,7 @@ function campSync() {
   if (ch) lsSet('luparis-chars', CH);
 }
 function campAward(name, x, label) {
-  if (!name) return;
+  if (!name || MP.role === 'player') return;
   const o = campsGet(),
     r = campRec(o, name);
   r.xp = Math.max(0, r.xp + x);
@@ -6213,11 +6213,13 @@ function campAward(name, x, label) {
   r.log = r.log.slice(0, 60);
   campsPut(o);
   campSync();
+  if (MP.role === 'host') saveC();
   if (CH.active) renderSheet();
   else renderList();
   if (typeof renderHand === 'function') renderHand();
 }
 function campPanel() {
+  if (MP.role === 'player') return '';
   const o = campsGet(),
     names = camps();
   if (!names.length) return '';
@@ -6304,8 +6306,8 @@ function renderSheet() {
   {
     const cr = C.camp && campsGet()[C.camp],
       e = $('c_xp');
-    e.readOnly = !!cr;
-    e.title = cr
+    e.readOnly = MP.role === 'player' || !!cr;
+    e.title = e.readOnly
       ? L2(
           'Campaign XP, managed by the GM in the character list.',
           'XP de campagne, gérée par le MJ dans la liste des personnages.',
@@ -6819,7 +6821,7 @@ for (const [id, key] of [
         campSync();
         const r = C.camp && campsGet()[C.camp],
           x = $('c_xp');
-        x.readOnly = !!r;
+        x.readOnly = MP.role === 'player' || !!r;
         if (r) {
           x.value = C.xp;
           renderSheet();
@@ -6999,7 +7001,7 @@ fiche.addEventListener('submit', e => {
   window.scrollTo(0, 0);
 });
 $('c_xp').addEventListener('input', e => {
-  if (e.target.readOnly) return;
+  if (MP.role === 'player' || e.target.readOnly) return;
   C.xp = Math.max(0, +e.target.value || 0);
   saveC();
   renderSheet();
@@ -11710,6 +11712,64 @@ function cleanCharPatch(c) {
   if (Array.isArray(c.corder)) o.corder = c.corder.slice(0, 40).map(x => S(x, 40));
   return o;
 }
+// The GM owns earned XP. Accept only a legal allocation of that XP on the claimed sheet.
+function cleanProgression(incoming, current) {
+  const patch = {},
+    level = lvl(current),
+    integer = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
+    readMap = (field, keys, low, limit) => {
+      if (incoming[field] == null) return true;
+      const source = incoming[field];
+      if (typeof source !== 'object' || Array.isArray(source)) return false;
+      const result = {};
+      for (const k of keys) {
+        const old = (current[field] || {})[k] || 0,
+          v = source[k] ?? 0;
+        if (!integer(v, low, Math.max(old, limit(k)))) return false;
+        if (field !== 'tal' || v) result[k] = v;
+      }
+      patch[field] = result;
+      return true;
+    },
+    tierLimit = GATE.reduce((best, gate, i) => (gate <= level ? i : best), 0),
+    talentLimit = k => Math.min(TAL[k].c.length, level >= 11 ? 3 : level >= 5 ? 2 : 1);
+  if (
+    !readMap('st', [...INT, ...DOM], -1, () => stCap(current)) ||
+    !readMap('sch', Object.keys(SCH), 0, () => tierLimit) ||
+    !readMap('fam', Object.keys(FAM), 0, () => tierLimit) ||
+    !readMap('tal', Object.keys(TAL), 0, talentLimit)
+  ) return null;
+  if (incoming.apex != null) {
+    if (!integer(incoming.apex, 0, Math.max(current.apex || 0, tierLimit))) return null;
+    patch.apex = incoming.apex;
+  }
+  if (incoming.dv != null) {
+    if (![6, 8, 10, 12].includes(incoming.dv)) return null;
+    patch.dv = incoming.dv;
+  }
+  if (incoming.prof != null) {
+    const p = incoming.prof;
+    if (!integer(p.arm, 0, 3) || ![0, 1, false, true].includes(p.shd)) return null;
+    patch.prof = { arm: p.arm, shd: p.shd ? 1 : 0 };
+  }
+  if (incoming.sf != null) {
+    if (!Array.isArray(incoming.sf) || incoming.sf.length > 100) return null;
+    const cap = level >= 11 ? 3 : level >= 5 ? 2 : 1;
+    if (incoming.sf.some((x, i) => !x || !integer(x.r, 0, Math.max(cap, (current.sf || [])[i]?.r || 0)))) return null;
+    patch.sf = incoming.sf.map(x => ({ n: String(x.n || '').slice(0, 60), r: x.r }));
+  }
+  const candidate = { ...current, ...patch };
+  // Keep existing GM-approved exceptions, but never buy a talent without its prerequisites.
+  for (const k of Object.keys(TAL))
+    if ((candidate.tal[k] || 0) > ((current.tal || {})[k] || 0) && !talReq(TAL[k], candidate)) return null;
+  const cost = spent(candidate);
+  // Older over-budget sheets may be corrected without forcing an immediate full reset.
+  if (!Number.isFinite(cost) || cost > Math.max(+current.xp || 0, spent(current))) return null;
+  if (incoming.stances != null && Array.isArray(incoming.stances))
+    patch.stances = [...new Set(incoming.stances.filter(n => Number.isInteger(n) && STANCES[n]))].slice(0, candidate.tal.stance || 0);
+  if (Object.keys(patch).some(k => JSON.stringify(patch[k]) !== JSON.stringify(current[k]))) patch.demo = false;
+  return patch;
+}
 function mpTaken(id, conn) {
   return MP.conns.some(c => c !== conn && c.open && c.me === id);
 }
@@ -11778,10 +11838,30 @@ function mpHostMsg(m, conn) {
   if (m.type === 'char' && m.c && m.c.id) {
     const i = CH.list.findIndex(x => x.id === m.c.id);
     if (i >= 0) {
-      CH.list[i] = Object.assign({}, CH.list[i], cleanCharPatch(m.c));
-      if (C && C.id === m.c.id) C = CH.list[i];
+      const current = CH.list[i],
+        progression = cleanProgression(m.c, current),
+        next = Object.assign({}, current, cleanCharPatch(m.c), progression || {});
+      syncCells(next);
+      CH.list[i] = next;
+      if (C && C.id === m.c.id) C = next;
+      // Recompute placed character tokens after changing their stats or hit die.
+      const d = derived(next);
+      for (const k of tokens) {
+        if (k.cid !== next.id) continue;
+        k.esq = d.eva;
+        k.maj = d.major;
+        k.sev = d.severe;
+        k.init = d.init;
+        k.hpMax = d.hp;
+        k.hp = Math.max(0, d.hp - (next.used.hp || 0));
+      }
+      if (tokens.some(k => k.cid === next.id)) {
+        save();
+        draw();
+      }
       saveC();
       if (CH.active) renderSheet();
+      if (!progression) mpYou(conn, L2('Not enough XP or unmet prerequisites.', 'XP insuffisante ou prérequis non remplis.'));
     }
   }
 }
@@ -12088,7 +12168,7 @@ function mpRender(msg) {
     B.innerHTML = `<p>${L2('Connected to game', 'Connecté à la partie')} <b class="mpcode">${MP.code}</b>${MP.got ? '' : ' …'} · ${L2(...ROLE_N[MP.prole])}</p>${
       spec
         ? `<p class="small">${L2('You follow the game without acting on it.', 'Tu suis la partie sans y agir.')}</p>`
-        : `<label class="small">${L2('My character', 'Mon personnage')} <select id="mp_me"><option value="">—</option>${CH.list.map(c => `<option value="${esc(c.id)}"${c.id === MP.me ? ' selected' : ''}>${esc(c.name || '?')}</option>`).join('')}</select></label><p class="small">${L2('You can move your own token, roll, and use your cards. The game master does the rest.', 'Tu peux déplacer ton pion, lancer les dés et utiliser tes cartes. Le MJ gère le reste.')}</p>`
+        : `<label class="small">${L2('My character', 'Mon personnage')} <select id="mp_me"><option value="">—</option>${CH.list.map(c => `<option value="${esc(c.id)}"${c.id === MP.me ? ' selected' : ''}>${esc(c.name || '?')}</option>`).join('')}</select></label><p class="small">${L2('You can move your own token, roll, use your cards and spend your earned XP. The game master awards XP.', 'Tu peux déplacer ton pion, lancer les dés, utiliser tes cartes et dépenser ton XP. Le MJ attribue l’XP.')}</p>`
     }<div class="row"><button type="button" id="mp_leave">${L2('Leave', 'Quitter')}</button></div>`;
   }
   if (MP.msg) B.insertAdjacentHTML('beforeend', `<p class="small mpmsg" aria-live="polite">${esc(MP.msg)}</p>`);

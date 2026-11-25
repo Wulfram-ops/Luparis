@@ -135,6 +135,7 @@ def run(chrome: str | None) -> None:
         host.evaluate("DBG('mpHost()')")
         host.wait_for_timeout(400)
         code = host.evaluate("DBG('MP.code')")
+        host.evaluate("DBG(`{const c=blankC();c.id='xp-test';c.name='XP Test';c.xp=150;CH.list.push(c);saveC()}`)")
         host.evaluate(
             "DBG(`tokens.push({id:'f1',x:1,y:1,t:'foe',n:'G1',nm:'Gob',esq:12,maj:8,sev:16,hp:2,hpMax:4,mid:'x',no:'secret'},"
             "{id:'h1',x:3,y:3,t:'foe',n:'H'}); tokens[tokens.length-1].hid=1; MP.secret=true; pushRoll('<b>7</b>','GM'); MP.secret=false`)"
@@ -142,7 +143,7 @@ def run(chrome: str | None) -> None:
         player = ctx.new_page()
         player.goto(url + "?debug=1&local=1")
         player.wait_for_timeout(800)
-        player.evaluate(f"DBG(\"mpJoin('{code}')\")")
+        player.evaluate(f"DBG(\"mpJoin('{code}',{{me:'xp-test'}})\")")
         player.wait_for_timeout(1000)
         check("player joins the game", player.evaluate("DBG('MP.got')") is True)
         seen = player.evaluate("DBG('JSON.stringify(tokens.filter(k=>k.t===\\'foe\\'))')")
@@ -152,6 +153,20 @@ def run(chrome: str | None) -> None:
             seen,
         )
         check("secret GM rolls stay secret", player.evaluate("DBG('RL.some(r=>r.s===\\'GM\\')')") is False)
+        player.click('.tabs a[data-v="fiche"]')
+        player.locator('[data-open="xp-test"]').click()
+        check("player cannot award own XP", player.locator("#c_xp").get_attribute("readonly") is not None)
+        player.locator('[data-stat="P"][data-d="1"]').click()
+        host.wait_for_timeout(600)
+        check("player XP purchase reaches GM", host.evaluate("DBG(\"CH.list.find(c=>c.id==='xp-test').st.P\")") == 1)
+        check("XP purchase recalculates cells", host.evaluate("DBG(\"CH.list.find(c=>c.id==='xp-test').cells.P_phy\")") == 1)
+        check("XP purchase survives host sync", player.evaluate("DBG(\"spent(CH.list.find(c=>c.id==='xp-test'))\")") == 20)
+        player.evaluate("DBG(`{const c=CH.list.find(c=>c.id==='xp-test');mpSend({type:'char',c:{...c,xp:999999,dv:12}})}`)")
+        host.wait_for_timeout(600)
+        check("host rejects over-budget upgrades and forged XP", host.evaluate("DBG(\"{const c=CH.list.find(c=>c.id==='xp-test');c.xp===150&&c.dv===6&&c.st.P===1}\")"))
+        player.evaluate("DBG(`{const c=CH.list.find(c=>c.id==='xp-test');mpSend({type:'char',c:{...c,xp:999999}})}`)")
+        host.wait_for_timeout(600)
+        check("host ignores forged XP even with valid allocation", host.evaluate("DBG(\"CH.list.find(c=>c.id==='xp-test').xp\")") == 150)
         spec = ctx.new_page()
         spec.goto(url + "?debug=1&local=1")
         spec.wait_for_timeout(800)

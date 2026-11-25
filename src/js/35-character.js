@@ -400,11 +400,11 @@ function discs(c = C) {
 function discCost(c = C) {
   return discs(c).reduce((s, d, i) => s + Math.round(COST.tier[d[2]] * COST.mult[Math.min(i, 3)]), 0);
 }
-function spent() {
-  const pr = C.prof || {};
-  let s = discCost() + COST.prof.arm[pr.arm || 0] + (pr.shd ? COST.prof.shd : 0);
-  for (const k in C.st) s += stCost(C.st[k]);
-  return s + talCost(C) + COST.dv[C.dv];
+function spent(c = C) {
+  const pr = c.prof || {};
+  let s = discCost(c) + COST.prof.arm[pr.arm || 0] + (pr.shd ? COST.prof.shd : 0);
+  for (const k in c.st) s += stCost(c.st[k]);
+  return s + talCost(c) + COST.dv[c.dv];
 }
 function armNeed(k) {
   return k === 'none' ? 0 : { l: 1, m: 2, h: 3 }[(ARM[k] || ARM.none)[2]];
@@ -485,7 +485,7 @@ function campSync() {
   if (ch) lsSet('luparis-chars', CH);
 }
 function campAward(name, x, label) {
-  if (!name) return;
+  if (!name || MP.role === 'player') return;
   const o = campsGet(),
     r = campRec(o, name);
   r.xp = Math.max(0, r.xp + x);
@@ -493,11 +493,13 @@ function campAward(name, x, label) {
   r.log = r.log.slice(0, 60);
   campsPut(o);
   campSync();
+  if (MP.role === 'host') saveC();
   if (CH.active) renderSheet();
   else renderList();
   if (typeof renderHand === 'function') renderHand();
 }
 function campPanel() {
+  if (MP.role === 'player') return '';
   const o = campsGet(),
     names = camps();
   if (!names.length) return '';
@@ -584,8 +586,8 @@ function renderSheet() {
   {
     const cr = C.camp && campsGet()[C.camp],
       e = $('c_xp');
-    e.readOnly = !!cr;
-    e.title = cr
+    e.readOnly = MP.role === 'player' || !!cr;
+    e.title = e.readOnly
       ? L2(
           'Campaign XP, managed by the GM in the character list.',
           'XP de campagne, gérée par le MJ dans la liste des personnages.',
@@ -1099,7 +1101,7 @@ for (const [id, key] of [
         campSync();
         const r = C.camp && campsGet()[C.camp],
           x = $('c_xp');
-        x.readOnly = !!r;
+        x.readOnly = MP.role === 'player' || !!r;
         if (r) {
           x.value = C.xp;
           renderSheet();
@@ -1279,7 +1281,7 @@ fiche.addEventListener('submit', e => {
   window.scrollTo(0, 0);
 });
 $('c_xp').addEventListener('input', e => {
-  if (e.target.readOnly) return;
+  if (MP.role === 'player' || e.target.readOnly) return;
   C.xp = Math.max(0, +e.target.value || 0);
   saveC();
   renderSheet();
