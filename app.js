@@ -670,7 +670,7 @@ const ELEVATION_SCALE = Math.tan((12 * Math.PI) / 180),
 let TW, LH, ox, oy, W, Hc, TW0;
 function layout() {
   const r = stage.getBoundingClientRect(),
-    dpr = PERF.low ? 1 : Math.min(2, window.devicePixelRatio || 1);
+    dpr = Math.min(2, window.devicePixelRatio || 1);
   W = r.width;
   Hc = r.height;
   if(!W||!Hc)return;
@@ -799,7 +799,7 @@ function gv(vx, vy) {
   return x >= 0 && y >= 0 && x < N && y < N ? H[x][y] : null;
 }
 function hasAnim() {
-  if (reduce || N > 40 || PERF.low) return false;
+  if (reduce || N > 40) return false;
   if (Object.values(ENV).some(v => ['fire', 'fog', 'dark'].includes(v.k || v))) return true;
   const p = B[bio].pit;
   if (p !== 'lava' && p !== 'water' && p !== 'swamp') return false;
@@ -1316,15 +1316,9 @@ let BOK = false,
   BCAM = null,
   BHIDE = null,
   fullT = 0;
-var PERF = { mode: 'auto', low: false, hist: [], warned: false };
-try {
-  const m = localStorage.getItem('luparis-perf');
-  if (m === 'low' || m === 'high') PERF.mode = m;
-  PERF.low = m === 'low';
-} catch (e) {}
 // overscan: the scene is rendered with a margin around the view, so panning never shows an empty edge
 function ovs() {
-  return Math.round(Math.min(PERF.low ? 260 : 420, Math.max(W, Hc) * (PERF.low ? 0.25 : 0.35)));
+  return Math.round(Math.min(420, Math.max(W, Hc) * 0.35));
 }
 function baseBegin(part) {
   const dpr = W ? cv.width / W : 1;
@@ -1434,7 +1428,7 @@ function drawMoveNow() {
 let moveQ = false;
 function drawMove() {
   clearTimeout(fullT);
-  fullT = setTimeout(draw, PERF.low ? 160 : 90);
+  fullT = setTimeout(draw, 90);
   if (BCAM && BCAM.TW === TW && (Math.abs(ox - BCAM.ox) > BCAM.M * 0.8 || Math.abs(oy - BCAM.oy) > BCAM.M * 0.8)) {
     clearTimeout(fullT);
     draw();
@@ -1454,50 +1448,6 @@ function drawLite() {
     liteQ = false;
     if (!drawQ) drawLiteNow();
   });
-}
-function perfNote(ms) {
-  if (PERF.mode !== 'auto' || PERF.low) return;
-  PERF.hist.push(ms);
-  if (PERF.hist.length > 12) PERF.hist.shift();
-  if (PERF.hist.length < 8) return;
-  const a = [...PERF.hist].sort((x, y) => x - y)[4];
-  if (a > 40) {
-    PERF.low = true;
-    PERF.hist = [];
-    perfUI();
-    layout();
-    const m = document.getElementById('save_msg');
-    if (m)
-      m.textContent = L2(
-        'Slow display detected: light quality on.',
-        'Affichage lent détecté : qualité allégée activée.',
-      );
-  }
-}
-function perfSet(m) {
-  PERF.mode = m;
-  PERF.low = m === 'low';
-  PERF.hist = [];
-  try {
-    localStorage.setItem('luparis-perf', m);
-  } catch (e) {}
-  perfUI();
-  layout();
-  if (typeof wApply === 'function' && WS) wApply();
-}
-function perfUI() {
-  const el = document.getElementById('perfq');
-  if (!el) return;
-  el.innerHTML = [
-    ['auto', L2('Auto', 'Auto')],
-    ['high', L2('High', 'Haute')],
-    ['low', L2('Light (slow PC)', 'Allégée (PC modeste)')],
-  ]
-    .map(
-      ([v, n]) =>
-        `<option value="${v}"${v === PERF.mode ? ' selected' : ''}>${esc(n)}${v === 'auto' && PERF.low ? ' ✓ ' + esc(L2('light', 'allégée')) : ''}</option>`,
-    )
-    .join('');
 }
 const OBJT = {
   door: { n: ['Door', 'Porte'], tg: ['open', 'ouverte', 'closed', 'fermée'] },
@@ -2292,10 +2242,8 @@ function hoverInfo() {
 let STBG = '';
 function drawNow(partOk) {
   if (!W || !Hc) return;
-  const T0 = performance.now(),
-    b = B[bio],
-    lq = PERF.low,
-    lod = TW >= 9 && !lq,
+  const b = B[bio],
+    lod = TW >= 9,
     lodS = TW >= 5;
   const part =
     partOk &&
@@ -2354,7 +2302,7 @@ function drawNow(partOk) {
         const g = tileCorners(vx, vy, 0),
           sc = f === 4 ? FW.side[h - 1] : f === 5 ? '#6a4a2e' : FSIDE[f] ? FSIDE[f] : b.side[h - 1];
         poly([t[3], t[2], g[2], g[3]], mul(sc, 0.86), 'rgba(0,0,0,.25)');
-        if (b.brick && !lq) {
+        if (b.brick) {
           ctx.strokeStyle = 'rgba(0,0,0,.25)';
           ctx.lineWidth = 1;
           for (let i = 1; i <= h * 2; i++) {
@@ -2386,7 +2334,7 @@ function drawNow(partOk) {
       }
     }
 
-    if (h > 0 && !F[c.x][c.y] && TW >= 7 && !lq) {
+    if (h > 0 && !F[c.x][c.y] && TW >= 7) {
       const [cx, cy] = scr(vx, vy, h);
       deco(b.deco[h - 1], cx, cy, h, c.x, c.y);
     }
@@ -2411,7 +2359,6 @@ function drawNow(partOk) {
   ctx = MAINX;
   baseEnd(M);
   drawMoveNow();
-  if (!part) perfNote(performance.now() - T0);
   if (hasAnim() || (bio === 'volcan' && !reduce)) requestAnimationFrame(tick);
 }
 function ctr(c) {
@@ -6632,6 +6579,23 @@ function cellName(k) {
     di = DOM.indexOf(d);
   return lang === 'fr' ? `${T.fr.it[ii]} ${T.fr.dm[di]}` : `${T.en.dm[di]} ${T.en.it[ii]}`;
 }
+function syncCharacterVitality(c, max) {
+  const hp = Math.max(0, max - (c.used.hp || 0));
+  const changed = tokens.filter(k => k.cid === c.id && k.hp !== hp);
+  if (!changed.length) return;
+  for (const k of changed) k.hp = hp;
+  save();
+  draw();
+}
+function restCharacter(c, long) {
+  if (long) c.used = { hp: 0, mana: 0, st: 0 };
+  else {
+    c.used.hp = Math.floor((c.used.hp || 0) / 2);
+    c.used.mana = Math.ceil((c.used.mana || 0) / 2);
+    c.used.st = 0;
+  }
+  syncCharacterVitality(c, derived(c).hp);
+}
 const DIFF = [
   ['trivial', 0, ['Trivial', 'Trivial']],
   ['easy', 5, ['Easy', 'Facile']],
@@ -7294,13 +7258,8 @@ fiche.addEventListener('click', e => {
       else rollDmg(nm, tier, SDIE[k] || 8, 0, 's' + k);
     }
     return;
-  } else if (b.id === 'c_short') {
-    const U = C.used;
-    U.hp = Math.floor(U.hp / 2);
-    U.mana = Math.ceil(U.mana / 2);
-    U.st = 0;
-  } else if (b.id === 'c_long') {
-    C.used = { hp: 0, mana: 0, st: 0 };
+  } else if (b.id === 'c_short' || b.id === 'c_long') {
+    restCharacter(C, b.id === 'c_long');
   } else if (b.id === 'c_copy') {
     const txt = JSON.stringify(C);
     navigator.clipboard.writeText(txt).then(
@@ -7666,7 +7625,6 @@ T.en.sk_confirm2 = 'Confirm: erase the sheet?';
 T.fr.sk_confirm2 = 'Confirmer : effacer la fiche ?';
 // ---- 40-table.js
 Object.assign(T.en, {
-  perf_q: 'Quality',
   t_tpl: 'Zone',
   tpl_zones: 'Effect zones',
   mp_title: 'Multiplayer (test)',
@@ -7727,7 +7685,6 @@ Object.assign(T.en, {
   },
 });
 Object.assign(T.fr, {
-  perf_q: 'Qualité',
   t_tpl: 'Zone',
   tpl_zones: "Zones d'effet",
   mp_title: 'Partie à plusieurs (test)',
@@ -8363,7 +8320,7 @@ const lastInf = {};
 let handId = null;
 const HLOG = [];
 try {
-  handId = lsGet('luparis-hand', null);
+  handId = lsGet('luparis-hand', CH.list.length === 1 ? CH.list[0].id : null);
 } catch (e) {}
 const FX = [
   [
@@ -8495,47 +8452,58 @@ function hDmg(name, n, d, mod) {
   return `${esc(name)} · ${n}d${d}${mod ? sgn(mod) : ''} [${rs.join(', ')}] = <b>${tot}</b>`;
 }
 function trk(lbl, key, max, used) {
-  const left = Math.max(0, max - used);
-  return `<div class="htrk"><span>${lbl}</span><button type="button" data-ht="${key}" data-d="1" aria-label="${esc(lbl)} −">−</button><b>${left}/${max}</b><button type="button" data-ht="${key}" data-d="-1" aria-label="${esc(lbl)} +">+</button></div>`;
+  const left = Math.max(0, max - (used || 0));
+  return `<div class="htrk" data-resource="${key}"><span>${lbl}</span><b>${left}<small>/${max}</small></b><div class="htrk-controls"><button type="button" data-ht="${key}" data-d="1" aria-label="${esc(lbl)} −"${left ? '' : ' disabled'}>−</button><button type="button" data-ht="${key}" data-d="-1" aria-label="${esc(lbl)} +"${left < max ? '' : ' disabled'}>+</button></div></div>`;
 }
-let pfOpen = true;
-try {
-  const v = localStorage.getItem('luparis-pf');
-  if (v != null) pfOpen = JSON.parse(v);
-} catch (e) {}
-function pfSheet(c, D) {
-  const ti = lang === 'fr' ? 1 : 0,
-    a = ARM[c.armor] || ARM.none,
-    sh = SHD[c.shield] || SHD.none,
-    S = c.st || {},
+function playSheetHeader(c, D, u, sel) {
+  const details = [c.people, `${t('sk_level')} ${D.L}`, `${+c.xp || 0} XP`, c.camp].filter(Boolean).map(esc).join(' · ');
+  const tk = tokens.find(k => k.cid === c.id);
+  const initiative = (tk && INI.o.find(o => o.id === tk.id)?.v) ?? INIP[c.id];
+  const stat = (label, value) => `<div class="play-stat"><span>${label}</span><b>${value}</b></div>`;
+  return `<div class="hside">
+    <div class="play-identity">
+      ${c.img ? `<img class="play-portrait" src="${esc(c.img)}" alt="">` : ''}
+      <div><h3>${esc(c.name || '?')}</h3><p>${details}</p></div>
+      <div class="play-sheet-links">
+        <button type="button" class="play-jump" data-play-jump="stage">${L2('Map', 'Carte')}</button>
+        <button type="button" data-ha="sheet">${L2('Full sheet', 'Fiche complète')}</button>
+      </div>
+    </div>
+    ${sel}
+    <div class="play-combat-stats">
+      ${stat(t('sk_eva'), D.eva)}
+      ${stat(L2('Armor', 'Armure'), D.av)}
+      ${stat(L2('Speed', 'Déplacement'), D.mv + ' ' + L2('tiles', 'cases'))}
+      <button type="button" class="play-stat" data-pfi="1" aria-label="${L2('Roll initiative', 'Lancer l’initiative')} ${sgn(D.init)}">
+        <span>${t('sk_init')}</span><b>${initiative ?? sgn(D.init)}${initiative != null ? ` <small>(${sgn(D.init)})</small>` : ''}</b>
+      </button>
+    </div>
+    <div class="play-resources">
+      ${trk(t('sk_vit'), 'hp', D.hp, u.hp)}
+      ${D.mana > 0 ? trk('Mana', 'mana', D.mana, u.mana) : ''}
+      ${D.st ? trk(L2('Breath', 'Souffle'), 'st', D.st, u.st) : ''}
+    </div>
+  </div>`;
+}
+function pfSheet(c) {
+  const S = c.st || {},
     hd = lang === 'fr' ? T.fr.dmH : T.en.dm,
     Q = handSel[c.id + '_pf'] || (handSel[c.id + '_pf'] = { sf: -1, adv: 0 });
-  const box = (k, v) => `<div class="pfb"><span>${k}</span><b>${v}</b></div>`;
-  const mx = `<table class="pfmx"><tr><th></th>${DOM.map((d, i) => `<th>${hd[i]} <small>${sgn(S[d] || 0)}</small></th>`).join('')}</tr>${INT.map(
+  const mx = `<table class="pfmx"><thead><tr><td></td>${DOM.map((d, i) => `<th scope="col">${hd[i]} <small>${sgn(S[d] || 0)}</small></th>`).join('')}</tr></thead><tbody>${INT.map(
     (i, ii) =>
-      `<tr><th>${T[lang].it[ii]} <small>${sgn(S[i] || 0)}</small></th>${DOM.map(d => {
-        const k = i + '_' + d;
-        return `<td><button type="button" data-pfr="${k}" title="${esc(cellName(k))} · ${esc(T[lang].hint[k])}">${sgn(c.cells[k] || 0)}</button></td>`;
+      `<tr><th scope="row">${T[lang].it[ii]} <small>${sgn(S[i] || 0)}</small></th>${DOM.map(d => {
+        const k = i + '_' + d,
+          score = sgn(c.cells[k] || 0);
+        return `<td><button type="button" data-pfr="${k}" aria-label="${esc(cellName(k))} ${score}"><b>${score}</b><small>${esc(T[lang].hint[k])}</small></button></td>`;
       }).join('')}</tr>`,
-  ).join('')}</table>`;
-  const sfs = (c.sf || []).filter(f => f.r > 0 && f.n);
-  const mods = `<div class="pfmods">${Q.sf >= 0 && c.sf[Q.sf] ? `<span class="pflab">${L2('Expertise', 'Savoir-faire')}</span><button type="button" class="chip on" data-pfs="${Q.sf}" aria-pressed="true">${esc(c.sf[Q.sf].n)} +${2 * c.sf[Q.sf].r}</button>` : ''}<span class="pflab">${L2('Roll', 'Jet')}</span><button type="button" class="chip${Q.adv === 1 ? ' on' : ''}" data-pfa="1" aria-pressed="${Q.adv === 1}">${L2('Advantage', 'Avantage')}</button><button type="button" class="chip${Q.adv === -1 ? ' on' : ''}" data-pfa="-1" aria-pressed="${Q.adv === -1}">${L2('Disadvantage', 'Désavantage')}</button></div>`;
-  const tk0 = tokens.find(k => k.cid === c.id),
-    io = tk0 && INI.o.find(o => o.id === tk0.id),
-    ip = io ? io.v : INIP[c.id],
-    def = `<div class="pfst"><button type="button" class="pfb pfini" data-pfi="1" title="${L2('Roll initiative', "Lancer l'initiative")}"><span>${L2('Initiative', 'Initiative')} ${sgn(D.init)}</span><b>${ip != null ? ip : 'd20'}</b></button>${box(L2('Speed', 'Déplacement'), D.mv + ' ' + L2('tiles', 'cases'))}</div>`;
-  const inv = c.inv || {},
-    items = (inv.items || []).map(x => esc(x.n || '') + ((x.q || 1) > 1 ? ' ×' + x.q : '')).filter(Boolean),
-    pots = POTS.filter(p => (inv.pot || {})[p[0]] > 0).map(p => `${esc(tr(p[1]))} ×${inv.pot[p[0]]}`),
-    g = inv.gold || {};
-  const gear = [
-    `${esc(tr(a[0]))}${a[1] ? ' (' + a[1] + ')' : ''}${D.armOk ? '' : ' ⚠'}`,
-    ...(c.shield !== 'none' ? [esc(tr(sh[0])) + (D.shdOk ? '' : ' ⚠')] : []),
-    ...(c.weapons || []).map(w => esc(w.n)),
-  ];
-  return `<div class="pf"><div class="pfsum">${L2('Character sheet', 'Fiche')} · ${esc(c.people || '')}${c.people ? ' · ' : ''}${L2('level', 'niveau')} ${D.L} · ${+c.xp || 0} XP${c.camp ? ' · ' + esc(c.camp) : ''}</div><div class="pfg">
- <div>${mx}</div><div>${mods}${def}
- </div></div></div>`;
+  ).join('')}</tbody></table>`;
+  return `<div class="pf"><h4>${L2('Check and saving throw matrix', 'Matrice des tests et sauvegardes')}</h4>
+    <div class="pfmods">
+      <button type="button" class="chip" data-pfa="1" aria-pressed="${Q.adv === 1}">${L2('Advantage', 'Avantage')}</button>
+      <button type="button" class="chip" data-pfa="-1" aria-pressed="${Q.adv === -1}">${L2('Disadvantage', 'Désavantage')}</button>
+    </div>
+    ${mx}
+  </div>`;
 }
 function talCards(c) {
   const ti = lang === 'fr' ? 1 : 0,
@@ -8610,10 +8578,14 @@ function renderHand() {
   // a player picks their character once, in the multiplayer card: no second chooser here
   const sel =
     MP.role === 'player'
-      ? `<div class="hsel"><span>${L2('Character', 'Personnage')}</span><b>${c ? esc(c.name || '?') : L2('choose it in “Multiplayer”', 'à choisir dans « Partie à plusieurs »')}</b></div>`
+      ? ''
       : `<label class="hsel"><span>${L2('Character', 'Personnage')}</span><select id="h_ch"><option value="">—</option>${CH.list.map(x => `<option value="${esc(x.id)}"${c && c.id === x.id ? ' selected' : ''}>${esc(x.name || '?')}${x.camp ? ' · ' + esc(x.camp) : ''}</option>`).join('')}</select></label>`;
+  P.setAttribute('aria-label', L2('Character sheet', 'Fiche de personnage'));
   if (!c) {
-    P.innerHTML = `<div class="hhead"><h3>${L2('Character', 'Personnage')}</h3>${sel}</div><p class="small">${L2('Pick a character, or select a character token on the map.', "Choisis un personnage, ou sélectionne le pion d'un personnage sur la carte.")}</p>`;
+    const prompt = MP.role === 'player'
+      ? L2('Choose your character in the Session tab.', 'Choisis ton personnage dans l’onglet Session.')
+      : L2('Choose a character here or select their token on the map.', 'Choisis un personnage ici ou sélectionne son pion sur la carte.');
+    P.innerHTML = `<div class="hhead"><h3>${L2('Character', 'Personnage')}</h3><button type="button" class="play-jump" data-play-jump="stage">${L2('Map', 'Carte')}</button></div><div class="play-empty-sheet">${sel}<p>${prompt}</p>${MP.role === 'player' ? '' : `<a href="#fiche">${L2('Manage characters', 'Gérer les personnages')}</a>`}</div>`;
     return;
   }
   const D = derived(c),
@@ -8645,13 +8617,18 @@ function renderHand() {
       ? `<div class="inf"><label><span>${L2('Infusion', 'Infusion')}</span><select data-hinf="${i}"><option value="">—</option>${srcs.map(k => `<option value="${k}"${infOn === k ? ' selected' : ''}>${esc(srcN(k))}</option>`).join('')}</select></label>${infOn ? `<div class="fx">${Array.from({ length: infT }, (_, n) => `<button type="button" class="chip${infV === n + 1 ? ' on' : ''}" data-hiv="${i}" data-v="${n + 1}">${n + 1}</button>`).join('')}</div>` : ''}</div>`
       : '';
     WL.push(
-      `<div class="wpn"><div class="wpt"><b>${esc(w.n)}</b> <span class="small">${esc(tr(FAM[w.f] ? FAM[w.f].n : ['', '']))}</span></div><div class="hb">${L2('Damage', 'Dégâts')} <b>${nd}d${dd}${mod ? sgn(mod) : ''}</b>${infOn ? ` <b>+${infV}d${infD}</b> (${esc(srcN(infOn))}, ${infV} ${infP})` : ''}${tier ? '' : ` <span class="small">(${L2('untrained', 'sans maîtrise')})</span>`}</div>${weaponPassiveHTML(c, i, w, tier, true)}${infH}<div class="hbt"><button type="button" class="go" data-ha="dmg" data-i="${i}">${L2('Damage', 'Dégâts')}</button></div></div>`,
+      `<div class="wpn"><div class="wpt"><b>${esc(w.n)}</b> <span class="small">${esc(tr(FAM[w.f] ? FAM[w.f].n : ['', '']))}${tier ? '' : ` · ${t('sk_unm')}`}</span></div>
+        <div class="hbt">
+          <button type="button" class="go" data-ha="atk" data-i="${i}">${t('sk_attack')} <b>${sgn(ab)}</b></button>
+          <button type="button" data-ha="dmg" data-i="${i}">${t('sk_damage')} <b>${nd}d${dd}${mod ? sgn(mod) : ''}${infOn ? `+${infV}d${infD}` : ''}</b></button>
+        </div>
+        ${tier || infH ? `<details class="play-weapon-options" data-weapon="${i}"><summary>${infH ? L2('Properties and infusion', 'Propriétés et infusion') : L2('Weapon properties', 'Propriétés de l’arme')}</summary>${weaponPassiveHTML(c, i, w, tier)}${infH}</details>` : ''}
+      </div>`,
     );
   });
-  if (WL.length)
-    cards.push(
-      `<div class="hc k-atk"><div class="ht">${L2('Weapons', 'Armes')}</div><div class="hn">${WL.length > 1 ? WL.length + ' ' + L2('weapons', 'armes') : L2('Weapon', 'Arme')}</div>${WL.join('')}</div>`,
-    );
+  cards.unshift(
+    `<div class="hc k-atk"><h4>${L2('Weapons', 'Armes')}</h4>${WL.join('') || `<p class="small">${L2('No weapons equipped.', 'Aucune arme équipée.')}</p>`}</div>`,
+  );
   const sMod = c.cells.P_men || 0;
   for (const k of Object.keys(SCH)) {
     const tier = c.sch[k] || 0;
@@ -8691,6 +8668,12 @@ function renderHand() {
         `<div class="hc k-sf"><div class="ht">${L2('Expertise', 'Savoir-faire')}</div><div class="sfl">${sfs.map(([f, i]) => `<button type="button" class="${Q.sf === i ? 'on' : ''}" data-pfs="${i}" aria-pressed="${Q.sf === i}"><span>${esc(f.n)}</span><b>+${2 * f.r}</b></button>`).join('')}</div><p class="small">${L2('Pick one, then click a cell of the matrix: d20 + cell + expertise.', 'Choisis-en un, puis clique une case de la matrice : d20 + case + savoir-faire.')}</p></div>`,
       );
   }
+  const disciplines = discs(c).map(([kind, key, tier]) => {
+    const name = kind === 'sch' ? tr(SCH[key]) : kind === 'fam' ? tr(FAM[key].n) : 'Apex';
+    return `<li>${esc(name)} <b>+${mb(tier)}</b></li>`;
+  });
+  if (disciplines.length)
+    cards.push(`<div class="hc k-training"><h4>${L2('Masteries', 'Maîtrises')}</h4><ul class="play-masteries">${disciplines.join('')}</ul></div>`);
   cards.push(...talCards(c), ...invCards(c));
   cards.push(
     `<div class="hc k-note"><div class="ht">${L2('Notes', 'Notes')}</div><div class="hn">${L2('Character notes', 'Notes du personnage')}</div><textarea class="hnote" data-hnotes="1" rows="7" placeholder="${L2('Same notes as on the character sheet.', 'Mêmes notes que sur la fiche du personnage.')}">${esc(c.notes || '')}</textarea></div>`,
@@ -8703,7 +8686,11 @@ function renderHand() {
   cards.push(
     `<form class="hc k-add" id="h_add"><div class="ht">${L2('New card', 'Nouvelle carte')}</div><select id="h_ak"><option>${L2('Feat', 'Don')}</option><option>${L2('Item', 'Objet')}</option><option>${L2('Trait', 'Trait')}</option><option>${L2('Condition', 'État')}</option></select><input id="h_an" required maxlength="60" placeholder="${L2('Name', 'Nom')}"><textarea id="h_at" rows="3" maxlength="400" placeholder="${L2('What it does', 'Ce que ça fait')}"></textarea><div class="hbt"><button class="go" type="submit">${L2('Add', 'Ajouter')}</button></div></form>`,
   );
-  P.innerHTML = `<div class="htop">${pfSheet(c, D)}<div class="hside"><h3>${esc(c.name || '?')} <span class="small">${L2('level', 'niveau')} ${D.L}</span></h3>${sel}${trk(L2('Vitality', 'Vitalité'), 'hp', D.hp, u.hp)}${D.mana ? trk('Mana', 'mana', D.mana, u.mana) : ''}${D.st ? trk(L2('Breath', 'Souffle'), 'st', D.st, u.st) : ''}</div></div>
+  cards.push(`<div class="hc k-rest"><h4>${L2('Recovery', 'Récupération')}</h4><p class="small">${L2('Hit die', 'Dé de vie')} · d${c.dv}</p><div class="hbt">
+    <button type="button" data-hrest="short">${t('sk_short')}</button>
+    <button type="button" data-hrest="long">${t('sk_long')}</button>
+  </div></div>`);
+  P.innerHTML = `<div class="htop">${pfSheet(c)}${playSheetHeader(c, D, u, sel)}</div>
  <div class="hcards">${hOrder(c, cards).join('')}</div>`;
 }
 document.getElementById('hand').addEventListener('submit', e => {
@@ -8807,23 +8794,14 @@ document.getElementById('hand').addEventListener('input', e => {
   c.notes = e.target.value.slice(0, 5000);
   clearTimeout(window._hnT);
   window._hnT = setTimeout(() => {
-    lsSet('luparis-chars', CH);
+    if (MP.role === 'player') mpSendChar();
+    else lsSet('luparis-chars', CH);
   }, 300);
   if (c === C) {
     const t2 = document.getElementById('c_notes');
     if (t2 && document.activeElement !== t2) t2.value = c.notes;
   }
 });
-document.getElementById('hand').addEventListener(
-  'toggle',
-  e => {
-    if (e.target.classList && e.target.classList.contains('pf')) {
-      pfOpen = e.target.open;
-      lsSet('luparis-pf', pfOpen);
-    }
-  },
-  true,
-);
 document.getElementById('hand').addEventListener('change', e => {
   if (e.target.dataset.hcell != null) {
     const c = handChar();
@@ -8869,16 +8847,23 @@ document.getElementById('hand').addEventListener('click', e => {
   const ds = b.dataset,
     D = derived(c),
     u = c.used;
+  if (ds.ha === 'sheet') {
+    CH.active = c.id;
+    C = c;
+    renderSheet();
+    location.hash = '#fiche';
+    return;
+  }
+  if (ds.hrest) {
+    restCharacter(c, ds.hrest === 'long');
+    saveC();
+    renderHand();
+    return;
+  }
   if (ds.ht) {
     const max = ds.ht === 'hp' ? D.hp : ds.ht === 'mana' ? D.mana : D.st;
-    u[ds.ht] = Math.max(0, Math.min(max, u[ds.ht] + +ds.d));
-    if (ds.ht === 'hp')
-      for (const k of tokens)
-        if (k.cid === c.id) {
-          k.hp = D.hp - u.hp;
-          save();
-          draw();
-        }
+    u[ds.ht] = Math.max(0, Math.min(max, (u[ds.ht] || 0) + +ds.d));
+    if (ds.ht === 'hp') syncCharacterVitality(c, D.hp);
     saveC();
     renderHand();
     return;
@@ -8904,11 +8889,11 @@ document.getElementById('hand').addEventListener('click', e => {
       r1 = dRoll(20),
       r2 = Q.adv ? dRoll(20) : null,
       r = Q.adv === 1 ? Math.max(r1, r2) : Q.adv === -1 ? Math.min(r1, r2) : r1;
+    Q.sf = -1;
+    Q.adv = 0;
     hRoll(
       `${esc(cellName(k))}${f ? ' + ' + esc(f.n) : ''} · d20 (${r2 != null ? r1 + ', ' + r2 + ' → ' + r : r}) ${sgn(b)} = <b>${r + b}</b>${r === 20 ? ` <span class="cr">${t('sk_crit')}</span>` : r === 1 ? ` <span class="ko">${t('sk_miss')}</span>` : ''}`,
     );
-    Q.sf = -1;
-    Q.adv = 0;
     return;
   }
   if (ds.hfold) {
@@ -9015,10 +9000,10 @@ document.getElementById('hand').addEventListener('click', e => {
         lastInf[key] = { sn, iv, iD };
         ex = ` · ${L2('infused', 'infusé')} (${esc(sn)} ${iv}) −${iv} ${pn}`;
       }
-      hRoll(weaponAttack(c, i, null) + ex);
+      hRoll(weaponAttack(c, i, weaponInput(c, i).target) + ex);
       return;
     }
-    // the attack itself is a Matrix roll; the infusion is paid when the damage is rolled
+    // Reuse the infusion paid with the attack, or apply it when rolling damage directly.
     let li = lastInf[key];
     if (!li && ik) {
       const pool = ik === 'apex' ? 'st' : 'mana',
@@ -9586,8 +9571,8 @@ function wPan() {
 function wImg(x0, y0, k) {
   const lo = $('w_lo'),
     hi = $('w_hi');
-  if (!PERF.low && k > 2.1 && !hi.src && hi.dataset.src) hi.src = hi.dataset.src;
-  const useHi = k > 2.1 && hi.dataset.ok && !PERF.low;
+  if (k > 2.1 && !hi.src && hi.dataset.src) hi.src = hi.dataset.src;
+  const useHi = k > 2.1 && hi.dataset.ok;
   lo.style.transform = `translate(${-x0 * k}px,${-y0 * k}px) scale(${k / 2})`;
   if (useHi) hi.style.transform = `translate(${-x0 * k}px,${-y0 * k}px) scale(${k / 4})`;
   hi.hidden = !useHi;
@@ -10279,7 +10264,6 @@ function applyLang() {
   if (typeof fillTpl === 'function' && TPLK) fillTpl();
   if (typeof toolHint === 'function' && TPLK) toolHint();
   if (typeof usBtn === 'function' && TPLK) usBtn();
-  if (typeof perfUI === 'function') perfUI();
   if (typeof layApply === 'function') layApply();
   if (typeof snRender === 'function' && typeof SN !== 'undefined' && SN) snRender();
   if (typeof aiUI === 'function' && typeof AIC !== 'undefined') aiUI();
@@ -11257,7 +11241,9 @@ function usPick(it, alt) {
 }
 function usBtn() {
   const b = document.getElementById('us_open');
-  if (b) b.innerHTML = `<span>🔍 ${esc(L2('Search', 'Rechercher'))}</span><kbd>Ctrl K</kbd>`;
+  const label = L2('Search', 'Rechercher');
+  b.setAttribute('aria-label', label);
+  b.innerHTML = `<span aria-hidden="true">🔍</span><span class="us-label">${esc(label)}</span><kbd>Ctrl K</kbd>`;
 }
 document.getElementById('us_open').addEventListener('click', usOpen);
 document.addEventListener(
@@ -11272,8 +11258,6 @@ document.addEventListener(
   true,
 );
 usBtn();
-perfUI();
-document.getElementById('perfq').addEventListener('change', e => perfSet(e.target.value));
 // ---- contextual tool hint + placement preview
 function toolHint() {
   const el = document.getElementById('thint');
@@ -12050,7 +12034,7 @@ function setMode(m) {
 // ---- 57-layout.js
 // Integrated play workspace: fixed responsive columns, no movable modules.
 const PLAY_AUX={in:['Initiative','Initiative'],tk:['Token','Pion'],mk:['Markers / zones','Repères / zones'],mp:['Session','Session'],img:['Illustrations','Illustrations'],sn:['GM notes','Notes MJ'],roll:['Rolls','Jets']};
-const PLAY_SHEET={actions:['Actions','Actions'],checks:['Checks','Tests'],gear:['Equipment','Équipement'],notes:['Notes','Notes']};
+const PLAY_SHEET={actions:['Combat','Combat'],checks:['Checks','Tests'],magic:['Magic','Magie'],gear:['Equipment','Équipement'],profile:['Profile','Profil']};
 let playAuxTab='in',playSheetTab='actions',playClaimState='',playLastToken=null,playSizeQ=0;
 const playWorkspace=$('play_workspace'),playAux=$('play_aux'),playHand=$('hand');
 function playSelectAux(k){
@@ -12081,11 +12065,16 @@ function playTabsKeyboard(e,selector){
 }
 function playLabels(){
   for(const b of playAux.querySelectorAll('[data-play-tab]'))b.textContent=tr(PLAY_AUX[b.dataset.playTab]);
-  const labels={play_aux_label:['Table tools','Outils de table'],play_map_label:['Battle map','Carte tactique'],g_public:['Public table','Table publique'],g_map:['Second map screen','Carte sur un second écran'],g_screens:['Detect screens','Détecter les écrans']};
+  const labels={play_aux_label:['Table tools','Outils de table'],play_map_label:['Battle map','Carte tactique'],play_jump_sheet:['Character','Personnage'],play_display_label:['Displays','Écrans'],g_public:['Public table','Table publique'],g_map:['Second map screen','Carte sur un second écran'],g_screens:['Detect screens','Détecter les écrans']};
   for(const [id,p] of Object.entries(labels))$(id).textContent=tr(p);
+  $('zin').setAttribute('aria-label',L2('Zoom in','Zoom avant'));
+  $('zout').setAttribute('aria-label',L2('Zoom out','Zoom arrière'));
+  $('mode_play').textContent=L2('Play','Partie');
+  $('mode_edit').textContent=L2('Edit','Édition');
   $('g_screen').setAttribute('aria-label',L2('Destination screen','Écran de destination'));
   for(const o of $('g_screen').options)if(o.dataset.screenSize)o.textContent=(o.dataset.screenLabel||L2('Screen ','Écran ')+(+o.value+1))+' · '+o.dataset.screenSize;
   const msg=$('g_display_msg');if(msg.dataset.en!==undefined)msg.textContent=L2(msg.dataset.en,msg.dataset.fr);
+  playRollPreview();
 }
 function playFit(){
   if(TABLE_DISPLAY||$('v-carte').hidden||playSizeQ)return;
@@ -12135,13 +12124,16 @@ function playArrangeHand(scroll=0){
   }
   panes.checks.append(matrix);
   for(const card of [...cards.children]){
-    const k=card.matches('.k-sf')?'checks':card.matches('.k-inv,.k-eq')?'gear':card.matches('.k-note,.k-add,.k-cus')?'notes':'actions';
+    const k=card.matches('.k-sf')?'checks'
+      :card.matches('.k-spl')?'magic'
+      :card.matches('.k-inv,.k-eq')?'gear'
+      :card.matches('.k-note,.k-add,.k-cus,.k-tal,.k-training')?'profile'
+      :'actions';
     panes[k].append(card);
   }
   for(const k of Object.keys(panes))if(!panes[k].children.length){
-    const p=document.createElement('p');p.className='small';p.textContent=L2('Nothing in this section yet.','Aucun élément dans cette section pour le moment.');panes[k].append(p);
+    const p=document.createElement('p');p.className='play-empty-sheet';p.textContent=t('sk_nospell');panes[k].append(p);
   }
-  const edit=document.createElement('a');edit.href='#fiche';edit.className='play-edit-sheet';edit.textContent=L2('Character management','Gestion des personnages');summary.append(edit);
   cards.replaceWith(nav,content);playSelectSheet(playSheetTab);content.scrollTop=scroll;
 }
 function playRoute(){
@@ -12153,8 +12145,22 @@ function playRoute(){
 {
   const originalHand=renderHand;
   renderHand=function(){
-    const scroll=playHand.querySelector('.play-sheet-body')?.scrollTop||0;
-    const r=originalHand.apply(this,arguments);playArrangeHand(scroll);return r;
+    const character=handChar()?.id||'';
+    const sameCharacter=playHand.dataset.character===character;
+    const scroll=sameCharacter?playHand.querySelector('.play-sheet-body')?.scrollTop||0:0;
+    const openWeapons=sameCharacter?[...playHand.querySelectorAll('[data-weapon][open]')].map(e=>e.dataset.weapon):[];
+    const active=document.activeElement;
+    const focusAttrs=sameCharacter&&playHand.contains(active)&&active.matches('button,select')
+      ?[...active.attributes].filter(a=>a.name==='id'||a.name.startsWith('data-'))
+      :[];
+    originalHand.apply(this,arguments);
+    playHand.dataset.character=character;
+    playArrangeHand(scroll);
+    for(const d of playHand.querySelectorAll('[data-weapon]'))d.open=openWeapons.includes(d.dataset.weapon);
+    if(focusAttrs.length){
+      const match=[...playHand.querySelectorAll(active.tagName)].find(el=>focusAttrs.every(a=>el.getAttribute(a.name)===a.value));
+      match?.focus({preventScroll:true});
+    }
   };
   const originalTok=renderTok;
   renderTok=function(){const r=originalTok.apply(this,arguments);playTokenSync();return r;};
@@ -12168,6 +12174,15 @@ function playRoute(){
     const b=e.target.closest('[data-sheet-tab]');if(!b)return;
     playSelectSheet(b.dataset.sheetTab);const p=playHand.querySelector('.play-sheet-body');if(p)p.scrollTop=0;
   });
+  playWorkspace.addEventListener('click',e=>{
+    const b=e.target.closest('[data-play-jump]');if(!b)return;
+    const target=$(b.dataset.playJump);target.focus({preventScroll:true});target.scrollIntoView({block:'start'});
+  });
+  $('pl_toggle').onclick=()=>{
+    const open=$('pl_bar').classList.toggle('open');
+    $('pl_toggle').setAttribute('aria-expanded',String(open));
+    if(open)$('pl_q').focus({preventScroll:true});
+  };
   playAux.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-play-tab]'));
   playHand.addEventListener('keydown',e=>playTabsKeyboard(e,'[data-sheet-tab]'));
   $('play_last_roll').onclick=()=>{playSelectAux('roll');if(!rlOpen){rlOpen=true;rlRender();}};

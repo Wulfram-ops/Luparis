@@ -13,7 +13,6 @@ function applyLang() {
   if (typeof fillTpl === 'function' && TPLK) fillTpl();
   if (typeof toolHint === 'function' && TPLK) toolHint();
   if (typeof usBtn === 'function' && TPLK) usBtn();
-  if (typeof perfUI === 'function') perfUI();
   if (typeof layApply === 'function') layApply();
   if (typeof snRender === 'function' && typeof SN !== 'undefined' && SN) snRender();
   if (typeof aiUI === 'function' && typeof AIC !== 'undefined') aiUI();

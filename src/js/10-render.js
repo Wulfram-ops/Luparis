@@ -15,7 +15,7 @@ const ELEVATION_SCALE = Math.tan((12 * Math.PI) / 180),
 let TW, LH, ox, oy, W, Hc, TW0;
 function layout() {
   const r = stage.getBoundingClientRect(),
-    dpr = PERF.low ? 1 : Math.min(2, window.devicePixelRatio || 1);
+    dpr = Math.min(2, window.devicePixelRatio || 1);
   W = r.width;
   Hc = r.height;
   if(!W||!Hc)return;
@@ -144,7 +144,7 @@ function gv(vx, vy) {
   return x >= 0 && y >= 0 && x < N && y < N ? H[x][y] : null;
 }
 function hasAnim() {
-  if (reduce || N > 40 || PERF.low) return false;
+  if (reduce || N > 40) return false;
   if (Object.values(ENV).some(v => ['fire', 'fog', 'dark'].includes(v.k || v))) return true;
   const p = B[bio].pit;
   if (p !== 'lava' && p !== 'water' && p !== 'swamp') return false;
@@ -661,15 +661,9 @@ let BOK = false,
   BCAM = null,
   BHIDE = null,
   fullT = 0;
-var PERF = { mode: 'auto', low: false, hist: [], warned: false };
-try {
-  const m = localStorage.getItem('luparis-perf');
-  if (m === 'low' || m === 'high') PERF.mode = m;
-  PERF.low = m === 'low';
-} catch (e) {}
 // overscan: the scene is rendered with a margin around the view, so panning never shows an empty edge
 function ovs() {
-  return Math.round(Math.min(PERF.low ? 260 : 420, Math.max(W, Hc) * (PERF.low ? 0.25 : 0.35)));
+  return Math.round(Math.min(420, Math.max(W, Hc) * 0.35));
 }
 function baseBegin(part) {
   const dpr = W ? cv.width / W : 1;
@@ -779,7 +773,7 @@ function drawMoveNow() {
 let moveQ = false;
 function drawMove() {
   clearTimeout(fullT);
-  fullT = setTimeout(draw, PERF.low ? 160 : 90);
+  fullT = setTimeout(draw, 90);
   if (BCAM && BCAM.TW === TW && (Math.abs(ox - BCAM.ox) > BCAM.M * 0.8 || Math.abs(oy - BCAM.oy) > BCAM.M * 0.8)) {
     clearTimeout(fullT);
     draw();
@@ -799,50 +793,6 @@ function drawLite() {
     liteQ = false;
     if (!drawQ) drawLiteNow();
   });
-}
-function perfNote(ms) {
-  if (PERF.mode !== 'auto' || PERF.low) return;
-  PERF.hist.push(ms);
-  if (PERF.hist.length > 12) PERF.hist.shift();
-  if (PERF.hist.length < 8) return;
-  const a = [...PERF.hist].sort((x, y) => x - y)[4];
-  if (a > 40) {
-    PERF.low = true;
-    PERF.hist = [];
-    perfUI();
-    layout();
-    const m = document.getElementById('save_msg');
-    if (m)
-      m.textContent = L2(
-        'Slow display detected: light quality on.',
-        'Affichage lent détecté : qualité allégée activée.',
-      );
-  }
-}
-function perfSet(m) {
-  PERF.mode = m;
-  PERF.low = m === 'low';
-  PERF.hist = [];
-  try {
-    localStorage.setItem('luparis-perf', m);
-  } catch (e) {}
-  perfUI();
-  layout();
-  if (typeof wApply === 'function' && WS) wApply();
-}
-function perfUI() {
-  const el = document.getElementById('perfq');
-  if (!el) return;
-  el.innerHTML = [
-    ['auto', L2('Auto', 'Auto')],
-    ['high', L2('High', 'Haute')],
-    ['low', L2('Light (slow PC)', 'Allégée (PC modeste)')],
-  ]
-    .map(
-      ([v, n]) =>
-        `<option value="${v}"${v === PERF.mode ? ' selected' : ''}>${esc(n)}${v === 'auto' && PERF.low ? ' ✓ ' + esc(L2('light', 'allégée')) : ''}</option>`,
-    )
-    .join('');
 }
 const OBJT = {
   door: { n: ['Door', 'Porte'], tg: ['open', 'ouverte', 'closed', 'fermée'] },
@@ -1637,10 +1587,8 @@ function hoverInfo() {
 let STBG = '';
 function drawNow(partOk) {
   if (!W || !Hc) return;
-  const T0 = performance.now(),
-    b = B[bio],
-    lq = PERF.low,
-    lod = TW >= 9 && !lq,
+  const b = B[bio],
+    lod = TW >= 9,
     lodS = TW >= 5;
   const part =
     partOk &&
@@ -1699,7 +1647,7 @@ function drawNow(partOk) {
         const g = tileCorners(vx, vy, 0),
           sc = f === 4 ? FW.side[h - 1] : f === 5 ? '#6a4a2e' : FSIDE[f] ? FSIDE[f] : b.side[h - 1];
         poly([t[3], t[2], g[2], g[3]], mul(sc, 0.86), 'rgba(0,0,0,.25)');
-        if (b.brick && !lq) {
+        if (b.brick) {
           ctx.strokeStyle = 'rgba(0,0,0,.25)';
           ctx.lineWidth = 1;
           for (let i = 1; i <= h * 2; i++) {
@@ -1731,7 +1679,7 @@ function drawNow(partOk) {
       }
     }
 
-    if (h > 0 && !F[c.x][c.y] && TW >= 7 && !lq) {
+    if (h > 0 && !F[c.x][c.y] && TW >= 7) {
       const [cx, cy] = scr(vx, vy, h);
       deco(b.deco[h - 1], cx, cy, h, c.x, c.y);
     }
@@ -1756,7 +1704,6 @@ function drawNow(partOk) {
   ctx = MAINX;
   baseEnd(M);
   drawMoveNow();
-  if (!part) perfNote(performance.now() - T0);
   if (hasAnim() || (bio === 'volcan' && !reduce)) requestAnimationFrame(tick);
 }
 function ctr(c) {

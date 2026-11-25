@@ -590,6 +590,23 @@ function cellName(k) {
     di = DOM.indexOf(d);
   return lang === 'fr' ? `${T.fr.it[ii]} ${T.fr.dm[di]}` : `${T.en.dm[di]} ${T.en.it[ii]}`;
 }
+function syncCharacterVitality(c, max) {
+  const hp = Math.max(0, max - (c.used.hp || 0));
+  const changed = tokens.filter(k => k.cid === c.id && k.hp !== hp);
+  if (!changed.length) return;
+  for (const k of changed) k.hp = hp;
+  save();
+  draw();
+}
+function restCharacter(c, long) {
+  if (long) c.used = { hp: 0, mana: 0, st: 0 };
+  else {
+    c.used.hp = Math.floor((c.used.hp || 0) / 2);
+    c.used.mana = Math.ceil((c.used.mana || 0) / 2);
+    c.used.st = 0;
+  }
+  syncCharacterVitality(c, derived(c).hp);
+}
 const DIFF = [
   ['trivial', 0, ['Trivial', 'Trivial']],
   ['easy', 5, ['Easy', 'Facile']],
@@ -1252,13 +1269,8 @@ fiche.addEventListener('click', e => {
       else rollDmg(nm, tier, SDIE[k] || 8, 0, 's' + k);
     }
     return;
-  } else if (b.id === 'c_short') {
-    const U = C.used;
-    U.hp = Math.floor(U.hp / 2);
-    U.mana = Math.ceil(U.mana / 2);
-    U.st = 0;
-  } else if (b.id === 'c_long') {
-    C.used = { hp: 0, mana: 0, st: 0 };
+  } else if (b.id === 'c_short' || b.id === 'c_long') {
+    restCharacter(C, b.id === 'c_long');
   } else if (b.id === 'c_copy') {
     const txt = JSON.stringify(C);
     navigator.clipboard.writeText(txt).then(
