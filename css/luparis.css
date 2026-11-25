@@ -226,6 +226,16 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 .ini button{min-height:32px;min-width:32px;padding:0;justify-content:center;border:1px solid var(--line)}
 .sbar{margin-bottom:8px}.sbar button{border:1px solid var(--line)}
 .camp{margin:18px 0 8px;font:600 20px/1.2 Cinzel,serif}
+.campfolders{display:grid;gap:12px;margin:14px 0}
+.campfolder{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.campfolder>summary{cursor:pointer;padding:12px 14px;font:600 17px/1.3 Cinzel,serif}
+.campfolder>summary .pill{margin-left:10px;font:normal 13px/1.4 sans-serif}
+.campfolder>.ccards{padding:0 12px 12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))}
+.campfolderform{flex-wrap:wrap;margin:12px 0;gap:8px}
+.campfolderform label,.cf-move{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.cf-move{font-size:13px;color:var(--muted)}
+.cf-move select{max-width:100%;min-width:0;flex:1}
+.campfolder .ccards>p{margin:6px 2px}
 .ccards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .cc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
 .cc .cn{font:600 19px/1.2 Cinzel,serif}.cc .cs{font-size:14px;color:var(--muted)}

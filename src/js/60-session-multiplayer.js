@@ -211,7 +211,7 @@ function mpView(st, rolls) {
 }
 function mpState() {
   const v = mpView(memStateNow(), RL);
-  return { type: 'state', map: { ...v, rolls: undefined }, chars: CH.list, rolls: v.rolls, code: MP.code };
+  return { type: 'state', map: { ...v, rolls: undefined }, chars: CH.list, folders: campaignFolders(), rolls: v.rolls, code: MP.code };
 }
 function mpSend(o, conn) {
   if (MP.local) {
@@ -405,7 +405,7 @@ function mpHostMsg(m, conn) {
     const c = blankC();
     c.name = source.name.trim().slice(0, 60);
     c.camp = typeof source.camp === 'string' ? source.camp.trim().slice(0, 60) : '';
-    if (['__proto__', 'constructor', 'prototype'].includes(c.camp)) return reply(null, L2('Invalid campaign.', 'Campagne invalide.'));
+    if (c.camp && !validCampaignName(c.camp)) return reply(null, L2('Invalid campaign.', 'Campagne invalide.'));
     const campaigns = campsGet(), record = c.camp && Object.hasOwn(campaigns, c.camp) ? campaigns[c.camp] : null;
     const existing = CH.list.filter(x => x.camp && x.camp === c.camp);
     if (record && Number.isFinite(record.xp)) c.xp = Math.max(0, record.xp);
@@ -416,6 +416,7 @@ function mpHostMsg(m, conn) {
       Object.assign(c, cleanCharPatch(source), progression);
       syncCells(c);
     }
+    rememberCampaignFolder(c.camp);
     CH.list.push(c);
     conn.me = c.id;
     requests.set(m.request, c.id);
@@ -551,6 +552,7 @@ function mpClientMsg(m) {
   MP.got = true;
   applyState(m.map);
   CH.list = m.chars || [];
+  CH.folders = Array.isArray(m.folders) ? m.folders.filter(validCampaignName) : camps();
   if (CH.active && !CH.list.some(c => c.id === CH.active)) CH.active = null;
   C = CH.list.find(c => c.id === CH.active) || CH.list[0] || null;
   RL = (Array.isArray(m.rolls) ? m.rolls : [])

@@ -424,6 +424,9 @@ if (!CH || !Array.isArray(CH.list) || !CH.list.length) {
   } catch (e) {}
   CH = { list: [old && old.cells ? old : demoC()], active: null };
 }
+// Campaign folders live alongside the character list (also included in backups).
+CH.folders = [...new Set([...(Array.isArray(CH.folders) ? CH.folders : []), ...CH.list.map(c => c.camp)].filter(validCampaignName))];
+const closedCampaignFolders = new Set(lsGet('luparis-camp-folders-closed', []) || []);
 for (const c of CH.list) {
   if (!c.prof) c.prof = { arm: armNeed(c.armor || 'none'), shd: c.shield && c.shield !== 'none' ? 1 : 0 };
   if (c.sch && c.sch.apex != null) {
@@ -620,36 +623,61 @@ function campPanel() {
 function camps() {
   return [...new Set(CH.list.map(c => c.camp || ''))].filter(Boolean).sort((a, b) => a.localeCompare(b, lang));
 }
+function validCampaignName(name) {
+  return typeof name === 'string' && !!name.trim() && !Object.hasOwn(Object.prototype, name) && name !== 'prototype';
+}
+function campaignFolders() {
+  return [...new Set([...(CH.folders || []), ...camps()].filter(validCampaignName))].sort((a, b) => a.localeCompare(b, lang));
+}
+function rememberCampaignFolder(name) {
+  if (validCampaignName(name)) {
+    CH.folders = CH.folders || [];
+    if (!CH.folders.includes(name)) CH.folders.push(name);
+  }
+}
+function moveCharacterCampaign(c, name) {
+  if (!c || MP.role === 'player' || (name && !validCampaignName(name))) return;
+  rememberCampaignFolder(c.camp);
+  rememberCampaignFolder(name);
+  c.camp = name;
+  // Preserve earned XP unless the destination already has a GM-defined campaign budget.
+  const records = campsGet(), record = name && Object.hasOwn(records, name) ? records[name] : null;
+  if (record && Number.isFinite(record.xp)) c.xp = record.xp;
+  saveC();
+  renderSheet();
+}
+function campaignFolderOptions(current) {
+  return opt('', t('sk_nocamp'), !current) + campaignFolders().map(n => opt(n, n, n === current)).join('');
+}
 function renderList() {
-  const groups = [...camps(), ''].filter(g => CH.list.some(c => (c.camp || '') === g)),
+  const groups = [...campaignFolders(), ''],
+    folderName = $('c_folder_name') ? $('c_folder_name').value : '',
     pending = MP.role === 'player' ? MP.createPending : null,
     nn = pending ? pending.c.name : $('c_nn') ? $('c_nn').value : '',
     nc = pending ? pending.c.camp : $('c_nc') ? $('c_nc').value : '',
     blocked = MP.role === 'player' && (!MP.got || MP.prole === 'spec' || !!pending);
+  $('c_camps').innerHTML = campaignFolders().map(x => opt(x, x)).join('');
   $('c_listv').innerHTML =
     `<div class="bhead"><h2>${t('sk_chars')}</h2><span class="small">${t('sk_nchars')(CH.list.length)}</span></div>
  <form class="newc" id="c_nf"><label>${t('sk_name')}<input id="c_nn" maxlength="60" required></label><label>${t('sk_camp')}<input id="c_nc" maxlength="60" list="c_camps"></label><div class="row"><button class="go" type="submit"${blocked ? ' disabled' : ''}>${t('sk_create')}</button></div></form><p class="small" id="c_create_msg" aria-live="polite">${MP.role === 'player' ? esc(pending ? L2('Registering the character with the GM…', 'Enregistrement du personnage auprès du MJ…') : MP.createMessage || '') : ''}</p>` +
-    campPanel() +
-    groups
-      .map(
-        g =>
-          `<h3 class="camp">${esc(g || t('sk_nocamp'))}</h3><div class="ccards">` +
-          CH.list
-            .filter(c => (c.camp || '') === g)
-            .map(c => {
-              const D = derived(c);
-              return `<div class="cc"><div class="cn">${esc(c.name || '?')}</div><div class="cs">${esc(c.people || '')}${c.people ? ' · ' : ''}${t('sk_level')} ${D.L} · ${t('sk_eva')} ${D.eva} · ${t('sk_vit')} ${D.hp}</div><button type="button" data-open="${esc(c.id)}">${t('sk_open')}</button></div>`;
-            })
-            .join('') +
-          '</div>',
-      )
-      .join('') +
-    (CH.list.length ? '' : `<p class="small">${t('sk_empty')}</p>`);
+    (MP.role !== 'player' ? `<form class="row campfolderform" id="c_folder_form"><label>${L2('New campaign folder', 'Nouveau dossier de campagne')} <input id="c_folder_name" maxlength="60" required></label><button type="submit">+ ${L2('Create folder', 'Créer le dossier')}</button><span class="small">${L2('Moving to a campaign with a recorded XP total adopts that total.', 'Déplacer vers une campagne ayant un total XP enregistré applique ce total.')}</span><span id="c_folder_msg" class="small" aria-live="polite"></span></form>` : '') +
+    '<div class="campfolders">' +
+    groups.map(g => {
+      const members = CH.list.filter(c => (c.camp || '') === g).sort((a, b) => (a.name || '').localeCompare(b.name || '', lang));
+      return `<details class="campfolder" data-campfolder="${esc(g)}"${closedCampaignFolders.has(g) ? '' : ' open'}><summary><span class="cf-title">${esc(g || t('sk_nocamp'))}</span><span class="pill">${t('sk_nchars')(members.length)}</span></summary><div class="ccards">` +
+        members.map(c => {
+          const D = derived(c);
+          return `<div class="cc"><div class="cn">${esc(c.name || '?')}</div><div class="cs">${esc(c.people || '')}${c.people ? ' · ' : ''}${t('sk_level')} ${D.L} · ${t('sk_eva')} ${D.eva} · ${t('sk_vit')} ${D.hp}</div><button type="button" data-open="${esc(c.id)}">${t('sk_open')}</button>${MP.role !== 'player' ? `<label class="cf-move"><span>${L2('Move to', 'Déplacer vers')}</span><select data-campmove="${esc(c.id)}">${campaignFolderOptions(g)}</select></label>` : ''}</div>`;
+        }).join('') +
+        (members.length ? '' : `<p class="small">${L2('Empty folder', 'Dossier vide')}</p>`) +
+        '</div></details>';
+    }).join('') + '</div>' + campPanel();
   $('c_nn').value = nn;
   $('c_nc').value = nc;
+  if ($('c_folder_name')) $('c_folder_name').value = folderName;
 }
 function renderSheet() {
-  $('c_camps').innerHTML = camps()
+  $('c_camps').innerHTML = campaignFolders()
     .map(x => opt(x, x))
     .join('');
   if (!CH.active || !C) {
@@ -998,6 +1026,26 @@ function rollDmg(name, nd, dd, mod, key) {
   );
 }
 const fiche = $('v-fiche');
+fiche.addEventListener('toggle', e => {
+  const folder = e.target;
+  if (!folder.isConnected || !folder.matches('details[data-campfolder]')) return;
+  if (folder.open) closedCampaignFolders.delete(folder.dataset.campfolder);
+  else closedCampaignFolders.add(folder.dataset.campfolder);
+  lsSet('luparis-camp-folders-closed', [...closedCampaignFolders]);
+}, true);
+fiche.addEventListener('change', e => {
+  if (MP.role === 'player') return;
+  const id = e.target.dataset.campmove;
+  if (id != null) moveCharacterCampaign(CH.list.find(c => c.id === id), e.target.value);
+  if (e.target.id === 'c_camp' && C) {
+    const name = e.target.value.trim();
+    if (name && !validCampaignName(name)) {
+      e.target.value = C.camp || '';
+      return;
+    }
+    moveCharacterCampaign(C, name);
+  }
+});
 fiche.addEventListener('click', e => {
   const b = e.target.closest('button');
   if (!b) return;
@@ -1143,6 +1191,7 @@ fiche.addEventListener('click', e => {
         mpCreateCharacter(c, true);
         return;
       }
+      rememberCampaignFolder(c.camp);
       CH.list.push(c);
       CH.active = c.id;
       C = c;
@@ -1185,24 +1234,13 @@ fiche.addEventListener('click', e => {
 for (const [id, key] of [
   ['c_name', 'name'],
   ['c_people', 'people'],
-  ['c_camp', 'camp'],
   ['c_notes', 'notes'],
 ])
   $(id).addEventListener('input', e => {
     if (C) {
-      if (MP.role === 'player' && (key === 'camp' || MP.me !== C.id || MP.prole === 'spec')) return;
+      if (MP.role === 'player' && (MP.me !== C.id || MP.prole === 'spec')) return;
       C[key] = e.target.value;
       saveC();
-      if (key === 'camp') {
-        campSync();
-        const r = C.camp && campsGet()[C.camp],
-          x = $('c_xp');
-        x.readOnly = MP.role === 'player' || !!r;
-        if (r) {
-          x.value = C.xp;
-          renderSheet();
-        }
-      }
     }
   });
 $('c_don').addEventListener('change', e => {
@@ -1351,6 +1389,20 @@ function layApply() {
 layApply();
 
 fiche.addEventListener('submit', e => {
+  if (e.target.id === 'c_folder_form') {
+    e.preventDefault();
+    if (MP.role === 'player') return;
+    const name = $('c_folder_name').value.trim();
+    if (!validCampaignName(name) || campaignFolders().includes(name)) {
+      $('c_folder_msg').textContent = L2('Invalid or existing folder name.', 'Nom de dossier invalide ou déjà utilisé.');
+      return;
+    }
+    rememberCampaignFolder(name);
+    $('c_folder_name').value = '';
+    saveC();
+    renderList();
+    return;
+  }
   if (e.target.dataset && e.target.dataset.cxf != null) {
     e.preventDefault();
     const [a, b] = e.target.querySelectorAll('input'),
@@ -1365,10 +1417,12 @@ fiche.addEventListener('submit', e => {
   const c = blankC();
   c.name = n;
   c.camp = $('c_nc').value.trim();
+  if (c.camp && !validCampaignName(c.camp)) return;
   if (MP.role === 'player') {
     mpCreateCharacter(c);
     return;
   }
+  rememberCampaignFolder(c.camp);
   {
     const r = c.camp && campsGet()[c.camp];
     if (r) c.xp = r.xp;
