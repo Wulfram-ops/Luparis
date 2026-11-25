@@ -366,3 +366,18 @@ body.mp-player #modes{display:none!important}
 body.mode-play #tools button:is([data-t=shift],[data-t=up],[data-t=down],[data-t=flat],[data-t=surf],[data-t=obj],[data-t=pref],[data-t=mark],[data-t=hide]),body.mode-play #tools :is(#objrot,#prefrot,#prefroll),body.mode-play .szl,body.mode-play .bar label:has(#biosel),body.mode-play .bar label:has(#scene),body.mode-play #gen,body.mode-play #clear,body.mode-play #mg_f{display:none!important}
 body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){display:none!important}
 .mppick{margin:6px 0 2px;font-weight:600}.mpwant select{outline:2px solid var(--acc);outline-offset:1px}
+
+/* Map page grid: modules snap to it */
+.cgrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:30px;gap:8px;margin:6px max(2vw,8px) 0;position:relative}
+.cgrid.gon{background-image:linear-gradient(to right,color-mix(in srgb,var(--acc) 22%,transparent) 1px,transparent 1px),linear-gradient(to bottom,color-mix(in srgb,var(--acc) 22%,transparent) 1px,transparent 1px);background-size:var(--gcw,80px) 38px;background-position:-4px -4px}
+.gmod{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column}
+.gmod:has(>[hidden]),body.mp-player .gmod[data-mod=sn],body.mp-player .gmod[data-mod=pl]{display:none}
+.gmod>.card,.gmod>.hand{flex:1;overflow:auto;margin:0;min-height:0}
+.gmod>.stage{margin:0!important;flex:1;aspect-ratio:auto!important;height:auto!important;width:100%!important;min-height:0;max-height:none}
+.gmod .rsz{display:none}
+.ggrip{position:absolute;top:4px;right:4px;z-index:7;min-height:0;padding:0 6px;font-size:14px;line-height:20px;cursor:grab;opacity:0;transition:opacity .15s;background:var(--panel);border:1px solid var(--line);border-radius:6px}
+.gsz{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;z-index:7;opacity:0;transition:opacity .15s;border-right:3px solid var(--acc);border-bottom:3px solid var(--acc);border-radius:0 0 6px 0}
+.gmod:hover>.ggrip,.gmod:hover>.gsz,.gmod.gdrag>.ggrip,.gmod.gdrag>.gsz,.ggrip:focus-visible{opacity:.9}
+.gmod.gdrag{outline:2px dashed var(--acc);outline-offset:2px;z-index:5}
+.greset{margin:8px max(2vw,8px);font-size:13px}
+@media(max-width:900px){.cgrid{display:flex;flex-direction:column}.gmod{min-height:auto}.gmod>.stage{aspect-ratio:16/9!important;flex:none}.ggrip,.gsz,.greset{display:none}}
