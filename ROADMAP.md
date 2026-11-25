@@ -103,6 +103,8 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
+- Carte dessinée à partir d'une phrase (25 novembre) : champ « Décris la scène » dans la barre de la carte. Sans clé, mots-clés français et anglais (biomes, scènes, temple et bâtiments, « en ruines », « abandonné », objets, dangers, taille) ; avec une clé Gemini enregistrée dans le navigateur du MJ (⚙), l'IA écrit la recette. La clé n'est jamais exportée, même dans la sauvegarde 💾. Reste : d'autres générateurs (crypte, navire, grotte aménagée, camp militaire…), poser des monstres depuis la phrase.
+- Bouclier réflexe (25 novembre) : réaction en Mana, +2 Esquive par point (Égide +3, et sur un allié). Simulation : rentable dès le niveau 10 (mages de 70 à 80 % de l'optimum), inutile au niveau 1 faute de Mana.
 - Carte « Images » sur l'onglet Carte (25 novembre) : le MJ garde une galerie sur son ordinateur, montre une image aux joueurs (elle s'ouvre en grand chez eux), la masque d'un clic.
 
 - **Performance de la carte** (novembre 2026)

@@ -693,6 +693,14 @@ try {
   handId = lsGet('luparis-hand', null);
 } catch (e) {}
 const FX = [
+  [
+    1,
+    ['Reflex shield', 'Bouclier réflexe'],
+    [
+      'Reaction when an attack hits you: +2 Evasion per point until your next turn, this attack included',
+      "Réaction quand une attaque te touche : +2 Esquive par point jusqu'à ton prochain tour, cette attaque comprise",
+    ],
+  ],
   [1, ['Pressed hit', 'Coup appuyé'], ['+1 box on a hit', '+1 case si le sort touche']],
   [1, ['Offset', 'Déport'], ['Cast from another point', 'Lancer depuis un autre point']],
   [
@@ -781,7 +789,13 @@ function fxFor(k) {
     set('Contrôle majeur', 2);
   }
   if (k === 'eidolon') set('Persistance', 1);
-  if (k === 'egide') set("Bouclier d'Égide", 1);
+  if (k === 'egide') {
+    set("Bouclier d'Égide", 1);
+    set('Bouclier réflexe', 1, [
+      'Reaction when an attack hits you or an ally within 30 ft: +3 Evasion per point until your next turn',
+      "Réaction quand une attaque te touche, toi ou un allié à 9 m : +3 Esquive par point jusqu'à ton prochain tour",
+    ]);
+  }
   if (k === 'creuset') set('Soin', 1, ['Target regains 2 boxes per point', 'La cible regagne 2 cases par point']);
   if (k === 'horizon') set('Déport', 0);
   if (k === 'harmonie') set('Multiplication', 1, ['One more target (1 per target)', 'Une cible de plus (1 par cible)']);

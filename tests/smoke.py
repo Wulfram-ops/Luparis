@@ -119,6 +119,15 @@ def run(chrome: str | None) -> None:
         check("backup holds the map", "luparis-tac" in backup.get("data", {}))
         page.keyboard.press("Escape")
 
+        # a sentence becomes a map (keywords, no AI key)
+        r = D("JSON.stringify(mgParse('Temple en ruines dans la forêt, trois statues'))")
+        page.evaluate("DBG(`mgBuild(mgParse('temple en ruines dans la forêt'))`)")
+        check(
+            "a sentence draws a map",
+            '"bio":"foret"' in r and '"temple"' in r and '"n":3' in r and D("OBJS.some(o=>o.k==='altar') && bio==='foret'"),
+            r,
+        )
+
         # multiplayer (same browser): a player's roll reaches the GM cleaned of any script
         host = ctx.new_page()
         host.goto(url + "?debug=1&local=1")
