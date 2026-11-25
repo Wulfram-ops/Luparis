@@ -256,8 +256,17 @@ const WP = {
   estoc: ['Weak point', 'Point faible'],
   cont: ['Armor break', 'Fracassement'],
 };
-const weaponInputs = new Map(), weaponStrikes = new Map(), sweepUsed = new Map();
+const weaponInputs = new Map(),
+  weaponStrikes = new Map(),
+  sweepUsed = new Map();
 const weaponKey = (c, i) => JSON.stringify([c.id, i]);
+// the Matrix cell used to attack depends on the situation; by default the family's own
+const CELLS = ['P_phy', 'F_phy', 'R_phy', 'P_men', 'F_men', 'R_men', 'P_soc', 'F_soc', 'R_soc'];
+function weaponCell(c, i) {
+  const w = c.weapons[i],
+    k = typeof handSel !== 'undefined' && handSel[c.id + '_cell' + i];
+  return CELLS.includes(k) ? k : FAM[w.f] ? FAM[w.f].c : 'P_phy';
+}
 function weaponInput(c, i) {
   const key = weaponKey(c, i);
   if (!weaponInputs.has(key)) weaponInputs.set(key, {});
@@ -269,9 +278,21 @@ function weaponNumber(v) {
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 function weaponPassiveText(f) {
-  if (f === 'taille') return L2('Once per turn: half weapon damage to a second enemy adjacent to the target and within reach, if the same attack meets its Evasion.', 'Une fois par tour : moitié des dégâts de l’arme à un second ennemi adjacent à la cible et à portée, si le même jet atteint son Esquive.');
-  if (f === 'estoc') return L2('+1 weapon die when your attack exceeds the target’s Evasion by at least 5.', '+1 dé de l’arme si ton jet dépasse l’Esquive de la cible d’au moins 5.');
-  if (f === 'cont') return L2('Ignore up to 2 armor value; reduce all three damage thresholds accordingly.', 'Ignore jusqu’à 2 points de valeur d’armure : réduis les trois seuils de dégâts en conséquence.');
+  if (f === 'taille')
+    return L2(
+      'Once per turn: half weapon damage to a second enemy adjacent to the target and within reach, if the same attack meets its Evasion.',
+      'Une fois par tour : moitié des dégâts de l’arme à un second ennemi adjacent à la cible et à portée, si le même jet atteint son Esquive.',
+    );
+  if (f === 'estoc')
+    return L2(
+      '+1 weapon die when your attack exceeds the target’s Evasion by at least 5.',
+      '+1 dé de l’arme si ton jet dépasse l’Esquive de la cible d’au moins 5.',
+    );
+  if (f === 'cont')
+    return L2(
+      'Ignore up to 2 armor value; reduce all three damage thresholds accordingly.',
+      'Ignore jusqu’à 2 points de valeur d’armure : réduis les trois seuils de dégâts en conséquence.',
+    );
   return '';
 }
 function sweepTurn() {
@@ -280,9 +301,11 @@ function sweepTurn() {
 }
 function weaponPassiveHTML(c, i, w, tier, hand = false) {
   if (!tier || !WP[w.f]) return '';
-  const q = weaponInput(c, i), key = esc(weaponKey(c, i));
-  const field = (k, label) => `<label><span>${label}</span><input type="number" min="0" step="1" style="width:4.5em" data-wp-key="${key}" data-wp-field="${k}" value="${esc(q[k] ?? '')}" placeholder="—"></label>`;
-  return `<div class="small"><b>${tr(WP[w.f])}</b> · ${weaponPassiveText(w.f)}</div><div class="row" style="flex-wrap:wrap">${hand && w.f !== 'cont' ? field('target', L2('Target Evasion', 'Esquive cible')) : ''}${w.f === 'taille' ? field('second', L2('Second enemy Evasion (adjacent, in reach)', 'Esquive du second ennemi (adjacent, à portée)')) : ''}${w.f === 'cont' ? field('armor', L2('Target armor', 'Armure cible')) : ''}${w.f === 'taille' && !INI.o.length ? `<button type="button" data-wp-reset="${esc(c.id)}">${L2('New turn', 'Nouveau tour')}</button>` : ''}</div>`;
+  const q = weaponInput(c, i),
+    key = esc(weaponKey(c, i));
+  const field = (k, label) =>
+    `<label><span>${label}</span><input type="number" min="0" step="1" style="width:4.5em" data-wp-key="${key}" data-wp-field="${k}" value="${esc(q[k] ?? '')}" placeholder="—"></label>`;
+  return `<div class="small"><b>${tr(WP[w.f])}</b> · ${weaponPassiveText(w.f)}</div><div class="row" style="flex-wrap:wrap">${!hand && w.f !== 'cont' ? field('target', L2('Target Evasion', 'Esquive cible')) : ''}${!hand && w.f === 'taille' ? field('second', L2('Second enemy Evasion (adjacent, in reach)', 'Esquive du second ennemi (adjacent, à portée)')) : ''}${w.f === 'cont' ? field('armor', L2('Target armor', 'Armure cible')) : ''}${!hand && w.f === 'taille' && !INI.o.length ? `<button type="button" data-wp-reset="${esc(c.id)}">${L2('New turn', 'Nouveau tour')}</button>` : ''}</div>`;
 }
 document.addEventListener('input', e => {
   const { wpKey, wpField } = e.target.dataset || {};
@@ -299,36 +322,62 @@ function weaponOutcome(f, tier, r, total, target, second) {
   const hit = r !== 1 && (r === 20 || (target != null && total >= target));
   const missed = r === 1 || (r !== 20 && target != null && total < target);
   return {
-    hit, missed, crit: r === 20,
+    hit,
+    missed,
+    crit: r === 20,
     weak: !!(tier && f === 'estoc' && hit && target != null && total - target >= 5),
     sweep: !!(tier && f === 'taille' && hit && second != null && total >= second),
   };
 }
 function weaponAttack(c, i, target) {
-  const w = c.weapons[i], tier = c.fam[w.f] || 0,
-    q = weaponInput(c, i), ab = (c.cells[FAM[w.f].c] || 0) + mb(tier),
-    r = dRoll(20), total = r + ab,
+  const w = c.weapons[i],
+    tier = c.fam[w.f] || 0,
+    q = weaponInput(c, i),
+    cell = weaponCell(c, i),
+    ab = (c.cells[cell] || 0) + mb(tier),
+    r = dRoll(20),
+    total = r + ab,
     result = weaponOutcome(w.f, tier, r, total, weaponNumber(target), weaponNumber(q.second));
   weaponStrikes.set(weaponKey(c, i), { ...result, f: w.f, n: w.n, s: w.s, turn: sweepTurn() });
-  const status = result.crit ? ` <span class="cr">${t('sk_crit')}</span>` : result.missed ? ` <span class="ko">${t('sk_miss')}</span>` : result.hit ? ` · ${t('sk_hit')}` : '';
-  const bonus = result.weak ? ` · ${tr(WP.estoc)} +1d${SZ[w.s]}` : result.sweep && sweepUsed.get(c.id) !== sweepTurn() ? ` · ${tr(WP.taille)}` : '';
-  return `${esc(w.n)} · d20 (${r}) ${sgn(ab)} = <b>${total}</b>${status}${bonus}`;
+  const status = result.crit
+    ? ` <span class="cr">${t('sk_crit')}</span>`
+    : result.missed
+      ? ` <span class="ko">${t('sk_miss')}</span>`
+      : result.hit
+        ? ` · ${t('sk_hit')}`
+        : '';
+  const bonus = result.weak
+    ? ` · ${tr(WP.estoc)} +1d${SZ[w.s]}`
+    : result.sweep && sweepUsed.get(c.id) !== sweepTurn()
+      ? ` · ${tr(WP.taille)}`
+      : '';
+  return `${esc(w.n)} · ${esc(cellName(cell))} · d20 (${r}) ${sgn(ab)} = <b>${total}</b>${status}${bonus}`;
 }
 function weaponArmorReduction(armor) {
   return armor == null ? null : Math.min(2, Math.max(0, armor));
 }
 function weaponDamage(c, i) {
-  const w = c.weapons[i], tier = c.fam[w.f] || 0, key = weaponKey(c, i),
+  const w = c.weapons[i],
+    tier = c.fam[w.f] || 0,
+    key = weaponKey(c, i),
     previous = weaponStrikes.get(key),
     strike = previous && previous.f === w.f && previous.n === w.n && previous.s === w.s ? previous : null;
   weaponStrikes.delete(key);
-  const d = SZ[w.s] || 6, mod = c.cells[FAM[w.f].c] || 0,
+  const d = SZ[w.s] || 6,
+    mod = tier,
     // Only the normal mastery dice double on a critical; Point faible is one additional die.
     n = Math.max(1, tier) * (strike && strike.crit ? 2 : 1) + (strike && strike.weak && tier ? 1 : 0),
-    rs = Array.from({ length: n }, () => dRoll(d)), total = rs.reduce((a, b) => a + b, 0) + mod;
+    rs = Array.from({ length: n }, () => dRoll(d)),
+    total = rs.reduce((a, b) => a + b, 0) + mod;
   let h = `${esc(w.n)} · ${n}d${d}${mod ? sgn(mod) : ''} [${rs.join(', ')}] = <b>${total}</b>`;
   if (strike && strike.missed) return h + ` · ${t('sk_miss')}`;
   if (tier && strike && strike.weak) h += ` · ${tr(WP.estoc)} (+1d${d})`;
+  else if (tier && w.f === 'estoc' && !(strike && strike.missed)) {
+    const x = dRoll(d);
+    h += ` · ${tr(WP.estoc)} ${L2('if the roll beat Evasion by 5', "si le jet dépassait l'Esquive de 5")} : +${x}`;
+  }
+  if (tier && w.f === 'taille' && !(strike && strike.sweep))
+    h += ` · ${tr(WP.taille)} : <b>${Math.max(0, Math.floor(total / 2))}</b> ${L2('to a second adjacent enemy the roll reaches', 'à un second ennemi adjacent que le jet atteint')}`;
   if (tier && strike && strike.sweep && strike.turn === sweepTurn() && sweepUsed.get(c.id) !== strike.turn) {
     sweepUsed.set(c.id, strike.turn);
     h += ` · ${tr(WP.taille)}: <b>${Math.max(0, Math.floor(total / 2))}</b> ${L2('damage to the second enemy', 'dégâts au second ennemi')}`;
@@ -425,7 +474,9 @@ if (!CH || !Array.isArray(CH.list) || !CH.list.length) {
   CH = { list: [old && old.cells ? old : demoC()], active: null };
 }
 // Campaign folders live alongside the character list (also included in backups).
-CH.folders = [...new Set([...(Array.isArray(CH.folders) ? CH.folders : []), ...CH.list.map(c => c.camp)].filter(validCampaignName))];
+CH.folders = [
+  ...new Set([...(Array.isArray(CH.folders) ? CH.folders : []), ...CH.list.map(c => c.camp)].filter(validCampaignName)),
+];
 const closedCampaignFolders = new Set(lsGet('luparis-camp-folders-closed', []) || []);
 for (const c of CH.list) {
   if (!c.prof) c.prof = { arm: armNeed(c.armor || 'none'), shd: c.shield && c.shield !== 'none' ? 1 : 0 };
@@ -478,7 +529,7 @@ function saveC() {
   }
 }
 const lvl = (c = C) => Math.max(1, Math.floor((+c.xp || 0) / 100)),
-  mb = tier => (tier > 0 ? tier + 1 : 0),
+  mb = tier => (tier > 0 ? tier : 0),
   sgn = v => (v >= 0 ? '+' : '') + v;
 function discs(c = C) {
   return [
@@ -627,7 +678,9 @@ function validCampaignName(name) {
   return typeof name === 'string' && !!name.trim() && !Object.hasOwn(Object.prototype, name) && name !== 'prototype';
 }
 function campaignFolders() {
-  return [...new Set([...(CH.folders || []), ...camps()].filter(validCampaignName))].sort((a, b) => a.localeCompare(b, lang));
+  return [...new Set([...(CH.folders || []), ...camps()].filter(validCampaignName))].sort((a, b) =>
+    a.localeCompare(b, lang),
+  );
 }
 function rememberCampaignFolder(name) {
   if (validCampaignName(name)) {
@@ -641,7 +694,8 @@ function moveCharacterCampaign(c, name) {
   rememberCampaignFolder(name);
   c.camp = name;
   // Preserve earned XP unless the destination already has a GM-defined campaign budget.
-  const records = campsGet(), record = name && Object.hasOwn(records, name) ? records[name] : null;
+  const records = campsGet(),
+    record = name && Object.hasOwn(records, name) ? records[name] : null;
   if (record && Number.isFinite(record.xp)) c.xp = record.xp;
   saveC();
   renderSheet();
@@ -662,8 +716,11 @@ function deleteCampaign(name) {
   renderSheet();
 }
 function renameCampaign(from, to) {
-  to = String(to || '').trim().slice(0, 60);
-  if (!from || !validCampaignName(to) || to === from || campaignFolders().includes(to) || MP.role === 'player') return false;
+  to = String(to || '')
+    .trim()
+    .slice(0, 60);
+  if (!from || !validCampaignName(to) || to === from || campaignFolders().includes(to) || MP.role === 'player')
+    return false;
   for (const c of CH.list) if ((c.camp || '') === from) c.camp = to;
   CH.folders = (CH.folders || []).map(n => (n === from ? to : n));
   const o = campsGet();
@@ -679,7 +736,12 @@ function renameCampaign(from, to) {
   return true;
 }
 function campaignFolderOptions(current) {
-  return opt('', t('sk_nocamp'), !current) + campaignFolders().map(n => opt(n, n, n === current)).join('');
+  return (
+    opt('', t('sk_nocamp'), !current) +
+    campaignFolders()
+      .map(n => opt(n, n, n === current))
+      .join('')
+  );
 }
 function renderList() {
   // keep what is open or closed on screen right now: the toggle event may not have fired yet
@@ -693,22 +755,36 @@ function renderList() {
     nn = pending ? pending.c.name : $('c_nn') ? $('c_nn').value : '',
     nc = pending ? pending.c.camp : $('c_nc') ? $('c_nc').value : '',
     blocked = MP.role === 'player' && (!MP.got || MP.prole === 'spec' || !!pending);
-  $('c_camps').innerHTML = campaignFolders().map(x => opt(x, x)).join('');
+  $('c_camps').innerHTML = campaignFolders()
+    .map(x => opt(x, x))
+    .join('');
   $('c_listv').innerHTML =
     `<div class="bhead"><h2>${t('sk_chars')}</h2><span class="small">${t('sk_nchars')(CH.list.length)}</span></div>
  <form class="newc" id="c_nf"><label>${t('sk_name')}<input id="c_nn" maxlength="60" required></label><label>${t('sk_camp')}<input id="c_nc" maxlength="60" list="c_camps"></label><div class="row"><button class="go" type="submit"${blocked ? ' disabled' : ''}>${t('sk_create')}</button></div></form><p class="small" id="c_create_msg" aria-live="polite">${MP.role === 'player' ? esc(pending ? L2('Registering the character with the GM…', 'Enregistrement du personnage auprès du MJ…') : MP.createMessage || '') : ''}</p>` +
-    (MP.role !== 'player' ? `<form class="row campfolderform" id="c_folder_form"><label>${L2('New campaign folder', 'Nouveau dossier de campagne')} <input id="c_folder_name" maxlength="60" required></label><button type="submit">+ ${L2('Create folder', 'Créer le dossier')}</button><span class="small">${L2('Moving to a campaign with a recorded XP total adopts that total.', 'Déplacer vers une campagne ayant un total XP enregistré applique ce total.')}</span><span id="c_folder_msg" class="small" aria-live="polite"></span></form>` : '') +
+    (MP.role !== 'player'
+      ? `<form class="row campfolderform" id="c_folder_form"><label>${L2('New campaign folder', 'Nouveau dossier de campagne')} <input id="c_folder_name" maxlength="60" required></label><button type="submit">+ ${L2('Create folder', 'Créer le dossier')}</button><span class="small">${L2('Moving to a campaign with a recorded XP total adopts that total.', 'Déplacer vers une campagne ayant un total XP enregistré applique ce total.')}</span><span id="c_folder_msg" class="small" aria-live="polite"></span></form>`
+      : '') +
     '<div class="campfolders">' +
-    groups.map(g => {
-      const members = CH.list.filter(c => (c.camp || '') === g).sort((a, b) => (a.name || '').localeCompare(b.name || '', lang));
-      return `<details class="campfolder" data-campfolder="${esc(g)}"${closedCampaignFolders.has(g) ? '' : ' open'}><summary><span class="cf-title">${esc(g || t('sk_nocamp'))}</span><span class="pill">${t('sk_nchars')(members.length)}</span>${g && MP.role !== 'player' ? `<button type="button" class="cf-del" data-campdel="${esc(g)}" title="${L2('Delete this campaign (its characters are kept, without campaign)', 'Supprimer cette campagne (ses personnages sont gardés, sans campagne)')}" aria-label="${L2('Delete the campaign', 'Supprimer la campagne')} ${esc(g)}">🗑</button>` : ''}</summary><div class="ccards">` +
-        members.map(c => {
-          const D = derived(c);
-          return `<div class="cc"><div class="cn">${esc(c.name || '?')}</div><div class="cs">${esc(c.people || '')}${c.people ? ' · ' : ''}${t('sk_level')} ${D.L} · ${t('sk_eva')} ${D.eva} · ${t('sk_vit')} ${D.hp}</div><button type="button" data-open="${esc(c.id)}">${t('sk_open')}</button>${MP.role !== 'player' ? `<label class="cf-move"><span>${L2('Move to', 'Déplacer vers')}</span><select data-campmove="${esc(c.id)}">${campaignFolderOptions(g)}</select></label>` : ''}</div>`;
-        }).join('') +
-        (members.length ? '' : `<p class="small">${L2('Empty folder', 'Dossier vide')}</p>`) +
-        '</div></details>';
-    }).join('') + '</div>' + campPanel();
+    groups
+      .map(g => {
+        const members = CH.list
+          .filter(c => (c.camp || '') === g)
+          .sort((a, b) => (a.name || '').localeCompare(b.name || '', lang));
+        return (
+          `<details class="campfolder" data-campfolder="${esc(g)}"${closedCampaignFolders.has(g) ? '' : ' open'}><summary><span class="cf-title">${esc(g || t('sk_nocamp'))}</span><span class="pill">${t('sk_nchars')(members.length)}</span>${g && MP.role !== 'player' ? `<button type="button" class="cf-del" data-campdel="${esc(g)}" title="${L2('Delete this campaign (its characters are kept, without campaign)', 'Supprimer cette campagne (ses personnages sont gardés, sans campagne)')}" aria-label="${L2('Delete the campaign', 'Supprimer la campagne')} ${esc(g)}">🗑</button>` : ''}</summary><div class="ccards">` +
+          members
+            .map(c => {
+              const D = derived(c);
+              return `<div class="cc"><div class="cn">${esc(c.name || '?')}</div><div class="cs">${esc(c.people || '')}${c.people ? ' · ' : ''}${t('sk_level')} ${D.L} · ${t('sk_eva')} ${D.eva} · ${t('sk_vit')} ${D.hp}</div><button type="button" data-open="${esc(c.id)}">${t('sk_open')}</button>${MP.role !== 'player' ? `<label class="cf-move"><span>${L2('Move to', 'Déplacer vers')}</span><select data-campmove="${esc(c.id)}">${campaignFolderOptions(g)}</select></label>` : ''}</div>`;
+            })
+            .join('') +
+          (members.length ? '' : `<p class="small">${L2('Empty folder', 'Dossier vide')}</p>`) +
+          '</div></details>'
+        );
+      })
+      .join('') +
+    '</div>' +
+    campPanel();
   $('c_nn').value = nn;
   $('c_nc').value = nc;
   if ($('c_folder_name')) $('c_folder_name').value = folderName;
@@ -918,8 +994,8 @@ function renderSheet() {
   const w = C.weapons
     .map((x, i) => {
       const tier = C.fam[x.f] || 0,
-        mod = C.cells[FAM[x.f].c],
-        ab = mod + mb(tier),
+        mod = tier,
+        ab = C.cells[FAM[x.f].c] + mb(tier),
         nd = Math.max(1, tier),
         dd = SZ[x.s];
       return `<div class="atk"><div><div class="an">${esc(x.n)}</div><div class="ad">${esc(tr(FAM[x.f].n))} · ${esc(szLabel(x.f, x.s))} · ${tier ? 'Tier ' + tier : esc(t('sk_unm'))}<br>${t('sk_attack')} ${sgn(ab)} · ${t('sk_damage')} ${nd}d${dd}${mod ? sgn(mod) : ''}</div>${weaponPassiveHTML(C, i, x, tier)}</div>
@@ -966,12 +1042,17 @@ function rlRender() {
   document.getElementById('rl_cnt').textContent = RL.length ? '(' + RL.length + ')' : '';
   document.getElementById('rl_clr').textContent = L2('Clear', 'Effacer');
   document.getElementById('rl_clr').hidden = !RL.length || !rlOpen;
+  // oldest at the top, newest at the bottom, like a chat
   el.innerHTML = RL.length
-    ? RL.map(
-        (r, i) =>
-          `<li class="${i === 0 ? 'new' : ''}"><span class="rlw">${new Date(r.t).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}${r.s ? ' · ' + esc(r.s) : ''}${r.gm ? ' · 🔒' : ''}</span>${r.h}</li>`,
-      ).join('')
+    ? [...RL]
+        .reverse()
+        .map(
+          (r, i, A) =>
+            `<li class="${i === A.length - 1 ? 'new' : ''}"><span class="rlw">${new Date(r.t).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}${r.s ? ' · ' + esc(r.s) : ''}${r.gm ? ' · 🔒' : ''}</span>${r.h}</li>`,
+        )
+        .join('')
     : `<li class="small">${t('sk_nolog')}</li>`;
+  el.scrollTop = el.scrollHeight;
 }
 // roll lines are HTML; anything that came from another computer keeps only b/i/br and span.cr|ko|small, as text
 function safeRoll(h) {
@@ -1063,17 +1144,25 @@ function rollDmg(name, nd, dd, mod, key) {
   );
 }
 const fiche = $('v-fiche');
-fiche.addEventListener('toggle', e => {
-  const folder = e.target;
-  if (!folder.isConnected || !folder.matches('details[data-campfolder]')) return;
-  if (folder.open) closedCampaignFolders.delete(folder.dataset.campfolder);
-  else closedCampaignFolders.add(folder.dataset.campfolder);
-  lsSet('luparis-camp-folders-closed', [...closedCampaignFolders]);
-}, true);
+fiche.addEventListener(
+  'toggle',
+  e => {
+    const folder = e.target;
+    if (!folder.isConnected || !folder.matches('details[data-campfolder]')) return;
+    if (folder.open) closedCampaignFolders.delete(folder.dataset.campfolder);
+    else closedCampaignFolders.add(folder.dataset.campfolder);
+    lsSet('luparis-camp-folders-closed', [...closedCampaignFolders]);
+  },
+  true,
+);
 fiche.addEventListener('change', e => {
   if (MP.role === 'player') return;
   const id = e.target.dataset.campmove;
-  if (id != null) moveCharacterCampaign(CH.list.find(c => c.id === id), e.target.value);
+  if (id != null)
+    moveCharacterCampaign(
+      CH.list.find(c => c.id === id),
+      e.target.value,
+    );
   if (e.target.id === 'c_camp' && C) {
     const name = e.target.value.trim();
     if (name && !validCampaignName(name)) {
@@ -1446,7 +1535,10 @@ fiche.addEventListener('submit', e => {
     if (MP.role === 'player') return;
     const name = $('c_folder_name').value.trim();
     if (!validCampaignName(name) || campaignFolders().includes(name)) {
-      $('c_folder_msg').textContent = L2('Invalid or existing folder name.', 'Nom de dossier invalide ou déjà utilisé.');
+      $('c_folder_msg').textContent = L2(
+        'Invalid or existing folder name.',
+        'Nom de dossier invalide ou déjà utilisé.',
+      );
       return;
     }
     rememberCampaignFolder(name);

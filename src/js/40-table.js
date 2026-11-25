@@ -955,8 +955,9 @@ function renderHand() {
   const WL = [];
   (c.weapons || []).forEach((w, i) => {
     const tier = c.fam[w.f] || 0,
-      mod = c.cells[FAM[w.f] ? FAM[w.f].c : 'P_phy'] || 0,
-      ab = mod + mb(tier),
+      cellK = weaponCell(c, i),
+      mod = tier,
+      ab = (c.cells[cellK] || 0) + mb(tier),
       nd = Math.max(1, tier),
       dd = SZ[w.s] || 6;
     const srcs = [...Object.keys(SCH).filter(k => c.sch[k] > 0), ...((c.apex || 0) > 0 ? ['apex'] : [])],
@@ -971,7 +972,7 @@ function renderHand() {
       ? `<div class="inf"><label><span>${L2('Infusion', 'Infusion')}</span><select data-hinf="${i}"><option value="">—</option>${srcs.map(k => `<option value="${k}"${infOn === k ? ' selected' : ''}>${esc(srcN(k))}</option>`).join('')}</select></label>${infOn ? `<div class="fx">${Array.from({ length: infT }, (_, n) => `<button type="button" class="chip${infV === n + 1 ? ' on' : ''}" data-hiv="${i}" data-v="${n + 1}">${n + 1}</button>`).join('')}</div>` : ''}</div>`
       : '';
     WL.push(
-      `<div class="wpn"><div class="wpt"><b>${esc(w.n)}</b> <span class="small">${esc(tr(FAM[w.f] ? FAM[w.f].n : ['', '']))}</span></div><div class="hb">${L2('Attack', 'Attaque')} <b>${sgn(ab)}</b> · ${L2('Damage', 'Dégâts')} <b>${nd}d${dd}${mod ? sgn(mod) : ''}</b>${infOn ? ` <b>+${infV}d${infD}</b> (${esc(srcN(infOn))}, ${infV} ${infP})` : ''}${tier ? '' : ` <span class="small">(${L2('untrained', 'sans maîtrise')})</span>`}</div>${weaponPassiveHTML(c, i, w, tier, true)}${infH}<div class="hbt"><button type="button" class="go" data-ha="atk" data-i="${i}">${L2('Attack', 'Attaque')}</button><button type="button" data-ha="dmg" data-i="${i}">${L2('Damage', 'Dégâts')}</button></div></div>`,
+      `<div class="wpn"><div class="wpt"><b>${esc(w.n)}</b> <span class="small">${esc(tr(FAM[w.f] ? FAM[w.f].n : ['', '']))}</span></div><div class="hb"><label class="wcell"><span class="small">${L2('Attack with', 'Attaque avec')}</span><select data-hcell="${i}" aria-label="${L2('Matrix cell for the attack', 'Case de la Matrice pour l’attaque')}">${CELLS.map(k => `<option value="${k}"${k === cellK ? ' selected' : ''}>${esc(cellName(k))} (${sgn(c.cells[k] || 0)})</option>`).join('')}</select></label> ${L2('Attack', 'Attaque')} <b>${sgn(ab)}</b> · ${L2('Damage', 'Dégâts')} <b>${nd}d${dd}${mod ? sgn(mod) : ''}</b>${infOn ? ` <b>+${infV}d${infD}</b> (${esc(srcN(infOn))}, ${infV} ${infP})` : ''}${tier ? '' : ` <span class="small">(${L2('untrained', 'sans maîtrise')})</span>`}</div>${weaponPassiveHTML(c, i, w, tier, true)}${infH}<div class="hbt"><button type="button" class="go" data-ha="atk" data-i="${i}">${L2('Attack', 'Attaque')}</button><button type="button" data-ha="dmg" data-i="${i}">${L2('Damage', 'Dégâts')}</button></div></div>`,
     );
   });
   if (WL.length)
@@ -1151,6 +1152,13 @@ document.getElementById('hand').addEventListener(
   true,
 );
 document.getElementById('hand').addEventListener('change', e => {
+  if (e.target.dataset.hcell != null) {
+    const c = handChar();
+    if (!c) return;
+    handSel[c.id + '_cell' + e.target.dataset.hcell] = e.target.value;
+    renderHand();
+    return;
+  }
   if (e.target.dataset.hinf != null) {
     const c = handChar();
     if (!c) return;
@@ -1334,7 +1342,7 @@ document.getElementById('hand').addEventListener('click', e => {
         lastInf[key] = { sn, iv, iD };
         ex = ` · ${L2('infused', 'infusé')} (${esc(sn)} ${iv}) −${iv} ${pn}`;
       }
-      hRoll(weaponAttack(c, i, weaponInput(c, i).target) + ex);
+      hRoll(weaponAttack(c, i, null) + ex);
       return;
     }
     const li = lastInf[key];
@@ -1435,7 +1443,7 @@ function renderTok() {
         .map(w => {
           const tier = ch.fam[w.f] || 0,
             mod = ch.cells[FAM[w.f].c];
-          return `<p class="tline"><b>${esc(w.n)}</b> · ${t('sk_attack')} ${sgn(mod + mb(tier))} · ${Math.max(1, tier)}d${SZ[w.s]}${mod ? sgn(mod) : ''}</p>`;
+          return `<p class="tline"><b>${esc(w.n)}</b> · ${t('sk_attack')} ${sgn(mod + mb(tier))} · ${Math.max(1, tier)}d${SZ[w.s]}${tier ? sgn(tier) : ''}</p>`;
         })
         .join('');
       h += Object.keys(SCH)
