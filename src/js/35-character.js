@@ -646,6 +646,38 @@ function moveCharacterCampaign(c, name) {
   saveC();
   renderSheet();
 }
+// delete a campaign: its characters stay, without campaign; its XP record goes
+function deleteCampaign(name) {
+  if (!name || MP.role === 'player') return;
+  for (const c of CH.list) if ((c.camp || '') === name) c.camp = '';
+  CH.folders = (CH.folders || []).filter(n => n !== name);
+  const o = campsGet();
+  if (Object.hasOwn(o, name)) {
+    delete o[name];
+    campsPut(o);
+  }
+  closedCampaignFolders.delete(name);
+  lsSet('luparis-camp-folders-closed', [...closedCampaignFolders]);
+  saveC();
+  renderSheet();
+}
+function renameCampaign(from, to) {
+  to = String(to || '').trim().slice(0, 60);
+  if (!from || !validCampaignName(to) || to === from || campaignFolders().includes(to) || MP.role === 'player') return false;
+  for (const c of CH.list) if ((c.camp || '') === from) c.camp = to;
+  CH.folders = (CH.folders || []).map(n => (n === from ? to : n));
+  const o = campsGet();
+  if (Object.hasOwn(o, from)) {
+    o[to] = o[from];
+    delete o[from];
+    campsPut(o);
+  }
+  if (closedCampaignFolders.delete(from)) closedCampaignFolders.add(to);
+  lsSet('luparis-camp-folders-closed', [...closedCampaignFolders]);
+  saveC();
+  renderSheet();
+  return true;
+}
 function campaignFolderOptions(current) {
   return opt('', t('sk_nocamp'), !current) + campaignFolders().map(n => opt(n, n, n === current)).join('');
 }
@@ -669,7 +701,7 @@ function renderList() {
     '<div class="campfolders">' +
     groups.map(g => {
       const members = CH.list.filter(c => (c.camp || '') === g).sort((a, b) => (a.name || '').localeCompare(b.name || '', lang));
-      return `<details class="campfolder" data-campfolder="${esc(g)}"${closedCampaignFolders.has(g) ? '' : ' open'}><summary><span class="cf-title">${esc(g || t('sk_nocamp'))}</span><span class="pill">${t('sk_nchars')(members.length)}</span></summary><div class="ccards">` +
+      return `<details class="campfolder" data-campfolder="${esc(g)}"${closedCampaignFolders.has(g) ? '' : ' open'}><summary><span class="cf-title">${esc(g || t('sk_nocamp'))}</span><span class="pill">${t('sk_nchars')(members.length)}</span>${g && MP.role !== 'player' ? `<button type="button" class="cf-del" data-campdel="${esc(g)}" title="${L2('Delete this campaign (its characters are kept, without campaign)', 'Supprimer cette campagne (ses personnages sont gardés, sans campagne)')}" aria-label="${L2('Delete the campaign', 'Supprimer la campagne')} ${esc(g)}">🗑</button>` : ''}</summary><div class="ccards">` +
         members.map(c => {
           const D = derived(c);
           return `<div class="cc"><div class="cn">${esc(c.name || '?')}</div><div class="cs">${esc(c.people || '')}${c.people ? ' · ' : ''}${t('sk_level')} ${D.L} · ${t('sk_eva')} ${D.eva} · ${t('sk_vit')} ${D.hp}</div><button type="button" data-open="${esc(c.id)}">${t('sk_open')}</button>${MP.role !== 'player' ? `<label class="cf-move"><span>${L2('Move to', 'Déplacer vers')}</span><select data-campmove="${esc(c.id)}">${campaignFolderOptions(g)}</select></label>` : ''}</div>`;
@@ -1204,6 +1236,21 @@ fiche.addEventListener('click', e => {
     } catch (err) {
       $('c_msg').textContent = t('sk_bad');
     }
+  } else if (ds.campdel) {
+    e.preventDefault();
+    if (!b.dataset.armed) {
+      b.dataset.armed = '1';
+      b.textContent = L2('Delete?', 'Supprimer ?');
+      setTimeout(() => {
+        if (b.isConnected) {
+          delete b.dataset.armed;
+          b.textContent = '🗑';
+        }
+      }, 3000);
+      return;
+    }
+    deleteCampaign(ds.campdel);
+    return;
   } else if (b.id === 'c_del') {
     if (MP.role === 'player') return;
     if (!b.dataset.armed) {

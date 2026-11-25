@@ -119,6 +119,16 @@ def run(chrome: str | None) -> None:
         check("backup holds the map", "luparis-tac" in backup.get("data", {}))
         page.keyboard.press("Escape")
 
+        # right-click menus and campaign deletion (characters are kept)
+        page.evaluate("DBG(`CH.list.push({...blankC(),id:'z1',name:'Zed',camp:'Temp'});saveC();deleteCampaign('Temp')`)")
+        check(
+            "deleting a campaign keeps its characters",
+            D("CH.list.some(c=>c.id==='z1'&&!c.camp) && !campaignFolders().includes('Temp')"),
+        )
+        page.evaluate("DBG(`ctxMenu(10,10,[{label:'x',fn:()=>{}}])`)")
+        check("context menu opens", page.locator(".ctxm").count() == 1)
+        page.keyboard.press("Escape")
+
         # a sentence becomes a map (keywords, no AI key)
         r = D("JSON.stringify(mgParse('Temple en ruines dans la forêt, trois statues'))")
         page.evaluate("DBG(`mgBuild(mgParse('temple en ruines dans la forêt'))`)")

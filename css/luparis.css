@@ -325,3 +325,10 @@ body:not(.mp-host) #tools button[data-t=hide]{display:none}
 
 .mgf{display:flex;flex-wrap:wrap;align-items:center;gap:4px;flex:1 1 100%}.mgf input{flex:1 1 16em;min-width:10em}#mg_msg{flex:1 1 100%}
 #mgdlg{max-width:28em;border-radius:10px}.mgd{display:flex;flex-direction:column;gap:8px}.mgd h3{margin:0}
+
+.ctxm{position:fixed;z-index:1000;min-width:170px;max-width:260px;max-height:70vh;overflow:auto;padding:4px;border-radius:8px;background:var(--card,#fbf6ec);border:1px solid var(--line,#0003);box-shadow:0 6px 24px #0004;display:flex;flex-direction:column}
+.ctxm button{all:unset;box-sizing:border-box;padding:6px 10px;border-radius:5px;cursor:pointer;font-size:13px}
+.ctxm button:hover,.ctxm button:focus-visible{background:var(--acc2,#c9a46a)33;background:color-mix(in srgb,var(--acc2,#c9a46a) 22%,transparent)}
+.ctxm button.ko{color:#b3261e}.ctxm hr{border:0;border-top:1px solid var(--line,#0002);margin:3px 0}.ctxh{font-size:11px;opacity:.65;padding:4px 10px 2px;text-transform:uppercase;letter-spacing:.04em}
+.campfolder summary .cf-del{margin-left:auto;padding:1px 6px;font-size:12px;opacity:0;transition:opacity .15s}.campfolder summary:hover .cf-del,.campfolder summary .cf-del:focus-visible,.campfolder summary .cf-del[data-armed]{opacity:1}
+.cf-ren{font:inherit;width:14em}
