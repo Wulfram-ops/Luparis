@@ -7256,7 +7256,7 @@ function renderIni() {
     .map((o, i) => {
       const k = tokens.find(k => k.id === o.id),
         nm = k ? (k.nm ? tr(k.nm) + (k.num ? ' ' + k.num : '') : k.n) : '?';
-      return `<li class="${i === INI.cur ? 'cur' : ''}"><input class="iv" type="number" value="${o.v}" data-iv="${i}" aria-label="${esc(t('in_title'))} ${esc(nm)}"><span class="inm ${k && k.t === 'pj' ? 'ally' : 'foe'}">${esc(nm)}</span>${k && k.mid && MON.find(m => m.id === k.mid) ? `<button type="button" class="isb" data-isb="${esc(k.id)}" title="${L2('Monster sheet', 'Fiche du monstre')}" aria-label="${L2('Monster sheet', 'Fiche du monstre')} ${esc(nm)}">📜</button>` : ''}<button type="button" data-ix="${i}" aria-label="${esc(t('sk_remove'))} ${esc(nm)}">×</button></li>`;
+      return `<li class="${i === INI.cur ? 'cur' : ''}"><input class="iv" type="number" value="${o.v}" data-iv="${i}" aria-label="${esc(t('in_title'))} ${esc(nm)}"><span class="inm ${k && k.t === 'pj' ? 'ally' : 'foe'}">${esc(nm)}${k && k.cd && Object.keys(k.cd).length ? ` <span class="icd" title="${L2('Recharging', 'En recharge')}">⏳${Math.max(...Object.values(k.cd))}</span>` : ''}</span>${k && k.mid && MON.find(m => m.id === k.mid) ? `<button type="button" class="isb" data-isb="${esc(k.id)}" title="${L2('Monster sheet', 'Fiche du monstre')}" aria-label="${L2('Monster sheet', 'Fiche du monstre')} ${esc(nm)}">📜</button>` : ''}<button type="button" data-ix="${i}" aria-label="${esc(t('sk_remove'))} ${esc(nm)}">×</button></li>`;
     })
     .join('');
 }
@@ -7281,6 +7281,14 @@ $('in_next').onclick = () => {
   if (INI.cur >= INI.o.length) {
     INI.cur = 0;
     INI.round++;
+  }
+  // a creature whose turn starts recovers one turn of recharge on each ability
+  {
+    const k = tokens.find(x => x.id === INI.o[INI.cur].id);
+    if (k && k.cd) {
+      for (const a of Object.keys(k.cd)) if (--k.cd[a] <= 0) delete k.cd[a];
+      if (typeof SBRP === 'function' && SBT === k && document.getElementById('sbdlg')?.open) SBRP();
+    }
   }
   save();
   draw();
@@ -9902,7 +9910,8 @@ function srdKey(m) {
           .replace(/^-|-$/g, '');
 }
 // attacks shown on the sheet: the Luparis conversion when there is one, else the bestiary line
-let SBA = [];
+let SBA = [],
+  SBRP = null;
 function monBlockHTML(m, D, tk, LU) {
   const v = conv(m),
     P = x => (Array.isArray(x) ? x[lang === 'fr' ? 1 : 0] : x || ''),
@@ -9924,10 +9933,33 @@ function monBlockHTML(m, D, tk, LU) {
     : monAtk(m).map(a => ({ n: (a.n || '') + (a.k > 1 ? ' ×' + a.k : ''), ab: a.ab, nd: a.nd, dd: a.dd, mod: a.mod }));
   const stat = (k, val) => `<div><span>${k}</span><b>${val}</b></div>`,
     line = (k, x) => (x ? `<p><span class="mk">${k}</span> ${esc(x)}</p>` : ''),
-    list = (h, a) =>
+    list = (h, a, sec) =>
       a && a.length
         ? `<h4>${h}</h4>` +
-          a.map(x => `<p><b>${esc(lang === 'fr' ? x[1] : x[0])}.</b> ${esc(lang === 'fr' ? x[3] : x[2])}</p>`).join('')
+          a
+            .map((x, i) => {
+              const rc = x[4] && x[4].rc;
+              let ctl = '';
+              if (rc) {
+                // recharge chosen at the table: N turns of recharge = N × Tier dice
+                const id = sec + i,
+                  cd = tk && tk.cd ? +tk.cd[id] || 0 : 0;
+                ctl =
+                  `<div class="msrc">` +
+                  [1, 2, 3]
+                    .map(
+                      n =>
+                        `<button type="button" data-sbrc="${id}" data-n="${n}" data-t="${rc.t}" data-d="${rc.d}" data-ty="${esc(P(rc.ty))}" data-nm="${esc(P([x[0], x[1]]).replace(/\s*\(.*$/, ''))}">${n === 1 ? L2('every turn', 'chaque tour') : n + ' ' + L2('turns', 'tours')} · ${rc.t * n}d${rc.d}</button>`,
+                    )
+                    .join('') +
+                  (tk
+                    ? `<span class="msrcs${cd ? ' wait' : ''}">${cd ? L2(`recharging: ${cd} turn${cd > 1 ? 's' : ''}`, `en recharge : ${cd} tour${cd > 1 ? 's' : ''}`) : L2('ready', 'prêt')}</span>`
+                    : '') +
+                  `</div>`;
+              }
+              return `<p><b>${esc(lang === 'fr' ? x[1] : x[0])}.</b> ${esc(lang === 'fr' ? x[3] : x[2])}</p>${ctl}`;
+            })
+            .join('')
         : '';
   const sub = [tr(SZN2[monSz(m)] || ['', '']) + ' ' + tyName(m.type), LU ? P(LU.al) : ''].filter(Boolean).join(' · ');
   let h = `<div class="ms"><div class="mshd"><h2>${esc(tr(m.n))}${tk && tk.num ? ' ' + tk.num : ''}</h2><span class="mst">Tier ${T} · ${L2('CR', 'FP')} ${esc(m.fp)}</span></div>
@@ -9969,10 +10001,10 @@ function monBlockHTML(m, D, tk, LU) {
       `</div>`;
   if (LU) {
     h +=
-      list(L2('Traits', 'Capacités'), LU.tr) +
-      list(L2('Actions', 'Actions'), LU.act) +
-      list(L2('Reactions', 'Réactions'), LU.rea) +
-      list(L2('Legendary actions (3 per round)', 'Actions légendaires (3 par round)'), LU.leg);
+      list(L2('Traits', 'Capacités'), LU.tr, 'tr') +
+      list(L2('Actions', 'Actions'), LU.act, 'act') +
+      list(L2('Reactions', 'Réactions'), LU.rea, 'rea') +
+      list(L2('Legendary actions (3 per round)', 'Actions légendaires (3 par round)'), LU.leg, 'leg');
   } else if ((m.tr || []).length) h += list(L2('Traits', 'Capacités'), (m.tr || []).map(([n, d]) => [n, n, d, d]));
   if (!LU && noT(m)) h += `<p class="msn">${esc(noT(m))}</p>`;
   if (D) {
@@ -10006,6 +10038,26 @@ function monSheet(m, tk) {
         dl.close();
         return;
       }
+      if (b.dataset.sbrc) {
+        const n = +b.dataset.n,
+          nd = n * +b.dataset.t,
+          dd = +b.dataset.d,
+          rs = Array.from({ length: nd }, () => dRoll(dd)),
+          tot = rs.reduce((x, y) => x + y, 0),
+          who = tr(SBM.n) + (SBT && SBT.num ? ' ' + SBT.num : '');
+        pushRoll(
+          `${esc(who)} · ${esc(b.dataset.nm)} · ${nd}d${dd} [${rs.join(', ')}] = <b>${tot}</b> ${esc(b.dataset.ty)}` +
+            (n > 1 ? ` · ${L2(`recharge ${n} turns`, `recharge ${n} tours`)}` : ''),
+        );
+        if (SBT) {
+          SBT.cd = SBT.cd || {};
+          if (n > 1) SBT.cd[b.dataset.sbrc] = n - 1;
+          else delete SBT.cd[b.dataset.sbrc];
+          save();
+          SBRP && SBRP();
+        }
+        return;
+      }
       if (b.dataset.sbr) {
         const a = SBA[+b.dataset.i];
         if (!a) return;
@@ -10034,6 +10086,7 @@ function monSheet(m, tk) {
   let DD = null,
     LU = null;
   const paint = () => {
+    SBRP = paint;
     dl.innerHTML =
       `<div class="sbbar"><button type="button" id="sb_close" aria-label="${L2('Close', 'Fermer')}">×</button></div>` +
       monBlockHTML(m, DD, SBT, LU);

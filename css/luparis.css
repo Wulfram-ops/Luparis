@@ -298,3 +298,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 .ms .msraw summary{cursor:pointer}
 @media (max-width:520px){.ms .msk{grid-template-columns:repeat(3,1fr)}}
 .ms .mshd h2{padding:0;margin:0;text-align:left}
+.ms .msrc{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:2px 0 8px}
+.ms .msrc button{min-height:28px;padding:2px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px}
+.ms .msrcs{font-size:13px;color:var(--acc2)}.ms .msrcs.wait{color:#b0552c}
+.icd{font-size:12px;color:#b0552c;white-space:nowrap}

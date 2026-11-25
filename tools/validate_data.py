@@ -95,8 +95,12 @@ def check_luparis(ids: set[str]) -> None:
         if v.get("mx") is not None and len(v["mx"]) != 9:
             err(f"srd-luparis.json[{k}]: mx must hold the nine cells")
         for sec in ("tr", "act", "leg", "rea"):
-            if not all(isinstance(x, list) and len(x) == 4 for x in v.get(sec, [])):
-                err(f"srd-luparis.json[{k}]: {sec} entries must be [name en, name fr, text en, text fr]")
+            if not all(isinstance(x, list) and len(x) in (4, 5) for x in v.get(sec, [])):
+                err(f"srd-luparis.json[{k}]: {sec} entries must be [name en, name fr, text en, text fr, extra?]")
+            for x in v.get(sec, []):
+                rc = x[4].get("rc") if len(x) == 5 and isinstance(x[4], dict) else None
+                if len(x) == 5 and not (rc and all(isinstance(rc.get(f), int) for f in ("t", "d"))):
+                    err(f"srd-luparis.json[{k}]: {x[0]} has a malformed recharge")
         for a in v.get("atk", []):
             if not all(isinstance(a.get(f), int) for f in ("ab", "nd", "dd", "mod")):
                 err(f"srd-luparis.json[{k}]: attack {a.get('n')} has non-integer fields")

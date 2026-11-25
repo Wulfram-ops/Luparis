@@ -269,7 +269,7 @@ function renderIni() {
     .map((o, i) => {
       const k = tokens.find(k => k.id === o.id),
         nm = k ? (k.nm ? tr(k.nm) + (k.num ? ' ' + k.num : '') : k.n) : '?';
-      return `<li class="${i === INI.cur ? 'cur' : ''}"><input class="iv" type="number" value="${o.v}" data-iv="${i}" aria-label="${esc(t('in_title'))} ${esc(nm)}"><span class="inm ${k && k.t === 'pj' ? 'ally' : 'foe'}">${esc(nm)}</span>${k && k.mid && MON.find(m => m.id === k.mid) ? `<button type="button" class="isb" data-isb="${esc(k.id)}" title="${L2('Monster sheet', 'Fiche du monstre')}" aria-label="${L2('Monster sheet', 'Fiche du monstre')} ${esc(nm)}">📜</button>` : ''}<button type="button" data-ix="${i}" aria-label="${esc(t('sk_remove'))} ${esc(nm)}">×</button></li>`;
+      return `<li class="${i === INI.cur ? 'cur' : ''}"><input class="iv" type="number" value="${o.v}" data-iv="${i}" aria-label="${esc(t('in_title'))} ${esc(nm)}"><span class="inm ${k && k.t === 'pj' ? 'ally' : 'foe'}">${esc(nm)}${k && k.cd && Object.keys(k.cd).length ? ` <span class="icd" title="${L2('Recharging', 'En recharge')}">⏳${Math.max(...Object.values(k.cd))}</span>` : ''}</span>${k && k.mid && MON.find(m => m.id === k.mid) ? `<button type="button" class="isb" data-isb="${esc(k.id)}" title="${L2('Monster sheet', 'Fiche du monstre')}" aria-label="${L2('Monster sheet', 'Fiche du monstre')} ${esc(nm)}">📜</button>` : ''}<button type="button" data-ix="${i}" aria-label="${esc(t('sk_remove'))} ${esc(nm)}">×</button></li>`;
     })
     .join('');
 }
@@ -294,6 +294,14 @@ $('in_next').onclick = () => {
   if (INI.cur >= INI.o.length) {
     INI.cur = 0;
     INI.round++;
+  }
+  // a creature whose turn starts recovers one turn of recharge on each ability
+  {
+    const k = tokens.find(x => x.id === INI.o[INI.cur].id);
+    if (k && k.cd) {
+      for (const a of Object.keys(k.cd)) if (--k.cd[a] <= 0) delete k.cd[a];
+      if (typeof SBRP === 'function' && SBT === k && document.getElementById('sbdlg')?.open) SBRP();
+    }
   }
   save();
   draw();

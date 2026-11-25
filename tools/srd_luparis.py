@@ -164,8 +164,16 @@ SLOT_PATTERNS = [
 ]
 
 
-def slot_text(kind: str, g: tuple, cx: Ctx, lang: str) -> str:
+def slot_text(kind: str, g: tuple, cx: Ctx, lang: str, recharge: bool = False) -> str:
     fr = lang == "fr"
+    if kind == "dmg" and recharge:
+        # recharge abilities: Tier dice per turn of recharge, chosen at the table (1 to 3 turns)
+        die = g[1].split("d")[1]
+        per = f"{cx.t}d{die}"
+        ty = g[4]
+        if fr:
+            return (f"dégâts {DMG[ty]} " if ty else "dégâts ") + f"({per} par tour de recharge)"
+        return (f"{ty} damage " if ty else "damage ") + f"({per} per turn of recharge)"
     if kind == "save":
         a = ABIL.index(g[1])
         dom = DOM_N[DOMAIN[a]]
@@ -234,13 +242,13 @@ def tid(template: str) -> str:
     return hashlib.sha1(template.encode("utf-8")).hexdigest()[:10]
 
 
-def fill(template: str, slots: list, cx: Ctx, lang: str, self_en: str) -> str:
+def fill(template: str, slots: list, cx: Ctx, lang: str, self_en: str, recharge: bool = False) -> str:
     def rep(m):
         k = m.group(1)
         if k == "S":
             return "la créature" if lang == "fr" else self_en
         i = int(k) - 1
-        return slot_text(slots[i][0], slots[i][1], cx, lang) if i < len(slots) else m.group(0)
+        return slot_text(slots[i][0], slots[i][1], cx, lang, recharge) if i < len(slots) else m.group(0)
 
     s = re.sub(r"\{(S|\d+)\}", rep, template)
     if lang != "fr":
@@ -445,12 +453,12 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
     names = fr.get("names", {})
     texts = fr.get("texts", {})
 
-    def both(text: str, where: str) -> list[str]:
+    def both(text: str, where: str, recharge: bool = False) -> list[str]:
         t, slots = templatize(text, cx)
         i = tid(t)
-        en = fill(t, slots, cx, "en", self_en)
+        en = fill(t, slots, cx, "en", self_en, recharge)
         if i in texts:
-            fr_t = fill(texts[i], slots, cx, "fr", self_en)
+            fr_t = fill(texts[i], slots, cx, "fr", self_en, recharge)
         else:
             fr_t = en
             if missing is not None:
@@ -470,6 +478,27 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
                 t = rest[1:]
             t = t[:1].upper() + t[1:]
         return [text[0], t]
+
+    def recharge_of(n: str, t: str) -> dict | None:
+        """Recharge abilities that deal damage: the table chooses 1 to 3 turns of recharge, Tier dice per turn."""
+        if not re.search(r"\(Recharge", n):
+            return None
+        _, slots = templatize(t, cx)
+        d = next((g for k, g in slots if k == "dmg"), None)
+        if not d:
+            return None
+        return {"t": cx.t, "d": int(d[1].split("d")[1]), "ty": [d[4] or "", DMG.get(d[4] or "", "")]}
+
+    def entry(n: str, t: str) -> list:
+        np_ = name_pair(n)
+        rc = recharge_of(n, t)
+        e = np_ + tidy(np_, both(t, n, bool(rc)))
+        if rc:
+            base_en = re.sub(r"\s*\(Recharge[^)]*\)", "", e[0])
+            base_fr = re.sub(r"\s*\(Recharge[^)]*\)", "", e[1])
+            e[0], e[1] = base_en + " (recharge 1–3 turns)", base_fr + " (recharge 1 à 3 tours)"
+            e.append({"rc": rc})
+        return e
 
     def name_pair(n: str) -> list[str]:
         base = n
@@ -512,8 +541,7 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
         "atk": [], "tr": [], "act": [], "leg": [], "rea": [],
     }
     for n, t in d.get("tr", []):
-        np_ = name_pair(n)
-        out["tr"].append(np_ + tidy(np_, both(t, n)))
+        out["tr"].append(entry(n, t))
     for n, t in d.get("act", []):
         a = attack(n, t, cx)
         if a:
@@ -527,14 +555,11 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
                 "rest": rest,
             })
         else:
-            np_ = name_pair(n)
-            out["act"].append(np_ + tidy(np_, both(t, n)))
+            out["act"].append(entry(n, t))
     for n, t in d.get("leg", []):
-        np_ = name_pair(n)
-        out["leg"].append(np_ + tidy(np_, both(t, n)))
+        out["leg"].append(entry(n, t))
     for n, t in d.get("rea", []):
-        np_ = name_pair(n)
-        out["rea"].append(np_ + tidy(np_, both(t, n)))
+        out["rea"].append(entry(n, t))
     return out
 
 
