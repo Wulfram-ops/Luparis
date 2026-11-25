@@ -1,0 +1,180 @@
+<h2 id="r-aide">Cheat sheet</h2>
+<div class="cheat">
+<div class="ch"><h4>Attacks and DCs</h4><p><b>Attack</b>: d20 + mod + Mastery (Tier + 1) against Evasion. Natural 20: double the Mastery dice.</p><p><b>DC</b>: 8 + mod + Mastery. 10 easy, 15 medium, 20 hard, 25 very hard, 30 nearly impossible.</p><p><b>Save</b>: the threat sets the domain, the story sets the intent (Resilience by default).</p></div>
+<div class="ch"><h4>Damage and boxes</h4><p>Below Minor: 0 boxes, but 1 Stamina (wear). Minor to Major: 1. Major: 2. Severe: 3.</p><p>At 0 boxes: unconscious, death saves. Resistance and vulnerability apply before thresholds.</p></div>
+<div class="ch"><h4>Defense</h4><p><b>Evasion</b> = 10 + Physical Finesse (armor cap) + shield.</p><p><b>Parry</b> (reaction): d20 + Physical Resilience + shield ≥ the attack roll, and the blow costs 1 box less. Each extra Parry in the round: 1 Stamina.</p></div>
+<div class="ch"><h4>Effects and maneuvers</h4><p>Total value ≤ Tier. Paid in Mana (spell) or Stamina (weapon).</p><p>1: heavy blow, offset, movement, light control, heal (per box). 2: heavy control, persistence, extra target (each). 3: major control, area or whirlwind (successful save = half), extra action.</p></div>
+<div class="ch"><h4>Rest</h4><p><b>Short (1 h)</b>: half the missing boxes and Mana, all Stamina.</p><p><b>Long (8 h)</b>: everything, and one less level of exhaustion.</p></div>
+<div class="ch"><h4>Distance and terrain</h4><p>1 tile = 5 ft (1.5 m), diagonals included; +5 ft per height level.</p><p>+1 half cover, +2 cover, +3 impassable; −1 difficult, −2 impassable.</p></div>
+<div class="ch wide"><h4>Conditions</h4><dl class="cond">
+<dt>Blinded</dt><dd>Disadvantage on its attacks, advantage against it.</dd><dt>Charmed</dt><dd>Can't attack the charmer.</dd><dt>Deafened</dt><dd>Can't hear.</dd>
+<dt>Exhaustion</dt><dd>−2 to d20s and −5 ft per level; death at 6.</dd><dt>Frightened</dt><dd>Disadvantage while it sees the source; can't approach it.</dd><dt>Grappled</dt><dd>Speed 0.</dd>
+<dt>Incapacitated</dt><dd>No actions or reactions, so no Parry.</dd><dt>Invisible</dt><dd>Advantage on its attacks, disadvantage against it.</dd><dt>Paralyzed</dt><dd>Incapacitated; a melee hit is a critical.</dd>
+<dt>Petrified</dt><dd>Incapacitated, resistance to all damage.</dd><dt>Poisoned</dt><dd>Disadvantage on attacks and checks.</dd><dt>Prone</dt><dd>Crawls; disadvantage on its attacks; advantage on melee against it.</dd>
+<dt>Restrained</dt><dd>Speed 0; disadvantage on attacks and Physical saves; advantage against it.</dd><dt>Stunned</dt><dd>Incapacitated, fails Physical saves; advantage against it.</dd><dt>Unconscious</dt><dd>Incapacitated, prone; a melee hit is a critical.</dd></dl></div>
+</div>
+<p class="lead">Luparis plays with the D&D 5.5 rules. This book only describes what changes. Anything not written here stays the D&D rule.</p>
+<h2 id="r-matrice">1. The Matrix of Intents</h2>
+<p>The six D&D ability scores are replaced by nine cells: an intent (Power, Finesse, Resilience) applied to a domain (Physical, Mental, Social). Always name the intent with its domain: Physical Finesse, Mental Resilience. Each cell has a modifier, like a D&D ability. The context of the action picks the cell, never the school of magic.</p>
+<p><b>Six stats, nine cells.</b> You buy six stats: the three intents and the three domains. Each cell is the sum of its intent and its domain: Physical Power = Power + Physical. A stat starts at 0 and can drop to −1. Being bad at something is a choice: lowering a stat to −1 gives back 20 XP.</p>
+<p><b>Cap by level:</b> stats up to +3 until level 5, +5 until level 10, +7 until level 15, no cap beyond. XP stays the real limit: each +1 costs double the previous one.</p>
+<table><thead><tr><th></th><th>Physical</th><th>Mental</th><th>Social</th></tr></thead><tbody>
+<tr><th>Power</th><td>Strength</td><td>Intellect, offensive spells</td><td>Authority, intimidation</td></tr>
+<tr><th>Finesse</th><td>Dexterity, Evasion</td><td>Perception, subtle spells</td><td>Persuasion, deception</td></tr>
+<tr><th>Resilience</th><td>Constitution: thresholds, Stamina</td><td>Willpower: Mana, resisting magic</td><td>Composure: resisting influence</td></tr></tbody></table>
+<p class="ex">Example: an Aegis mage who projects an imposing aura during a negotiation uses Social Power. If they forge a hammer of light to strike, they use Mental Power.</p>
+<h2 id="r-perso">2. The character</h2>
+<p>There are no classes. Each character spends XP on the schools of magic, weapon masteries and stats they want. Their stats tell their life story, whatever their people: no race gives a bonus.</p>
+<p>Everyone starts with a d6 hit die, then buys d8, d10 and d12 with XP.</p>
+<p><b>Speed:</b> 6 tiles (30 ft) per turn. The Fleet-footed talent adds 2 tiles per rank (2 ranks, 40 XP each). Heavy armor costs 2 tiles.</p>
+<h3>XP costs (v0.4)</h3>
+<p>Level equals XP earned divided by 100: 150 XP to create a level 1 character, 2,000 at level 20. The Character tab does all the math.</p>
+<table><thead><tr><th>Purchase</th><th>Cost of each step</th><th>Total</th></tr></thead><tbody>
+<tr><td>Stat (intent or domain), each +1</td><td>20, 40, 80, 160, 320… (−1 gives back 20)</td><td>+3: 140, +5: 620</td></tr><tr><td>Talent (chapter 7), per rank</td><td>40, 80, 160 (Expertise: 20, 40, 80)</td><td>—</td></tr><tr><td>Armor training: light, medium, heavy</td><td>20, 40, 80</td><td>140</td></tr><tr><td>Shield training</td><td>40</td><td>40</td></tr>
+<tr><td>Tier in a discipline (school, weapon family or Apex), 1 to 5</td><td>40, 80, 160, 240, 320</td><td>840</td></tr>
+<tr><td>Hit die d8, d10, d12</td><td>80, 160, 240</td><td>480</td></tr></tbody></table>
+<p><b>Armor and shield training:</b> like proficiencies in D&D. Wearing armor you are not trained for gives no armor value (your thresholds are those of an unarmored body) and −2 Evasion. A shield without training gives no bonus and no Parry. Medium armor needs light training first, heavy armor needs medium.</p>
+<p><b>Specialization:</b> your disciplines are ranked by Tier. The highest costs normal price, the 2nd ×1.5, the 3rd ×2, every further one ×3. At level 20 (2,000 XP), that buys one discipline at Tier 5 and a second at Tier 4, with the matrix and a d8; a tank who takes the d12 settles for Tier 5 and Tier 3.</p>
+<p><b>Tier gates:</b> Tier 2 from level 3, Tier 3 from 5, Tier 4 from 11, Tier 5 from 17, like D&D's major tiers.</p>
+<h2 id="r-defense">3. Defense: Evasion and armor</h2>
+<p>Armor Class is gone. The attacker rolls d20 + bonus against the target's <b>Evasion</b>. On a hit, <b>armor</b> decides how much the blow costs.</p>
+<p><b>Evasion = 10 + Physical Finesse (capped by armor) + shield + other bonuses.</b></p>
+<p><b>Armor value = the armor's base AC in D&D − 10.</b> It sets the Minor threshold and adds to the Major and Severe thresholds.</p>
+<table><thead><tr><th>Armor</th><th>Category</th><th>Finesse in Evasion</th><th class="r">Value</th></tr></thead><tbody>
+<tr><td>None</td><td>—</td><td>max +5</td><td class="r">0</td></tr><tr><td>Leather</td><td>Light</td><td>max +5</td><td class="r">1</td></tr><tr><td>Studded leather</td><td>Light</td><td>max +5</td><td class="r">2</td></tr>
+<tr><td>Chain shirt</td><td>Medium</td><td>max +2</td><td class="r">3</td></tr><tr><td>Breastplate, scale mail</td><td>Medium</td><td>max +2</td><td class="r">4</td></tr><tr><td>Half plate</td><td>Medium</td><td>max +2</td><td class="r">5</td></tr>
+<tr><td>Chain mail</td><td>Heavy</td><td>max +1</td><td class="r">6</td></tr><tr><td>Splint</td><td>Heavy</td><td>max +1</td><td class="r">7</td></tr><tr><td>Plate</td><td>Heavy</td><td>max +1</td><td class="r">8</td></tr></tbody></table>
+<h3>Shields</h3>
+<p><b>Parry (reaction):</b> when you are hit, roll d20 + Physical Resilience + the shield's Evasion bonus. If you match or beat the attack roll, the blow costs one box less (2 becomes 1, 1 becomes 0). The first Parry of the round is free; each extra one costs 1 Stamina.</p>
+<table><thead><tr><th>Shield</th><th class="r">Evasion</th><th>Parry</th><th>Special</th></tr></thead><tbody>
+<tr><td>Buckler</td><td class="r">+0</td><td>Melee only</td><td>Hand almost free: you can cast or hold an item</td></tr>
+<tr><td>Small shield</td><td class="r">+1</td><td>Yes</td><td>Light, no drawback</td></tr>
+<tr><td>Heater shield</td><td class="r">+1</td><td>Yes, also against missiles</td><td>The standard shield</td></tr>
+<tr><td>Large shield</td><td class="r">+2</td><td>Yes + Intercept</td><td>Disadvantage on Stealth</td></tr>
+<tr><td>Tower shield</td><td class="r">+2</td><td>Yes + Intercept</td><td>Plant it (bonus action): cover for you and one ally behind; speed −10 ft (3 m) while carried</td></tr></tbody></table>
+<p><b>Intercept:</b> you can use your Parry to protect an adjacent ally instead.</p>
+<h2 id="r-vitalite">4. Damage and Vitality</h2>
+<p>There are no more hit points to subtract. Compare a blow's damage to the target's thresholds:</p>
+<table><thead><tr><th>Damage of the blow</th><th class="r">Boxes lost</th></tr></thead><tbody>
+<tr><td>Below the Minor threshold</td><td class="r">0 (but wear applies)</td></tr><tr><td>From Minor to Major</td><td class="r">1</td></tr><tr><td>Major or more</td><td class="r">2</td></tr><tr><td>Severe or more</td><td class="r">3</td></tr></tbody></table>
+<ul><li><b>Minor threshold</b> = armor value</li><li><b>Base</b> = maximum hit die value + level + Physical Resilience modifier</li><li><b>Major threshold</b> = Base + armor value</li><li><b>Severe threshold</b> = 2 × Base + armor value</li><li><b>Vitality boxes</b> = 1 + (level × hit die ÷ 12), rounded up</li></ul>
+<table><thead><tr><th>Level</th><th class="r">d6</th><th class="r">d8</th><th class="r">d10</th><th class="r">d12</th></tr></thead><tbody>
+<tr><td>1</td><td class="r">2</td><td class="r">2</td><td class="r">2</td><td class="r">2</td></tr><tr><td>5</td><td class="r">4</td><td class="r">5</td><td class="r">6</td><td class="r">6</td></tr><tr><td>10</td><td class="r">6</td><td class="r">8</td><td class="r">10</td><td class="r">11</td></tr><tr><td>20</td><td class="r">11</td><td class="r">15</td><td class="r">18</td><td class="r">21</td></tr></tbody></table>
+<p><b>Wear:</b> a blow stopped by armor costs no box, but it costs 1 Stamina. When Stamina is empty, each stopped blow costs a box. Nobody is invincible against numbers.</p>
+<p><b>At 0 boxes:</b> the character falls unconscious and makes death saving throws, as in D&D.</p>
+<p class="note">Calibration: at every level tested (1, 5 and 10), a character drops after as many attacks as in D&D, within 10%.</p>
+<h2 id="r-maitrise">5. Mastery and magic</h2>
+<p>Spells and weapons follow the same rule. Your <b>Mastery</b> in a school or a weapon is your Tier, from 1 to 5. It sets how many dice you roll; what you use sets the die type.</p>
+<ol><li><b>Basic attack, free.</b> Weapon: Mastery × weapon die + modifier. School's basic spell: Mastery × the school's die, no modifier (see the table of schools).</li>
+<li><b>Effects.</b> Each effect is worth 1 to 5. The total costs that much Mana and cannot exceed your Tier in the school.</li>
+<li><b>Circumstances.</b> A bonus or a penalty changes Mastery by ±1: an inspiring ally, Rage, a weakened or blinded target.</li></ol>
+<h3>The schools</h3><p>Each school has its own damage die (basic spell and infusion) and an <b>affinity</b>: a signature effect that costs it less. The smaller the die, the stronger the affinity.</p>
+<table><thead><tr><th>School</th><th>Die</th><th>Affinity</th><th>Domain</th></tr></thead><tbody>
+<tr><td>Surge</td><td>d12</td><td>—</td><td>Destruction, like evocation</td></tr>
+<tr><td>Mirage</td><td>d8</td><td>Heavy control 1, major control 2</td><td>Psychic damage, illusions, fear and charm</td></tr>
+<tr><td>Eidolon</td><td>d8</td><td>Persistence 1</td><td>Souls: curses and purification</td></tr>
+<tr><td>Aegis</td><td>d8</td><td>Aegis ward 1</td><td>Energy condensed into matter: shields, summoned weapons</td></tr>
+<tr><td>Crucible</td><td>d8</td><td>Heal: 2 boxes per point</td><td>Transmutation and healing</td></tr>
+<tr><td>Horizon</td><td>d6</td><td>Offset 0 (free); the only school that can teleport</td><td>Space and time: teleportation, portals, slowing time</td></tr>
+<tr><td>Harmony</td><td>d6</td><td>Multiply 1 per target</td><td>Resonance: bards, shaping the battlefield</td></tr></tbody></table>
+<h3>Weapon masteries</h3><p>You buy one mastery per weapon family; it covers every weapon of that family. The weapon's size sets the die. Each school's basic spell uses its own die (table below).</p>
+<table><thead><tr><th>Family</th><th>Examples</th><th>Special</th></tr></thead><tbody><tr><td>Cutting weapons</td><td>Sword, axe, sabre, scimitar</td><td>To be defined</td></tr><tr><td>Thrusting weapons</td><td>Rapier, dagger, shortsword, estoc</td><td>To be defined</td></tr><tr><td>Blunt weapons</td><td>Mace, hammer, flail, staff</td><td>Proposal: ignores 2 points of armor value</td></tr><tr><td>Polearms</td><td>Spear, halberd, glaive, pike</td><td>Proposal: reach, strikes at 10 ft (3 m)</td></tr><tr><td>Ranged and thrown weapons</td><td>Bow, crossbow, javelin, sling</td><td>Ranged attacks</td></tr><tr><td>Martial arts</td><td>Fists, feet, knees, elbows</td><td>Uses Physical Finesse. d6 with one hand busy, d8 with both hands free. Proposal: cannot be disarmed, and grabbing or tripping needs no weapon</td></tr><tr><td>Natural weapons</td><td>Claws, fangs, horns, tail</td><td>Uses Physical Power. The die depends on the natural weapon's size, not on hands: small d6, medium d8, large d10, huge d12. Cannot be disarmed; tied to the people or a transformation</td></tr></tbody></table>
+<table><thead><tr><th>Size</th><th>Die</th></tr></thead><tbody><tr><td>One-handed weapon</td><td>d6</td></tr><tr><td>Versatile weapon held in one hand</td><td>d8</td></tr><tr><td>Versatile weapon held in two hands</td><td>d10</td></tr><tr><td>Two-handed weapon</td><td>d12</td></tr></tbody></table>
+<h3>Spell effects</h3>
+<table><thead><tr><th>Effect</th><th class="r">Value</th></tr></thead><tbody>
+<tr><td>Heavy blow: if the spell hits, +1 box (once per spell)</td><td class="r">1</td></tr><tr><td>Offset: cast from another point</td><td class="r">1</td></tr><tr><td>Non-instant movement of yourself or a target (flight, a push…)</td><td class="r">1</td></tr><tr><td>Horizon only: teleporting yourself or a willing target (an ally); Multiply for each extra person, as when opening a portal</td><td class="r">2</td></tr><tr><td>Horizon only: teleporting an enemy target, which makes a saving throw</td><td class="r">3</td></tr>
+<tr><td>Split: one more target</td><td class="r">2 per target</td></tr><tr><td>Light control: push, slow</td><td class="r">1</td></tr><tr><td>Heavy control: pin, restrain, blind</td><td class="r">2</td></tr><tr><td>Major control: stun, paralyze</td><td class="r">3</td></tr>
+<tr><td>Persistence or wall: the effect lasts 1 minute</td><td class="r">2</td></tr><tr><td>Area: every creature within 20 ft (6 m); as in D&D, a successful save takes half damage</td><td class="r">3</td></tr></tbody></table>
+<p class="ex">Example: a Tier 2 Crucible mage casts their earth spike for free (2d8). Pinning the target under rock is a value 2 effect: it costs 2 Mana. Pin + Area (2 + 3 = 5) needs Tier 5.</p>
+<h3>Mana</h3>
+<p>Mana comes from the Tiers bought in schools: each school adds Mana by its Tier, and schools add up. A martial character who dabbles in one school only gets 2 to 6 points. Recovery is covered in the Healing and rest chapter.</p>
+<table><thead><tr><th>Tier in the school</th><th class="r">1</th><th class="r">2</th><th class="r">3</th><th class="r">4</th><th class="r">5</th></tr></thead><tbody><tr><td>Mana gained (total)</td><td class="r">2</td><td class="r">6</td><td class="r">14</td><td class="r">24</td><td class="r">36</td></tr></tbody></table>
+<p><b>Mental Resilience bonus:</b> + modifier × half your highest Tier in magic, rounded down.</p>
+<p class="note">Benchmarks for a pure mage: level 1, 2 Mana; level 5 (Tiers 3 and 1), 16; level 10 (Tiers 3, 3 and 2), 34; level 20 (Tiers 5, 4 and 3), 74. That is a D&D wizard's day, within 15%.</p>
+<h2 id="r-souffle">6. Stamina</h2>
+<p>Stamina is the body's exhaustion, as Mana is the mind's. It refills completely on a short rest.</p>
+<p><b>Pool = the Stamina gained from each weapon family you master + Physical Resilience modifier.</b> A pure mage only has their modifier.</p>
+<table><thead><tr><th>Tier in the family</th><th class="r">1</th><th class="r">2</th><th class="r">3</th><th class="r">4</th><th class="r">5</th></tr></thead><tbody><tr><td>Stamina gained (total)</td><td class="r">1</td><td class="r">3</td><td class="r">7</td><td class="r">12</td><td class="r">18</td></tr></tbody></table>
+<p><b>Stamina pays for:</b> martial maneuvers, Parries beyond the first, wear, and an extra action on your turn (3 Stamina, for everyone). <b>It never pays</b> for spell effects.</p>
+<table><thead><tr><th>Maneuver</th><th class="r">Value</th></tr></thead><tbody>
+<tr><td>Heavy blow: if the attack hits, +1 box</td><td class="r">1</td></tr><tr><td>Cleave: one more adjacent enemy</td><td class="r">2 per target</td></tr><tr><td>Charge or leap: move before striking</td><td class="r">1</td></tr>
+<tr><td>Throw or reach: strike farther</td><td class="r">1</td></tr><tr><td>Shove, guard break</td><td class="r">1</td></tr><tr><td>Disarm, trip, grapple</td><td class="r">2</td></tr>
+<tr><td>Held stance: an effect kept for 1 minute</td><td class="r">2</td></tr><tr><td>Whirlwind: every adjacent enemy</td><td class="r">3</td></tr><tr><td>Extra Parry this round</td><td class="r">1</td></tr><tr><td>Extra action this turn</td><td class="r">3</td></tr></tbody></table>
+<p class="ex">At level 5, a fighter at Tier 3 in cutting weapons and Tier 1 in ranged weapons, with +3 Physical Resilience, has 11 Stamina per fight, 33 over a day with two short rests. A mage has 19 Mana for the whole day: the mage hits hard once, the fighter goes the distance.</p>
+<h3>Apex</h3><p>The Apex is abnormal physical power: it is not magic, but it is not normal either. It is bought by Tier like a weapon family (same XP costs and Tier gates).</p><ul><li><b>Breath:</b> each Apex Tier adds Breath exactly like a weapon family (1, 3, 7, 12, 18 cumulative).</li><li><b>Natural armor = 2 × Apex Tier</b> (2 to 10). It does not stack with worn armor: keep the better value. Natural armor never limits Evasion.</li><li><b>Infusion:</b> the Apex can infuse a weapon strike (see below).</li></ul>
+<h3>Infusion (v0.3)</h3><p>A character who masters both a weapon family and a source of power can infuse the strike: the strike deals extra damage. The infusion has a value from 1 up to your Tier in the source, and <b>each point costs 1 Mana</b> (a school) <b>or 1 Breath</b> (the Apex) and adds <b>one die</b>: the school's damage die (d8) for a school, the weapon's die for the Apex. Paid when the attack is declared, even on a miss; the extra dice are added to that strike's damage. The source is a magic school (a Crucible adept sharpens or densifies a cutting blade, an Aegis adept wraps a mace in solidified energy) or the Apex (a blow struck with outrageous strength). One infusion per strike.</p><p><b>Damage types come from the story.</b> At character creation, the player and the GM agree on what the character's school can produce: Aegis, being solidified energy, will hardly deal anything but force, bludgeoning or physical damage; a Surge adept may deal force, fire or radiant damage, depending on their lore and what they know how to do. The scene can tighten or widen those limits.</p>
+<h2 id="r-talents">7. Talents</h2>
+<p>Talents are the class features of D&D, sold à la carte. Buy them with XP like everything else, as many as you like, as long as the story follows: a Rage needs a reason to rage, a Companion needs to be met. Rank 2 is open from level 5, rank 3 from level 11. Unless noted, a talent costs 40, 80 then 160 XP per rank.</p>
+<h3>Martial</h3><table><thead><tr><th>Talent</th><th>Effect</th><th>XP per rank</th></tr></thead><tbody>
+<tr><td><b>Sneak strike</b></td><td><b>Rank 1:</b> Once per turn, when you hit with Physical Finesse a target you have advantage against, or that an ally threatens in melee: +1 Mastery die.<br><b>Rank 2:</b> +2 Mastery dice instead.<br><b>Rank 3:</b> +3 Mastery dice instead.</td><td>40, 80, 160</td></tr>
+<tr><td><b>Second wind</b></td><td><b>Rank 1:</b> Bonus action, once per short rest: regain 1 box and 2 Stamina.<br><b>Rank 2:</b> 2 boxes and 4 Stamina, twice per short rest.<br><i>Requires: Resilience +3</i></td><td>40, 80</td></tr>
+<tr><td><b>Uncanny dodge</b></td><td>Reaction when a hit you can see lands, 2 Stamina: its damage is halved before the thresholds. Once per round.<br><i>Requires: Finesse +3</i></td><td>80</td></tr>
+<tr><td><b>Fleet-footed</b></td><td><b>Rank 1:</b> +2 tiles of movement.<br><b>Rank 2:</b> +4 tiles of movement in total.</td><td>40, 40</td></tr>
+</tbody></table>
+<h3>Bonds and pacts</h3><table><thead><tr><th>Talent</th><th>Effect</th><th>XP per rank</th></tr></thead><tbody>
+<tr><td><b>Companion</b></td><td><b>Rank 1:</b> A beast bound to you (Bestiary, CR 1/4 or less). It acts on your initiative when you command it (bonus action); otherwise it only defends itself. If it dies, a new one answers an 8-hour ritual.<br><b>Rank 2:</b> CR 1 or less; you share its senses as an action.<br><b>Rank 3:</b> CR 3 or less; it acts on its own without a command.</td><td>40, 80, 160</td></tr>
+<tr><td><b>Pact</b></td><td><b>Rank 1:</b> You are bound to an entity met in the story. Favors: rank + 1 per long rest. Spend a Favor to pay 2 Mana or 2 Stamina of a cost, to gain +1 Mastery on a roll (before rolling), or to call on a gift of your entity. Each Favor spent adds 1 Debt. Rank 1 gift of your entity.<br><b>Rank 2:</b> Rank 2 gift of your entity.<br><b>Rank 3:</b> Rank 3 gift of your entity; your Debt threshold rises by 2.</td><td>40, 80, 160</td></tr>
+</tbody></table>
+<p><b>Debt.</b> Each Favor spent adds 1 Debt. The GM may spend 1 Debt at any time for a complication: a vision, an order, a visible mark, a rival who smells the pact. When Debt reaches 3 × your rank (+2 at rank 3), the entity calls it in: a service to perform. Until it is done, you have no Favors; once it is done, Debt goes back to 0. Refusing breaks the pact: the talent is lost, the XP with it, and the entity remembers.</p>
+<table><thead><tr><th>Entity</th><th>Rank 1</th><th>Rank 2</th><th>Rank 3</th></tr></thead><tbody><tr><td><b>Fiend</b><br><i>Infernal bargains, fire and ambition.</i></td><td>When you drop an enemy to 0 boxes, regain 2 Stamina or 2 Mana.</td><td>Resistance to fire.</td><td>1 Favor when you hit: the blow costs 1 more box (once per round).</td></tr><tr><td><b>Archfey</b><br><i>Whims, glamour and old oaths.</i></td><td>1 Favor: light control (pushed or slowed) on a creature you see, no roll to hit, Mental save against your DC.</td><td>Advantage against charmed; you cannot be put to sleep by magic.</td><td>Reaction, 1 Favor, when you lose a box: you become invisible until the end of your next turn.</td></tr><tr><td><b>Great Old One</b><br><i>Whispers from beyond the stars.</i></td><td>Telepathy with any creature within 30 ft that speaks a language.</td><td>Advantage against charmed and frightened; resistance to psychic damage.</td><td>1 Favor: a creature you see is frightened or charmed until the end of its next turn (Mental Resilience against your DC).</td></tr><tr><td><b>Celestial</b><br><i>A bright and demanding light.</i></td><td>1 Favor, bonus action: an ally within 30 ft regains 1 box.</td><td>Resistance to radiant damage; you shed light at will.</td><td>2 Favors, action: an ally at 0 boxes within 30 ft gets up with 2 boxes.</td></tr><tr><td><b>The Dead</b><br><i>Ghosts, liches and forgotten tombs.</i></td><td>You see spirits and can ask a corpse three questions once per long rest.</td><td>Resistance to necrotic damage; advantage against poisoned.</td><td>Once per long rest, when you drop to 0 boxes, you stay up with 1 box until the end of your next turn, then fall.</td></tr><tr><td><b>Elder dragon</b><br><i>A wyrm older than kingdoms.</i></td><td>Draconic scales: natural armor 2 (keep the better of natural and worn armor).</td><td>1 Favor, action: breath in a 15 ft cone, your rank × d8 damage of your dragon's element, Physical Finesse save for half.</td><td>2 Favors, bonus action: wings for 1 minute (flight at your speed).</td></tr></tbody></table>
+<p>The entity is yours to name: Asmodeus, the Queen of Thorns, a drowned god of Luparis. The table gives its kind.</p>
+<h3>Expertise</h3><p>Pick a precise field: lockpicking, tracking, herbalism, the history of Luparis, sailing… Your checks in that field add +2, +4 then +6 (ranks 1 to 3, for 20, 40 then 80 XP). Buy it for as many fields as you like. It is the answer to "how good is my character at this", outside combat.</p>
+<h2 id="r-jets">8. Rolls, DCs and conditions</h2>
+<p>Rolls follow D&D, with Mastery replacing the proficiency bonus.</p>
+<ul><li><b>Mastery bonus = Tier + 1</b> (+2 to +6).</li><li><b>Attack roll</b> = d20 + cell modifier + Mastery bonus, against Evasion. On a natural 20, double the Mastery dice.</li><li><b>Spell or maneuver DC</b> = 8 + modifier of the cell used + Mastery bonus.</li><li><b>DC of an effect left on the ground</b> (flames, acid, ice, webs…) = 10 + its author's Resilience, in the domain the story points to (physical, mental or social). On the map, set the DC next to the Effect tool.</li><li><b>Elevation on the battle map:</b> a tile at elevation 1 is difficult terrain; elevation 2 needs a jump or a climb; elevation 3 needs a high jump (only characters strong enough), flight or a climbing check. A jump uses Physical Power, a climb Physical Power or Finesse, DC set by the GM.</li><li><b>Resistance and vulnerability</b> halve or double damage before comparing it to thresholds.</li></ul>
+<h3>Saving throws</h3>
+<table><thead><tr><th>D&D save</th><th>Luparis domain</th></tr></thead><tbody>
+<tr><td>Strength, Dexterity, Constitution</td><td>Physical</td></tr><tr><td>Intelligence, Wisdom</td><td>Mental</td></tr><tr><td>Charisma</td><td>Social</td></tr></tbody></table>
+<p><b>The intent comes from the story.</b> The threat sets the domain; how the player describes their reaction sets the intent. Resilience is the default. Diving away from an explosion: Physical Finesse. Holding firm against a shove: Physical Power. Enduring a poison: Physical Resilience. Seeing through an illusion: Mental Finesse. The GM confirms the description fits the situation.</p>
+<h3>Difficulty</h3>
+<table><thead><tr><th class="r">DC</th><th>Difficulty</th></tr></thead><tbody><tr><td class="r">10</td><td>Easy</td></tr><tr><td class="r">15</td><td>Medium</td></tr><tr><td class="r">20</td><td>Hard</td></tr><tr><td class="r">25</td><td>Very hard</td></tr><tr><td class="r">30</td><td>Nearly impossible</td></tr></tbody></table>
+<h3>Control effects</h3>
+<p>A condition lasts until the end of the target's next turn. With Persistence, the target repeats its save at the end of each of its turns.</p>
+<table><thead><tr><th>Effect</th><th class="r">Value</th><th>Possible conditions</th></tr></thead><tbody>
+<tr><td>Light control</td><td class="r">1</td><td>Pushed 10 ft (3 m), or slowed (−10 ft speed)</td></tr><tr><td>Heavy control</td><td class="r">2</td><td>Prone, grappled, restrained, blinded, deafened, frightened, charmed</td></tr><tr><td>Major control</td><td class="r">3</td><td>Stunned, paralyzed</td></tr></tbody></table>
+<p><b>No damage over time:</b> burning, bleeding or gnawing poison become a single hit, or the poisoned condition.</p>
+<h3>Conditions</h3>
+<table><thead><tr><th>Condition</th><th>Effect</th></tr></thead><tbody>
+<tr><td>Blinded</td><td>Fails anything that needs sight. Disadvantage on its attacks, advantage on attacks against it.</td></tr>
+<tr><td>Charmed</td><td>Can't attack the charmer, who has advantage on social checks against it.</td></tr>
+<tr><td>Deafened</td><td>Can't hear; fails anything that needs hearing.</td></tr>
+<tr><td>Exhaustion</td><td>Levels 1 to 6: each level gives −2 to every d20 and −5 ft speed. Level 6 is death. A long rest removes one level.</td></tr>
+<tr><td>Frightened</td><td>Disadvantage on its rolls while it sees the source; can't willingly move closer to it.</td></tr>
+<tr><td>Grappled</td><td>Speed 0. Disadvantage on attacks against anyone but the grappler. Escape: action, Physical check against the DC.</td></tr>
+<tr><td>Incapacitated</td><td>No action, bonus action or reaction, so it can't Parry.</td></tr>
+<tr><td>Invisible</td><td>Advantage on its attacks, disadvantage on attacks against it, as long as it isn't located.</td></tr>
+<tr><td>Paralyzed</td><td>Incapacitated, speed 0. Fails Physical saves; advantage against it, and a melee hit is a critical.</td></tr>
+<tr><td>Petrified</td><td>Turned to stone and incapacitated; resistance to all damage.</td></tr>
+<tr><td>Poisoned</td><td>Disadvantage on attack rolls and checks.</td></tr>
+<tr><td>Prone</td><td>Crawls; standing up costs half its movement. Disadvantage on its attacks. Advantage on melee attacks against it, disadvantage at range.</td></tr>
+<tr><td>Restrained</td><td>Speed 0. Disadvantage on its attacks and Physical saves; advantage on attacks against it.</td></tr>
+<tr><td>Stunned</td><td>Incapacitated. Fails Physical saves; advantage on attacks against it.</td></tr>
+<tr><td>Unconscious</td><td>Incapacitated and prone, drops what it holds. Fails Physical saves; advantage against it, and a melee hit is a critical.</td></tr></tbody></table>
+<h2 id="r-soins">9. Healing and rest</h2>
+<p>You recover in three ways: rest, consumables and magic. D&D hit dice are no longer spent to heal; they only set thresholds and boxes.</p>
+<h3>Rest</h3>
+<table><thead><tr><th>Rest</th><th>Duration</th><th>Vitality boxes</th><th>Mana</th><th>Stamina</th></tr></thead><tbody>
+<tr><td>Short</td><td>1 hour</td><td>Half the missing boxes (rounded up)</td><td>Half the missing Mana</td><td>All</td></tr>
+<tr><td>Long</td><td>8 hours</td><td>All</td><td>All</td><td>All, and one less level of exhaustion</td></tr></tbody></table>
+<h3>Consumables</h3>
+<table><thead><tr><th>Consumable</th><th>Effect</th></tr></thead><tbody>
+<tr><td>Potion of healing</td><td>1 box</td></tr><tr><td>Potion of greater healing</td><td>2 boxes</td></tr><tr><td>Potion of superior healing</td><td>3 boxes</td></tr><tr><td>Potion of supreme healing</td><td>5 boxes</td></tr>
+<tr><td>Hot meal (during a short rest)</td><td>1 more box than the rest gives</td></tr><tr><td>Vigor tonic</td><td>3 Stamina (proposal)</td></tr><tr><td>Mana elixir</td><td>2, 6 or 14 Mana by quality (to be confirmed)</td></tr></tbody></table>
+<h3>Healing magic</h3>
+<p>The Crucible heals by closing the flesh; Harmony makes natural regeneration resonate. Healing is an effect like any other, paid in Mana and capped by Tier.</p>
+<table><thead><tr><th>Effect</th><th class="r">Value</th><th>Schools</th></tr></thead><tbody>
+<tr><td>Stabilize a creature at 0 boxes</td><td class="r">0</td><td>Crucible, Harmony (basic spell)</td></tr>
+<tr><td>Heal: the target regains 1 box</td><td class="r">1 per box</td><td>Crucible, Harmony</td></tr>
+<tr><td>Resting song: during a short rest, the party regains 1 more box</td><td class="r">1</td><td>Harmony, out of combat</td></tr></tbody></table>
+<p>Healing combines with other effects: Heal + Offset to heal at range, Heal + Area to heal the whole party (value 4). A creature at 0 boxes that regains a box wakes up.</p>
+<p class="ex">Proposal for the Aegis, which protects rather than heals. Aegis shield, value 2: an ally cancels the next box they would lose before your next turn.</p>
+<h2 id="r-mj">10. Game Master's chapter</h2>
+<h3>Converting a D&D monster</h3>
+<p>Evasion = the monster's AC. Thresholds, boxes and Mastery follow its CR smoothly, with no jumps between tiers. The Bestiary on this site does the math automatically.</p>
+<ul><li><b>Major</b> = 7 + CR (rounded); <b>Severe</b> = 2 × Major.</li><li><b>Boxes</b> = HP ÷ (4 + CR), rounded, at least 1.</li><li><b>Mastery Tier of its attacks</b> = 1 + CR ÷ 4.5, rounded, between 1 and 5 (CR 1: 1, CR 5: 2, CR 10: 3, CR 15: 4, CR 17+: 5).</li></ul><p class="ex">Example: an ogre (CR 2, 59 HP): Major 9, Severe 18, 10 boxes, Tier 1. A young red dragon (CR 10, 178 HP): Major 17, Severe 34, 13 boxes, Tier 3.</p>
+<h3>Ruling an unexpected effect</h3>
+<p>Find the D&D spell closest to the player's idea. Its level gives the value: levels 1 to 3, same value; 4 and 5, value 4; 6 and up, value 5.</p>
+<h3>Terrain</h3>
+<p>On the tactical map: +1 half cover, +2 cover, +3 impassable obstacle; −1 difficult terrain, −2 impassable.</p>
+<h2 id="r-avenir">11. Coming next</h2>
+<ul class="todo"><li>Balancing the XP costs after the first tests</li><li>Out-of-combat utility magic (Tier 0)</li><li>More talents after the first sessions</li><li>Simulating light armor, two-weapon and archer builds</li></ul>
