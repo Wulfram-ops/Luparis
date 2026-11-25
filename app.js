@@ -13639,9 +13639,12 @@ function mpClientMsg(m) {
   }
   if (m.type !== 'state') return;
   const first = !MP.got,
-    n0 = N;
+    n0 = N,
+    rot0 = rot;
   MP.got = true;
   applyState(m.map);
+  // each player keeps their own viewing angle
+  if (!first) rot = rot0;
   PBEST = (Array.isArray(m.best) ? m.best : []).filter(x => x && x.id && x.n).slice(0, 500);
   renderPBest();
   // the GM changed the map size: start again from the whole map in view

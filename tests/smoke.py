@@ -261,6 +261,10 @@ def run(chrome: str | None) -> None:
         creator.evaluate("DBG(`mpSend({type:'obj',x:6,y:6})`)")
         host.wait_for_timeout(500)
         check("players open doors", host.evaluate("DBG('OBJS.find(o=>o.x===6&&o.y===6).o')") is True)
+        creator.evaluate("DBG('rot=2')")
+        host.evaluate("DBG(`rot=1;save();mpPush()`)")
+        creator.wait_for_timeout(600)
+        check("each player keeps their own viewing angle", creator.evaluate("DBG('rot')") == 2)
         creator.evaluate("DBG(`tplSel='circle';TPLA=null;tplClick({x:3,y:3});mpSend({type:'env',x:4,y:4,k:'fire',dc:12})`)")
         host.wait_for_timeout(600)
         check(
