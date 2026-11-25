@@ -430,6 +430,8 @@ function playLabels() {
   $('play_preset_select').replaceChildren(
     ...Object.entries(PLAY_PRESETS).map(([key, p]) => new Option(tr(p.label), key)),
   );
+  // table modules carry the same small family line as the character cards
+  for (const p of playAux.querySelectorAll('.play-aux-pane')) p.dataset.fam = L2('Table', 'Table');
   $('mode_play').textContent = L2('Play', 'Partie');
   $('mode_edit').textContent = L2('Edit', 'Édition');
   for (const [k, e] of gMods()) {
@@ -587,7 +589,7 @@ function gCustomize() {
   const handle = t => {
     const g = t.closest('.ggrip, .gsz');
     if (g) return g;
-    const h = t.closest('h3, h4, .ht, .play-identity');
+    const h = t.closest('h3, h4, .ht, .hn, .play-identity');
     if (!h || t.closest('button, input, select, textarea, a, label, summary, details')) return null;
     return h.closest('[data-gk]') ? h : null;
   };

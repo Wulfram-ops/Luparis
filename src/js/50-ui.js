@@ -34,6 +34,8 @@ function applyLang() {
   renderTok();
   renderRes();
   rlRender();
+  // the table modules are rebuilt in the new language too
+  for (const f of [renderMarks, renderTpls, imgRender, snRender]) try { f(); } catch (e) {}
   if(typeof playLabels==='function'&&$('play_workspace')?.dataset.ready){playLabels();playSync();playFit();mpRender();}
   if (WS) wRender();
   draw();

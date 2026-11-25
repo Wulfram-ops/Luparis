@@ -7511,11 +7511,11 @@ function invCards(c) {
     D = derived(c),
     pr = c.prof || {},
     lv = [L2('none', 'aucun'), L2('light', 'légères'), L2('medium', 'intermédiaires'), L2('heavy', 'lourdes')];
-  const eq = `<div class="hc k-eq"><div class="ht">${L2('Equipment', 'Équipement')}</div><ul class="eql"><li><span>${L2('Armor', 'Armure')}</span> ${esc(tr(a[0]))}${a[1] ? ` <b>${a[1]}</b>` : ''}${D.armOk ? '' : ` <span class="ko">⚠ ${L2('untrained', 'sans entraînement')}</span>`}</li><li><span>${L2('Shield', 'Bouclier')}</span> ${c.shield !== 'none' ? esc(tr(sh[0])) + (sh[1] ? ` <b>+${sh[1]}</b>` : '') + (D.shdOk ? '' : ` <span class="ko">⚠</span>`) : '—'}</li>${(c.weapons || []).map(w => `<li><span>${esc(tr(FAM[w.f] ? FAM[w.f].n : ['', '']))}</span> ${esc(w.n)} <b>d${SZ[w.s] || 6}</b></li>`).join('')}<li><span>${L2('Training', 'Entraînement')}</span> ${L2('armor', 'armures')} ${lv[pr.arm || 0]}${pr.shd ? ' · ' + L2('shields', 'boucliers') : ''}</li></ul></div>`;
+  const eq = `<div class="hc k-eq"><div class="ht">${L2('Gear', 'Objets')}</div><div class="hn">${L2('Equipment', 'Équipement')}</div><ul class="eql"><li><span>${L2('Armor', 'Armure')}</span> ${esc(tr(a[0]))}${a[1] ? ` <b>${a[1]}</b>` : ''}${D.armOk ? '' : ` <span class="ko">⚠ ${L2('untrained', 'sans entraînement')}</span>`}</li><li><span>${L2('Shield', 'Bouclier')}</span> ${c.shield !== 'none' ? esc(tr(sh[0])) + (sh[1] ? ` <b>+${sh[1]}</b>` : '') + (D.shdOk ? '' : ` <span class="ko">⚠</span>`) : '—'}</li>${(c.weapons || []).map(w => `<li><span>${esc(tr(FAM[w.f] ? FAM[w.f].n : ['', '']))}</span> ${esc(w.n)} <b>d${SZ[w.s] || 6}</b></li>`).join('')}<li><span>${L2('Training', 'Entraînement')}</span> ${pr.arm ? `${L2('armor', 'armures')} ${lv[pr.arm]}` : L2('no armor', 'aucune armure')}${pr.shd ? ' · ' + L2('shields', 'boucliers') : ''}</li></ul></div>`;
   const gr = (k, l) =>
     `<div class="igr"><span>${l}</span><button type="button" data-hinv="1" data-gold="${k}" data-d="1" aria-label="${esc(l)} +">+</button><b>${g[k]}</b><button type="button" data-hinv="1" data-gold="${k}" data-d="-1" aria-label="${esc(l)} −">−</button></div>`;
   const pots = POTS.filter(p => (v.pot[p[0]] || 0) > 0);
-  const inv = `<div class="hc k-inv"><div class="ht">${L2('Inventory', 'Inventaire')}</div><div class="igold">${gr('h', L2('Handfuls', 'Poignées'))}${gr('b', L2('Bags', 'Bourses'))}${gr('c', L2('Chests', 'Coffres'))}</div>
+  const inv = `<div class="hc k-inv"><div class="ht">${L2('Gear', 'Objets')}</div><div class="hn">${L2('Inventory', 'Inventaire')}</div><div class="igold">${gr('h', L2('Handfuls', 'Poignées'))}${gr('b', L2('Bags', 'Bourses'))}${gr('c', L2('Chests', 'Coffres'))}</div>
   <ul class="ipl">${pots.map(p => `<li title="${esc(tr(p[2]))}"><span>${esc(tr(p[1]))}</span><button type="button" data-hinv="1" data-pot="${p[0]}" data-d="-1" aria-label="−">−</button><b>${v.pot[p[0]]}</b><button type="button" data-hinv="1" data-pot="${p[0]}" data-d="1" aria-label="+">+</button><button type="button" class="go" data-hinv="1" data-drink="${p[0]}">${L2('Use', 'Boire')}</button></li>`).join('')}
   ${v.items.map((x, i) => `<li title="${esc(x.no || '')}"><span>${esc(x.n || '?')}</span><button type="button" data-hinv="1" data-itq="${i}" data-d="-1" aria-label="−">−</button><b>${x.q}</b><button type="button" data-hinv="1" data-itq="${i}" data-d="1" aria-label="+">+</button><button type="button" data-hinv="1" data-itdel="${i}" aria-label="${L2('Remove', 'Retirer')}">×</button></li>`).join('')}</ul>
   <form class="iadd" data-hadd="1"><select aria-label="${L2('Add', 'Ajouter')}"><option value="">${L2('+ potion…', '+ potion…')}</option>${POTS.map(p => `<option value="${p[0]}">${esc(tr(p[1]))}</option>`).join('')}</select><input maxlength="60" placeholder="${L2('New item', 'Nouvel objet')}" aria-label="${L2('New item', 'Nouvel objet')}"><button type="submit">${L2('Add', 'Ajouter')}</button></form></div>`;
@@ -8460,7 +8460,7 @@ function fxFor(k) {
   return L;
 }
 function handChar() {
-  if(MP.role==='player')return MP.prole==='spec'?null:CH.list.find(c=>c.id===MP.me)||null;
+  if (MP.role === 'player') return MP.prole === 'spec' ? null : CH.list.find(c => c.id === MP.me) || null;
   const k = tokens.find(x => x.id === selTok && x.cid);
   const id = k ? k.cid : handId;
   return CH.list.find(c => c.id === id) || null;
@@ -8484,7 +8484,10 @@ function trk(lbl, key, max, used) {
   return `<div class="htrk" data-resource="${key}"><span>${lbl}</span><b>${left}<small>/${max}</small></b><div class="htrk-controls"><button type="button" data-ht="${key}" data-d="1" aria-label="${esc(lbl)} −"${left ? '' : ' disabled'}>−</button><button type="button" data-ht="${key}" data-d="-1" aria-label="${esc(lbl)} +"${left < max ? '' : ' disabled'}>+</button></div></div>`;
 }
 function playSheetHeader(c, D, u, sel) {
-  const details = [c.people, `${t('sk_level')} ${D.L}`, `${+c.xp || 0} XP`, c.camp].filter(Boolean).map(esc).join(' · ');
+  const details = [c.people, `${t('sk_level')} ${D.L}`, `${+c.xp || 0} XP`, c.camp]
+    .filter(Boolean)
+    .map(esc)
+    .join(' · ');
   const tk = tokens.find(k => k.cid === c.id);
   const initiative = (tk && INI.o.find(o => o.id === tk.id)?.v) ?? INIP[c.id];
   const stat = (label, value) => `<div class="play-stat"><span>${label}</span><b>${value}</b></div>`;
@@ -8525,7 +8528,7 @@ function pfSheet(c) {
         return `<td><button type="button" data-pfr="${k}" aria-label="${esc(cellName(k))} ${score}"><b>${score}</b><small>${esc(T[lang].hint[k])}</small></button></td>`;
       }).join('')}</tr>`,
   ).join('')}</tbody></table>`;
-  return `<div class="pf"><h4>${L2('Check and saving throw matrix', 'Matrice des tests et sauvegardes')}</h4>
+  return `<div class="pf hc k-pf"><div class="ht">${L2('Checks', 'Tests')}</div><div class="hn">${L2('Check and saving throw matrix', 'Matrice des tests et sauvegardes')}</div>
     <div class="pfmods">
       <button type="button" class="chip" data-pfa="1" aria-pressed="${Q.adv === 1}">${L2('Advantage', 'Avantage')}</button>
       <button type="button" class="chip" data-pfa="-1" aria-pressed="${Q.adv === -1}">${L2('Disadvantage', 'Désavantage')}</button>
@@ -8570,10 +8573,15 @@ function talCards(c) {
   }
   return out;
 }
+// options of a higher tier: one discreet line instead of greyed buttons
+function hMore(n) {
+  return n ? `<p class="small hmore">${L2(`+${n} at higher tiers`, `+${n} aux tiers suivants`)}</p>` : '';
+}
 function hKey(h) {
   const m = /class="hc (k-[a-z]+)/.exec(h),
     cl = m ? m[1] : 'k';
-  if (['k-def', 'k-man', 'k-inv', 'k-eq', 'k-sf', 'k-add', 'k-atk', 'k-note'].includes(cl)) return cl;
+  if (['k-def', 'k-man', 'k-inv', 'k-eq', 'k-sf', 'k-add', 'k-atk', 'k-note', 'k-rest', 'k-training'].includes(cl))
+    return cl;
   const n = /<div class="hn">([\s\S]*?)<\/div>/.exec(h);
   return cl + ':' + (n ? n[1].replace(/<[^>]*>/g, '').trim() : '');
 }
@@ -8610,10 +8618,17 @@ function renderHand() {
       : `<label class="hsel"><span>${L2('Character', 'Personnage')}</span><select id="h_ch"><option value="">—</option>${CH.list.map(x => `<option value="${esc(x.id)}"${c && c.id === x.id ? ' selected' : ''}>${esc(x.name || '?')}${x.camp ? ' · ' + esc(x.camp) : ''}</option>`).join('')}</select></label>`;
   P.setAttribute('aria-label', L2('Character sheet', 'Fiche de personnage'));
   if (!c) {
-    const prompt = MP.role === 'player'
-      ? L2('Choose your character in the Multiplayer tab.', 'Choisis ton personnage dans l’onglet Multijoueur.')
-      : L2('Choose a character here or select their token on the map.', 'Choisis un personnage ici ou sélectionne son pion sur la carte.');
-    const link = MP.role === 'player' ? `<a href="#multijoueur">${t('mp_title')}</a>` : `<a href="#fiche">${L2('Manage characters', 'Gérer les personnages')}</a>`;
+    const prompt =
+      MP.role === 'player'
+        ? L2('Choose your character in the Multiplayer tab.', 'Choisis ton personnage dans l’onglet Multijoueur.')
+        : L2(
+            'Choose a character here or select their token on the map.',
+            'Choisis un personnage ici ou sélectionne son pion sur la carte.',
+          );
+    const link =
+      MP.role === 'player'
+        ? `<a href="#multijoueur">${t('mp_title')}</a>`
+        : `<a href="#fiche">${L2('Manage characters', 'Gérer les personnages')}</a>`;
     P.innerHTML = `<div class="hhead"><h3>${L2('Character', 'Personnage')}</h3><button type="button" class="play-jump" data-play-jump="stage">${L2('Map', 'Carte')}</button></div><div class="play-empty-sheet">${sel}<p>${prompt}</p>${link}</div>`;
     return;
   }
@@ -8624,7 +8639,7 @@ function renderHand() {
   const cards = [];
   const shd = SHD[c.shield] || SHD.none;
   cards.push(
-    `<div class="hc k-def"><div class="ht">${L2('Defense', 'Défense')}</div><div class="hn">${L2('Evasion', 'Esquive')} ${D.eva}</div><div class="hb">${L2('Armor', 'Armure')} ${esc(tr((ARM[c.armor] || ARM.none)[0]))} (${D.av})${D.armOk ? '' : ' ⚠'}<br>${L2('Thresholds', 'Seuils')} ${D.minor} / ${D.major} / ${D.severe}<br>${c.shield !== 'none' ? `${L2('Shield', 'Bouclier')} ${esc(tr(shd[0]))}${shd[1] ? ` (+${shd[1]} ${L2('Evasion', 'Esquive')})` : ''}${shd[2] != null ? ` · ${L2('Finesse capped at', 'Finesse plafonnée à')} +${shd[2]}` : ''}${c.shield === 'grand' || c.shield === 'pavois' ? `<br>${L2('Intercept: an attack on an adjacent ally targets your Evasion instead', 'Interception : une attaque contre un allié adjacent vise ton Esquive à la place')}` : ''}${D.shdOk ? '' : ` · <span class="ko">${L2('untrained: no bonus', 'sans entraînement : aucun bonus')}</span>`}` : `${L2('No shield', 'Pas de bouclier')}`}</div></div>`,
+    `<div class="hc k-def"><div class="ht">${L2('Combat', 'Combat')}</div><div class="hn">${L2('Defense', 'Défense')}</div><div class="hb">${L2('Armor', 'Armure')} ${esc(tr((ARM[c.armor] || ARM.none)[0]))} (${D.av})${D.armOk ? '' : ' ⚠'}<br>${L2('Thresholds', 'Seuils')} ${D.minor} / ${D.major} / ${D.severe}<br>${c.shield !== 'none' ? `${L2('Shield', 'Bouclier')} ${esc(tr(shd[0]))}${shd[1] ? ` (+${shd[1]} ${L2('Evasion', 'Esquive')})` : ''}${shd[2] != null ? ` · ${L2('Finesse capped at', 'Finesse plafonnée à')} +${shd[2]}` : ''}${c.shield === 'grand' || c.shield === 'pavois' ? `<br>${L2('Intercept: an attack on an adjacent ally targets your Evasion instead', 'Interception : une attaque contre un allié adjacent vise ton Esquive à la place')}` : ''}${D.shdOk ? '' : ` · <span class="ko">${L2('untrained: no bonus', 'sans entraînement : aucun bonus')}</span>`}` : `${L2('No shield', 'Pas de bouclier')}`}</div></div>`,
   );
   const WL = [];
   (c.weapons || []).forEach((w, i) => {
@@ -8656,7 +8671,7 @@ function renderHand() {
     );
   });
   cards.unshift(
-    `<div class="hc k-atk"><h4>${L2('Weapons', 'Armes')}</h4>${WL.join('') || `<p class="small">${L2('No weapons equipped.', 'Aucune arme équipée.')}</p>`}</div>`,
+    `<div class="hc k-atk"><div class="ht">${L2('Combat', 'Combat')}</div><div class="hn">${L2('Weapons', 'Armes')}</div>${WL.join('') || `<p class="small">${L2('No weapons equipped.', 'Aucune arme équipée.')}</p>`}</div>`,
   );
   const sMod = c.cells.P_men || 0;
   for (const k of Object.keys(SCH)) {
@@ -8666,35 +8681,39 @@ function renderHand() {
       list = fxFor(k),
       st = handSel[c.id + k] || (handSel[c.id + k] = new Set()),
       cost = [...st].reduce((s, i) => s + list[i][0], 0);
-    cards.push(`<div class="hc k-spl"><div class="ht">${L2('Spell', 'Sort')} · Tier ${tier}</div><div class="hn">${esc(tr(SCH[k]))}</div><div class="hb">${L2('Attack', 'Attaque')} <b>${sgn(ab)}</b> · ${L2('Save DC', 'DD')} <b>${8 + ab}</b> · ${L2('Damage', 'Dégâts')} <b>${tier}d${SDIE[k] || 8}</b></div>
+    cards.push(`<div class="hc k-spl"><div class="ht">${L2('Magic', 'Magie')} · Tier ${tier}</div><div class="hn">${esc(tr(SCH[k]))}</div><div class="hb">${L2('Attack', 'Attaque')} <b>${sgn(ab)}</b> · ${L2('Save DC', 'DD')} <b>${8 + ab}</b> · ${L2('Damage', 'Dégâts')} <b>${tier}d${SDIE[k] || 8}</b></div>
   <div class="fx">${list
     .map((f, i) => {
+      // effects above the tier are not playable yet: they stay out of the card
+      if (f[0] > tier) return '';
       const on = st.has(i),
         dis = !on && f[0] + cost > tier;
       return `<button type="button" class="chip${on ? ' on' : ''}" data-hf="${k}" data-i="${i}" title="${esc(tr(f[2]))}"${dis ? ' disabled' : ''}>${esc(tr(f[1]))} <b>${f[0]}</b></button>`;
     })
-    .join('')}</div>
+    .join('')}</div>${hMore(list.filter(f => f[0] > tier).length)}
   <div class="hbt"><button type="button" class="go" data-ha="cast" data-k="${k}"${cost > manaL ? ' disabled' : ''}>${L2('Cast', 'Lancer')}${cost ? ` (${cost} ${L2('Mana', 'Mana')})` : ''}</button><button type="button" data-ha="sdmg" data-k="${k}">${L2('Damage', 'Dégâts')}</button></div></div>`);
   }
   const famT = Math.max(0, ...Object.values(c.fam));
   if (famT > 0 || D.st > 0) {
     const st = handSel[c.id + '_m'] || (handSel[c.id + '_m'] = new Set()),
       cost = [...st].reduce((s, i) => s + MAN[i][0], 0);
-    cards.push(`<div class="hc k-man"><div class="ht">${L2('Maneuvers', 'Manœuvres')} · Tier ${famT}</div><div class="hn">${L2('Breath', 'Souffle')} ${stL}/${D.st}</div><div class="fx">${MAN.map(
+    const mt = Math.max(famT, 1);
+    cards.push(`<div class="hc k-man"><div class="ht">${L2('Combat', 'Combat')} · Tier ${famT}</div><div class="hn">${L2('Maneuvers', 'Manœuvres')}</div><div class="fx">${MAN.map(
       (f, i) => {
+        if (f[0] > mt) return '';
         const on = st.has(i),
-          dis = !on && f[0] + cost > Math.max(famT, 1);
+          dis = !on && f[0] + cost > mt;
         return `<button type="button" class="chip${on ? ' on' : ''}" data-hm="${i}" title="${esc(tr(f[2]))}"${dis ? ' disabled' : ''}>${esc(tr(f[1]))} <b>${f[0]}</b></button>`;
       },
-    ).join('')}</div>
-  <div class="hbt"><button type="button" class="go" data-ha="man"${!cost || cost > stL ? ' disabled' : ''}>${L2('Use', 'Utiliser')}${cost ? ` (${cost} ${L2('Breath', 'Souffle')})` : ''}</button></div></div>`);
+    ).join('')}</div>${hMore(MAN.filter(f => f[0] > mt).length)}
+  ${cost ? `<div class="hbt"><button type="button" class="go" data-ha="man"${cost > stL ? ' disabled' : ''}>${L2('Use', 'Utiliser')} (${cost} ${L2('Breath', 'Souffle')})</button></div>` : `<p class="small hhint">${L2('Pick one or more maneuvers, then use them.', 'Choisis une ou plusieurs manœuvres, puis utilise-les.')}</p>`}</div>`);
   }
   {
     const Q = handSel[c.id + '_pf'] || (handSel[c.id + '_pf'] = { sf: -1, adv: 0 }),
       sfs = (c.sf || []).map((f, i) => [f, i]).filter(([f]) => f.r > 0 && f.n);
     if (sfs.length)
       cards.push(
-        `<div class="hc k-sf"><div class="ht">${L2('Expertise', 'Savoir-faire')}</div><div class="sfl">${sfs.map(([f, i]) => `<button type="button" class="${Q.sf === i ? 'on' : ''}" data-pfs="${i}" aria-pressed="${Q.sf === i}"><span>${esc(f.n)}</span><b>+${2 * f.r}</b></button>`).join('')}</div><p class="small">${L2('Pick one, then click a cell of the matrix: d20 + cell + expertise.', 'Choisis-en un, puis clique une case de la matrice : d20 + case + savoir-faire.')}</p></div>`,
+        `<div class="hc k-sf"><div class="ht">${L2('Checks', 'Tests')}</div><div class="hn">${L2('Expertise', 'Savoir-faire')}</div><div class="sfl">${sfs.map(([f, i]) => `<button type="button" class="${Q.sf === i ? 'on' : ''}" data-pfs="${i}" aria-pressed="${Q.sf === i}"><span>${esc(f.n)}</span><b>+${2 * f.r}</b></button>`).join('')}</div><p class="small">${L2('Pick one, then click a cell of the matrix: d20 + cell + expertise.', 'Choisis-en un, puis clique une case de la matrice : d20 + case + savoir-faire.')}</p></div>`,
       );
   }
   const disciplines = discs(c).map(([kind, key, tier]) => {
@@ -8702,10 +8721,12 @@ function renderHand() {
     return `<li>${esc(name)} <b>+${mb(tier)}</b></li>`;
   });
   if (disciplines.length)
-    cards.push(`<div class="hc k-training"><h4>${L2('Masteries', 'Maîtrises')}</h4><ul class="play-masteries">${disciplines.join('')}</ul></div>`);
+    cards.push(
+      `<div class="hc k-training"><div class="ht">${L2('Character', 'Personnage')}</div><div class="hn">${L2('Masteries', 'Maîtrises')}</div><ul class="play-masteries">${disciplines.join('')}</ul></div>`,
+    );
   cards.push(...talCards(c), ...invCards(c));
   cards.push(
-    `<div class="hc k-note"><div class="ht">${L2('Notes', 'Notes')}</div><div class="hn">${L2('Character notes', 'Notes du personnage')}</div><textarea class="hnote" data-hnotes="1" rows="7" placeholder="${L2('Same notes as on the character sheet.', 'Mêmes notes que sur la fiche du personnage.')}">${esc(c.notes || '')}</textarea></div>`,
+    `<div class="hc k-note"><div class="ht">${L2('Character', 'Personnage')}</div><div class="hn">${L2('Notes', 'Notes')}</div><textarea class="hnote" data-hnotes="1" rows="7" placeholder="${L2('Same notes as on the character sheet.', 'Mêmes notes que sur la fiche du personnage.')}">${esc(c.notes || '')}</textarea></div>`,
   );
   (c.cards || []).forEach((x, i) =>
     cards.push(
@@ -8713,9 +8734,9 @@ function renderHand() {
     ),
   );
   cards.push(
-    `<form class="hc k-add" id="h_add"><div class="ht">${L2('New card', 'Nouvelle carte')}</div><select id="h_ak"><option>${L2('Feat', 'Don')}</option><option>${L2('Item', 'Objet')}</option><option>${L2('Trait', 'Trait')}</option><option>${L2('Condition', 'État')}</option></select><input id="h_an" required maxlength="60" placeholder="${L2('Name', 'Nom')}"><textarea id="h_at" rows="3" maxlength="400" placeholder="${L2('What it does', 'Ce que ça fait')}"></textarea><div class="hbt"><button class="go" type="submit">${L2('Add', 'Ajouter')}</button></div></form>`,
+    `<form class="hc k-add" id="h_add"><div class="ht">${L2('Character', 'Personnage')}</div><div class="hn">${L2('New card', 'Nouvelle carte')}</div><select id="h_ak"><option>${L2('Feat', 'Don')}</option><option>${L2('Item', 'Objet')}</option><option>${L2('Trait', 'Trait')}</option><option>${L2('Condition', 'État')}</option></select><input id="h_an" required maxlength="60" placeholder="${L2('Name', 'Nom')}"><textarea id="h_at" rows="3" maxlength="400" placeholder="${L2('What it does', 'Ce que ça fait')}"></textarea><div class="hbt"><button class="go" type="submit">${L2('Add', 'Ajouter')}</button></div></form>`,
   );
-  cards.push(`<div class="hc k-rest"><h4>${L2('Recovery', 'Récupération')}</h4><p class="small">${L2('Hit die', 'Dé de vie')} · d${c.dv}</p><div class="hbt">
+  cards.push(`<div class="hc k-rest"><div class="ht">${L2('Character', 'Personnage')}</div><div class="hn">${L2('Recovery', 'Récupération')}</div><p class="small">${L2('Hit die', 'Dé de vie')} · d${c.dv}</p><div class="hbt">
     <button type="button" data-hrest="short">${t('sk_short')}</button>
     <button type="button" data-hrest="long">${t('sk_long')}</button>
   </div></div>`);
@@ -10314,6 +10335,8 @@ function applyLang() {
   renderTok();
   renderRes();
   rlRender();
+  // the table modules are rebuilt in the new language too
+  for (const f of [renderMarks, renderTpls, imgRender, snRender]) try { f(); } catch (e) {}
   if(typeof playLabels==='function'&&$('play_workspace')?.dataset.ready){playLabels();playSync();playFit();mpRender();}
   if (WS) wRender();
   draw();
@@ -12490,6 +12513,8 @@ function playLabels() {
   $('play_preset_select').replaceChildren(
     ...Object.entries(PLAY_PRESETS).map(([key, p]) => new Option(tr(p.label), key)),
   );
+  // table modules carry the same small family line as the character cards
+  for (const p of playAux.querySelectorAll('.play-aux-pane')) p.dataset.fam = L2('Table', 'Table');
   $('mode_play').textContent = L2('Play', 'Partie');
   $('mode_edit').textContent = L2('Edit', 'Édition');
   for (const [k, e] of gMods()) {
@@ -12647,7 +12672,7 @@ function gCustomize() {
   const handle = t => {
     const g = t.closest('.ggrip, .gsz');
     if (g) return g;
-    const h = t.closest('h3, h4, .ht, .play-identity');
+    const h = t.closest('h3, h4, .ht, .hn, .play-identity');
     if (!h || t.closest('button, input, select, textarea, a, label, summary, details')) return null;
     return h.closest('[data-gk]') ? h : null;
   };
