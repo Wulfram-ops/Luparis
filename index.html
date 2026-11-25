@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Cinzel:wght@600&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%236b7a3a'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' font-weight='700' text-anchor='middle' fill='%23f4efe2'%3EL%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/luparis.css?v=357acaeb7b">
+<link rel="stylesheet" href="css/luparis.css?v=09ff6788f8">
 </head>
 <body>
 <header><h1 data-i18n="title"></h1>
@@ -79,18 +79,27 @@
 <div class="ctxbar" id="ctxbar" hidden></div>
 <form class="ctxbar" id="savebox" hidden><label class="scn"><span data-i18n="save_name"></span> <input id="save_n" maxlength="80" size="40"></label><button type="submit" class="go" data-i18n="save"></button><button type="button" id="save_cancel" data-i18n="cancel"></button></form>
 <div class="grp" id="biomes" hidden></div>
-<div class="mapwrap"><div class="stage" id="stage"><canvas id="cv"></canvas><div id="info"></div></div>
-<aside class="side">
-  <section class="card" id="tk_panel" hidden></section>
-  <section class="card" id="mk_card"><h3 data-i18n="mk_title"></h3><ol class="mks" id="mk_list"></ol><p class="small" data-i18n="mk_hint"></p><h4 class="tplh" data-i18n="tpl_zones"></h4><ul class="tpls" id="tpl_list"></ul></section>
-  <section class="card" id="mp_card"><h3 data-i18n="mp_title"></h3><div id="mp_box"></div></section>
-  <section class="card" id="img_card"><h3 data-i18n="img_title"></h3><div id="img_box"></div></section>
-  <section class="card" id="sn_card"><h3 data-i18n="sn_title"></h3><div id="sn_box"></div></section>
-  <section class="card"><h3 data-i18n="in_title"></h3>
+<div class="play-display-bar" id="play_display_bar"><span class="small" id="play_map_label"></span><button type="button" id="g_public"></button><button type="button" id="g_map"></button><button type="button" id="g_screens"></button><select id="g_screen" hidden></select><span class="small" id="g_display_msg" aria-live="polite"></span></div>
+<div id="play_workspace" class="play-workspace">
+  <div class="play-map-column">
+    <div class="stage" id="stage"><canvas id="cv"></canvas><div id="info"></div></div>
+    <div id="play_aux" class="play-aux">
+      <div class="play-aux-head"><span id="play_aux_label" class="small"></span><button type="button" id="play_last_roll" aria-live="polite"></button></div>
+      <div class="play-aux-tabs" role="tablist" aria-labelledby="play_aux_label"><button type="button" id="play_tab_in" role="tab" data-play-tab="in" aria-controls="play_pane_in" aria-selected="true"></button><button type="button" id="play_tab_tk" role="tab" data-play-tab="tk" aria-controls="play_pane_tk" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_mk" role="tab" data-play-tab="mk" aria-controls="play_pane_mk" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_mp" role="tab" data-play-tab="mp" aria-controls="play_pane_mp" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_img" role="tab" data-play-tab="img" aria-controls="play_pane_img" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_sn" role="tab" data-play-tab="sn" aria-controls="play_pane_sn" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_roll" role="tab" data-play-tab="roll" aria-controls="play_pane_roll" aria-selected="false" tabindex="-1"></button></div>
+      <div class="play-aux-body"><div class="play-aux-pane" id="play_pane_in" data-play-pane="in" role="tabpanel" aria-labelledby="play_tab_in"><section class="card"><h3 data-i18n="in_title"></h3>
     <div class="row"><button type="button" class="go" id="in_roll" data-i18n="in_roll"></button><button type="button" id="in_next" data-i18n="in_next"></button><button type="button" id="in_end" data-i18n="in_end"></button></div>
     <p class="small" id="in_round"></p><div id="in_xp" hidden></div><ol class="ini" id="in_list"></ol></section>
-</aside></div>
-<section class="hand" id="hand" aria-label="Cartes"></section>
+</div>
+<div class="play-aux-pane" id="play_pane_tk" data-play-pane="tk" role="tabpanel" aria-labelledby="play_tab_tk" hidden><section class="card" id="tk_panel" hidden></section></div>
+<div class="play-aux-pane" id="play_pane_mk" data-play-pane="mk" role="tabpanel" aria-labelledby="play_tab_mk" hidden><section class="card" id="mk_card"><h3 data-i18n="mk_title"></h3><ol class="mks" id="mk_list"></ol><p class="small" data-i18n="mk_hint"></p><h4 class="tplh" data-i18n="tpl_zones"></h4><ul class="tpls" id="tpl_list"></ul></section></div>
+<div class="play-aux-pane" id="play_pane_mp" data-play-pane="mp" role="tabpanel" aria-labelledby="play_tab_mp" hidden><section class="card" id="mp_card"><h3 data-i18n="mp_title"></h3><div id="mp_box"></div></section></div>
+<div class="play-aux-pane" id="play_pane_img" data-play-pane="img" role="tabpanel" aria-labelledby="play_tab_img" hidden><section class="card" id="img_card"><h3 data-i18n="img_title"></h3><div id="img_box"></div></section></div>
+<div class="play-aux-pane" id="play_pane_sn" data-play-pane="sn" role="tabpanel" aria-labelledby="play_tab_sn" hidden><section class="card" id="sn_card"><h3 data-i18n="sn_title"></h3><div id="sn_box"></div></section></div>
+<div class="play-aux-pane" id="play_pane_roll" data-play-pane="roll" role="tabpanel" aria-labelledby="play_tab_roll" hidden><div id="play_roll_pane"></div></div></div>
+    </div>
+  </div>
+  <section class="hand" id="hand" aria-label="Personnage"></section>
+</div>
 <div class="help">
   <div data-i18n-html="h_click"></div>
   <div data-i18n-html="h_keys"></div>
@@ -183,6 +192,6 @@
 </section>
 
 <aside class="rolls" id="rolls" aria-label="Jets"><div class="rlh"><button type="button" class="rlt" id="rl_tog" aria-expanded="true"><span id="rl_ttl"></span> <span class="rlc" id="rl_cnt"></span></button><button type="button" id="rl_clr" class="rlx"></button></div><ol id="rl_list" aria-live="polite"></ol></aside>
-<script src="app.js?v=61055024d2"></script>
+<script src="app.js?v=bf29922f82"></script>
 </body>
 </html>

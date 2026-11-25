@@ -367,40 +367,9 @@ body.mode-play #tools button:is([data-t=shift],[data-t=up],[data-t=down],[data-t
 body.mode-edit #tools button:is([data-t=move],[data-t=measure],[data-t=tpl]){display:none!important}
 .mppick{margin:6px 0 2px;font-weight:600}.mpwant select{outline:2px solid var(--acc);outline-offset:1px}
 
-/* Map page grid: modules snap to it */
-.cgrid{display:grid;grid-template-columns:repeat(var(--gcols,12),minmax(0,1fr));grid-auto-rows:36px;gap:8px;margin:6px max(2vw,8px) 0;position:relative}
-.cgrid.gon{background-image:linear-gradient(to right,color-mix(in srgb,var(--acc) 22%,transparent) 1px,transparent 1px),linear-gradient(to bottom,color-mix(in srgb,var(--acc) 22%,transparent) 1px,transparent 1px);background-size:var(--gcw,80px) 44px;background-position:-4px -4px}
-.gmod{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column}
-.gmod:has(>[hidden]),body.mp-player .gmod[data-mod=sn]{display:none}
-.gmod>.card,.gmod>.hand{flex:1;overflow:auto;margin:0;min-height:0}
-.gmod>.stage{margin:0!important;flex:1;aspect-ratio:auto!important;height:auto!important;width:100%!important;min-height:0;max-height:none}
-.gmod .rsz{display:none}
-.ggrip{position:absolute;top:4px;right:4px;z-index:7;min-height:0;padding:0 6px;font-size:14px;line-height:20px;cursor:grab;opacity:0;transition:opacity .15s;background:var(--panel);border:1px solid var(--line);border-radius:6px}
-.gsz{position:absolute;right:0;bottom:0;width:16px;height:16px;cursor:nwse-resize;z-index:7;opacity:0;transition:opacity .15s;border-right:3px solid var(--acc);border-bottom:3px solid var(--acc);border-radius:0 0 6px 0}
-.gmod:hover>.ggrip,.gmod:hover>.gsz,.gmod.gdrag>.ggrip,.gmod.gdrag>.gsz,.ggrip:focus-visible{opacity:.9}
-.gmod.gdrag{outline:2px dashed var(--acc);outline-offset:2px;z-index:5}
-.gpresets{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px max(2vw,8px) 0;font-size:13px}.gpresets button{font-size:13px;min-height:0;padding:3px 10px}.greset{opacity:.8}
-@media(max-width:900px){.cgrid{display:flex;flex-direction:column}.gmod{min-height:auto}.gmod>.stage{aspect-ratio:16/9!important;flex:none}.ggrip,.gsz,.gpresets{display:none}}
 /* each character card is a module of the Map grid */
-#cgrid>#hand,#cgrid>#hand>.htop,#cgrid>#hand .hcards{display:contents}
-#cgrid .gitem{position:relative;min-width:0;min-height:0;box-sizing:border-box}
-#cgrid #hand .gitem{margin:0;overflow:auto}
-#cgrid>#hand>p.small{display:none}
-#cgrid .gitem:hover>.ggrip,#cgrid .gitem:hover>.gsz,#cgrid .gitem.gdrag>.ggrip,#cgrid .gitem.gdrag>.gsz{opacity:.9}
-#cgrid .gitem.gdrag{outline:2px dashed var(--acc);outline-offset:2px;z-index:5}
 /* the title of a module moves it */
-#cgrid .gttl{cursor:grab;user-select:none;touch-action:none}
-#cgrid .gdrag .gttl{cursor:grabbing}
-@media(max-width:900px){#cgrid .gttl{cursor:auto}}
 /* Map grid: sheet + character box in one module */
-#cgrid .pfbox{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:6px 10px;overflow:auto}
-#cgrid .pfbox>.pf{border:0;padding:0;margin:0;background:none;flex:none}
-#cgrid .pfbox>.hside{flex:none;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 14px;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0 0 6px;background:none}
-#cgrid .pfbox>.hside h3{margin-right:4px}
-#cgrid .pfbox>.hside .hsel{flex-direction:row;align-items:center;gap:6px}
-#cgrid .pfbox>.hside .hsel select{width:auto;min-width:150px}
-#cgrid .pfbox>.hside .htrk span{flex:none}
-#cgrid .gitem.gdrag{z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 /* zoom buttons and quality are no longer shown (wheel and keys still zoom) */
 #zout,#zin,#zfit,label.scn:has(>#perfq){display:none!important}
 
@@ -419,45 +388,77 @@ body.mp-player #pl_bar{display:none!important}
 @media(max-width:600px){#pl_bar{width:100%}#pl_bar .scn{white-space:normal}#pl_bar select{max-width:44vw}#pl_bar .pl_hint{max-width:100%}}
 
 /* Wide-screen grids and local detached module windows. */
-.gwindow{position:absolute;top:4px;right:28px;z-index:8;min-height:0;line-height:22px;padding:0 6px;background:var(--panel);border:1px solid var(--line);opacity:0}
-.gitem:hover>.gwindow,.gwindow:focus-visible{opacity:1}
-.gdetached{display:none!important}
-.gdisplaytools{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
-.gdisplaytools select{min-height:26px;max-width:220px}
 body.mp-player #g_public,body.mp-player [data-gpre=dual]{display:none}
-body.gpopup{margin:0;padding:0;overflow:auto}
-.gpopupbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px;background:var(--panel);border-bottom:1px solid var(--line)}
-.gpopupbar strong{flex:1}
-.gpopupcontent{padding:8px;overflow:auto}
-.gpopupcontent>.gmod,.gpopupcontent>.pfbox,.gpopupcontent>.hc{display:block;min-height:auto;width:100%;margin:0}
-.gpopupcontent .gttl{cursor:default}
 body.table-display{padding:0;overflow:hidden}
 body.table-display> *:not(#v-carte):not(.table-fullscreen){display:none!important}
 body.table-display #v-carte{display:block!important}
-body.table-display #v-carte> *:not(#cgrid){display:none!important}
-body.table-display #cgrid{display:block!important;margin:0;width:100vw;height:100dvh}
-body.table-display #cgrid> *:not([data-gk=map]){display:none!important}
-body.table-display [data-gk=map]{width:100%;height:100%;display:flex!important;pointer-events:none}
 body.table-display .stage{visibility:hidden;border-radius:0;aspect-ratio:auto!important;min-height:0;flex:1!important}
 body.table-display.table-ready .stage{visibility:visible}
-body.table-display .ggrip,body.table-display .gsz,body.table-display #info,body.table-display .gwindow{display:none!important}
 .table-fullscreen{position:fixed;right:12px;top:12px;z-index:90;background:var(--panel);opacity:.6}
 .table-fullscreen:hover,.table-fullscreen:focus-visible{opacity:1}
-@media(max-width:900px){.gwindow{opacity:1}}
 
 /* Presets prioritize the scene without hiding modules. */
-.gpresets{gap:5px 12px;align-items:center}
-.gpres-main{display:flex;align-items:center;flex-wrap:wrap;gap:5px}
-.gpres-main button{border:1px solid var(--line);min-height:28px;border-radius:7px;padding:3px 9px;font-size:13px}
-.gpres-main button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
-#g_preset_hint{font-size:12px;color:var(--muted);max-width:35em}
-#cgrid .gitem{scrollbar-width:thin}
-#cgrid .pfbox .pfg{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
-#cgrid .pfbox .pfmx{width:100%}
-#cgrid .pfbox .pfmx th,#cgrid .pfbox .pfmx td{padding:3px 5px!important}
-@media(max-width:900px){.gpresets{display:flex}.gpres-main{width:100%}.gdisplaytools{font-size:12px}#g_preset_hint{display:none}}
 
 #mg_preview{flex:1 1 100%;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--panel)}#mg_preview[hidden],#mg_cancel[hidden]{display:none!important}#mg_preview p{margin:5px 0;white-space:pre-wrap}#mg_preview label{display:inline-flex;gap:5px;align-items:center;margin-right:8px}#mg_preview button{min-height:32px}
 
 /* Real top-down preview of the generated candidate, not the active battle map. */
 .mgpreviewbody{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}.mgpreviewbody canvas{width:min(240px,100%);height:auto;aspect-ratio:1;image-rendering:pixelated;border:1px solid var(--line);border-radius:5px}.mgpreviewbody canvas[hidden]{display:none}.mgpreviewbody>div{flex:1;min-width:min(240px,100%)}
+
+/* Integrated play surface: map and sheet share one viewport; tabs take natural height. */
+#v-carte>.bar{padding-inline:max(1vw,8px);gap:5px}
+.play-display-bar{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:4px max(1vw,8px);font-size:13px}
+.play-display-bar button,.play-display-bar select{min-height:27px;font-size:13px;padding:2px 8px}
+.play-display-bar #play_map_label{font-weight:700;margin-right:auto}
+.play-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,clamp(360px,34vw,650px));gap:8px;margin:6px max(1vw,8px) 0;height:var(--play-height,68vh);min-height:420px;align-items:stretch}
+.play-map-column{display:flex;flex-direction:column;min-height:0;gap:6px;min-width:0}
+#play_workspace #stage{flex:1;min-height:200px;height:auto!important;width:100%!important;aspect-ratio:auto!important;margin:0;border-radius:10px}
+#play_workspace .rsz{display:none!important}
+.play-aux{display:flex;flex-direction:column;min-height:0;flex:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.play-aux-head{display:flex;align-items:center;gap:6px;padding:4px 8px;border-bottom:1px solid var(--line)}
+.play-aux-head>span{white-space:nowrap;font-weight:600}
+#play_last_roll{min-height:26px;flex:1;display:block;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.play-aux-tabs,.play-sheet-tabs{display:flex;align-items:center;gap:4px;overflow-x:auto;padding:5px 6px;border-bottom:1px solid var(--line);flex:none}
+.play-aux-tabs button,.play-sheet-tabs button{min-height:30px;white-space:nowrap;padding:4px 9px;font-size:14px;flex:none}
+.play-aux-tabs button[aria-selected=true],.play-sheet-tabs button[aria-selected=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
+.play-aux-body{max-height:min(22vh,210px);overflow:auto;overscroll-behavior:contain;padding:5px 9px}
+.play-aux-pane[hidden],.play-sheet-pane[hidden],.play-aux-tabs button[hidden]{display:none!important}
+.play-aux-pane>.card{border:0;border-radius:0;padding:2px 0;background:transparent;margin:0}
+.play-aux-pane>.card>h3{font-size:15px;margin:0 0 5px}
+.play-aux-pane #in_list{display:flex;flex-wrap:wrap;gap:4px 10px;padding:0;list-style:none;margin:4px 0}
+.play-aux-pane #in_list li{min-width:130px;flex:1 1 140px}
+#play_workspace #hand{display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden;padding:0;margin:0;border-radius:10px}
+#play_workspace .htop{display:block;flex:none;margin:0}
+#play_workspace .hside{display:grid;grid-template-columns:1fr;gap:4px;padding:8px 10px;width:auto;border:0;border-radius:0;background:var(--panel)}
+#play_workspace .hside h3{font-size:19px}
+#play_workspace .hside .hsel{flex-direction:row;align-items:center;gap:6px}
+#play_workspace .hside .hsel select{flex:1;min-height:30px}
+#play_workspace .htrk button{min-height:30px}
+#play_workspace .hhead,#play_workspace #hand>p.small{padding:10px;margin:0}
+.play-edit-sheet{font-size:12px;text-align:right;color:var(--acc2)}
+.play-sheet-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:8px;background:var(--bg)}
+.play-sheet-pane{display:flex;flex-direction:column;gap:7px}
+.play-sheet-pane .hc{padding:8px;gap:5px}
+.play-sheet-pane .hc .hbt{margin-top:2px}
+.play-sheet-pane .pf{margin:0;padding:6px}
+.play-sheet-pane .pfg{display:block;padding:2px}
+.play-sheet-pane .pfmx{width:100%;table-layout:fixed;font-size:12px}
+.play-sheet-pane .pfmx th{padding:3px 2px!important;white-space:normal;overflow-wrap:anywhere}
+.play-sheet-pane .pfmx td button{min-width:0;min-height:36px;font-size:16px;padding:0}
+.play-sheet-pane .pfmods{margin-top:6px}
+#play_roll_pane #rolls{position:static;width:100%;max-height:none;box-shadow:none;border:0;background:transparent;border-radius:0}
+#play_roll_pane #rolls ol{max-height:none;overflow:visible}
+#play_roll_pane #rolls .rlh{padding:0}
+body.mp-player #g_public,body.mp-player #play_tab_sn{display:none!important}
+body.mp-spec .play-workspace{grid-template-columns:minmax(0,1fr)}
+body.mp-spec #play_workspace #hand{display:none!important}
+#v-carte #perfq{display:inline-block}
+#v-carte .bar label:has(>#perfq){display:flex!important}
+body.mp-player #v-carte .bar>.grp:has(#perfq){display:none!important}
+@media(min-width:1600px){.play-sheet-pane{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}.play-sheet-pane>.pf,.play-sheet-pane>.k-atk,.play-sheet-pane>.k-inv,.play-sheet-pane>.k-note{grid-column:1/-1}}
+@media(max-width:900px){.play-workspace{display:flex;flex-direction:column;height:auto;min-height:0}.play-map-column{min-height:0}#play_workspace #stage{flex:none;height:clamp(300px,55vh,560px)!important}.play-aux-body{max-height:230px}#play_workspace #hand{min-height:300px}.play-sheet-body{overflow:visible;flex:none}.play-sheet-pane .pfmx th{font-size:12px}}
+body.table-display #v-carte>*:not(#play_workspace){display:none!important}
+body.table-display #play_workspace{display:block!important;margin:0;width:100vw;height:100dvh;min-height:0}
+body.table-display .play-map-column{height:100%;display:block;pointer-events:none}
+body.table-display #play_workspace #stage{width:100%!important;height:100%!important;min-height:0;border-radius:0;visibility:hidden}
+body.table-display.table-ready #play_workspace #stage{visibility:visible}
+body.table-display #play_aux,body.table-display #play_workspace #hand,body.table-display #info{display:none!important}

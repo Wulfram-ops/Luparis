@@ -994,6 +994,7 @@ function mpRender(msg) {
     }<div class="row"><button type="button" id="mp_leave">${L2('Leave', 'Quitter')}</button></div>`;
   }
   if (MP.msg) B.insertAdjacentHTML('beforeend', `<p class="small mpmsg" aria-live="polite">${esc(MP.msg)}</p>`);
+  if($('play_workspace')?.dataset.ready)playSync();
 }
 function mpHostPeople() {
   return MP.conns.filter(c => c.open || MP.local);

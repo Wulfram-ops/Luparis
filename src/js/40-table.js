@@ -808,6 +808,7 @@ function fxFor(k) {
   return L;
 }
 function handChar() {
+  if(MP.role==='player')return MP.prole==='spec'?null:CH.list.find(c=>c.id===MP.me)||null;
   const k = tokens.find(x => x.id === selTok && x.cid);
   const id = k ? k.cid : handId;
   return CH.list.find(c => c.id === id) || null;
@@ -924,7 +925,7 @@ function hOrder(c, cards) {
   L.sort((a, b) => ix(a.k) - ix(b.k) || a.i - b.i);
   return L.map(x =>
     x.h
-      // cards no longer fold: on the Map grid each one is a module, moved by its title
+      // Preserve character card identity in the integrated sheet sections.
       .replace(/^<(div|form) class="hc /, `<$1 data-ck="${esc(x.k)}" class="hc `),
   );
 }
@@ -945,7 +946,7 @@ function renderHand() {
       ? `<div class="hsel"><span>${L2('Character', 'Personnage')}</span><b>${c ? esc(c.name || '?') : L2('choose it in “Multiplayer”', 'à choisir dans « Partie à plusieurs »')}</b></div>`
       : `<label class="hsel"><span>${L2('Character', 'Personnage')}</span><select id="h_ch"><option value="">—</option>${CH.list.map(x => `<option value="${esc(x.id)}"${c && c.id === x.id ? ' selected' : ''}>${esc(x.name || '?')}${x.camp ? ' · ' + esc(x.camp) : ''}</option>`).join('')}</select></label>`;
   if (!c) {
-    P.innerHTML = `<div class="hhead"><h3>${L2('Ability cards', 'Cartes de capacités')}</h3>${sel}</div><p class="small">${L2('Pick a character, or select a character token on the map.', "Choisis un personnage, ou sélectionne le pion d'un personnage sur la carte.")}</p>`;
+    P.innerHTML = `<div class="hhead"><h3>${L2('Character', 'Personnage')}</h3>${sel}</div><p class="small">${L2('Pick a character, or select a character token on the map.', "Choisis un personnage, ou sélectionne le pion d'un personnage sur la carte.")}</p>`;
     return;
   }
   const D = derived(c),

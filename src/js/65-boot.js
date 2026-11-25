@@ -7,8 +7,8 @@ function foldApply(root) {
   (root || document).querySelectorAll('section.card').forEach(sec => {
     const h = sec.querySelector('h3');
     if (!h || sec.closest('#c_mods')) return;
-    // the Map grid modules don't fold: their title moves them
-    if (sec.closest('#cgrid')) {
+    // The integrated play tabs already provide navigation.
+    if (sec.closest('#play_workspace')) {
       sec.classList.remove('fold');
       h.classList.remove('foldh');
       h.removeAttribute('role');

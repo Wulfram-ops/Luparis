@@ -15,8 +15,10 @@ function layout() {
     dpr = PERF.low ? 1 : Math.min(2, window.devicePixelRatio || 1);
   W = r.width;
   Hc = r.height;
-  cv.width = W * dpr;
-  cv.height = Hc * dpr;
+  if(!W||!Hc)return;
+  const pw=Math.max(1,Math.round(W*dpr)),ph=Math.max(1,Math.round(Hc*dpr));
+  if(cv.width!==pw)cv.width=pw;
+  if(cv.height!==ph)cv.height=ph;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   TW0 = Math.min((W * 0.94) / N, (Hc * 0.78) / (N / 2 + 2));
   camSet();

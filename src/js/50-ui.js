@@ -34,10 +34,7 @@ function applyLang() {
   renderIni();
   renderTok();
   renderRes();
-  if(typeof gLabels==='function'&&$('g_layout_label')){
-    gRefresh(true);
-    if(stage.clientWidth&&stage.clientHeight)layout();
-  }
+  if(typeof playLabels==='function'&&$('play_workspace')?.dataset.ready){playLabels();playSync();playFit();mpRender();}
   if (WS) wRender();
   draw();
 }
