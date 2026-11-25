@@ -1,22 +1,26 @@
-// ---- the Map page is a grid: every module (map, cards, character cards) can be moved and resized, snapped to it.
+// ---- the Map page is a grid: every module (map, panels, each character card) can be moved and resized, snapped to it.
 // Each person keeps their own layout in their browser. Narrow screens fall back to one column.
 const GCOLS = 12,
-  GROW = 30,
+  GROW = 36,
   GGAP = 8;
 const GDEF = {
-  map: [1, 1, 9, 16],
-  hand: [1, 17, 9, 16],
-  tk: [10, 1, 3, 6],
-  pl: [10, 7, 3, 6],
-  in: [10, 13, 3, 8],
-  mk: [10, 21, 3, 6],
-  mp: [10, 27, 3, 8],
-  img: [10, 35, 3, 7],
-  sn: [10, 42, 3, 7],
+  map: [1, 1, 9, 18],
+  pf: [1, 19, 6, 10],
+  hside: [7, 19, 3, 10],
+  hhead: [1, 19, 9, 3],
+  tk: [10, 1, 3, 7],
+  pl: [10, 8, 3, 7],
+  in: [10, 15, 3, 9],
+  mk: [10, 24, 3, 7],
+  mp: [10, 31, 3, 9],
+  img: [10, 40, 3, 8],
+  sn: [10, 48, 3, 8],
 };
 const GNAME = {
   map: ['Map', 'Carte'],
-  hand: ['Character cards', 'Cartes du personnage'],
+  pf: ['Character sheet', 'Fiche'],
+  hside: ['Character', 'Personnage'],
+  hhead: ['Ability cards', 'Cartes de capacités'],
   tk: ['Selected token', 'Token choisi'],
   pl: ['Quick place', 'Placement rapide'],
   in: ['Initiative', 'Initiative'],
@@ -25,26 +29,39 @@ const GNAME = {
   img: ['Images', 'Images'],
   sn: ['Session notes', 'Notes de séance'],
 };
-let GL = null;
+let GL = {};
+// a character card (defense, weapons, a school…) gets its own place, under the map by default
+function gDefault(k) {
+  if (GDEF[k]) return [...GDEF[k]];
+  const n = Object.keys(GL).filter(x => x.startsWith('c:')).length;
+  return [1 + (n % 3) * 3, 29 + Math.floor(n / 3) * 10, 3, 10];
+}
 function gLoad() {
-  const v = lsGet('luparis-grid', null) || {},
+  const v = lsGet('luparis-grid2', null) || {},
     o = {};
-  for (const k in GDEF) {
-    const a = Array.isArray(v[k]) && v[k].length === 4 && v[k].every(n => Number.isInteger(n)) ? v[k] : GDEF[k];
+  for (const k of new Set([...Object.keys(GDEF), ...Object.keys(v)])) {
+    const a = Array.isArray(v[k]) && v[k].length === 4 && v[k].every(n => Number.isInteger(n)) ? v[k] : null;
+    if (!a && !GDEF[k]) continue;
+    const r = a || GDEF[k];
     o[k] = [
-      Math.max(1, Math.min(GCOLS, a[0])),
-      Math.max(1, a[1]),
-      Math.max(2, Math.min(GCOLS, a[2])),
-      Math.max(2, a[3]),
+      Math.max(1, Math.min(GCOLS, r[0])),
+      Math.max(1, r[1]),
+      Math.max(2, Math.min(GCOLS, r[2])),
+      Math.max(2, r[3]),
     ];
     if (o[k][0] + o[k][2] - 1 > GCOLS) o[k][0] = GCOLS - o[k][2] + 1;
   }
   return o;
 }
 const gHit = (a, b) => a[0] < b[0] + b[2] && b[0] < a[0] + a[2] && a[1] < b[1] + b[3] && b[1] < a[1] + a[3];
-// the module just moved keeps its place; the others slide down until nothing overlaps, then everything rises back up
+const gEl = k => document.querySelector(`#cgrid [data-gk="${CSS.escape(k)}"]`);
+function gShown(k) {
+  const m = gEl(k);
+  return !!m && getComputedStyle(m).display !== 'none';
+}
+// the module just moved keeps its place; the others rise as high as they can without overlapping
 function gSettle(fixed) {
-  const keys = Object.keys(GL).filter(k => gShown(k)),
+  const keys = Object.keys(GL).filter(gShown),
     order = [fixed, ...keys.filter(k => k !== fixed).sort((a, b) => GL[a][1] - GL[b][1] || GL[a][0] - GL[b][0])].filter(
       k => k && keys.includes(k),
     ),
@@ -52,21 +69,15 @@ function gSettle(fixed) {
   for (const k of order) {
     const r = GL[k];
     if (k !== fixed) {
-      // rise as high as possible, then go down past whatever is in the way
       r[1] = 1;
       while (done.some(d => gHit(r, GL[d]))) r[1]++;
     }
     done.push(k);
   }
 }
-const gMod = k => document.querySelector(`.gmod[data-mod="${k}"]`);
-function gShown(k) {
-  const m = gMod(k);
-  return !!m && getComputedStyle(m).display !== 'none';
-}
 function gApply() {
   for (const k in GL) {
-    const m = gMod(k);
+    const m = gEl(k);
     if (!m) continue;
     const [c, r, w, h] = GL[k];
     m.style.gridColumn = `${c} / span ${w}`;
@@ -74,7 +85,44 @@ function gApply() {
   }
 }
 function gSave() {
-  lsSet('luparis-grid', GL);
+  lsSet('luparis-grid2', GL);
+}
+// move and resize handles, added to any element that becomes a module
+function gHandles(el, k) {
+  el.dataset.gk = k;
+  el.classList.add('gitem');
+  if (el.querySelector(':scope > .ggrip')) return;
+  const nm = GNAME[k] ? L2(...GNAME[k]) : (el.querySelector('.ht') || el).textContent.trim().slice(0, 30);
+  el.insertAdjacentHTML(
+    'beforeend',
+    `<button type="button" class="ggrip" title="${L2('Drag to move', 'Glisse pour déplacer')} · ${esc(nm)}" aria-label="${L2('Move', 'Déplacer')} ${esc(nm)}">⠿</button><div class="gsz" title="${L2('Drag to resize', 'Glisse pour redimensionner')}" aria-hidden="true"></div>`,
+  );
+}
+// the character cards are rebuilt often: each time, give every card its module place again
+function gHandSync() {
+  const hand = document.getElementById('hand');
+  if (!hand || !document.getElementById('cgrid')) return;
+  const items = [
+    [hand.querySelector(':scope > .htop > .pf'), 'pf'],
+    [hand.querySelector(':scope > .htop > .hside'), 'hside'],
+    [hand.querySelector(':scope > .hhead'), 'hhead'],
+    ...[...hand.querySelectorAll('.hcards > .hc')].map(c => [
+      c,
+      'c:' + (c.dataset.ck || [...c.classList].find(x => x.startsWith('k-')) || 'card'),
+    ]),
+  ];
+  let added = false;
+  for (const [el, k] of items) {
+    if (!el) continue;
+    gHandles(el, k);
+    if (!GL[k]) {
+      GL[k] = gDefault(k);
+      added = true;
+    }
+  }
+  gSettle(null);
+  gApply();
+  if (added) gSave();
 }
 {
   const view = document.getElementById('v-carte'),
@@ -85,7 +133,6 @@ function gSave() {
   grid.id = 'cgrid';
   const cardOf = {
     map: document.getElementById('stage'),
-    hand: document.getElementById('hand'),
     tk: document.getElementById('tk_panel'),
     pl: document.getElementById('pl_q') && document.getElementById('pl_q').closest('.card'),
     in: document.getElementById('in_list') && document.getElementById('in_list').closest('.card'),
@@ -95,16 +142,19 @@ function gSave() {
     sn: document.getElementById('sn_card'),
   };
   wrap.before(grid);
-  for (const k in GDEF) {
+  for (const k in cardOf) {
     const el = cardOf[k];
     if (!el) continue;
     const m = document.createElement('div');
     m.className = 'gmod';
     m.dataset.mod = k;
-    m.innerHTML = `<button type="button" class="ggrip" title="${L2('Drag to move', 'Glisse pour déplacer')} · ${esc(L2(...GNAME[k]))}" aria-label="${L2('Move', 'Déplacer')} ${esc(L2(...GNAME[k]))}">⠿</button><div class="gsz" title="${L2('Drag to resize', 'Glisse pour redimensionner')}" aria-hidden="true"></div>`;
     m.prepend(el);
+    gHandles(m, k);
     grid.append(m);
   }
+  // the character cards live in #hand, which steps out of the layout (display: contents): each card is a module
+  const hand = document.getElementById('hand');
+  if (hand) grid.append(hand);
   if (side && !side.children.length) side.remove();
   if (!wrap.children.length) wrap.remove();
   const reset = document.createElement('button');
@@ -113,14 +163,18 @@ function gSave() {
   reset.textContent = L2('Reset the layout', 'Disposition par défaut');
   grid.after(reset);
   reset.onclick = () => {
-    lsSet('luparis-grid', null);
+    lsSet('luparis-grid2', null);
     GL = gLoad();
-    gSettle(null);
-    gApply();
+    gHandSync();
   };
   GL = gLoad();
-  gSettle(null);
-  gApply();
+  renderHand = (f =>
+    function () {
+      const r = f.apply(this, arguments);
+      gHandSync();
+      return r;
+    })(renderHand);
+  gHandSync();
   // grid cell under the pointer
   const cell = (x, y) => {
     const r = grid.getBoundingClientRect(),
@@ -132,19 +186,25 @@ function gSave() {
     };
   };
   let act = null;
-  grid.addEventListener('pointerdown', e => {
-    const g = e.target.closest('.ggrip, .gsz');
-    if (!g) return;
-    const m = g.closest('.gmod'),
-      k = m.dataset.mod,
-      p = cell(e.clientX, e.clientY);
-    e.preventDefault();
-    g.setPointerCapture(e.pointerId);
-    act = { k, m, move: g.classList.contains('ggrip'), p0: p, r0: [...GL[k]], g };
-    m.classList.add('gdrag');
-    grid.style.setProperty('--gcw', p.cw + GGAP + 'px');
-    grid.classList.add('gon');
-  });
+  grid.addEventListener(
+    'pointerdown',
+    e => {
+      const g = e.target.closest('.ggrip, .gsz');
+      if (!g) return;
+      const m = g.closest('[data-gk]'),
+        k = m.dataset.gk,
+        p = cell(e.clientX, e.clientY);
+      if (!GL[k]) return;
+      e.preventDefault();
+      e.stopPropagation();
+      g.setPointerCapture(e.pointerId);
+      act = { k, m, move: g.classList.contains('ggrip'), p0: p, r0: [...GL[k]], g };
+      m.classList.add('gdrag');
+      grid.style.setProperty('--gcw', p.cw + GGAP + 'px');
+      grid.classList.add('gon');
+    },
+    true,
+  );
   grid.addEventListener('pointermove', e => {
     if (!act) return;
     const p = cell(e.clientX, e.clientY),
