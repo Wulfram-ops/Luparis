@@ -12100,7 +12100,8 @@ const savedPreset = lsGet('luparis-grid-preset', null);
 let gActive = savedPreset && typeof savedPreset.id === 'string' ? savedPreset.id : '',
   gAuto = !!savedPreset?.auto,
   gOverrides = savedPreset?.overrides && typeof savedPreset.overrides === 'object' ? Object.assign(Object.create(null), savedPreset.overrides) : Object.create(null),
-  gLastSignature = '';
+  gLastSignature = '',
+  gDockHTML = '';
 function gRole() {
   return MP.role === 'player' ? (MP.prole === 'spec' ? 'spec' : 'player') : 'gm';
 }
@@ -12187,7 +12188,7 @@ const gHit = (a, b) => a[0] < b[0] + b[2] && b[0] < a[0] + a[2] && a[1] < b[1] +
 const gEl = k => document.querySelector(`#cgrid [data-gk="${CSS.escape(k)}"]`);
 function gShown(k) {
   const m = gEl(k);
-  return !!m && !gDetached.has(k) && getComputedStyle(m).display !== 'none';
+  return !!m && gAvailable(k) && getComputedStyle(m).display !== 'none';
 }
 // modules stay where they are put. A hidden module (no token selected, GM-only card…) takes no room;
 // when one shows up on a taken spot, it is the one that goes down, never the modules already shown.
@@ -12305,7 +12306,15 @@ const GPRE = {
 };
 const gMatches = (pattern,k) => pattern.endsWith('*') ? k.startsWith(pattern.slice(0,-1)) : pattern === k;
 function gRegions(P) {
-  return gRole()==='player' && P.player ? P.player : P.reg;
+  const regions=gRole()==='player' && P.player ? P.player : P.reg;
+  if(gRole()!=='player'||MP.me)return regions;
+  // Before a character is claimed, the session picker is more important than
+  // combat or exploration references. Keep it adjacent to the map if possible.
+  const out=regions.map(r=>({...r,it:r.it.filter(([k])=>k!=='mp')}));
+  const side=out.find(r=>!r.it.some(([k])=>k==='map'))||out[0];
+  const pos=side.it.findIndex(([k])=>k==='map');
+  side.it.splice(pos<0?0:pos+1,0,['mp',side.w,8]);
+  return out;
 }
 function gAllowed(k) {
   const role=gRole();
@@ -12323,7 +12332,7 @@ function gIsParked(k) {
 }
 function gModuleName(k) {
   const m=gEl(k);
-  return GNAME[k] ? tr(GNAME[k]) : (m?.querySelector('.hn,.ht,h3')?.textContent.trim() || k.replace(/^c:/,''));
+  return GNAME[k] ? tr(GNAME[k]) : (m?.querySelector('.hn')?.textContent.trim() || m?.querySelector('.ht,h3')?.textContent.trim() || k.replace(/^c:/,''));
 }
 function gDock() {
   const list=$('g_module_list');
@@ -12334,7 +12343,7 @@ function gDock() {
     const status=detached?L2('Detached','Détaché'):!available?L2('Unavailable','Indisponible'):parked?L2('Hidden','Masqué'):L2('Visible','Visible');
     return `<button type="button" data-gmodule="${esc(k)}"${(!available&&!detached)||k==='map'||(k==='mp'&&MP.role==='player'&&!MP.me)?' disabled':''} aria-pressed="${!parked&&available}"><span>${esc(gModuleName(k))}</span><small>${status}</small></button>`;
   }).join('');
-  if(list.innerHTML!==html)list.innerHTML=html;
+  if(gDockHTML!==html){list.innerHTML=html;gDockHTML=html;}
   const count=keys.filter(k=>gAvailable(k)&&gIsParked(k)).length;
   const summary=$('g_module_summary');
   if(summary)summary.textContent=L2('Modules','Modules')+(count?' · '+count+' '+L2('hidden','masqués'):'');
@@ -12382,14 +12391,16 @@ function gPack() {
 function gRefresh(force=false) {
   if(TABLE_DISPLAY)return;
   gPark();
-  const sig=JSON.stringify([gActive,gRole(),GCOLS,Object.keys(GL).filter(k=>gAvailable(k)&&!gIsParked(k)).sort()]);
+  // Updating the labels can wrap the toolbar. Measure the map only after that.
+  gDock();
+  const sig=JSON.stringify([gActive,gRole(),!!MP.me,GCOLS,Object.keys(GL).filter(k=>gAvailable(k)&&!gIsParked(k)).sort()]);
   if(gAuto&&GPRE[gActive]&&(force||sig!==gLastSignature))gPack();
   gLastSignature=sig;
-  gFix();gApply();gDock();
+  gFix();gApply();
 }
 function gPreset(id) {
+  if(!Object.hasOwn(GPRE,id)||id==='dual'&&gRole()!=='gm')return;
   const P=GPRE[id];
-  if(!P || id==='dual'&&gRole()!=='gm')return;
   gActive=id;gAuto=true;gOverrides=Object.create(null);gLastSignature='';
   gColumns(P.cols||12);
   gRefresh(true);
@@ -12531,7 +12542,7 @@ function gHandSync() {
     if(d&&!d.contains(e.target))d.open=false;
   });
   GL = gLoad();
-  if(!GPRE[gActive]){gActive='';gAuto=false;}
+  if(!Object.hasOwn(GPRE,gActive)){gActive='';gAuto=false;}
   else if(gAuto)gColumns(GPRE[gActive].cols||12);
   renderHand = (f =>
     function () {
