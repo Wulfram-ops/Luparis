@@ -3,14 +3,12 @@
 let GCOLS = [12, 24, 36].includes(lsGet('luparis-grid-cols', 12)) ? lsGet('luparis-grid-cols', 12) : 12;
 const GROW = 36, GGAP = 8;
 const gDetached = new Map();
-// Presets are intent-based, with independently overridable secondary modules.
+// Presets change ordering and size, never hide available modules.
 // Old custom grids remain custom until the user selects a preset.
 const savedPreset = lsGet('luparis-grid-preset', null);
 let gActive = savedPreset && typeof savedPreset.id === 'string' ? savedPreset.id : '',
   gAuto = !!savedPreset?.auto,
-  gOverrides = savedPreset?.overrides && typeof savedPreset.overrides === 'object' ? Object.assign(Object.create(null), savedPreset.overrides) : Object.create(null),
-  gLastSignature = '',
-  gDockHTML = '';
+  gLastSignature = '';
 function gRole() {
   return MP.role === 'player' ? (MP.prole === 'spec' ? 'spec' : 'player') : 'gm';
 }
@@ -130,8 +128,8 @@ function gPush(snap, k, n) {
   }
   return out;
 }
-// Each region packs explicit priorities first. Unlisted modules are parked,
-// not destroyed; the Modules drawer can restore them at any time.
+// Each region packs explicit priorities first; all remaining modules follow.
+
 // A wildcard matches each card of that category, regardless of the character.
 const GPRE = {
   combat: {
@@ -174,8 +172,8 @@ const GPRE = {
     ],
   },
   focus: {
-    n:['Map focus','Carte seule'],
-    desc:['Full-width tactical map without secondary panels.', 'Carte tactique pleine largeur, sans panneaux secondaires.'],
+    n:['Map first','Carte prioritaire'],
+    desc:['Full-width tactical map, other panels below.', 'Carte tactique pleine largeur, autres modules en dessous.'],
     cols:12,
     reg:[{c:1,w:12,y:1,it:[['map',12,40]]}],
   },
@@ -206,7 +204,7 @@ const GPRE = {
   standard: {
     n:['Standard','Standard'],
     desc:['Balanced map and character workspace; all modules accessible.', 'Espace équilibré carte et personnage ; tous les modules accessibles.'],
-    cols:12, all:true,
+    cols:12,
     reg:[
       {c:1,w:8,y:1,it:[['map',8,30],['pf',8,9],['hhead',8,3],['c:k-atk',4,9],['c:k-def',4,6],['c:k-spl*',4,9],['c:k-man',4,8]]},
       {c:9,w:4,y:1,it:[['in',4,6],['tk',4,6],['mk',4,7],['mp',4,9],['img',4,8],['sn',4,8]]},
@@ -233,46 +231,52 @@ function gAvailable(k) {
   const m=gEl(k);
   return !!m && gAllowed(k) && !gDetached.has(k) && !m.hidden && !(m.classList.contains('gmod') && m.firstElementChild?.hidden);
 }
-function gIsParked(k) {
-  if (!GPRE[gActive] || k==='map' || k==='mp' && MP.role==='player' && !MP.me) return false;
-  if (Object.hasOwn(gOverrides,k)) return !gOverrides[k];
-  const P=GPRE[gActive];
-  return !P.all && !gRegions(P).some(r=>r.it.some(([m])=>gMatches(m,k)));
-}
 function gModuleName(k) {
   const m=gEl(k);
   return GNAME[k] ? tr(GNAME[k]) : (m?.querySelector('.hn')?.textContent.trim() || m?.querySelector('.ht,h3')?.textContent.trim() || k.replace(/^c:/,''));
 }
-function gDock() {
-  const list=$('g_module_list');
-  if (!list) return;
-  const keys=Object.keys(GL).filter(k=>gEl(k)&&gAllowed(k));
-  const html=keys.map(k=>{
-    const detached=gDetached.has(k), available=gAvailable(k), parked=gIsParked(k);
-    const status=detached?L2('Detached','Détaché'):!available?L2('Unavailable','Indisponible'):parked?L2('Hidden','Masqué'):L2('Visible','Visible');
-    return `<button type="button" data-gmodule="${esc(k)}"${(!available&&!detached)||k==='map'||(k==='mp'&&MP.role==='player'&&!MP.me)?' disabled':''} aria-pressed="${!parked&&available}"><span>${esc(gModuleName(k))}</span><small>${status}</small></button>`;
-  }).join('');
-  if(gDockHTML!==html){list.innerHTML=html;gDockHTML=html;}
-  const count=keys.filter(k=>gAvailable(k)&&gIsParked(k)).length;
-  const summary=$('g_module_summary');
-  if(summary)summary.textContent=L2('Modules','Modules')+(count?' · '+count+' '+L2('hidden','masqués'):'');
-  const info=$('g_preset_hint'), P=GPRE[gActive];
-  if(info)info.textContent=P?tr(P.desc)+(gAuto?'':' · '+L2('customized','personnalisée')):L2('Custom layout','Disposition personnalisée');
-  document.querySelectorAll('[data-gpre]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.gpre===gActive)));
-}
-function gPark() {
-  for(const k in GL) {
-    const m=gEl(k);
-    if(m)m.classList.toggle('gparked',gIsParked(k));
+function gLabels() {
+  const set=(id,en,fr)=>{const e=$(id);if(e){const v=L2(en,fr);if(e.textContent!==v)e.textContent=v;}};
+  set('g_layout_label','Layout','Disposition');
+  set('g_public','Public table','Table publique');
+  set('g_screens','Detect screens','Détecter les écrans');
+  set('g_restore','Restore windows','Rouvrir les fenêtres');
+  set('g_return','Reattach all','Tout réintégrer');
+  const sel=$('g_screen');
+  if(sel){
+    sel.setAttribute('aria-label',L2('Destination screen','Écran de destination'));
+    for(const o of sel.options)if(o.dataset.screenSize)o.textContent=(o.dataset.screenLabel||L2('Screen ','Écran ')+(+o.value+1))+' · '+o.dataset.screenSize;
+  }
+  const msg=$('g_display_msg');
+  if(msg?.dataset.en!==undefined)msg.textContent=L2(msg.dataset.en,msg.dataset.fr);
+  const info=$('g_preset_hint'),P=GPRE[gActive];
+  if(info){const s=P?tr(P.desc)+(gAuto?'':' · '+L2('customized','personnalisée')):L2('Custom layout','Disposition personnalisée');if(info.textContent!==s)info.textContent=s;}
+  for(const b of document.querySelectorAll('[data-gpre]')){
+    const p=GPRE[b.dataset.gpre];if(!p)continue;
+    const s=b.dataset.gpre==='standard'?L2('Default','Par défaut'):tr(p.n);
+    if(b.textContent!==s)b.textContent=s;
+    b.title=tr(p.desc);b.setAttribute('aria-pressed',String(b.dataset.gpre===gActive));
+  }
+  for(const e of document.querySelectorAll('#cgrid .gwindow')){e.title=L2('Open on another screen','Ouvrir sur un autre écran');e.setAttribute('aria-label',e.title);}
+  for(const e of document.querySelectorAll('#cgrid .gttl'))e.title=L2('Drag the title to move','Glisse le titre pour déplacer');
+  for(const e of document.querySelectorAll('#cgrid .ggrip')){e.title=L2('Drag to move','Glisse pour déplacer');e.setAttribute('aria-label',L2('Move','Déplacer'));}
+  for(const e of document.querySelectorAll('#cgrid .gsz'))e.title=L2('Drag to resize','Glisse pour redimensionner');
+  for(const [k,p] of gDetached){
+    if(p.win.closed)continue;
+    const d=p.win.document;
+    d.documentElement.lang=lang;d.title='Luparis · '+gModuleName(k);
+    const title=d.querySelector('.gpopupbar strong'),buttons=d.querySelectorAll('.gpopupbar button');
+    if(title)title.textContent=d.title;
+    if(buttons[0])buttons[0].textContent=L2('Fullscreen','Plein écran');
+    if(buttons[1])buttons[1].textContent=L2('Reattach','Réintégrer');
   }
 }
 function gPack() {
   const P=GPRE[gActive];
   if(!P)return;
-  const regions=gRegions(P), keys=Object.keys(GL).filter(k=>gAvailable(k)&&!gIsParked(k)),used=new Set(),out={};
+  const regions=gRegions(P), keys=Object.keys(GL).filter(gAvailable),used=new Set(),out={},shelves=[];
   const match=m=>keys.filter(k=>!used.has(k)&&gMatches(m,k));
-  let bottom=1;
-  for(const R of regions){
+   for(const R of regions){
     let x=0,y=R.y,sh=0;
     const put=(k,w,h)=>{
       w=Math.min(w,R.w);
@@ -281,17 +285,21 @@ function gPack() {
       out[k]=[R.c+x,y,w,h];used.add(k);x+=w;sh=Math.max(sh,h);
     };
     for(const [m,w,h] of R.it)for(const k of match(m))put(k,w,h);
-    bottom=Math.max(bottom,y+sh);
+     shelves.push({c:R.c,w:R.w,y:y+sh,x:0,sh:0});
   }
-  // Do not let the catch-all steal modules reserved for later regions.
-  // Unlisted, explicitly enabled modules get a separate full-width shelf.
-  const fallback=keys.filter(k=>!used.has(k));
-  let x=0,y=bottom,sh=0;
+  // All unlisted panels fill the shortest region, after its priority panels.
+  // This avoids giant blank columns while preserving the map's first position.
+  const fallback=keys.filter(k=>!used.has(k)).sort((a,b)=>(a==='mp'?-1:b==='mp'?1:0));
   for(const k of fallback){
-    const w=Math.min(GCOLS,Math.max(2,Math.round(GCOLS/3)));
-    if(x+w>GCOLS){y+=sh;x=0;sh=0;}
     const h=GDEF[k]?.[3]||8;
-    out[k]=[x+1,y,w,h];x+=w;sh=Math.max(sh,h);
+    const opts=shelves.map(s=>{
+      const w=k==='pf'||k==='hhead'||k==='mp'?s.w:Math.min(s.w,Math.max(Math.ceil(GCOLS/3),Math.ceil(s.w/2)));
+      const wrap=s.x+w>s.w;
+      return {s,w,y:wrap?s.y+s.sh:s.y,wrap};
+    }).sort((a,b)=>a.y-b.y||b.w-a.w);
+    const {s,w,y,wrap}=opts[0];
+    if(wrap){s.y=y;s.x=0;s.sh=0;}
+    out[k]=[s.c+s.x,s.y,w,h];s.x+=w;s.sh=Math.max(s.sh,h);
   }
   for(const k in GL)if(!out[k])out[k]=[...GL[k]];
   GL=out;
@@ -299,10 +307,11 @@ function gPack() {
 }
 function gRefresh(force=false) {
   if(TABLE_DISPLAY)return;
-  gPark();
-  // Updating the labels can wrap the toolbar. Measure the map only after that.
-  gDock();
-  const sig=JSON.stringify([gActive,gRole(),!!MP.me,GCOLS,Object.keys(GL).filter(k=>gAvailable(k)&&!gIsParked(k)).sort()]);
+  // Remove obsolete hiding state, including layouts saved by older releases.
+  for(const m of document.querySelectorAll('#cgrid .gparked'))m.classList.remove('gparked');
+  for(const k of [...gDetached.keys()])if(!gAllowed(k))gReattach(k);
+  gLabels();
+  const sig=JSON.stringify([gActive,gRole(),!!MP.me,GCOLS,Object.keys(GL).filter(gAvailable).sort()]);
   if(gAuto&&GPRE[gActive]&&(force||sig!==gLastSignature))gPack();
   gLastSignature=sig;
   gFix();gApply();
@@ -310,21 +319,13 @@ function gRefresh(force=false) {
 function gPreset(id) {
   if(!Object.hasOwn(GPRE,id)||id==='dual'&&gRole()!=='gm')return;
   const P=GPRE[id];
-  gActive=id;gAuto=true;gOverrides=Object.create(null);gLastSignature='';
+  gActive=id;gAuto=true;gLastSignature='';
   gColumns(P.cols||12);
   gRefresh(true);
   gSave();
   gFitMap();
 }
-function gToggleModule(k) {
-  if(gDetached.has(k)){gDetached.get(k).win.focus();return;}
-  if(!gAvailable(k)||k==='map'||(k==='mp'&&MP.role==='player'&&!MP.me))return;
-  // A user can hide modules even in an imported/custom layout.
-  if(!GPRE[gActive]){gActive='standard';gAuto=false;}
-  gOverrides[k]=gIsParked(k);
-  gRefresh(true);
-  gSave();
-}
+
 function gApply() {
   for (const k in GL) {
     const m = gEl(k);
@@ -338,14 +339,14 @@ function gApply() {
 function gSave() {
   lsSet('luparis-grid2', GL);
   lsSet('luparis-grid-cols', GCOLS);
-  lsSet('luparis-grid-preset',{id:gActive,auto:gAuto,overrides:gOverrides});
+  lsSet('luparis-grid-preset',{id:gActive,auto:gAuto});
 }
 // the title of a module is its move handle (the map, without a title, keeps a small grip); a corner resizes it
 function gHandles(el, k) {
   el.dataset.gk = k;
   el.classList.add('gitem');
   el.classList.toggle('gdetached', gDetached.has(k));
-  el.classList.toggle('gparked', gIsParked(k));
+  el.classList.remove('gparked');
   if (!TABLE_DISPLAY && !el.querySelector(':scope > .gwindow'))
     el.insertAdjacentHTML('beforeend', `<button type="button" class="gwindow" data-gwindow="${esc(k)}" title="${L2('Open on another screen', 'Ouvrir sur un autre écran')}" aria-label="${L2('Open on another screen', 'Ouvrir sur un autre écran')}">↗</button>`);
   const t = el.querySelector('.hside > h3, .ht, h3, h2');
@@ -438,18 +439,12 @@ function gHandSync() {
   if (!wrap.children.length) wrap.remove();
   const bar = document.createElement('div');
   bar.className = 'gpresets';
-  bar.innerHTML = `<div class="gpres-main"><span class="small">${L2('Layout', 'Disposition')}</span>${['combat','explo','totm','focus','wide','superwide','dual'].map(id => `<button type="button" data-gpre="${id}" title="${esc(tr(GPRE[id].desc))}" aria-pressed="false">${tr(GPRE[id].n)}</button>`).join('')}<button type="button" class="greset" data-gpre="standard">${L2('Default', 'Par défaut')}</button><details id="g_modules"><summary id="g_module_summary">${L2('Modules','Modules')}</summary><div id="g_module_list"></div></details><span id="g_preset_hint" class="small" aria-live="polite"></span></div><span class="gdisplaytools"><button type="button" id="g_public">${L2('Public table', 'Table publique')}</button><button type="button" id="g_screens">${L2('Detect screens', 'Détecter les écrans')}</button><select id="g_screen" aria-label="${L2('Destination screen', 'Écran de destination')}" hidden></select><button type="button" id="g_restore">${L2('Restore windows', 'Rouvrir les fenêtres')}</button><button type="button" id="g_return">${L2('Reattach all', 'Tout réintégrer')}</button><span class="small" id="g_display_msg" aria-live="polite"></span></span>`;
+  bar.innerHTML = `<div class="gpres-main"><span class="small" id="g_layout_label">${L2('Layout', 'Disposition')}</span>${['combat','explo','totm','focus','wide','superwide','dual'].map(id => `<button type="button" data-gpre="${id}" title="${esc(tr(GPRE[id].desc))}" aria-pressed="false">${tr(GPRE[id].n)}</button>`).join('')}<button type="button" class="greset" data-gpre="standard">${L2('Default', 'Par défaut')}</button><span id="g_preset_hint" class="small" aria-live="polite"></span></div><span class="gdisplaytools"><button type="button" id="g_public">${L2('Public table', 'Table publique')}</button><button type="button" id="g_screens">${L2('Detect screens', 'Détecter les écrans')}</button><select id="g_screen" aria-label="${L2('Destination screen', 'Écran de destination')}" hidden></select><button type="button" id="g_restore">${L2('Restore windows', 'Rouvrir les fenêtres')}</button><button type="button" id="g_return">${L2('Reattach all', 'Tout réintégrer')}</button><span class="small" id="g_display_msg" aria-live="polite"></span></span>`;
   grid.before(bar);
   bar.onclick = e => {
     const b = e.target.closest('[data-gpre]');
     if (b) gPreset(b.dataset.gpre);
-    const m=e.target.closest('[data-gmodule]');
-    if(m)gToggleModule(m.dataset.gmodule);
   };
-  document.addEventListener('pointerdown',e=>{
-    const d=$('g_modules');
-    if(d&&!d.contains(e.target))d.open=false;
-  });
   GL = gLoad();
   if(!Object.hasOwn(GPRE,gActive)){gActive='';gAuto=false;}
   else if(gAuto)gColumns(GPRE[gActive].cols||12);
@@ -522,7 +517,7 @@ function gHandSync() {
     grid.classList.remove('gon');
     act = null;
     gVis = new Set(Object.keys(GL).filter(gShown));
-    gDock();
+    gLabels();
     gSave();
   };
   grid.addEventListener('pointerup', () => end(true));
@@ -551,8 +546,7 @@ function gHandSync() {
     e.stopPropagation();
     const k=m.dataset.gk;
     ctxMenu(e.clientX, e.clientY, [
-      {label:L2('Open on another screen', 'Ouvrir sur un autre écran'),fn:()=>gOpenWindow(k)},
-      k==='map'||(k==='mp'&&MP.role==='player'&&!MP.me)?null:{label:L2('Hide module','Masquer le module'),fn:()=>gToggleModule(k)}
+      {label:L2('Open on another screen', 'Ouvrir sur un autre écran'),fn:()=>gOpenWindow(k)}
     ]);
   }, true);
   // a module that appears or disappears: make room only for the one that appears
@@ -560,6 +554,7 @@ function gHandSync() {
     if (act) return;
     gRefresh();
   }).observe(grid, { attributes: true, subtree: true, attributeFilter: ['hidden'] });
+  new MutationObserver(()=>{if(!act)gRefresh();}).observe(document.body,{attributes:true,attributeFilter:['class']});
   let gResizeTimer;
   window.addEventListener('resize',()=>{
     clearTimeout(gResizeTimer);
@@ -581,7 +576,7 @@ const gViews = new Map();
 let gTick = 0, gScreenDetails = null, gClosing = false;
 function gDisplayMsg(en, fr) {
   const el = $('g_display_msg');
-  if (el) el.textContent = L2(en, fr);
+  if (el) {el.dataset.en=en;el.dataset.fr=fr;el.textContent=L2(en,fr);}
 }
 function gRememberWindows() {
   lsSet('luparis-detached', [...gWanted]);
@@ -602,7 +597,8 @@ async function gDetectScreens() {
       gScreenDetails.screens.forEach((screen, i) => {
         const o = document.createElement('option');
         o.value = i;
-        o.textContent = (screen.label || L2('Screen ', 'Écran ') + (i + 1)) + ' · ' + screen.width + '×' + screen.height;
+        o.dataset.screenLabel=screen.label||'';o.dataset.screenSize=screen.width+'×'+screen.height;
+        o.textContent=(screen.label||L2('Screen ','Écran ')+(i+1))+' · '+o.dataset.screenSize;
         s.append(o);
       });
       const i = gScreenDetails.screens.indexOf(gScreenDetails.currentScreen);
@@ -632,8 +628,9 @@ function gSourceControls(el) {
 }
 function gMirrorPanel(k, p) {
   const el = gEl(k);
-  if (!el) {
-    if (p.root.dataset.missing !== '1') {
+  if (!el||!gAllowed(k)||el.hidden||(el.classList.contains('gmod')&&el.firstElementChild?.hidden)) {
+    if (p.root.dataset.missing !== '1'||p.root.dataset.lang!==lang) {
+      p.root.dataset.lang=lang;
       p.root.dataset.missing = '1';
       p.root.textContent = L2('This module is not available for the selected character.', 'Ce module est indisponible pour le personnage sélectionné.');
       p.signature = '';
