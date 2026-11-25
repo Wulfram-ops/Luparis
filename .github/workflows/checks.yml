@@ -1,0 +1,24 @@
+name: checks
+on: [push, pull_request]
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install -r tools/requirements.txt ruff
+          python -m playwright install --with-deps chromium
+      - name: Lint (Python)
+        run: ruff check tools tests --select F,E9
+      - name: app.js and index.html match src/
+        run: python tools/build_site.py --check
+      - name: Talent table matches tools/talents.py
+        run: python tools/talents.py --check
+      - name: Data files
+        run: python tools/validate_data.py
+      - name: Browser smoke tests
+        run: python tests/smoke.py

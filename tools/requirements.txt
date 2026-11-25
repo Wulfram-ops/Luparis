@@ -1,0 +1,7 @@
+# Python tools of Luparis (python 3.10+). Install: pip install -r tools/requirements.txt
+# then, if no Chrome is installed: python -m playwright install chromium
+numpy==2.5.3
+scipy==1.18.1
+shapely==2.2.0
+pillow==12.3.0
+playwright==1.63.0

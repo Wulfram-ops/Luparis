@@ -51,18 +51,22 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 
 ---
 
-## 3. Dette technique (relecture du 25 novembre)
+## 3. Dette technique (relectures du 25 novembre, avis croisés Claude / Gemini / GPT / Perplexity)
 
 | Sujet | État | Suite |
 | --- | --- | --- |
-| Fichier unique de ~420 Ko | Fonctionne, mais lourd à relire | Découper en modules (`map.js`, `sheet.js`, `mp.js`, `rules.html`) avec une étape de build simple, quand l'hébergement passera sur Firebase |
-| Règles EN/FR dans deux `<template>` | ~1 800 nœuds dans la page | Charger le livre de règles à la première ouverture de l'onglet |
-| Grilles de la carte en tableaux de tableaux | Correct (le dessin coûte bien plus que les données) | Passer en tableaux typés seulement avec la synchro par différences |
-| Multijoueur par état complet | Simple mais lourd | Voir 1.2 |
-| Pas de tests automatisés | Tests manuels via navigateur automatisé | Ajouter un script de tests de fumée (chargement, onglets, peinture, multijoueur local) |
-| PeerJS chargé depuis unpkg | Version épinglée 1.5.4 | Ajouter une empreinte d'intégrité ou héberger le fichier |
+| Fichier unique de ~420 Ko | **Fait** : CSS, règles et code séparés ; code lisible en 14 fichiers `src/js/` assemblés en `app.js` | Passer aux modules ES (imports explicites) domaine par domaine, en commençant par le multijoueur |
+| Variables partagées entre domaines | Toujours une seule portée (comme avant le découpage) | À réduire au fil des modules ES ; règles de jeu en fonctions pures testables |
+| Persistance dispersée | **Fait** : `lsGet`/`lsSet`, alerte en cas d'échec, version de schéma, sauvegarde complète 💾 | Couche « dépôt » pour brancher Firebase/Supabase sans toucher au reste |
+| Données reçues ou sauvegardées | **Fait** : jets assainis (y compris restaurés), fiches des joueurs filtrées, miniatures limitées aux images | Étendre la validation à l'import de cartes et de bestiaire |
+| Outils Python | **Fait** : plus d'`exec`, CLI `argparse`, `build_world.py` unique, `requirements.txt`, Chrome configurable ; sorties identiques à l'octet près | Tests pytest des conversions SRD |
+| Tests | **Fait** : `tests/smoke.py` (navigateur), `tools/validate_data.py`, CI GitHub | Tests unitaires des règles (coûts d'XP, dérivés de fiche) une fois extraites en fonctions pures |
+| Images de la carte du monde | **Fait** : `world-lo.webp` 616 → 391 Ko sans perte visible ; HD chargée au premier zoom | — |
+| Grilles en tableaux de tableaux | Correct (le dessin coûte bien plus que les données) | Tableaux typés avec la synchro multijoueur par différences |
+| PeerJS chargé depuis unpkg | Version épinglée 1.5.4 | Empreinte d'intégrité ou fichier hébergé |
+| Versions publiées | Une seule branche, pas d'étiquette | Étiqueter les versions jouées en séance (`v0.5`, …) |
 
----
+Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
 
@@ -74,6 +78,7 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
   - Bestiaire rendu à l'ouverture de l'onglet (page deux fois plus légère).
   - Carte du monde : déplacement en image, image HD chargée au premier zoom.
 - **Sécurité multijoueur** : jets reçus des joueurs assainis ; un joueur n'agit que pour son personnage.
+- **Structure** : code découpé et lisible (`src/js/`), CSS et règles séparés, outils Python reproductibles, tests navigateur et CI, sauvegarde complète exportable.
 - **Interface** : barre d'outils contextuelle, aperçu avant placement (empreinte, rotation, hauteur), recherche universelle (Ctrl+K), titres de cartes cliquables (réduire) et déplaçables (maintenir), fiche Personnage fixe en trois colonnes.
 - **Jeu** : fiches de monstres depuis les tokens, zones d'effet (cercle, sphère, cône, ligne, cube), notes de séance du MJ, multijoueur de test.
 - **Règles v0.5** : six stats, talents, pactes, équilibrage par simulations.
