@@ -342,3 +342,7 @@ body:not(.mp-host) #tools button[data-t=hide]{display:none}
 @media (max-width:900px){.book{grid-template-columns:minmax(0,1fr)!important}.toc{position:static;max-height:40vh;overflow:auto}}
 @media (min-width:1800px){.book{grid-template-columns:260px minmax(0,1fr)}.page{font-size:17px}}
 .campfolder>.campx{margin:4px 12px 10px;padding:8px 10px;border:1px dashed var(--line);border-radius:10px;background:var(--bg)}
+
+body.mp-player #v-bestiaire>.band:not(#pbest){display:none!important}
+.pbl{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:8px}.pbc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+#bt button[data-rev].on{background:color-mix(in srgb,var(--acc) 25%,transparent)}

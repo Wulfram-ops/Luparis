@@ -175,6 +175,12 @@ document.getElementById('v-fiche').addEventListener('contextmenu', e => {
       ctxMenu(e.clientX, e.clientY, [
         { head: k.nm ? `${tr(k.nm)} ${k.num || ''}` : k.n || '' },
         m && { label: L2('Monster sheet', 'Fiche du monstre'), fn: () => monSheet(m, k) },
+        m && {
+          label: REV.has(m.id)
+            ? L2("Remove from the players' bestiary", 'Retirer du bestiaire des joueurs')
+            : L2("Show in the players' bestiary", 'Montrer dans le bestiaire des joueurs'),
+          fn: () => revToggle(m.id),
+        },
         k.cid && {
           label: L2('Character sheet', 'Fiche du personnage'),
           fn: () => {

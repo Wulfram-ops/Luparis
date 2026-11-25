@@ -213,6 +213,7 @@ function mpState() {
   const v = mpView(memStateNow(), RL);
   return {
     type: 'state',
+    best: revList(),
     map: { ...v, rolls: undefined },
     chars: CH.list,
     folders: campaignFolders(),
@@ -227,7 +228,13 @@ function mpPieces(o) {
   if (s.length <= MP_CHUNK) return [o];
   const id = Math.random().toString(36).slice(2, 10),
     n = Math.ceil(s.length / MP_CHUNK);
-  return Array.from({ length: n }, (_, i) => ({ type: 'chunk', id, i, n, d: s.slice(i * MP_CHUNK, (i + 1) * MP_CHUNK) }));
+  return Array.from({ length: n }, (_, i) => ({
+    type: 'chunk',
+    id,
+    i,
+    n,
+    d: s.slice(i * MP_CHUNK, (i + 1) * MP_CHUNK),
+  }));
 }
 // put the pieces back together; returns the whole message once every piece has arrived
 function mpJoinPiece(store, m) {
@@ -624,6 +631,8 @@ function mpClientMsg(m) {
     n0 = N;
   MP.got = true;
   applyState(m.map);
+  PBEST = (Array.isArray(m.best) ? m.best : []).filter(x => x && x.id && x.n).slice(0, 500);
+  renderPBest();
   // the GM changed the map size: start again from the whole map in view
   if (N !== n0) {
     CAM.z = 1;

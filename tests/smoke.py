@@ -242,6 +242,14 @@ def run(chrome: str | None) -> None:
         host.wait_for_timeout(600)
         check("GM moves character without deleting empty folder", host.locator('details[data-campfolder="Northern Expedition"] .cc').count() == 0 and host.locator(f'details[data-campfolder=""] [data-campmove="{created_id}"]').count() == 1)
         check("campaign move reaches player and preserves XP", creator.evaluate("DBG(\"CH.list.find(c=>c.id===MP.me).camp===''&&CH.list.find(c=>c.id===MP.me).xp===150\")"))
+        mid = host.evaluate("DBG('MON[0].id')")
+        host.evaluate(f"DBG(`revToggle('{mid}');mpPush()`)")
+        creator.wait_for_timeout(700)
+        check(
+            "players see only the creatures the GM shows",
+            creator.evaluate("DBG('PBEST.length')") == 1 and creator.evaluate("DBG('PBEST.every(m=>m.no==null)')"),
+        )
+        host.evaluate(f"DBG(`revToggle('{mid}')`)")
         creator.evaluate("DBG(`placing={ally:MP.me,n:'x'};setTool('place');apply({x:2,y:2})`)")
         host.wait_for_timeout(600)
         check(

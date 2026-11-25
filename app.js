@@ -5403,6 +5403,45 @@ const DEF = [
   ][i],
 }));
 let MON;
+// monsters the GM chose to show in the players' bestiary
+const REV = new Set(lsGet('luparis-best-rev', []) || []);
+function revToggle(id) {
+  if (REV.has(id)) REV.delete(id);
+  else REV.add(id);
+  lsSet('luparis-best-rev', [...REV]);
+  if (typeof mpPush === 'function') mpPush();
+  renderB();
+}
+// what the players receive: only revealed monsters, without the GM's notes
+function revList() {
+  return MON.filter(m => REV.has(m.id)).map(m => {
+    const o = { ...m };
+    delete o.no;
+    delete o.noFr;
+    delete o.noEn;
+    return o;
+  });
+}
+let PBEST = [];
+function renderPBest() {
+  const el = document.getElementById('pbest');
+  if (!el) return;
+  el.hidden = MP.role !== 'player';
+  if (el.hidden) return;
+  el.innerHTML = `<div class="bhead"><h2>${L2('Bestiary', 'Bestiaire')}</h2><span class="small">${PBEST.length ? t('count')(PBEST.length, PBEST.length) : ''}</span></div>${
+    PBEST.length
+      ? `<div class="pbl">${PBEST.map(
+          m =>
+            `<button type="button" class="pbc" data-pbs="${esc(m.id)}"><b>${esc(tr(m.n))}</b><span class="small">${esc(tyName(m.type))} · ${lang === 'fr' ? 'FP' : 'CR'} ${esc(m.fp)}</span></button>`,
+        ).join('')}</div>`
+      : `<p class="small">${L2('The game master has not shown any creature yet.', "Le MJ n'a encore montré aucune créature.")}</p>`
+  }`;
+}
+document.getElementById('pbest').addEventListener('click', e => {
+  const b = e.target.closest('[data-pbs]'),
+    m = b && PBEST.find(x => x.id === b.dataset.pbs);
+  if (m) monSheet(m);
+});
 function loadMon() {
   try {
     const d = lsGet('luparis-bestiary-v2', null);
@@ -5524,7 +5563,7 @@ function renderB() {
   $('bt').tBodies[0].innerHTML = L.length
     ? L.map(m => {
         const v = conv(m);
-        return `<tr><td><b>${esc(nm(m))}</b>${noT(m) ? `<div class="small">${esc(noT(m))}</div>` : ''}</td><td>${esc(tyName(m.type))}<div class="small">${esc(t('szn')[monSz(m)] || '')}</div></td><td class="r">${esc(m.fp)}</td><td>${m.hab.map(h => (B[h] ? `<span class="tag">${esc(tr(B[h].n))}</span>` : '')).join('')}</td><td class="r">${v.esq}</td><td class="r">${v.maj} / ${v.sev}</td><td class="r">${v.cases} <span class="small">(${esc(m.pv)} ${t('hp')})</span></td><td class="r"><div class="acts"><button class="go" data-place="${esc(m.id)}">${t('place')}</button><button data-sheet="${esc(m.id)}">${L2('Sheet', 'Fiche')}</button><button data-edit="${esc(m.id)}">${t('edit')}</button><button data-del="${esc(m.id)}">${t('del')}</button></div></td></tr>`;
+        return `<tr><td><b>${esc(nm(m))}</b>${noT(m) ? `<div class="small">${esc(noT(m))}</div>` : ''}</td><td>${esc(tyName(m.type))}<div class="small">${esc(t('szn')[monSz(m)] || '')}</div></td><td class="r">${esc(m.fp)}</td><td>${m.hab.map(h => (B[h] ? `<span class="tag">${esc(tr(B[h].n))}</span>` : '')).join('')}</td><td class="r">${v.esq}</td><td class="r">${v.maj} / ${v.sev}</td><td class="r">${v.cases} <span class="small">(${esc(m.pv)} ${t('hp')})</span></td><td class="r"><div class="acts"><button class="go" data-place="${esc(m.id)}">${t('place')}</button><button data-sheet="${esc(m.id)}">${L2('Sheet', 'Fiche')}</button><button data-rev="${esc(m.id)}" class="${REV.has(m.id) ? 'on' : ''}" title="${L2("Show in the players' bestiary", 'Montrer dans le bestiaire des joueurs')}" aria-pressed="${REV.has(m.id)}">${REV.has(m.id) ? L2('👁 Shown', '👁 Montré') : L2('👁 Show', '👁 Montrer')}</button><button data-edit="${esc(m.id)}">${t('edit')}</button><button data-del="${esc(m.id)}">${t('del')}</button></div></td></tr>`;
       }).join('')
     : `<tr><td colspan="8" class="empty">${t('none')}</td></tr>`;
 }
@@ -5532,9 +5571,13 @@ for (const id of ['q', 'ft', 'fh', 'fmin', 'fmax', 'fs']) $(id).addEventListener
 $('bt').addEventListener('click', e => {
   const b = e.target.closest('button');
   if (!b) return;
-  const id = b.dataset.place || b.dataset.edit || b.dataset.del || b.dataset.sheet,
+  const id = b.dataset.place || b.dataset.edit || b.dataset.del || b.dataset.sheet || b.dataset.rev,
     m = MON.find(x => x.id === id);
   if (!m) return;
+  if (b.dataset.rev) {
+    revToggle(m.id);
+    return;
+  }
   if (b.dataset.sheet) {
     monSheet(m);
     return;
@@ -11435,6 +11478,12 @@ document.getElementById('v-fiche').addEventListener('contextmenu', e => {
       ctxMenu(e.clientX, e.clientY, [
         { head: k.nm ? `${tr(k.nm)} ${k.num || ''}` : k.n || '' },
         m && { label: L2('Monster sheet', 'Fiche du monstre'), fn: () => monSheet(m, k) },
+        m && {
+          label: REV.has(m.id)
+            ? L2("Remove from the players' bestiary", 'Retirer du bestiaire des joueurs')
+            : L2("Show in the players' bestiary", 'Montrer dans le bestiaire des joueurs'),
+          fn: () => revToggle(m.id),
+        },
         k.cid && {
           label: L2('Character sheet', 'Fiche du personnage'),
           fn: () => {
@@ -12294,6 +12343,7 @@ function mpState() {
   const v = mpView(memStateNow(), RL);
   return {
     type: 'state',
+    best: revList(),
     map: { ...v, rolls: undefined },
     chars: CH.list,
     folders: campaignFolders(),
@@ -12308,7 +12358,13 @@ function mpPieces(o) {
   if (s.length <= MP_CHUNK) return [o];
   const id = Math.random().toString(36).slice(2, 10),
     n = Math.ceil(s.length / MP_CHUNK);
-  return Array.from({ length: n }, (_, i) => ({ type: 'chunk', id, i, n, d: s.slice(i * MP_CHUNK, (i + 1) * MP_CHUNK) }));
+  return Array.from({ length: n }, (_, i) => ({
+    type: 'chunk',
+    id,
+    i,
+    n,
+    d: s.slice(i * MP_CHUNK, (i + 1) * MP_CHUNK),
+  }));
 }
 // put the pieces back together; returns the whole message once every piece has arrived
 function mpJoinPiece(store, m) {
@@ -12705,6 +12761,8 @@ function mpClientMsg(m) {
     n0 = N;
   MP.got = true;
   applyState(m.map);
+  PBEST = (Array.isArray(m.best) ? m.best : []).filter(x => x && x.id && x.n).slice(0, 500);
+  renderPBest();
   // the GM changed the map size: start again from the whole map in view
   if (N !== n0) {
     CAM.z = 1;
