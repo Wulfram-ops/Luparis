@@ -2149,10 +2149,14 @@ function mpHostMsg(m,conn){if(m.type==='hello'){mpSend(mpState(),conn);return}
  if(m.type==='tokens'){for(const u of m.t||[]){const k=tokens.find(x=>x.id===u.id&&x.cid===m.me);if(!k)continue;const n=tfp(k);if(fits(u.x,u.y,n,k.id)){k.x=u.x;k.y=u.y}if(typeof u.hp==='number'&&k.hpMax){k.hp=Math.max(0,Math.min(k.hpMax,u.hp))}}save();draw();return}
  if(m.type==='roll'){pushRoll(String(m.h||''),String(m.s||''),true);return}
  if(m.type==='char'&&m.c&&m.c.id){const i=CH.list.findIndex(x=>x.id===m.c.id);if(i>=0){CH.list[i]=Object.assign({},CH.list[i],{used:m.c.used,inv:m.c.inv,notes:m.c.notes,corder:m.c.corder});if(C&&C.id===m.c.id)C=CH.list[i];saveC();if(CH.active)renderSheet()}}}
-function mpClientMsg(m){if(m.type!=='state')return;const first=!MP.got;MP.got=true;
+function mpClientMsg(m){if(m.type==='closed'){mpRender(L2('The game master closed the game.','Le MJ a fermé la partie.'));setTimeout(mpLeave,1500);return}if(m.type!=='state')return;const first=!MP.got;MP.got=true;
  applyState(m.map);CH.list=m.chars||[];C=CH.list.find(c=>c.id===CH.active)||CH.list[0]||null;RL=m.rolls||[];rlRender();
  if(MP.me&&!CH.list.some(c=>c.id===MP.me))MP.me=null;if(MP.me)handId=MP.me;
  for(const x of document.querySelectorAll('#biosel'))x.value=bio;showSize();legend();ctxBar&&ctxBar();layout();if(typeof renderIni==='function')renderIni();if(typeof renderMarks==='function')renderMarks();renderHand();renderTok&&renderTok();if(CH.active)renderSheet();else renderList();mpRender();if(first)setTool('move')}
+function mpStop(){if(MP.role!=='host')return;clearTimeout(mpT);mpSend({type:'closed'});
+ setTimeout(()=>{for(const c of MP.conns)try{c.close()}catch(e){}try{MP.peer&&MP.peer.destroy()}catch(e){}try{MP.bc&&MP.bc.close()}catch(e){}
+  Object.assign(MP,{role:null,me:null,conns:[],code:'',n:0,peer:null,bc:null,conn:null,got:false});document.body.classList.remove('mp-host');mpRender(L2('Game closed: players are disconnected.','Partie fermée : les joueurs sont déconnectés.'))},300)}
+function mpLeave(){try{MP.conn&&MP.conn.close();MP.peer&&MP.peer.destroy();MP.bc&&MP.bc.close()}catch(e){}history.replaceState(null,'',location.pathname+location.hash);location.reload()}
 function mpLoadPeer(){return new Promise((ok,ko)=>{if(window.Peer)return ok();const sc=document.createElement('script');sc.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';sc.onload=()=>ok();sc.onerror=()=>ko(new Error('peerjs'));document.head.append(sc)})}
 function mpCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:6},()=>A[Math.floor(Math.random()*A.length)]).join('')}
 async function mpHost(){MP.code=mpCode();MP.role='host';MP.conns=[];document.body.classList.add('mp-host');mpRender(L2('Opening…','Ouverture…'));
@@ -2170,7 +2174,7 @@ function mpRender(msg){const B=document.getElementById('mp_box');if(!B)return;if
  else B.innerHTML=`<p>${L2('Connected to game','Connecté à la partie')} <b class="mpcode">${MP.code}</b>${MP.got?'':' …'}</p><label class="small">${L2('My character','Mon personnage')} <select id="mp_me"><option value="">—</option>${CH.list.map(c=>`<option value="${esc(c.id)}"${c.id===MP.me?' selected':''}>${esc(c.name||'?')}</option>`).join('')}</select></label><p class="small">${L2('You can move your own token, roll, and use your cards. The game master does the rest.','Tu peux déplacer ton pion, lancer les dés et utiliser tes cartes. Le MJ gère le reste.')}</p><div class="row"><button type="button" id="mp_leave">${L2('Leave','Quitter')}</button></div>`;
  if(MP.msg)B.insertAdjacentHTML('beforeend',`<p class="small mpmsg">${esc(MP.msg)}</p>`)}
 document.getElementById('mp_card').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
- if(b.id==='mp_host')mpHost();else if(b.id==='mp_stop'||b.id==='mp_leave'){location.href=location.pathname+location.hash}
+ if(b.id==='mp_host')mpHost();else if(b.id==='mp_stop')mpStop();else if(b.id==='mp_leave')mpLeave()
  else if(b.id==='mp_link'){const link=location.origin+location.pathname+'?join='+MP.code+(MP.local?'&local=1':'')+'#carte';navigator.clipboard.writeText(link).then(()=>mpRender(L2('Link copied.','Lien copié.')),()=>mpRender(link))}});
 document.getElementById('mp_card').addEventListener('submit',e=>{if(e.target.id!=='mp_jf')return;e.preventDefault();mpJoin(document.getElementById('mp_code').value)});
 document.getElementById('mp_card').addEventListener('change',e=>{if(e.target.id!=='mp_me')return;MP.me=e.target.value||null;handId=MP.me;selTok=null;renderHand();mpRender()});
