@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Cinzel:wght@600&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%236b7a3a'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' font-weight='700' text-anchor='middle' fill='%23f4efe2'%3EL%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/luparis.css?v=0602c6186e">
+<link rel="stylesheet" href="css/luparis.css?v=5647183023">
 </head>
 <body>
 <header><h1 data-i18n="title"></h1>
@@ -46,12 +46,8 @@
 <dialog id="play_layout_dialog" aria-labelledby="play_layout_title">
   <form method="dialog">
     <h2 id="play_layout_title" data-play-i18n="play_customize"></h2>
-    <label><span data-play-i18n="play_position"></span><select id="play_position"></select></label>
-    <label><span data-play-i18n="play_width"></span><select id="play_width"></select></label>
-    <fieldset><legend data-play-i18n="play_panels"></legend>
-      <label><input type="checkbox" id="play_sheet_visible"><span data-play-i18n="play_character"></span></label>
-      <label><input type="checkbox" id="play_tools_visible"><span data-play-i18n="play_tools"></span></label>
-    </fieldset>
+    <p class="small" data-play-i18n="play_grid_hint"></p>
+    <fieldset><legend data-play-i18n="play_panels"></legend><div id="play_modules" class="play-modules"></div></fieldset>
     <div class="row"><button type="button" id="play_restore" data-play-i18n="play_restore"></button><button type="submit" class="go" data-play-i18n="play_done"></button></div>
   </form>
 </dialog>
@@ -144,17 +140,15 @@
     <div class="stage" id="stage" tabindex="-1" aria-labelledby="play_map_label"><canvas id="cv"></canvas><div id="info"></div></div>
     <h2 id="play_map_label" class="vh" data-play-i18n="play_map"></h2>
   </div>
-    <div id="play_aux" class="play-aux" tabindex="-1" aria-labelledby="play_aux_label">
-      <div class="play-aux-head"><span id="play_aux_label" class="small" data-play-i18n="play_tools"></span></div>
-      <div class="play-aux-tabs" role="tablist" aria-labelledby="play_aux_label"><button type="button" id="play_tab_in" role="tab" data-play-tab="in" aria-controls="play_pane_in" aria-selected="true"></button><button type="button" id="play_tab_tk" role="tab" data-play-tab="tk" aria-controls="play_pane_tk" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_mk" role="tab" data-play-tab="mk" aria-controls="play_pane_mk" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_img" role="tab" data-play-tab="img" aria-controls="play_pane_img" aria-selected="false" tabindex="-1"></button><button type="button" id="play_tab_sn" role="tab" data-play-tab="sn" aria-controls="play_pane_sn" aria-selected="false" tabindex="-1"></button></div>
-      <div class="play-aux-body"><div class="play-aux-pane" id="play_pane_in" data-play-pane="in" role="tabpanel" aria-labelledby="play_tab_in"><section class="card"><h3 data-i18n="in_title"></h3>
+    <div id="play_aux" class="play-aux">
+      <div class="play-aux-body"><div class="play-aux-pane" id="play_pane_in" data-play-pane="in"><section class="card"><h3 data-i18n="in_title"></h3>
     <div class="row"><button type="button" class="go" id="in_roll" data-i18n="in_roll"></button><button type="button" id="in_next" data-i18n="in_next"></button><button type="button" id="in_end" data-i18n="in_end"></button></div>
     <p class="small" id="in_round"></p><div id="in_xp" hidden></div><ol class="ini" id="in_list"></ol></section>
 </div>
-<div class="play-aux-pane" id="play_pane_tk" data-play-pane="tk" role="tabpanel" aria-labelledby="play_tab_tk" hidden><section class="card" id="tk_panel" hidden></section></div>
-<div class="play-aux-pane" id="play_pane_mk" data-play-pane="mk" role="tabpanel" aria-labelledby="play_tab_mk" hidden><section class="card" id="mk_card"><h3 data-i18n="mk_title"></h3><ol class="mks" id="mk_list"></ol><p class="small" data-i18n="mk_hint"></p><h4 class="tplh" data-i18n="tpl_zones"></h4><ul class="tpls" id="tpl_list"></ul></section></div>
-<div class="play-aux-pane" id="play_pane_img" data-play-pane="img" role="tabpanel" aria-labelledby="play_tab_img" hidden><section class="card" id="img_card"><h3 data-i18n="img_title"></h3><div id="img_box"></div></section></div>
-<div class="play-aux-pane" id="play_pane_sn" data-play-pane="sn" role="tabpanel" aria-labelledby="play_tab_sn" hidden><section class="card" id="sn_card"><h3 data-i18n="sn_title"></h3><div id="sn_box"></div></section></div>
+<div class="play-aux-pane" id="play_pane_tk" data-play-pane="tk"><section class="card" id="tk_panel" hidden></section><section class="card play-tk-empty"><h3 data-play-i18n="play_tk_title"></h3><p class="small" data-play-i18n="play_tk_empty"></p></section></div>
+<div class="play-aux-pane" id="play_pane_mk" data-play-pane="mk"><section class="card" id="mk_card"><h3 data-i18n="mk_title"></h3><ol class="mks" id="mk_list"></ol><p class="small" data-i18n="mk_hint"></p><h4 class="tplh" data-i18n="tpl_zones"></h4><ul class="tpls" id="tpl_list"></ul></section></div>
+<div class="play-aux-pane" id="play_pane_img" data-play-pane="img"><section class="card" id="img_card"><h3 data-i18n="img_title"></h3><div id="img_box"></div></section></div>
+<div class="play-aux-pane" id="play_pane_sn" data-play-pane="sn"><section class="card" id="sn_card"><h3 data-i18n="sn_title"></h3><div id="sn_box"></div></section></div>
 </div>
     </div>
   <section class="hand" id="hand" tabindex="-1"></section>
@@ -257,6 +251,6 @@
   </section>
 </section>
 <aside class="rolls" id="rolls" aria-label="Jets"><div class="rlh"><button type="button" class="rlt" id="rl_tog" aria-expanded="false" aria-controls="rl_list"><span id="rl_ttl"></span> <span class="rlc" id="rl_cnt"></span></button><button type="button" id="rl_clr" class="rlx"></button></div><ol id="rl_list" aria-live="polite"></ol></aside>
-<script src="app.js?v=4d49bc613c"></script>
+<script src="app.js?v=d0187d1365"></script>
 </body>
 </html>
