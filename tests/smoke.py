@@ -262,6 +262,11 @@ def run(chrome: str | None) -> None:
             "players lay zones and effects",
             host.evaluate("id => DBG('TPLS.some(T=>T.by===' + JSON.stringify(id) + ') && ENV[\\'4,4\\'] && ENV[\\'4,4\\'].by===' + JSON.stringify(id))", created_id),
         )
+        creator.evaluate("DBG(`pushRoll('<b>12</b>','Moi')`)")
+        host.evaluate("DBG(`pushRoll('<b>3</b>','MJ')`)")
+        creator.wait_for_timeout(700)
+        mine = creator.evaluate("[...document.querySelectorAll('#rl_list li.mine .rlw')].map(l=>l.innerText.toUpperCase()).join('|')")
+        check("your own rolls stand out", "MOI" in mine and "MJ" not in mine, mine)
         spec = ctx.new_page()
         spec.goto(url + "?debug=1&local=1")
         spec.wait_for_timeout(800)

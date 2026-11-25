@@ -6849,7 +6849,7 @@ function rlRender() {
         .reverse()
         .map(
           (r, i, A) =>
-            `<li class="${i === A.length - 1 ? 'new' : ''}"><span class="rlw">${new Date(r.t).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}${r.s ? ' · ' + esc(r.s) : ''}${r.gm ? ' · 🔒' : ''}</span>${r.h}</li>`,
+            `<li class="${i === A.length - 1 ? 'new' : ''}${MP.role && r.by && r.by === MP.uid ? ' mine' : ''}"><span class="rlw">${new Date(r.t).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}${r.s ? ' · ' + esc(r.s) : ''}${r.gm ? ' · 🔒' : ''}</span>${r.h}</li>`,
         )
         .join('')
     : `<li class="small">${t('sk_nolog')}</li>`;
@@ -6883,12 +6883,18 @@ function safeRoll(h) {
   })(t.content, out);
   return out.innerHTML;
 }
-function pushRoll(h, src, remote) {
+function pushRoll(h, src, remote, by) {
   if (remote) h = safeRoll(h);
-  RL.unshift({ h, s: src || '', t: Date.now(), ...(MP.role === 'host' && MP.secret && !remote ? { gm: 1 } : {}) });
+  RL.unshift({
+    h,
+    s: src || '',
+    t: Date.now(),
+    by: remote ? String(by || '').slice(0, 20) : MP.uid,
+    ...(MP.role === 'host' && MP.secret && !remote ? { gm: 1 } : {}),
+  });
   if (RL.length > 40) RL.length = 40;
   if (MP.role === 'player' && MP.prole !== 'spec' && !remote && typeof mpSend === 'function')
-    mpSend({ type: 'roll', h, s: src || '' });
+    mpSend({ type: 'roll', h, s: src || '', by: MP.uid });
   if (MP.role !== 'player') lsSet('luparis-rolls', RL);
   if (MP.role === 'host' && typeof mpPush === 'function') mpPush();
   if (!rlOpen) {
@@ -6898,8 +6904,6 @@ function pushRoll(h, src, remote) {
     } catch (e) {}
   }
   rlRender();
-  const el = document.getElementById('rl_list');
-  if (el) el.scrollTop = 0;
 }
 document.getElementById('rl_tog').addEventListener('click', () => {
   rlOpen = !rlOpen;
@@ -12375,7 +12379,16 @@ snRender();
 
 // ---- multiplayer: host = GM, players and spectators join with a code. PeerJS (WebRTC) or ?local=1 (BroadcastChannel, same browser)
 // The host sends each participant a filtered view: hidden items, monster numbers and secret GM rolls never leave the GM's computer.
-MP.uid = Math.random().toString(36).slice(2, 10);
+// one id per tab, kept across reloads: tells which rolls are yours
+MP.uid = (() => {
+  try {
+    let u = sessionStorage.getItem('luparis-uid');
+    if (!u) sessionStorage.setItem('luparis-uid', (u = Math.random().toString(36).slice(2, 10)));
+    return u;
+  } catch (e) {
+    return Math.random().toString(36).slice(2, 10);
+  }
+})();
 MP.local = /[?&]local=1/.test(location.search);
 MP.prole = 'player';
 MP.secret = false;
@@ -12794,7 +12807,7 @@ function mpHostMsg(m, conn) {
     return;
   }
   if (m.type === 'roll') {
-    pushRoll(String(m.h || ''), String(m.s || ''), true);
+    pushRoll(String(m.h || ''), String(m.s || ''), true, m.by);
     return;
   }
   if (m.type === 'char' && m.c && m.c.id) {
@@ -12901,9 +12914,12 @@ function mpClientMsg(m) {
   CH.folders = Array.isArray(m.folders) ? m.folders.filter(validCampaignName) : camps();
   if (CH.active && !CH.list.some(c => c.id === CH.active)) CH.active = null;
   C = CH.list.find(c => c.id === CH.active) || CH.list[0] || null;
-  RL = (Array.isArray(m.rolls) ? m.rolls : [])
-    .slice(0, 40)
-    .map(r => ({ h: safeRoll((r && r.h) || ''), s: String((r && r.s) || ''), t: +(r && r.t) || Date.now() }));
+  RL = (Array.isArray(m.rolls) ? m.rolls : []).slice(0, 40).map(r => ({
+    h: safeRoll((r && r.h) || ''),
+    s: String((r && r.s) || ''),
+    t: +(r && r.t) || Date.now(),
+    by: String((r && r.by) || '').slice(0, 20),
+  }));
   rlRender();
   if (MP.me && !CH.list.some(c => c.id === MP.me)) MP.me = null;
   if (MP.me) handId = MP.me;
