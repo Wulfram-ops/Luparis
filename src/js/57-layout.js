@@ -8,19 +8,17 @@ const GDEF = {
   pf: [1, 19, 9, 9],
   hhead: [1, 19, 9, 3],
   tk: [10, 1, 3, 7],
-  pl: [10, 8, 3, 7],
-  in: [10, 15, 3, 9],
-  mk: [10, 24, 3, 7],
-  mp: [10, 31, 3, 9],
-  img: [10, 40, 3, 8],
-  sn: [10, 48, 3, 8],
+  in: [10, 8, 3, 9],
+  mk: [10, 17, 3, 7],
+  mp: [10, 24, 3, 9],
+  img: [10, 33, 3, 8],
+  sn: [10, 41, 3, 8],
 };
 const GNAME = {
   map: ['Map', 'Carte'],
   pf: ['Character sheet', 'Fiche'],
   hhead: ['Ability cards', 'Cartes de capacités'],
   tk: ['Selected token', 'Token choisi'],
-  pl: ['Quick place', 'Placement rapide'],
   in: ['Initiative', 'Initiative'],
   mk: ['Landmarks', 'Repères'],
   mp: ['Multiplayer', 'Partie à plusieurs'],
@@ -38,6 +36,7 @@ function gLoad() {
   const v = lsGet('luparis-grid2', null) || {},
     o = {};
   for (const k of new Set([...Object.keys(GDEF), ...Object.keys(v)])) {
+    if (k === 'pl') continue; // quick place now lives in the toolbar, not in saved grids
     const a = Array.isArray(v[k]) && v[k].length === 4 && v[k].every(n => Number.isInteger(n)) ? v[k] : null;
     if (!a && !GDEF[k]) continue;
     const r = a || GDEF[k];
@@ -115,7 +114,6 @@ const GPRE = {
         it: [
           ['in', 3, 10],
           ['tk', 3, 8],
-          ['pl', 3, 7],
           ['mk', 3, 7],
           ['mp', 3, 9],
         ],
@@ -147,7 +145,6 @@ const GPRE = {
           ['mk', 4, 8],
           ['img', 4, 9],
           ['tk', 4, 8],
-          ['pl', 4, 7],
           ['sn', 4, 8],
           ['in', 4, 9],
           ['mp', 4, 9],
@@ -187,7 +184,6 @@ const GPRE = {
           ['map', 4, 10],
           ['tk', 4, 8],
           ['mk', 4, 7],
-          ['pl', 4, 7],
           ['mp', 4, 9],
         ],
       },
@@ -311,7 +307,6 @@ function gHandSync() {
   const cardOf = {
     map: document.getElementById('stage'),
     tk: document.getElementById('tk_panel'),
-    pl: document.getElementById('pl_q') && document.getElementById('pl_q').closest('.card'),
     in: document.getElementById('in_list') && document.getElementById('in_list').closest('.card'),
     mk: document.getElementById('mk_card'),
     mp: document.getElementById('mp_card'),

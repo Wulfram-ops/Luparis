@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Cinzel:wght@600&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%236b7a3a'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' font-weight='700' text-anchor='middle' fill='%23f4efe2'%3EL%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/luparis.css?v=e72805833b">
+<link rel="stylesheet" href="css/luparis.css?v=6833ff38f1">
 </head>
 <body>
 <header><h1 data-i18n="title"></h1>
@@ -68,6 +68,13 @@
     <button id="clear" data-i18n="clear"></button>
     <label class="scn"><span><span data-i18n="perf_q"></span></span> <select id="perfq"></select></label><button id="savemap" class="go" data-i18n="savemap"></button><span class="small" id="save_msg" aria-live="polite"></span>
   </div>
+  <div class="grp" id="pl_bar" role="group" aria-labelledby="pl_title">
+    <span id="pl_title" data-i18n="pl_title"></span>
+    <div class="pl_find"><label class="scn"><span class="vh" data-i18n="pl_search"></span><input id="pl_q" type="search" autocomplete="off" data-i18n-ph="pl_search_ph"></label><div class="pres" id="pl_res"></div></div>
+    <label class="scn"><span data-i18n="pl_ally"></span><select id="pl_ally"></select></label>
+    <label class="scn"><span data-i18n="pl_foe"></span><select id="pl_foe"></select></label>
+    <span class="small pl_hint" data-i18n="pl_hint"></span>
+  </div>
 </div>
 <div class="ctxbar" id="ctxbar" hidden></div>
 <form class="ctxbar" id="savebox" hidden><label class="scn"><span data-i18n="save_name"></span> <input id="save_n" maxlength="80" size="40"></label><button type="submit" class="go" data-i18n="save"></button><button type="button" id="save_cancel" data-i18n="cancel"></button></form>
@@ -75,11 +82,6 @@
 <div class="mapwrap"><div class="stage" id="stage"><canvas id="cv"></canvas><div id="info"></div></div>
 <aside class="side">
   <section class="card" id="tk_panel" hidden></section>
-  <section class="card"><h3 data-i18n="pl_title"></h3>
-    <label><span data-i18n="pl_search"></span><input id="pl_q" type="search" autocomplete="off" data-i18n-ph="pl_search_ph"></label><div class="pres" id="pl_res"></div>
-    <label><span data-i18n="pl_ally"></span><select id="pl_ally"></select></label>
-    <label><span data-i18n="pl_foe"></span><select id="pl_foe"></select></label>
-    <p class="small" data-i18n="pl_hint"></p></section>
   <section class="card" id="mk_card"><h3 data-i18n="mk_title"></h3><ol class="mks" id="mk_list"></ol><p class="small" data-i18n="mk_hint"></p><h4 class="tplh" data-i18n="tpl_zones"></h4><ul class="tpls" id="tpl_list"></ul></section>
   <section class="card" id="mp_card"><h3 data-i18n="mp_title"></h3><div id="mp_box"></div></section>
   <section class="card" id="img_card"><h3 data-i18n="img_title"></h3><div id="img_box"></div></section>
@@ -181,6 +183,6 @@
 </section>
 
 <aside class="rolls" id="rolls" aria-label="Jets"><div class="rlh"><button type="button" class="rlt" id="rl_tog" aria-expanded="true"><span id="rl_ttl"></span> <span class="rlc" id="rl_cnt"></span></button><button type="button" id="rl_clr" class="rlx"></button></div><ol id="rl_list" aria-live="polite"></ol></aside>
-<script src="app.js?v=8e60ad5783"></script>
+<script src="app.js?v=826249be17"></script>
 </body>
 </html>

@@ -125,6 +125,15 @@ def run(chrome: str | None) -> None:
             D("(()=>{const o={type:'state',x:'a'.repeat(200000)},P=mpPieces(o),st={};let r=null;for(const p of P.reverse())r=mpJoinPiece(st,p)||r;return P.length>3&&r&&r.x.length===200000})()"),
         )
 
+        # Quick placement belongs to the map toolbar, not the draggable layout.
+        page.click('.tabs a[data-v="carte"]')
+        check("quick place is in GM toolbar", page.locator("#v-carte > .bar #pl_bar").is_visible() and page.locator('#cgrid [data-mod="pl"]').count() == 0)
+        check("layout presets omit old quick place module", D("!GL.pl && Object.values(GPRE).every(p=>p.reg.every(r=>r.it.every(i=>i[0]!=='pl')))"))
+        page.fill("#pl_q", "dragon")
+        check("toolbar quick place search still works", page.locator("#pl_res button[data-pm]").count() > 0)
+        page.locator("#pl_res button[data-pm]").first.click()
+        check("toolbar quick place selects a monster", D("tool==='place' && !!placing && !placing.ally"))
+        page.keyboard.press("Escape")
         # right-click menus and campaign deletion (characters are kept)
         page.evaluate("DBG(`CH.list.push({...blankC(),id:'z1',name:'Zed',camp:'Temp'});saveC();deleteCampaign('Temp')`)")
         check(
@@ -199,6 +208,8 @@ def run(chrome: str | None) -> None:
         player.evaluate("DBG(`{const c=CH.list.find(c=>c.id==='xp-test');mpSend({type:'char',c:{...c,xp:999999}})}`)")
         host.wait_for_timeout(600)
         check("host ignores forged XP even with valid allocation", host.evaluate("DBG(\"CH.list.find(c=>c.id==='xp-test').xp\")") == 150)
+        player.click('.tabs a[data-v="carte"]')
+        check("quick place toolbar hidden for players", not player.locator("#pl_bar").is_visible())
         # Campaign folders exist even when empty and are shared with players.
         host.click('.tabs a[data-v="fiche"]')
         host.evaluate("DBG('CH.active=null;renderSheet()')")

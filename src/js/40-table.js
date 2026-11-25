@@ -249,6 +249,7 @@ function renderPlace() {
       .join('');
 }
 $('pl_ally').addEventListener('change', e => {
+  if (MP.role === 'player') return;
   const v = e.target.value;
   if (!v) return setTool('move');
   $('pl_foe').value = '';
@@ -257,6 +258,7 @@ $('pl_ally').addEventListener('change', e => {
   setTool('place');
 });
 $('pl_foe').addEventListener('change', e => {
+  if (MP.role === 'player') return;
   const v = e.target.value;
   if (!v) return setTool('move');
   $('pl_ally').value = '';
@@ -1584,7 +1586,7 @@ $('tk_panel').addEventListener('change', e => {
 function renderRes() {
   const q = $('pl_q').value.trim().toLowerCase(),
     R = $('pl_res');
-  if (!q) {
+  if (!q || MP.role === 'player') {
     R.innerHTML = '';
     return;
   }
@@ -1605,7 +1607,15 @@ function renderRes() {
   R.innerHTML = al.concat(mo).join('') || `<p class="small">${t('pl_none')}</p>`;
 }
 $('pl_q').addEventListener('input', renderRes);
+$('pl_q').addEventListener('focus', renderRes);
+document.addEventListener('pointerdown', e => {
+  if (!e.target.closest('#pl_bar')) $('pl_res').innerHTML = '';
+});
 $('pl_q').addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    $('pl_q').value = '';
+    renderRes();
+  }
   if (e.key === 'Enter') {
     e.preventDefault();
     const b = $('pl_res').querySelector('button');
@@ -1613,10 +1623,12 @@ $('pl_q').addEventListener('keydown', e => {
   }
 });
 $('pl_res').addEventListener('click', e => {
+  if (MP.role === 'player') return;
   const b = e.target.closest('button');
   if (!b) return;
   if (b.dataset.pa) {
     const ch = CH.list.find(c => c.id === b.dataset.pa);
+    if (!ch) return;
     placing = { ally: ch.id, n: ch.name || '?' };
   } else {
     placing = MON.find(m => m.id === b.dataset.pm);
