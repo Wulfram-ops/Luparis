@@ -4,7 +4,7 @@ function bkCollect() {
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     // the AI key never leaves this browser, not even in a backup
-    if (k && k.startsWith('luparis-') && k !== 'luparis-ai-key') {
+    if (k && k.startsWith('luparis-') && !k.startsWith('luparis-ai-key')) {
       data[k] = localStorage.getItem(k);
     }
   }

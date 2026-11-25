@@ -10844,7 +10844,7 @@ function bkCollect() {
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     // the AI key never leaves this browser, not even in a backup
-    if (k && k.startsWith('luparis-') && k !== 'luparis-ai-key') {
+    if (k && k.startsWith('luparis-') && !k.startsWith('luparis-ai-key')) {
       data[k] = localStorage.getItem(k);
     }
   }
@@ -12228,14 +12228,38 @@ function mgFree(rect) {
 }
 // ---- places: each one fits in a rectangle and tells where its notable spots are
 const MG_POS = ['center', 'north', 'south', 'east', 'west', 'northwest', 'northeast', 'southwest', 'southeast'];
+// where a place of w×h tiles goes: near the asked position, away from the other places and out of the water
 function mgRect(pos, w, h) {
   w = Math.max(3, Math.min(N - 2, w));
   h = Math.max(3, Math.min(N - 2, h));
   const fx = { west: 0.12, northwest: 0.12, southwest: 0.12, east: 0.88, northeast: 0.88, southeast: 0.88 }[pos] ?? 0.5,
     fy = { north: 0.12, northwest: 0.12, northeast: 0.12, south: 0.88, southwest: 0.88, southeast: 0.88 }[pos] ?? 0.5,
-    x0 = Math.max(1, Math.min(N - w - 1, Math.round(fx * N - w / 2))),
-    y0 = Math.max(1, Math.min(N - h - 1, Math.round(fy * N - h / 2)));
-  return [x0, y0, x0 + w - 1, y0 + h - 1];
+    bx = Math.max(1, Math.min(N - w - 1, Math.round(fx * N - w / 2))),
+    by = Math.max(1, Math.min(N - h - 1, Math.round(fy * N - h / 2))),
+    taken = MG.taken || [];
+  let best = null,
+    bp = 1e12;
+  const span = Math.max(2, Math.round(N / 3));
+  for (let dx = -span; dx <= span; dx++)
+    for (let dy = -span; dy <= span; dy++) {
+      const x0 = bx + dx,
+        y0 = by + dy;
+      if (x0 < 1 || y0 < 1 || x0 + w > N - 1 || y0 + h > N - 1) continue;
+      let p = Math.hypot(dx, dy) * 2;
+      for (const [a0, b0, a1, b1] of taken) {
+        const ox = Math.min(x0 + w - 1, a1 + 1) - Math.max(x0, a0 - 1) + 1,
+          oy = Math.min(y0 + h - 1, b1 + 1) - Math.max(y0, b0 - 1) + 1;
+        if (ox > 0 && oy > 0) p += 1000 * ox * oy;
+      }
+      if (p >= bp) continue;
+      for (let x = x0; x < x0 + w; x++) for (let y = y0; y < y0 + h; y++) if (H[x][y] < 0) p += 6;
+      if (p < bp) ((bp = p), (best = [x0, y0]));
+    }
+  const [x0, y0] = best || [bx, by],
+    R0 = [x0, y0, x0 + w - 1, y0 + h - 1];
+  taken.push(R0);
+  MG.taken = taken;
+  return R0;
 }
 const mgPut = (x, y, k, r = 0, o = false) => {
   if (ok(x, y) && objAt(x, y) < 0 && H[x][y] >= 0) OBJS.push({ x, y, k, o, r });
@@ -12269,7 +12293,7 @@ function mgWalls([x0, y0, x1, y1], side = 'south', door = true) {
 }
 const MG_PLACES = {
   temple(pos) {
-    const w = Math.max(7, Math.min(N - 4, Math.round(N * 0.45))) | 1,
+    const w = Math.max(7, Math.min(N - 4, Math.round(MG.span * 0.45))) | 1,
       h = Math.max(9, Math.min(N - 3, Math.round(w * 1.4))),
       R0 = mgRect(pos, w, h),
       [x0, y0, x1, y1] = R0,
@@ -12292,8 +12316,8 @@ const MG_PLACES = {
     return { rect: R0, spots: { altar: { x: mid, y: y0 + 2 }, entrance: ent, center: { x: mid, y: (y0 + y1) >> 1 } } };
   },
   crypt(pos) {
-    const w = Math.max(9, Math.min(N - 4, Math.round(N * 0.5))) | 1,
-      h = Math.max(9, Math.min(N - 4, Math.round(N * 0.5))),
+    const w = Math.max(9, Math.min(N - 4, Math.round(MG.span * 0.5))) | 1,
+      h = Math.max(9, Math.min(N - 4, Math.round(MG.span * 0.5))),
       R0 = mgRect(pos, w, h),
       [x0, y0, x1, y1] = R0,
       mid = (x0 + x1) >> 1;
@@ -12316,7 +12340,7 @@ const MG_PLACES = {
     return { rect: R0, spots: { altar: { x: mid, y: y0 + 2 }, entrance: ent, center: { x: mid, y: (y0 + y1) >> 1 } } };
   },
   camp(pos) {
-    const r = Math.max(4, Math.min(Math.round(N * 0.3), 10)),
+    const r = Math.max(4, Math.min(Math.round(MG.span * 0.3), 10)),
       R0 = mgRect(pos, 2 * r + 1, 2 * r + 1),
       cx = (R0[0] + R0[2]) >> 1,
       cy = (R0[1] + R0[3]) >> 1;
@@ -12345,7 +12369,7 @@ const MG_PLACES = {
     return { rect: R0, spots: { altar: { x: cx, y: cy }, entrance: { x: cx, y: cy + r }, center: { x: cx, y: cy } } };
   },
   stone_circle(pos) {
-    const r = Math.max(3, Math.min(Math.round(N * 0.22), 7)),
+    const r = Math.max(3, Math.min(Math.round(MG.span * 0.22), 7)),
       R0 = mgRect(pos, 2 * r + 1, 2 * r + 1),
       cx = (R0[0] + R0[2]) >> 1,
       cy = (R0[1] + R0[3]) >> 1;
@@ -12367,7 +12391,7 @@ const MG_PLACES = {
     };
   },
   throne_room(pos) {
-    const w = Math.max(9, Math.min(N - 4, Math.round(N * 0.5))) | 1,
+    const w = Math.max(9, Math.min(N - 4, Math.round(MG.span * 0.5))) | 1,
       h = Math.max(11, Math.min(N - 3, Math.round(w * 1.3))),
       R0 = mgRect(pos, w, h),
       [x0, y0, x1, y1] = R0,
@@ -12388,7 +12412,7 @@ const MG_PLACES = {
     return { rect: R0, spots: { altar: { x: mid, y: y0 + 3 }, entrance: ent, center: { x: mid, y: (y0 + y1) >> 1 } } };
   },
   market(pos) {
-    const w = Math.max(9, Math.min(N - 2, Math.round(N * 0.6))),
+    const w = Math.max(9, Math.min(N - 2, Math.round(MG.span * 0.6))),
       R0 = mgRect(pos, w, w),
       [x0, y0, x1, y1] = R0,
       cx = (x0 + x1) >> 1,
@@ -12458,7 +12482,7 @@ function mgTerrain(t) {
         }
     }
   }
-  if (t.road) {
+  if (t.road && t.road !== 'carve') {
     const vert = RNG() < 0.5,
       w = N >= 32 ? 2 : 1;
     let c = Math.round(N * (0.3 + RNG() * 0.4));
@@ -12478,6 +12502,78 @@ function mgTerrain(t) {
         if (oi >= 0) OBJS.splice(oi, 1);
       }
       if (RNG() < 0.2) c = Math.max(1, Math.min(N - w - 1, c + (RNG() < 0.5 ? -1 : 1)));
+    }
+  }
+}
+// the cheapest way from a cell to the edge of the map: around buildings, over low ground, through water if needed
+function mgPath(sx, sy, avoid) {
+  const INF = 1e9,
+    d = new Float64Array(N * N).fill(INF),
+    prev = new Int32Array(N * N).fill(-1),
+    cost = (x, y) => {
+      if (avoid.some(([a0, b0, a1, b1]) => x >= a0 && x <= a1 && y >= b0 && y <= b1)) return INF;
+      const h = H[x][y];
+      return h >= 2 ? 6 : h === 1 ? 2 : h === -1 ? 4 : h <= -2 ? 8 : 1;
+    },
+    Q = [[0, sx * N + sy]];
+  d[sx * N + sy] = 0;
+  while (Q.length) {
+    let bi = 0;
+    for (let i = 1; i < Q.length; i++) if (Q[i][0] < Q[bi][0]) bi = i;
+    const [dc, id] = Q.splice(bi, 1)[0];
+    if (dc > d[id]) continue;
+    const x = (id / N) | 0,
+      y = id % N;
+    if (x === 0 || y === 0 || x === N - 1 || y === N - 1) {
+      const out = [];
+      for (let k = id; k >= 0; k = prev[k]) out.push([(k / N) | 0, k % N]);
+      return out;
+    }
+    for (const [ax, ay] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]) {
+      const nx = x + ax,
+        ny = y + ay;
+      if (!ok(nx, ny)) continue;
+      const c = cost(nx, ny);
+      if (c >= INF) continue;
+      const nd = dc + c,
+        ni = nx * N + ny;
+      if (nd < d[ni]) {
+        d[ni] = nd;
+        prev[ni] = id;
+        Q.push([nd, ni]);
+      }
+    }
+  }
+  return [];
+}
+// every place can be reached from the edge of the map; with a road, the way is paved and bridged
+function mgAccess(places, road) {
+  const rects = places.map(p => p.rect);
+  for (const p of places) {
+    const e = p.spots && p.spots.entrance;
+    if (!e) continue;
+    const [x0, y0, x1, y1] = p.rect,
+      sx = e.x <= x0 ? e.x - 1 : e.x >= x1 ? e.x + 1 : e.x,
+      sy = e.y >= y1 ? e.y + 1 : e.y <= y0 ? e.y - 1 : e.y;
+    if (!ok(sx, sy)) continue;
+    const path = [[sx, sy], ...mgPath(sx, sy, rects)];
+    for (const [x, y] of path) {
+      if (H[x][y] < 0) {
+        if (!road) continue;
+        H[x][y] = 0;
+        F[x][y] = 3;
+      } else {
+        if (H[x][y] > 0) H[x][y] = 0;
+        if (road) F[x][y] = 1;
+      }
+      const oi = objAt(x, y);
+      if (oi >= 0 && OBJS[oi].k !== 'door') OBJS.splice(oi, 1);
+      delete ENV[x + ',' + y];
     }
   }
 }
@@ -12509,6 +12605,17 @@ function mgDoorway(x, y) {
 }
 function mgFixDoors() {
   OBJS = OBJS.filter(o => o.k !== 'door' || mgDoorway(o.x, o.y) >= 0);
+  for (const o of OBJS.filter(o => o.k === 'door')) {
+    const ax = mgDoorway(o.x, o.y);
+    for (const s of [-1, 1]) {
+      const x = ax === 1 ? o.x + s : o.x,
+        y = ax === 1 ? o.y : o.y + s;
+      if (!ok(x, y)) continue;
+      if (H[x][y] === 1) H[x][y] = 0;
+      const oi = objAt(x, y);
+      if (oi >= 0) OBJS.splice(oi, 1);
+    }
+  }
 }
 // doors asked for in the description: open a doorway in an existing wall (never a door alone in the open)
 function mgAddDoors(n) {
@@ -12596,8 +12703,11 @@ function mgFoe(m, p) {
 }
 function mgBuild(r) {
   snap();
-  const big = r.add.some(a => ['temple', 'crypt', 'throne_room', 'market', 'camp'].includes(a.k)),
-    n = r.size ? MG_SIZE[r.size] : big && N < 24 ? 24 : N;
+  // the map is big enough for its places, and each place shrinks when it has to share the map
+  const nb = r.add.filter(a => MG_PLACES[a.k]).length,
+    need = nb >= 3 ? 64 : nb === 2 ? 32 : nb === 1 ? 24 : 0,
+    n = Math.max(r.size ? MG_SIZE[r.size] : N, need);
+  MG.span = (nb >= 3 ? 0.55 : nb === 2 ? 0.7 : 1) * n;
   if (n !== N) resizeTo(n);
   H = blank(N);
   F = blank(N);
@@ -12608,7 +12718,10 @@ function mgBuild(r) {
   ENV = {};
   NZ = null;
   RNG = Math.random;
+  MG.taken = [];
   if (r.bio) bio = r.bio;
+  // a scene made for another setting (a desert oasis in the snow…) is dropped
+  if (r.bio && r.scene && typeof SCN[r.scene].bio === 'string' && SCN[r.scene].bio !== r.bio) r.scene = null;
   // a crowded scene (camp, village, ruins…) under one of our own places makes a mess: keep only a landscape scene
   const LAND = [
     'forest_road',
@@ -12632,7 +12745,9 @@ function mgBuild(r) {
   else SCN[sc].run();
   if (r.scene && SCN[r.scene].bio && !r.bio)
     bio = typeof SCN[r.scene].bio === 'function' ? SCN[r.scene].bio() : SCN[r.scene].bio;
-  mgTerrain(r.terrain);
+  const T = { ...r.terrain };
+  if (T.road && r.add.some(a => MG_PLACES[a.k])) T.road = 'carve';
+  mgTerrain(T);
   const places = [];
   for (const a of r.add) {
     if (MG_PLACES[a.k]) places.push(MG_PLACES[a.k](a.pos || (places.length ? MG_POS[1 + R(8)] : 'center')));
@@ -12667,6 +12782,7 @@ function mgBuild(r) {
     for (let i = 0; i < Math.min(e.n, near.length); i++) ENV[near[i].x + ',' + near[i].y] = { k: e.k, dc: 12 };
   }
   if (r.ruin > 0) mgRuin(r.ruin);
+  mgAccess(places, T.road === 'carve');
   mgFixDoors();
   const missing = [];
   for (const f of r.foes) {
@@ -12697,52 +12813,102 @@ function mgBuild(r) {
   layout();
   draw();
 }
-// ---- the AI: Gemini, called from this browser with the GM's own key (never stored on the site)
-const MG_KEY = 'luparis-ai-key',
+// ---- the AI, called from this browser with the GM's own keys (never put on the site, sent to players or backed up).
+// Several providers can be filled in: they are tried in order, the free ones first, until one answers.
+const MG_KEYS = 'luparis-ai-keys',
   MG_MODEL = 'luparis-ai-model';
+const MG_AI = [
+  { id: 'gemini', n: 'Gemini', free: 1, url: 'https://aistudio.google.com/apikey' },
+  {
+    id: 'groq',
+    n: 'Groq',
+    free: 1,
+    url: 'https://console.groq.com/keys',
+    base: 'https://api.groq.com/openai/v1',
+    models: ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile', 'openai/gpt-oss-20b'],
+  },
+  {
+    id: 'cerebras',
+    n: 'Cerebras',
+    free: 1,
+    url: 'https://cloud.cerebras.ai',
+    base: 'https://api.cerebras.ai/v1',
+    models: ['gpt-oss-120b', 'llama-3.3-70b', 'qwen-3-32b', 'llama3.1-8b'],
+  },
+  {
+    id: 'openrouter',
+    n: 'OpenRouter',
+    free: 1,
+    url: 'https://openrouter.ai/keys',
+    base: 'https://openrouter.ai/api/v1',
+    models: null,
+  },
+  {
+    id: 'mistral',
+    n: 'Mistral',
+    free: 1,
+    url: 'https://console.mistral.ai/api-keys',
+    base: 'https://api.mistral.ai/v1',
+    models: ['mistral-small-latest', 'open-mistral-nemo'],
+  },
+  { id: 'claude', n: 'Claude', url: 'https://console.anthropic.com' },
+  {
+    id: 'openai',
+    n: 'OpenAI',
+    url: 'https://platform.openai.com/api-keys',
+    base: 'https://api.openai.com/v1',
+    models: ['gpt-4o-mini'],
+  },
+];
 function mgSet(k, v) {
   try {
     if (v) localStorage.setItem(k, v);
     else localStorage.removeItem(k);
   } catch (e) {}
 }
-function mgKey() {
-  try {
-    return localStorage.getItem(MG_KEY) || '';
-  } catch (e) {
-    return '';
-  }
-}
-// the key says which AI it belongs to: Gemini (AIza…), Claude (sk-ant-…), OpenAI (sk-…)
+// which provider a key belongs to, from its shape (Mistral keys have none: they go in their own field)
 function mgProv(key) {
-  return /^sk-ant-/.test(key) ? 'claude' : /^sk-/.test(key) ? 'openai' : 'gemini';
+  return /^sk-ant-/.test(key)
+    ? 'claude'
+    : /^sk-or-/.test(key)
+      ? 'openrouter'
+      : /^gsk_/.test(key)
+        ? 'groq'
+        : /^csk-/.test(key)
+          ? 'cerebras'
+          : /^sk-/.test(key)
+            ? 'openai'
+            : 'gemini';
 }
-async function mgModel(key) {
-  let m = '';
+function mgKeys() {
+  let o = {};
   try {
-    m = localStorage.getItem(MG_MODEL) || '';
+    o = JSON.parse(localStorage.getItem(MG_KEYS) || '{}') || {};
+    // the single key of the earlier version
+    const old = localStorage.getItem('luparis-ai-key');
+    if (old) {
+      o[mgProv(old)] = o[mgProv(old)] || old;
+      localStorage.setItem(MG_KEYS, JSON.stringify(o));
+      localStorage.removeItem('luparis-ai-key');
+    }
   } catch (e) {}
-  if (m) return m;
-  const prov = mgProv(key);
-  if (prov === 'claude') return 'claude-haiku-5-5';
-  if (prov === 'openai') {
-    try {
-      const j = await (
-        await fetch('https://api.openai.com/v1/models', { headers: { Authorization: 'Bearer ' + key } })
-      ).json();
-      const L = (j.data || [])
-        .map(x => x.id)
-        .filter(x => /^gpt-[\d.o]+-mini$/.test(x))
-        .sort()
-        .reverse();
-      if (L[0]) {
-        mgSet(MG_MODEL, L[0]);
-        return L[0];
-      }
-    } catch (e) {}
-    return 'gpt-4o-mini';
+  return o;
+}
+function mgKey() {
+  const K = mgKeys();
+  return MG_AI.some(p => K[p.id]);
+}
+const mgJSON = t => {
+  const a = t.indexOf('{'),
+    b = t.lastIndexOf('}');
+  return JSON.parse(a >= 0 ? t.slice(a, b + 1) : t);
+};
+async function mgFetch(url, opt) {
+  try {
+    return await fetch(url, { ...opt, signal: AbortSignal.timeout(25000) });
+  } catch (e) {
+    return { ok: false, status: 0 };
   }
-  return '';
 }
 // Gemini models get overloaded at times: try several, the last one that answered first
 async function mgGeminiList(key) {
@@ -12750,11 +12916,8 @@ async function mgGeminiList(key) {
   let L = [];
   try {
     const j = await (
-      await fetch(
+      await mgFetch(
         'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=' + encodeURIComponent(key),
-        {
-          signal: AbortSignal.timeout(10000),
-        },
       )
     ).json();
     L = (j.models || [])
@@ -12772,6 +12935,127 @@ async function mgGeminiList(key) {
   ].filter(x => !L.length || L.includes(x));
   return MG.list;
 }
+// OpenRouter: its free models change often, so ask which ones exist now
+async function mgOpenRouterList() {
+  if (MG.orl) return MG.orl;
+  let L = [];
+  try {
+    const j = await (await mgFetch('https://openrouter.ai/api/v1/models')).json();
+    L = (j.data || []).map(x => x.id).filter(id => /:free$/.test(id));
+  } catch (e) {}
+  const pref = ['gpt-oss', 'llama-3.3-70b', 'deepseek', 'qwen', 'gemma', 'mistral'];
+  L.sort((a, b) => ((pref.findIndex(p => a.includes(p)) + 99) % 99) - ((pref.findIndex(p => b.includes(p)) + 99) % 99));
+  MG.orl = L.slice(0, 4);
+  return MG.orl;
+}
+// one provider: returns the recipe, or throws { soft: true } to go on with the next one
+async function mgAsk(p, key, text) {
+  const prompt = mgPrompt(text),
+    forced = (() => {
+      try {
+        return localStorage.getItem(MG_MODEL + '-' + p.id) || '';
+      } catch (e) {
+        return '';
+      }
+    })();
+  const fail = (st, m) => {
+    const e = new Error(m);
+    e.st = st;
+    return e;
+  };
+  if (p.id === 'gemini') {
+    const body = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json', temperature: 0.6 },
+    });
+    let last = 0;
+    for (const m of forced ? [forced] : [...new Set([MG.ok, ...(await mgGeminiList(key))].filter(Boolean))]) {
+      const res = await mgFetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(key)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+        },
+      );
+      if (res.status === 400 || res.status === 401 || res.status === 403) throw fail(res.status, 'key');
+      if (!res.ok) {
+        last = res.status;
+        continue;
+      }
+      const j = await res.json();
+      MG.ok = m;
+      return mgClean(
+        mgJSON(
+          ((j.candidates && j.candidates[0] && j.candidates[0].content.parts) || []).map(x => x.text || '').join(''),
+        ),
+      );
+    }
+    throw fail(last, 'busy');
+  }
+  if (p.id === 'claude') {
+    const res = await mgFetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: forced || 'claude-haiku-5-5',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!res.ok) throw fail(res.status, res.status === 401 || res.status === 403 ? 'key' : 'busy');
+    const j = await res.json();
+    return mgClean(mgJSON((j.content || []).map(c => c.text || '').join('')));
+  }
+  // OpenAI-style providers (Groq, Cerebras, OpenRouter, Mistral, OpenAI)
+  const models = forced ? [forced] : p.id === 'openrouter' ? await mgOpenRouterList() : p.models;
+  let last = 0;
+  for (const m of models) {
+    const res = await mgFetch(p.base + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+      body: JSON.stringify({ model: m, temperature: 0.6, messages: [{ role: 'user', content: prompt }] }),
+    });
+    if (res.status === 401 || res.status === 403) throw fail(res.status, 'key');
+    if (!res.ok) {
+      last = res.status;
+      continue;
+    }
+    const j = await res.json(),
+      t = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+    try {
+      return mgClean(mgJSON(t));
+    } catch (e) {
+      last = 'json';
+    }
+  }
+  throw fail(last, 'busy');
+}
+// every filled key, in order, until one gives a recipe
+async function mgAI(text) {
+  const K = mgKeys(),
+    errs = [];
+  for (const p of MG_AI) {
+    if (!K[p.id]) continue;
+    mgMsg(L2(`${p.n} reads your description…`, `${p.n} lit ta description…`));
+    try {
+      const r = await mgAsk(p, K[p.id], text);
+      r.via = p.n;
+      return r;
+    } catch (e) {
+      errs.push(
+        `${p.n} ${e.message === 'key' ? L2('key refused', 'clé refusée') : e.st === 0 ? L2('unreachable', 'injoignable') : e.st === 429 || e.st === 503 ? L2('busy', 'saturé') : e.st || ''}`,
+      );
+    }
+  }
+  const e = new Error(errs.join(', ') || L2('no key', 'aucune clé'));
+  throw e;
+}
 function mgPrompt(text) {
   const scn = MG_SCENES.map(k => `${k} (${t('scn')[k] || k})`).join(', '),
     obj = MG_OBJ.map(k => `${k} (${OBJT[k].n[0]})`).join(', '),
@@ -12780,6 +13064,7 @@ function mgPrompt(text) {
   return `You are the map designer of a tabletop RPG. Turn the game master's description into a JSON recipe that a map generator will draw on a square grid of tiles (1 tile = 5 ft). Answer with JSON only.
 
 Fields (all optional; leave out what the description does not imply):
+- "plan": write this first: 2 or 3 sentences on the layout (what is where, how one gets in, what the terrain does), so that the rest is coherent.
 - "title": short name of the place, in the language of the description.
 - "bio": setting, one of ${JSON.stringify(ORDER)} (gen = generic stone, foret = forest, prairie = plains, montagne = mountain, volcan = volcano, desert, neige = snow, marais = swamp, donjon = dungeon / underground).
 - "scene": a ready-made whole map, one of: ${scn}. Use a scene ONLY when the description is mainly that kind of place and asks for no building below. Never combine "ruins" with a building: use "ruin" instead.
@@ -12792,76 +13077,9 @@ Fields (all optional; leave out what the description does not imply):
 - "marks": labelled landmarks, list of {"l": short label in the language of the description, "near": as above}.
 - "size": "small" (16×16), "medium" (24×24), "large" (32×32), "huge" (64×64). Pick large or huge for big outdoor scenes or several buildings.
 
+Coherence rules: the setting, the scene, the buildings and the terrain must agree (no oasis in the snow, no river inside a crypt). Underground places (crypt, dungeon, cave) use "donjon" and no water unless asked. Give two buildings different positions. Creatures stand where the story puts them (guards at the entrance, a boss by the altar or the throne). Keep counts plausible for the size of the map.
+
 Description: ${JSON.stringify(String(text).slice(0, 800))}`;
-}
-async function mgAI(text) {
-  const key = mgKey();
-  if (!key) return null;
-  const model = await mgModel(key),
-    prov = mgProv(key),
-    json = t => {
-      const a = t.indexOf('{'),
-        b = t.lastIndexOf('}');
-      return JSON.parse(a >= 0 ? t.slice(a, b + 1) : t);
-    };
-  if (prov === 'claude') {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({ model, max_tokens: 800, messages: [{ role: 'user', content: mgPrompt(text) }] }),
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const j = await res.json();
-    return mgClean(json((j.content || []).map(c => c.text || '').join('')));
-  }
-  if (prov === 'openai') {
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: mgPrompt(text) }],
-        response_format: { type: 'json_object' },
-      }),
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const j = await res.json();
-    return mgClean(json((j.choices && j.choices[0] && j.choices[0].message.content) || ''));
-  }
-  const body = JSON.stringify({
-      contents: [{ parts: [{ text: mgPrompt(text) }] }],
-      generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
-    }),
-    tries = model ? [model] : [...new Set([MG.ok, ...(await mgGeminiList(key))].filter(Boolean))];
-  let last = '';
-  for (const m of tries) {
-    let res;
-    try {
-      res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${encodeURIComponent(key)}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(20000) },
-      );
-    } catch (e) {
-      last = L2('no answer', 'pas de réponse');
-      continue;
-    }
-    if (res.status === 400 || res.status === 401 || res.status === 403)
-      throw new Error(L2('key refused', 'clé refusée') + ' (' + res.status + ')');
-    if (!res.ok) {
-      last = res.status === 503 || res.status === 429 ? L2('AI overloaded', 'IA surchargée') : 'HTTP ' + res.status;
-      continue;
-    }
-    const j = await res.json(),
-      out = j.candidates && j.candidates[0] && j.candidates[0].content.parts.map(p => p.text || '').join('');
-    MG.ok = m;
-    return mgClean(json(out || ''));
-  }
-  throw new Error(last || L2('no model available', 'aucun modèle disponible'));
 }
 // ---- UI: a line in the map toolbar
 function mgMsg(m) {
@@ -12874,12 +13092,14 @@ async function mgGo(again) {
   if (!text && !(again && MG.last)) return;
   let r = again && MG.last ? MG.last : null,
     via = '';
+  MG.aiErr = '';
   if (!r && mgKey()) {
     mgMsg(L2('The AI reads your description…', "L'IA lit ta description…"));
     try {
       r = await mgAI(text);
-      via = { gemini: 'Gemini', claude: 'Claude', openai: 'OpenAI' }[mgProv(mgKey())];
+      via = r.via;
     } catch (e) {
+      MG.aiErr = e.message;
       mgMsg(
         L2('AI unavailable (', 'IA indisponible (') +
           e.message +
@@ -12896,7 +13116,7 @@ async function mgGo(again) {
   const s = mgSummary(r);
   mgMsg(
     s
-      ? `${r.title ? r.title + ' — ' : ''}${L2('Understood', 'Compris')} (${via}) : ${s}${MG.missing && MG.missing.length ? ' · ' + L2('not in the bestiary: ', 'absents du bestiaire : ') + MG.missing.join(', ') : ''}`
+      ? `${r.title ? r.title + ' — ' : ''}${L2('Understood', 'Compris')} (${via}) : ${s}${MG.aiErr && !r.via ? ' · ' + L2('AI unavailable: ', 'IA indisponible : ') + MG.aiErr : ''}${MG.missing && MG.missing.length ? ' · ' + L2('not in the bestiary: ', 'absents du bestiaire : ') + MG.missing.join(', ') : ''}`
       : L2(
           'No known word: a map of the current setting instead.',
           'Aucun mot connu : une carte du décor actuel à la place.',
@@ -12921,29 +13141,24 @@ async function mgGo(again) {
       d.id = 'mgdlg';
       document.body.append(d);
     }
+    const K = mgKeys();
     d.innerHTML = `<form method="dialog" class="mgd"><h3>${L2('AI for map drawing', 'IA pour dessiner les cartes')}</h3>
-<p class="small">${L2('Optional. With an AI key, any sentence is understood; without it, known keywords only. Gemini (free at aistudio.google.com), Claude (console.anthropic.com) or OpenAI (platform.openai.com): the site recognizes the key. It stays in this browser: never put on the site, sent to the players or saved in backups.', "Facultatif. Avec une clé d'IA, n'importe quelle phrase est comprise ; sans clé, seulement les mots-clés connus. Gemini (gratuit sur aistudio.google.com), Claude (console.anthropic.com) ou OpenAI (platform.openai.com) : le site reconnaît la clé. Elle reste dans ce navigateur : jamais mise sur le site, envoyée aux joueurs ni copiée dans les sauvegardes.")}</p>
-<label><span class="small">${L2('API key', "Clé d'API")}</span><input id="mg_key" type="password" autocomplete="off" value="${esc(mgKey())}"></label>
-<label><span class="small">${L2('Model (empty = chosen automatically)', 'Modèle (vide = choisi automatiquement)')}</span><input id="mg_model" value="${esc(
-      (() => {
-        try {
-          return localStorage.getItem(MG_MODEL) || '';
-        } catch (e) {
-          return '';
-        }
-      })(),
-    )}"></label>
-<div class="row"><button value="save" class="go">${L2('Save', 'Enregistrer')}</button><button value="del">${L2('Forget the key', 'Oublier la clé')}</button><button value="cancel">${L2('Cancel', 'Annuler')}</button></div></form>`;
+<p class="small">${L2('Optional. With at least one key, any sentence is understood; without, known keywords only. Keys are tried in this order until one answers, the free ones first. They stay in this browser: never put on the site, sent to the players or copied into backups.', "Facultatif. Avec au moins une clé, n'importe quelle phrase est comprise ; sans clé, seulement les mots-clés connus. Les clés sont essayées dans cet ordre jusqu'à ce qu'une réponde, les gratuites d'abord. Elles restent dans ce navigateur : jamais mises sur le site, envoyées aux joueurs ni copiées dans les sauvegardes.")}</p>
+<div class="mgkeys">${MG_AI.map(p => `<label><span>${p.n} ${p.free ? `<span class="pill">${L2('free', 'gratuit')}</span>` : ''} <a href="${p.url}" target="_blank" rel="noopener" class="small">${L2('get a key', 'obtenir une clé')}</a></span><input type="password" autocomplete="off" data-mgk="${p.id}" value="${esc(K[p.id] || '')}" aria-label="${L2('Key', 'Clé')} ${p.n}"></label>`).join('')}</div>
+<div class="row"><button value="save" class="go">${L2('Save', 'Enregistrer')}</button><button value="del">${L2('Forget all keys', 'Oublier toutes les clés')}</button><button value="cancel">${L2('Cancel', 'Annuler')}</button></div></form>`;
     d.onclose = () => {
       if (d.returnValue === 'save') {
-        mgSet(MG_KEY, document.getElementById('mg_key').value.trim());
-        mgSet(MG_MODEL, document.getElementById('mg_model').value.trim());
-      } else if (d.returnValue === 'del') {
-        mgSet(MG_KEY, '');
-        mgSet(MG_MODEL, '');
-      }
-      const pv = { gemini: 'Gemini', claude: 'Claude', openai: 'OpenAI' }[mgProv(mgKey())];
-      mgMsg(mgKey() ? L2('AI on: ', 'IA activée : ') + pv + '.' : L2('Keywords only.', 'Mots-clés seulement.'));
+        const o = {};
+        for (const inp of d.querySelectorAll('[data-mgk]')) if (inp.value.trim()) o[inp.dataset.mgk] = inp.value.trim();
+        mgSet(MG_KEYS, Object.keys(o).length ? JSON.stringify(o) : '');
+        MG.list = MG.orl = null;
+      } else if (d.returnValue === 'del') mgSet(MG_KEYS, '');
+      const on = MG_AI.filter(p => mgKeys()[p.id]).map(p => p.n);
+      mgMsg(
+        on.length
+          ? L2('AI on: ', 'IA activée : ') + on.join(' → ') + '.'
+          : L2('Keywords only.', 'Mots-clés seulement.'),
+      );
     };
     d.showModal();
   };
