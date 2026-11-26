@@ -120,6 +120,37 @@ def run(chrome: str | None) -> None:
         check("dragons are chaotic neutral", "chaotic neutral" in sheet or "chaotique neutre" in sheet)
         page.evaluate("document.getElementById('sbdlg').close()")
 
+        # monster magic: an innate spell attack (banshee) and a caster's repertoire (lich)
+        page.evaluate("DBG(\"monSheet(MON.find(x=>x.id==='d22'))\")")
+        page.wait_for_timeout(700)
+        banshee = page.locator("#sbdlg .ms").inner_text()
+        check(
+            "banshee innate spell attack follows the rule",
+            ("Spectral touch" in banshee or "Toucher spectral" in banshee)
+            and "2d8+2" in banshee
+            and ("DC 11" in banshee or "DD 11" in banshee),
+            banshee[:140],
+        )
+        page.evaluate("document.getElementById('sbdlg').close()")
+        page.evaluate("DBG(\"monSheet(SRD.find(x=>x.id==='s-lich'))\")")
+        # the sheet repaints when srd-luparis.json (with the magic) has loaded
+        page.wait_for_selector("#sbdlg .msmagic", timeout=5000)
+        page.wait_for_timeout(200)
+        # text_content() also reads inside the closed <details>; inner_text() would not
+        lich = page.locator("#sbdlg .ms").text_content().lower()
+        check(
+            "lich shows a school magic repertoire",
+            ("school magic" in lich or "magie des écoles" in lich) and "mana" in lich,
+            lich[:140],
+        )
+        check("lich basic strike is d20 + Mental Power", "d20 +5" in lich, lich[:140])
+        page.click("#sbdlg .msmagic summary")  # expand a school so its buttons are clickable
+        before = D("RL.length")
+        page.click("#sbdlg .msmagic button[data-mode='atk']")
+        page.wait_for_timeout(300)
+        check("a school strike can be rolled", D("RL.length") > before)
+        page.evaluate("document.getElementById('sbdlg').close()")
+
         # backup round trip
         page.click("#bk_open")
         with page.expect_download() as dl:

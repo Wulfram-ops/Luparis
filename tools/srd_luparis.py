@@ -11,6 +11,7 @@ What changes, following the Luparis rules (chapter 10, "Convertir un monstre de 
 - attack bonuses drop the D&D proficiency (to hit = modifier only, like a character's Matrix cell);
 - save DCs use Tier instead of the D&D proficiency (8 + modifier + Tier);
 - weapon damage is Tier dice of the weapon die + Tier (as srd.py does); other damage keeps its D&D dice;
+- spellcasting becomes a shared Luparis repertoire of schools, Mana and effects (tools/monster_magic.py);
 - every dragon is chaotic neutral in Luparis.
 
 Every ability text is cut into a template (numbers and game terms replaced by numbered slots)
@@ -26,6 +27,8 @@ import json
 import re
 import sys
 from pathlib import Path
+
+from monster_magic import repertoire
 
 ROOT = Path(__file__).resolve().parent.parent
 FR_FILE = Path(__file__).resolve().parent / "srd_fr.json"
@@ -492,6 +495,25 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
 
     def entry(n: str, t: str) -> list:
         np_ = name_pair(n)
+        if n.startswith("Cast a Spell"):
+            return np_ + ["Cast one repertoire spell and pay its Mana cost.", "Lancer un sort du répertoire et payer son coût en Mana."]
+        if n == "Limited Magic Immunity":
+            return np_ + [
+                "Unless willing, the creature ignores spells cast at school Tiers 1-4. It has advantage on saves against other magic.",
+                "Sauf si elle y consent, la créature ignore les sorts des écoles de Tier 1 à 4. Elle a l'avantage aux sauvegardes contre les autres effets magiques.",
+            ]
+        if n == "Cantrip":
+            return np_ + ["Cast a free repertoire spell.", "Lancer un sort gratuit du répertoire."]
+        if n == "Divine Eminence":
+            return np_ + [
+                "Infuse one weapon strike with Surge before rolling. Each Mana adds 1d8 radiant, up to the school Tier.",
+                "Infuser un coup avec Afflux avant le jet. Chaque Mana ajoute 1d8 radiant, dans la limite du Tier de l'école.",
+            ]
+        if n == "Spell Storing":
+            return np_ + [
+                "The amulet wearer can pay for and store one school spell of value 4 or less. The guardian releases it once on command or on the chosen trigger, using the caster's statistics.",
+                "Le porteur de l'amulette peut payer et stocker un sort d'école de valeur 4 ou moins. Le gardien le libère une fois sur ordre ou au déclencheur choisi, avec les statistiques du lanceur.",
+            ]
         rc = recharge_of(n, t)
         e = np_ + tidy(np_, both(t, n, bool(rc)))
         if rc:
@@ -542,7 +564,19 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
         "atk": [], "tr": [], "act": [], "leg": [], "rea": [],
     }
     for n, t in d.get("tr", []):
-        out["tr"].append(entry(n, t))
+        if "Spellcasting" in n:
+            spells = repertoire(t)
+            tiers = {}
+            for spell in spells:
+                school = spell["school"]
+                tiers[school] = max(1, tiers.get(school, 0), spell["cost"])
+            primary = max(tiers, key=lambda school: sum(s["school"] == school for s in spells))
+            tiers[primary] = max(tiers[primary], cx.t)
+            res_men = out["mx"][7] if out.get("mx") else 0
+            mana = sum([0, 2, 6, 14, 24, 36][v] for v in tiers.values()) + res_men * (max(tiers.values()) // 2)
+            out["magic"] = {"tiers": tiers, "mana": mana, "spells": spells}
+        else:
+            out["tr"].append(entry(n, t))
     for n, t in d.get("act", []):
         a = attack(n, t, cx)
         if a:
@@ -574,6 +608,8 @@ def main() -> int:
     fr = json.loads(FR_FILE.read_text(encoding="utf-8")) if FR_FILE.exists() else {}
     missing: dict = {}
     out = {k: convert(mons[k], d, fr, missing) for k, d in det.items() if k in mons}
+    # The starter bestiary also has a banshee, absent from the SRD.
+    out["d22"] = json.loads((ROOT / "tools/banshee.json").read_text(encoding="utf-8"))
     if args.templates:
         items = sorted(missing.values(), key=lambda e: (-e["n"], e["id"]))
         args.templates.write_text(json.dumps(items, ensure_ascii=False, indent=1), encoding="utf-8")

@@ -10392,6 +10392,7 @@ function applyLang() {
     playFit();
     mpRender();
   }
+  if (document.getElementById('sbdlg')?.open) SBRP?.();
   if (WS) wRender();
   draw();
 }
@@ -10724,6 +10725,7 @@ function srdLuparis() {
   return SRDLP;
 }
 function srdKey(m) {
+  if (m.id === 'd22') return 'd22'; // the starter bestiary's banshee, absent from the SRD
   const en = Array.isArray(m.n) ? m.n[0] : String(m.n);
   return String(m.id).startsWith('s-')
     ? m.id
@@ -10834,6 +10836,19 @@ function monBlockHTML(m, D, tk, LU) {
           `<div class="msai"><div class="msah"><b>${esc(a.n)}</b><button type="button" class="go" data-sbr="atk" data-i="${i}" title="${L2('Attack roll', "Jet d'attaque")}">${sgn(a.ab)}</button>${a.nd ? `<button type="button" data-sbr="dmg" data-i="${i}" title="${L2('Damage', 'Dégâts')}">${a.nd}d${a.dd}${a.mod ? sgn(a.mod) : ''}${a.plus ? ' ' + esc(a.plus.replace(/^\+ /, '+')).replace(/ .*/, '') : ''}</button>` : ''}<span class="msty">${esc([a.ty, a.plus && a.plus.replace(/^\+ \S+ /, '+ ')].filter(Boolean).join(' '))}</span></div>${a.how ? `<p class="msh">${esc(a.how)}</p>` : ''}${a.rest ? `<p>${esc(a.rest)}</p>` : ''}</div>`,
       ).join('') +
       `</div>`;
+  if (LU?.magic) {
+    const { tiers, mana, spells } = LU.magic;
+    h += `<h4>${L2('School magic', 'Magie des écoles')} · ${mana} ${L2('Mana', 'Mana')}</h4>`;
+    for (const [school, tier] of Object.entries(tiers)) {
+      const ab = LU.mx[1];
+      h +=
+        `<details class="msmagic"><summary><b>${tr(SCH[school])}</b> · ${L2('Tier', 'Tier')} ${tier}</summary><p>${L2('Basic strike', 'Frappe de base')} · <button type="button" data-school="${school}" data-mode="atk">d20 ${sgn(ab)}</button> <button type="button" data-school="${school}" data-mode="dmg">${tier}d8${sgn(tier)}</button> · ${L2('DC', 'DD')} ${8 + ab + tier}${school === 'afflux' ? L2(' · ignores 2 armour', ' · ignore 2 points d’armure') : ''}</p>`;
+      for (const spell of spells.filter(x => x.school === school)) {
+        h += `<p><b>${esc(P(spell.n))}</b> · ${spell.cost} ${L2('Mana', 'Mana')} · ${esc(P(spell.effect))}${spell.limit ? ' (' + esc(P(spell.limit)) + ')' : ''}</p>`;
+      }
+      h += '</details>';
+    }
+  }
   if (LU) {
     h +=
       list(L2('Traits', 'Capacités'), LU.tr, 'tr') +
@@ -10877,6 +10892,30 @@ function monSheet(m, tk) {
       if (!b) return;
       if (b.id === 'sb_close') {
         dl.close();
+        return;
+      }
+      if (b.dataset.school) {
+        const school = b.dataset.school,
+          block = SRDL && SRDL[srdKey(SBM)],
+          tier = block && block.magic ? block.magic.tiers[school] : null;
+        if (tier) {
+          const ab = block.mx[1],
+            nm = tr(SBM.n) + (SBT && SBT.num ? ' ' + SBT.num : '') + ' · ' + tr(SCH[school]),
+            key = (SBT ? SBT.id : SBM.id) + '_' + school;
+          if (b.dataset.mode === 'atk') {
+            const r = dRoll(20);
+            TKCRIT[key] = r === 20;
+            pushRoll(
+              `${esc(nm)} · d20 (${r}) ${sgn(ab)} = <b>${r + ab}</b>${r === 20 ? ` <span class="cr">${t('sk_crit')}</span>` : r === 1 ? ` <span class="ko">${t('sk_miss')}</span>` : ''}`,
+            );
+          } else {
+            const n = TKCRIT[key] ? tier * 2 : tier,
+              rs = Array.from({ length: n }, () => dRoll(8)),
+              tot = rs.reduce((x, y) => x + y, 0) + tier;
+            TKCRIT[key] = false;
+            pushRoll(`${esc(nm)} · ${n}d8${sgn(tier)} [${rs.join(', ')}] = <b>${tot}</b>`);
+          }
+        }
         return;
       }
       if (b.dataset.sbrc) {

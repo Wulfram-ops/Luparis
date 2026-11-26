@@ -83,6 +83,68 @@ def check_details(ids: set[str]) -> None:
                 err(f"srd-details.json[{k}]: {sec} must be a list of [name, text]")
 
 
+SCHOOLS = {"afflux", "creuset", "mirage", "horizon", "eidolon", "egide", "harmonie"}
+MANA_BY_TIER = [0, 2, 6, 14, 24, 36]
+
+
+def check_magic(k: str, v: dict) -> None:
+    magic = v.get("magic")
+    if magic is None:
+        return
+    mx = v.get("mx")
+    if not (isinstance(mx, list) and len(mx) == 9):
+        err(f"srd-luparis.json[{k}]: magic needs the nine Matrix cells")
+    tiers = magic.get("tiers")
+    if not isinstance(tiers, dict) or not tiers:
+        err(f"srd-luparis.json[{k}]: magic.tiers must be a non-empty object")
+        return
+    for school, tier in tiers.items():
+        if school not in SCHOOLS:
+            err(f"srd-luparis.json[{k}]: magic school {school!r} is unknown")
+        if not (isinstance(tier, int) and 1 <= tier <= 5):
+            err(f"srd-luparis.json[{k}]: magic Tier {school} = {tier!r} is out of range")
+    mana = magic.get("mana")
+    if not isinstance(mana, int) or mana < 0:
+        err(f"srd-luparis.json[{k}]: magic.mana must be a non-negative integer")
+    elif isinstance(mx, list):
+        want = sum(MANA_BY_TIER[t] for t in tiers.values()) + mx[7] * (max(tiers.values()) // 2)
+        if mana != want:
+            err(f"srd-luparis.json[{k}]: magic.mana is {mana}, expected {want}")
+    spells = magic.get("spells")
+    if not isinstance(spells, list) or not spells:
+        err(f"srd-luparis.json[{k}]: magic.spells must be a non-empty list")
+        return
+    for s in spells:
+        label = s.get("n") if isinstance(s, dict) else s
+        if not all(isinstance(s.get(f), list) for f in ("n", "effect")):
+            err(f"srd-luparis.json[{k}]: spell {label!r} needs [en, fr] name and effect")
+            continue
+        if not isinstance(s.get("cost"), int) or not (0 <= s["cost"] <= 5):
+            err(f"srd-luparis.json[{k}]: spell {label!r} has a bad Mana cost {s.get('cost')!r}")
+        if s.get("school") not in tiers:
+            err(f"srd-luparis.json[{k}]: spell {label!r} uses school {s.get('school')!r} not in tiers")
+
+
+def check_spell_attacks(k: str, v: dict) -> None:
+    """Innate spell attacks follow the player rule: to-hit = Mental Power, damage = Tier d8 + Tier."""
+    mx = v.get("mx")
+    mast = v.get("mast")
+    if not (isinstance(mx, list) and len(mx) == 9) or not isinstance(mast, int):
+        return
+    for a in v.get("atk", []):
+        if not (a.get("category") == "Spell" or a.get("school")):
+            continue
+        label = a.get("n")
+        if a.get("ab") != mx[1]:
+            err(f"srd-luparis.json[{k}]: spell attack {label!r} to-hit {a.get('ab')} should be Mental Power {mx[1]}")
+        if a.get("nd") != mast:
+            err(f"srd-luparis.json[{k}]: spell attack {label!r} should roll {mast} dice")
+        if a.get("dd") != 8:
+            err(f"srd-luparis.json[{k}]: spell attack {label!r} should use d8")
+        if a.get("mod") != mast:
+            err(f"srd-luparis.json[{k}]: spell attack {label!r} modifier should be the Tier ({mast})")
+
+
 def check_luparis(ids: set[str]) -> None:
     data = load("srd-luparis.json")
     if not isinstance(data, dict):
@@ -104,6 +166,8 @@ def check_luparis(ids: set[str]) -> None:
         for a in v.get("atk", []):
             if not all(isinstance(a.get(f), int) for f in ("ab", "nd", "dd", "mod")):
                 err(f"srd-luparis.json[{k}]: attack {a.get('n')} has non-integer fields")
+        check_magic(k, v)
+        check_spell_attacks(k, v)
 
 
 def check_world() -> None:

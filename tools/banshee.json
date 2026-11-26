@@ -1,0 +1,55 @@
+{
+  "al": ["chaotic evil", "chaotique mauvais"],
+  "spd": ["fly 8 tiles (hover)", "vol 8 cases (stationnaire)"],
+  "sen": ["darkvision 12 tiles, passive Perception 10", "vision dans le noir 12 cases, Perception passive 10"],
+  "lng": ["Common, Elvish", "commun, elfique"],
+  "mx": [-5, 1, 3, 2, 0, 3, 0, 0, 1],
+  "sv": ["men", "soc"],
+  "sk": [],
+  "mast": 2,
+  "res": [
+    "acid, fire, lightning, thunder and nonmagical weapon damage",
+    "acide, feu, foudre, tonnerre et armes non magiques"
+  ],
+  "imm": ["cold, necrotic, poison", "froid, nécrotique, poison"],
+  "cimm": [
+    "charmed, frightened, grappled, paralysed, petrified, poisoned, prone, restrained, exhaustion",
+    "charmé, effrayé, agrippé, paralysé, pétrifié, empoisonné, à terre, entravé, épuisement"
+  ],
+  "atk": [
+    {
+      "n": ["Spectral touch", "Toucher spectral"],
+      "category": "Spell",
+      "school": "eidolon",
+      "ab": 1,
+      "nd": 2,
+      "dd": 8,
+      "mod": 2,
+      "ty": ["necrotic", "nécrotiques"],
+      "how": ["Melee, reach 1 tile", "Corps à corps, allonge 1 case"],
+      "rest": ["", ""]
+    }
+  ],
+  "tr": [
+    [
+      "Incorporeal",
+      "Immatérielle",
+      "Can move through creatures and solid objects as difficult terrain.",
+      "Peut traverser créatures et objets solides comme un terrain difficile."
+    ]
+  ],
+  "act": [
+    [
+      "Mourning cry",
+      "Lamentation",
+      "Once per long rest, outside direct sunlight, living creatures within 6 tiles that hear the cry make a DC 11 Physical save. On a failure, lose 3 boxes. On a success, lose 1 box.",
+      "Une fois par repos long, hors du soleil direct, les créatures vivantes à 6 cases qui entendent la plainte font une sauvegarde physique DD 11. Sur un échec, perdre 3 cases. Sur une réussite, perdre 1 case."
+    ],
+    [
+      "Terrifying visage",
+      "Visage terrifiant",
+      "One creature that sees the banshee makes a DC 11 Mental save or becomes frightened (persistent, save again at the end of each turn).",
+      "Une créature qui voit la banshee fait une sauvegarde mentale DD 11. Sur un échec, elle est effrayée (persistant, nouvelle sauvegarde à la fin de chaque tour)."
+    ]
+  ]
+}
