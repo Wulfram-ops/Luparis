@@ -30,6 +30,7 @@ node --check app.js
 python3 -m http.server 8765 &      # the smoke test expects this server
 python3 tests/smoke.py             # must end with "All checks passed."
 python3 tools/validate_data.py
+ruff check tools tests --select F,E9   # same lint as the CI
 ```
 
 The same checks run on GitHub (`.github/workflows/checks.yml`). Look at the screen too: take Playwright screenshots of what you changed, at desktop (1440×900) and phone (390×844) sizes, in French.
