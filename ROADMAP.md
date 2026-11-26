@@ -60,6 +60,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 ### 1.3 Onglet Campagne
 - Préparation de séance (fil, scènes prévues, PNJ, rencontres prêtes à poser sur la carte).
 - Journal des séances : retour de séance, import de la transcription de la séance 10.
+  - **Fait (26 novembre) :** le fil du chat de partie est désormais inclus automatiquement dans le compte rendu de séance (messages publics et chuchotements, horodatés).
 - Brainstorm assisté par IA (accroches, PNJ, conséquences des choix des joueurs).
 - Regroupe l'XP de campagne et l'historique des notes de séance déjà existants.
 
@@ -127,6 +128,7 @@ Points des avis externes écartés : framework (React/Vue) inutile pour l'instan
 - **Règle d'attaque (26 novembre)** : jet d'attaque = d20 + case de la Matrice, sans le Tier ; dégâts = Tier dés de l'arme ou de l'école + Tier (les sorts gagnent le + Tier) ; DD inchangé (8 + case + Tier). Les monstres suivent la même logique : toucher = modificateur seul, dégâts = Tier dés + Tier, DD = 8 + modificateur + Tier (bestiaire SRD reconverti).
 - **Interface (26 novembre)** : bandeau latéral gauche (navigation, recherche, langue, unités, sauvegarde), repliable en icônes, barre compacte sur téléphone ; barre de la carte sur une ligne avec les presets ; placement rapide et aide repliés ; bestiaire compact (actions sur une ligne).
 - **Onglet Jeu modulaire (26 novembre)** : grille de 12 colonnes, chaque carte du personnage est un module ; déplacement par le titre avec aperçu des autres modules, redimensionnement par le coin ; aucun module ne défile ; presets Table, Combat, Exploration, Préparation (le preset Fiche est retiré) ; « Personnaliser » montre ou masque les modules.
+- **Chat (26 novembre)** : panneau de discussion flottant (à côté des jets), messages publics et chuchotements (les joueurs chuchotent au MJ, le MJ chuchote à un joueur) ; le fil alimente le compte rendu de séance ; miroir optionnel du chat public (et des jets publics) vers un salon Discord par webhook — réglage MJ, URL du webhook exclue des sauvegardes, chuchotements jamais envoyés.
 - **Cartes unifiées (26 novembre)** : une structure et une couleur par famille, doublons retirés, options hors tier repliées, libellés traduits au changement de langue.
 - **Vue isométrique 2:1 façon Dofus (26 novembre)** : vue par défaut, vue de dessus en option personnelle ; murs et objets devant un pion deviennent transparents.
 - **Génération de cartes (26 novembre)** : souterrains creusés dans la roche, arbres en bosquets, plus d'éléments isolés, couvert et point haut garantis, étals décalés ; la nuit n'est plus une zone de ténèbres.

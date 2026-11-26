@@ -276,7 +276,10 @@ def run(chrome: str | None) -> None:
             check(f"character module {target} shown", page.locator(f'#play_workspace {target}').first.is_visible())
         page.locator('[data-ha="atk"]').first.click()
         check("weapon attack reaches the roll log from the play sheet", D("RL.at(-1).h.includes('d20')"))
-        check("roll log floats outside the play workspace", D("$('rolls').parentNode === document.body && getComputedStyle($('rolls')).position === 'fixed'"))
+        check(
+            "roll log floats outside the play workspace",
+            D("$('rolls').parentElement.className === 'floats' && $('rolls').parentElement.parentNode === document.body && getComputedStyle($('rolls').parentElement).position === 'fixed'"),
+        )
         if page.locator("#rl_tog").get_attribute("aria-expanded") == "true":
             page.locator("#rl_tog").click()
         page.locator('[data-ht="hp"][data-d="1"]').click()
@@ -515,6 +518,86 @@ def run(chrome: str | None) -> None:
         host.wait_for_timeout(500)
         got = host.evaluate("DBG('RL[0].h')")
         check("remote roll is sanitized", got == "<b>18</b>" and not host.evaluate("window.PWN||0"), got)
+
+        # chat: public messages, whispers, and the Discord webhook mirror (offline, fetch stubbed)
+        player.evaluate("DBG('const d=document.getElementById(\\'imgdlg\\');d&&d.close();1')")
+        check("the chat starts folded", player.evaluate("document.getElementById('chat').classList.contains('min')"))
+        player.click("#ch_tog")
+        player.fill("#ch_x", "hello from the player")
+        player.click("#ch_go")
+        host.wait_for_timeout(400)
+        check(
+            "player chat reaches the GM and the spectator",
+            host.evaluate("DBG('CHT.some(m=>m.x===\\'hello from the player\\'&&!m.w)')")
+            and spec.evaluate("DBG('CHT.some(m=>m.x===\\'hello from the player\\')')"),
+        )
+        player.select_option("#ch_to", "gm")
+        player.fill("#ch_x", "whisper to the GM")
+        player.click("#ch_go")
+        host.wait_for_timeout(400)
+        check(
+            "a whisper to the GM stays private",
+            host.evaluate("DBG('CHT.some(m=>m.x===\\'whisper to the GM\\'&&m.w&&m.to===\\'gm\\')')")
+            and not spec.evaluate("DBG('CHT.some(m=>m.x===\\'whisper to the GM\\')')"),
+        )
+        host.evaluate(f"DBG('chPost(\\'a secret word for you\\', \\'{created_id}\\')')")
+        host.wait_for_timeout(400)
+        check(
+            "the GM whispers a player, not the spectator",
+            creator.evaluate("DBG('CHT.some(m=>m.x===\\'a secret word for you\\'&&m.to===MP.me)')")
+            and not spec.evaluate("DBG('CHT.some(m=>m.x===\\'a secret word for you\\')')"),
+        )
+        dc_seen = host.evaluate(
+            """async () => {
+                const orig = window.fetch;
+                let seen = null;
+                window.fetch = (u, o) => {
+                    seen = { u: String(u), b: o && o.body && o.body.get ? o.body.get('payload_json') : o && o.body };
+                    return Promise.resolve(new Response('{}', { status: 204 }));
+                };
+                try {
+                    localStorage.setItem('luparis-discord', JSON.stringify({ u: 'https://discord.com/api/webhooks/123456789012345678/AbCdEfGhIjKlMnOpQrStUvWx', ch: true, r: true }));
+                    chPost('discord mirror test', '');
+                    await new Promise(r => setTimeout(r, 200));
+                } finally {
+                    window.fetch = orig;
+                }
+                return seen && seen.b ? seen.b : null;
+            }"""
+        )
+        check(
+            "the GM chat is mirrored to the Discord webhook",
+            bool(dc_seen) and "discord mirror test" in dc_seen and '"author":{"name"' in dc_seen and max(__import__("json").loads(dc_seen)["embeds"][0]["color"], 0) <= 0xFFFFFF,
+            dc_seen,
+        )
+        dc_whisper = host.evaluate(
+            """async () => {
+                const orig = window.fetch;
+                let n = 0;
+                window.fetch = () => {
+                    n++;
+                    return Promise.resolve(new Response('{}', { status: 204 }));
+                };
+                try {
+                    chPost('secret whisper', 'gm');
+                    await new Promise(r => setTimeout(r, 200));
+                } finally {
+                    window.fetch = orig;
+                }
+                return n;
+            }"""
+        )
+        check("whispers never reach Discord", dc_whisper == 0, dc_whisper)
+        check(
+            "the webhook URL validator is strict",
+            host.evaluate(
+                "DBG('dcUrlOk(\\'https://discord.com/api/webhooks/123456789012345678/AbCdEfGhIjKlMnOpQrStUvWx\\') && !dcUrlOk(\\'https://evil.example.com/hook\\')')"
+            ),
+        )
+        check(
+            "the Discord URL never enters a backup",
+            host.evaluate("DBG('!!JSON.parse(localStorage.getItem(\\'luparis-discord\\')) && !bkCollect().data[\\'luparis-discord\\']')"),
+        )
 
         check("no script error during the run", not errors, "; ".join(errors[:3]))
         browser.close()

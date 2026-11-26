@@ -12,6 +12,7 @@ Read this whole file before changing anything. It lists what the site must keep 
 ## Secrets
 
 - AI keys (Gemini, Groq, Cerebras, OpenRouter, Mistral, Claude, OpenAI) live **only in the GM's browser** (`localStorage` keys `luparis-ai-keys` and the legacy `luparis-ai-key`). Never put a key in the code, the repository, a test, the multiplayer messages or the backup file (`bkCollect` excludes `luparis-ai-key*`; keep it that way).
+- The Discord webhook URL of the chat mirror (GM only) lives **only in the GM's browser** (`luparis-discord`). Same hygiene as the AI keys: never in the code, the repository, a test or a backup (`bkCollect` excludes `luparis-discord`; keep it that way). Whispers are never mirrored.
 
 ## How the site is built
 
@@ -44,7 +45,7 @@ Each point below was asked for by Fred. Most are covered by `tests/smoke.py`; ke
 ### Navigation and interface
 - Left rail (`header.rail`): the six tabs (World, Play, Character, Bestiary, Rules, Multiplayer) with number-key shortcuts, universal search (Ctrl+K), language EN/FR, units ft/m, backup 💾. It folds to icons (remembered) and becomes a compact top bar on phones.
 - Sober, minimal interface; useful information reachable without scrolling. Help text is folded (`details.help`), quick placement opens from its button.
-- The floating **Rolls** panel at the bottom right, available from every tab; the newest roll at the bottom; your own rolls highlighted.
+- The floating **Chat** and **Rolls** panels at the bottom right, available from every tab; the newest roll at the bottom; your own rolls highlighted.
 
 ### Play tab (`#carte`, file `57-layout.js`)
 - A **12-column modular grid** (rows of 8 px). Every panel is a module: the map, the character header (`hero`), the check matrix (`pf`), **each character card** (`c:k-…`), initiative, token, markers/zones, illustrations, GM notes.
@@ -71,6 +72,7 @@ Each point below was asked for by Fred. Most are covered by `tests/smoke.py`; ke
 - PeerJS; the host filters what it sends (`mpView`): no hidden element, no monster numbers, no secret GM roll; players only act for their own character.
 - Players place their own token, open doors and levers, lay zones and effects, keep their own view angle, and pick a character no one else has claimed. Spectators are read-only.
 - The players' bestiary shows only the creatures the GM reveals.
+- In-game chat (`62-chat.js`): public messages and whispers. A player or spectator may whisper **only the GM**; the GM may whisper one player. The host is authoritative (author name, order, caps: 1000 chars, 200 messages, 8 messages per 10 seconds per connection); players see the public history synced in the state, their own whispers locally. The chat log feeds the session journal (`snMd`); the GM can mirror the **public** chat (and optionally public rolls) to a Discord webhook.
 
 ### Characters and rules (`35-character.js`, `40-table.js`, `rules/`)
 - No classes: one shared menu of effects, each school only has a small extra. All schools roll d8; Surge ignores 2 armour.

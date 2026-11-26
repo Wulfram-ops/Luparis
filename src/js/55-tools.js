@@ -4,7 +4,7 @@ function bkCollect() {
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     // the AI key never leaves this browser, not even in a backup
-    if (k && k.startsWith('luparis-') && !k.startsWith('luparis-ai-key')) {
+    if (k && k.startsWith('luparis-') && !k.startsWith('luparis-ai-key') && !k.startsWith('luparis-discord')) {
       data[k] = localStorage.getItem(k);
     }
   }
@@ -425,10 +425,7 @@ function toolHint() {
   const el = document.getElementById('thint');
   if (!el) return;
   const H = {
-    shift: [
-      'Drag an object or a marker to another square.',
-      'Glisse un objet ou un repère vers une autre case.',
-    ],
+    shift: ['Drag an object or a marker to another square.', 'Glisse un objet ou un repère vers une autre case.'],
     move: [
       'Drag a token; double-click a monster for its sheet.',
       'Glisse un token ; double-clic sur un monstre pour sa fiche.',
