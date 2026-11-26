@@ -74,7 +74,16 @@ def run(chrome: str | None) -> None:
         page.wait_for_timeout(300)
 
         # map: generate, paint, and compare the cached scene with a full redraw
-        D("document.getElementById('gen').click()")
+        # This scene exposes rasterisation differences when paths are clipped during painting.
+        D("""(() => {
+            const random = Math.random;
+            try {
+                Math.random = mulberry(3);
+                document.getElementById('gen').click();
+            } finally {
+                Math.random = RNG = random;
+            }
+        })()""")
         page.wait_for_timeout(500)
         D("CAM.z=2;camSet();drawNow();hover=null")
         D("""(()=>{for(const[x,y,v]of[[5,5,3],[6,5,-2],[7,7,2]]){H[x][y]=v;if(v<0)F[x][y]=0;drawDirty({x,y})}})()""")

@@ -1337,7 +1337,9 @@ function drawDirty(c) {
 }
 // ---- render cache: the scene is drawn once, hover/preview overlays are drawn on a copy
 const BC = document.createElement('canvas'),
-  BX = BC.getContext('2d');
+  BX = BC.getContext('2d'),
+  patchCanvas = document.createElement('canvas'),
+  patchCtx = patchCanvas.getContext('2d');
 let BOK = false,
   liteQ = false,
   BCAM = null,
@@ -1350,21 +1352,17 @@ function ovs() {
 function baseBegin(part) {
   const dpr = W ? cv.width / W : 1;
   if (part) {
-    const M = BCAM.M,
-      q = v => v * dpr;
-    part = [
-      Math.floor(q(part[0] + M)) / dpr - M,
-      Math.floor(q(part[1] + M)) / dpr - M,
-      Math.ceil(q(part[2] + M)) / dpr - M,
-      Math.ceil(q(part[3] + M)) / dpr - M,
-    ];
-    BX.setTransform(dpr, 0, 0, dpr, M * dpr, M * dpr);
-    ctx = BX;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(part[0], part[1], part[2] - part[0], part[3] - part[1]);
-    ctx.clip();
-    ctx.clearRect(part[0], part[1], part[2] - part[0], part[3] - part[1]);
+    const M = BCAM.M;
+    // Rasterise without a clip: cutting paths can change their antialiasing even
+    // inside the dirty rectangle. Copy only the finished pixels to the cache.
+    if (patchCanvas.width !== BC.width || patchCanvas.height !== BC.height) {
+      patchCanvas.width = BC.width;
+      patchCanvas.height = BC.height;
+    }
+    ctx = patchCtx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, patchCanvas.width, patchCanvas.height);
+    ctx.setTransform(dpr, 0, 0, dpr, M * dpr, M * dpr);
     return M;
   }
   const M = ovs(),
@@ -2419,7 +2417,20 @@ function drawNow(partOk) {
   drawFloat();
   if (typeof drawTpls === 'function') drawTpls();
   drawMarks();
-  if (part) ctx.restore();
+  if (part) {
+    const dpr = BCAM.dpr,
+      x = Math.max(0, Math.floor((part[0] + M) * dpr)),
+      y = Math.max(0, Math.floor((part[1] + M) * dpr)),
+      w = Math.min(BC.width, Math.ceil((part[2] + M) * dpr)) - x,
+      h = Math.min(BC.height, Math.ceil((part[3] + M) * dpr)) - y;
+    if (w > 0 && h > 0) {
+      BX.save();
+      BX.setTransform(1, 0, 0, 1, 0, 0);
+      BX.clearRect(x, y, w, h);
+      BX.drawImage(patchCanvas, x, y, w, h, x, y, w, h);
+      BX.restore();
+    }
+  }
   ctx = MAINX;
   baseEnd(M);
   drawMoveNow();

@@ -122,6 +122,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
+- **Carte** : le pinceau recopie les pixels de la zone modifiée après rastérisation pour conserver le même lissage que le redessin complet.
 - **Jets** : le MJ peut basculer ses jets en mode secret depuis le panneau flottant, quel que soit l’onglet actif.
 - **Règle d'attaque (26 novembre)** : jet d'attaque = d20 + case de la Matrice, sans le Tier ; dégâts = Tier dés de l'arme ou de l'école + Tier (les sorts gagnent le + Tier) ; DD inchangé (8 + case + Tier). Les monstres suivent la même logique : toucher = modificateur seul, dégâts = Tier dés + Tier, DD = 8 + modificateur + Tier (bestiaire SRD reconverti).
 - **Interface (26 novembre)** : bandeau latéral gauche (navigation, recherche, langue, unités, sauvegarde), repliable en icônes, barre compacte sur téléphone ; barre de la carte sur une ligne avec les presets ; placement rapide et aide repliés ; bestiaire compact (actions sur une ligne).
