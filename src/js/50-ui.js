@@ -452,7 +452,7 @@ function monBlockHTML(m, D, tk, LU) {
   const sub = [tr(SZN2[monSz(m)] || ['', '']) + ' ' + tyName(m.type), LU ? P(LU.al) : ''].filter(Boolean).join(' · ');
   let h = `<div class="ms"><div class="mshd"><h2>${esc(tr(m.n))}${tk && tk.num ? ' ' + tk.num : ''}</h2><span class="mst">Tier ${T} · ${L2('CR', 'FP')} ${esc(m.fp)}</span></div>
  <p class="mss">${esc(sub)}</p>
- <div class="msk">${stat(L2('Evasion', 'Esquive'), v.esq)}${stat(L2('Thresholds', 'Seuils'), v.maj + ' / ' + v.sev)}${stat(L2('Boxes', 'Cases'), tk ? tk.hp + ' / ' + tk.hpMax : v.cases)}${stat(L2('Mastery', 'Maîtrise'), sgn(T + 1))}${stat('Init', sgn(+m.init || 0))}</div>`;
+ <div class="msk">${stat(L2('Evasion', 'Esquive'), v.esq)}${stat(L2('Thresholds', 'Seuils'), v.maj + ' / ' + v.sev)}${stat(L2('Boxes', 'Cases'), tk ? tk.hp + ' / ' + tk.hpMax : v.cases)}${stat(L2('Mastery', 'Maîtrise'), sgn(T))}${stat('Init', sgn(+m.init || 0))}</div>`;
   if (LU && LU.mx) {
     const I = [L2('Power', 'Puissance'), 'Finesse', L2('Resilience', 'Résistance')],
       Dm = [
