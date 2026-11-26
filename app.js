@@ -668,22 +668,36 @@ function mul(hex, f) {
 const ELEVATION_SCALE = Math.tan((12 * Math.PI) / 180),
   TOP_CLEARANCE = 1 + MAX_ELEVATION * ELEVATION_SCALE;
 let TW, LH, ox, oy, W, Hc, TW0;
+// Projection: 'iso' (2:1 diamonds, like Dofus) or 'top' (square tiles seen from above). A personal view setting.
+let PROJ = lsGet('luparis-proj', 'iso') === 'top' ? 'top' : 'iso';
+const ISO = () => PROJ === 'iso';
+// circles on the ground are squashed in isometric view
+const YR = () => (ISO() ? 0.5 : 1);
 function layout() {
   const r = stage.getBoundingClientRect(),
     dpr = Math.min(2, window.devicePixelRatio || 1);
   W = r.width;
   Hc = r.height;
-  if(!W||!Hc)return;
-  const pw=Math.max(1,Math.round(W*dpr)),ph=Math.max(1,Math.round(Hc*dpr));
-  if(cv.width!==pw)cv.width=pw;
-  if(cv.height!==ph)cv.height=ph;
+  if (!W || !Hc) return;
+  const pw = Math.max(1, Math.round(W * dpr)),
+    ph = Math.max(1, Math.round(Hc * dpr));
+  if (cv.width !== pw) cv.width = pw;
+  if (cv.height !== ph) cv.height = ph;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  TW0 = Math.min((W * 0.94) / N, (Hc * 0.92) / (N + TOP_CLEARANCE));
+  TW0 = ISO()
+    ? Math.min((W * 0.94) / N, (Hc * 0.86) / (N / 2 + 2))
+    : Math.min((W * 0.94) / N, (Hc * 0.92) / (N + TOP_CLEARANCE));
   camSet();
   draw();
 }
 function camSet() {
   TW = TW0 * CAM.z;
+  if (ISO()) {
+    LH = TW * 0.28;
+    ox = W / 2 + CAM.px;
+    oy = (Hc - (N * TW) / 2) / 2 + LH * 2.2 + CAM.py;
+    return;
+  }
   LH = TW * ELEVATION_SCALE;
   ox = (W - N * TW) / 2 + CAM.px;
   oy = (Hc - (N - TOP_CLEARANCE) * TW) / 2 + CAM.py;
@@ -718,9 +732,18 @@ function view(x, y) {
   }
 }
 function scr(vx, vy, h) {
+  if (ISO()) return [ox + ((vx - vy) * TW) / 2, oy + ((vx + vy) * TW) / 4 - h * LH];
   return [ox + vx * TW, oy + vy * TW - h * LH];
 }
+// corners in the same order in both views: back, right, front, left (iso) / TL, TR, BR, BL (top)
 function tileQuad(cx, cy) {
+  if (ISO())
+    return [
+      [cx, cy],
+      [cx + TW / 2, cy + TW / 4],
+      [cx, cy + TW / 2],
+      [cx - TW / 2, cy + TW / 4],
+    ];
   return [
     [cx, cy],
     [cx + TW, cy],
@@ -746,12 +769,13 @@ function poly(p, fill, stroke, lw) {
   }
 }
 function tilePoint(cx, cy, u, v) {
+  if (ISO()) return [cx + ((u - v) * TW) / 2, cy + ((u + v) * TW) / 4];
   return [cx + u * TW, cy + v * TW];
 }
 let CC = null,
   CCk = '';
 function cells() {
-  const k = N + ':' + rot;
+  const k = N + ':' + rot + ':' + PROJ;
   if (CCk !== k) {
     const a = [];
     // Paint from the back of the map towards the camera.
@@ -760,6 +784,7 @@ function cells() {
         const [x, y] = unview(vx, vy);
         a.push({ x, y, vx, vy });
       }
+    if (ISO()) a.sort((p, q) => p.vx + p.vy - (q.vx + q.vy) || p.vx - q.vx);
     CC = a;
     CCk = k;
   }
@@ -1070,7 +1095,8 @@ function pit(c, h) {
     ctx.ellipse(cx2, cy2, TW * 0.11, TW * 0.045, 0, 0, 7);
     ctx.stroke();
   }
-  if (!nb[1]) poly([g[0], g[1], [g[1][0], g[1][1] + d], [g[0][0], g[0][1] + d]], cols[1]);
+  if (ISO() && !nb[0]) poly([g[3], g[0], [g[0][0], g[0][1] + d], [g[3][0], g[3][1] + d]], cols[1]);
+  if (!nb[1]) poly([g[0], g[1], [g[1][0], g[1][1] + d], [g[0][0], g[0][1] + d]], ISO() ? mul(cols[1], 0.82) : cols[1]);
   ctx.restore();
   if (!nb.some(Boolean)) poly(g, null, 'rgba(0,0,0,.4)');
   else {
@@ -1507,27 +1533,29 @@ function oP(cx, cy, u, v, z) {
 function obox(cx, cy, u0, v0, u1, v1, z0, z1, c, ln) {
   const P = (u, v, z) => oP(cx, cy, u, v, z),
     s = ln === 0 ? null : 'rgba(20,14,8,.55)';
+  if (ISO()) poly([P(u1, v0, z0), P(u1, v1, z0), P(u1, v1, z1), P(u1, v0, z1)], mul(c, 0.7), s, 0.6);
   poly([P(u0, v1, z0), P(u1, v1, z0), P(u1, v1, z1), P(u0, v1, z1)], mul(c, 0.86), s, 0.6);
   poly([P(u0, v0, z1), P(u1, v0, z1), P(u1, v1, z1), P(u0, v1, z1)], c, s, 0.6);
 }
 function ocyl(cx, cy, u, v, r, z0, z1, c) {
   const [x, y] = tilePoint(cx, cy, u, v),
-    radius = r * TW * 0.5;
+    radius = r * TW * 0.5,
+    ry = radius * YR();
   ctx.fillStyle = mul(c, 0.8);
   ctx.strokeStyle = 'rgba(20,14,8,.55)';
   ctx.lineWidth = 0.6;
   ctx.beginPath();
   ctx.moveTo(x - radius, y - z0);
   ctx.lineTo(x - radius, y - z1);
-  ctx.ellipse(x, y - z1, radius, radius, 0, Math.PI, 0, true);
+  ctx.ellipse(x, y - z1, radius, ry, 0, Math.PI, 0, true);
   ctx.lineTo(x + radius, y - z0);
-  ctx.ellipse(x, y - z0, radius, radius, 0, 0, Math.PI);
+  ctx.ellipse(x, y - z0, radius, ry, 0, 0, Math.PI);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
   ctx.fillStyle = c;
   ctx.beginPath();
-  ctx.arc(x, y - z1, radius, 0, Math.PI * 2);
+  ctx.ellipse(x, y - z1, radius, ry, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 }
@@ -1619,7 +1647,7 @@ function drawObj0(o, vx, vy, h) {
     ctx.lineWidth = 1;
     for (const f of [0.25, 0.7]) {
       ctx.beginPath();
-      ctx.arc(x, y - Z * 0.9 * f, TW * 0.17, 0, Math.PI);
+      ctx.ellipse(x, y - Z * 0.9 * f, TW * 0.17, TW * 0.17 * YR(), 0, 0, Math.PI);
       ctx.stroke();
     }
     return;
@@ -1819,7 +1847,7 @@ function drawObj0(o, vx, vy, h) {
     const [x, y] = tilePoint(cx, cy, 0.5, 0.5);
     ctx.fillStyle = '#1d3a52';
     ctx.beginPath();
-    ctx.arc(x, y - Z * 0.56, TW * 0.13, 0, 7);
+    ctx.ellipse(x, y - Z * 0.56, TW * 0.13, TW * 0.13 * YR(), 0, 0, 7);
     ctx.fill();
     obox(cx, cy, 0.17, 0.46, 0.23, 0.54, Z * 0.55, Z * 1.5, '#6b4428', 0);
     obox(cx, cy, 0.77, 0.46, 0.83, 0.54, Z * 0.55, Z * 1.5, '#6b4428', 0);
@@ -2184,7 +2212,7 @@ const TVAR = 6,
 let TILEK = '';
 function tile(fc, line, tx, f, v, cx, cy) {
   const dpr = cv.width / Math.max(1, W),
-    k = TW.toFixed(2) + '|' + dpr + '|' + bio;
+    k = TW.toFixed(2) + '|' + dpr + '|' + bio + '|' + PROJ;
   if (k !== TILEK) {
     TILES.clear();
     TILEK = k;
@@ -2195,13 +2223,13 @@ function tile(fc, line, tx, f, v, cx, cy) {
   if (!sp) {
     sp = document.createElement('canvas');
     sp.width = Math.ceil((TW + 4) * dpr);
-    sp.height = Math.ceil((TW + pad + 2) * dpr);
+    sp.height = Math.ceil(((ISO() ? TW / 2 : TW) + pad + 2) * dpr);
     const g = sp.getContext('2d'),
       keep = ctx;
     ctx = g;
     try {
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const x0 = 2,
+      const x0 = ISO() ? TW / 2 + 2 : 2,
         y0 = pad,
         t = tileQuad(x0, y0);
       poly(t, fc, line ? 'rgba(0,0,0,.14)' : null);
@@ -2213,7 +2241,7 @@ function tile(fc, line, tx, f, v, cx, cy) {
     if (TILES.size > 600) TILES.clear();
     TILES.set(key, sp);
   }
-  ctx.drawImage(sp, cx - 2, cy - pad, sp.width / dpr, sp.height / dpr);
+  ctx.drawImage(sp, cx - (ISO() ? TW / 2 : 0) - 2, cy - pad, sp.width / dpr, sp.height / dpr);
 }
 function hoverInfo() {
   const b = B[bio];
@@ -2240,12 +2268,39 @@ function hoverInfo() {
           : t('hover');
 }
 let STBG = '';
+let FADEK = '',
+  SEETHRU = lsGet('luparis-seethru', true) !== false;
+// cells that would hide a token: raised cells (walls, rocks, trees) or objects just in front of it, on screen
+function fadeCells() {
+  const out = new Set();
+  if (!ISO() || !SEETHRU) return out;
+  for (const k of tokens) {
+    if (k.x < 0 || k.y < 0 || k.x >= N || k.y >= N) continue;
+    const [tvx, tvy] = view(k.x, k.y),
+      th = Math.max(H[k.x][k.y], 0);
+    for (let d = 1; d <= 6; d++)
+      for (let e = -1; e <= 1; e++) {
+        if ((d + e) & 1) continue;
+        const vx = tvx + (d + e) / 2,
+          vy = tvy + (d - e) / 2;
+        if (vx < 0 || vy < 0 || vx >= N || vy >= N) continue;
+        const [x, y] = unview(vx, vy),
+          h = Math.max(H[x][y], 0) - th + (OBJS.some(o => o.x === x && o.y === y) ? 2 : 0);
+        // a cell of height h covers about 1.1 h + 2 quarter-tiles of what stands behind it
+        if (h > 0 && d < 1.12 * h + 2) out.add(x * 4096 + y);
+      }
+  }
+  return out;
+}
 function drawNow(partOk) {
   if (!W || !Hc) return;
   const b = B[bio],
     lod = TW >= 9,
     lodS = TW >= 5;
-  const part =
+  // see-through walls: in isometric view, raised cells and objects drawn in front of a token are faded
+  const fade = fadeCells(),
+    fadeK = [...fade].join(',');
+  let part =
     partOk &&
     DIRTY &&
     baseFits() &&
@@ -2255,6 +2310,8 @@ function drawNow(partOk) {
     BCAM.hide === (drag !== null && tokens[drag] ? tokens[drag].id : null)
       ? DIRTY
       : null;
+  if (fadeK !== FADEK) part = null;
+  FADEK = fadeK;
   DIRTY = null;
   hoverInfo();
   {
@@ -2294,6 +2351,7 @@ function drawNow(partOk) {
       const [sx, sy] = scr(vx, vy, 0);
       if (sx < CL - TW || sx > CR + TW || sy < CT - TW - LH * 4 || sy > CB + TW + LH * 3) continue;
     }
+    ctx.globalAlpha = fade.has(c.x * 4096 + c.y) ? 0.32 : 1;
     if (h < 0) pit(c, h);
     else {
       const f = F[c.x][c.y],
@@ -2301,7 +2359,8 @@ function drawNow(partOk) {
       if (h > 0) {
         const g = tileCorners(vx, vy, 0),
           sc = f === 4 ? FW.side[h - 1] : f === 5 ? '#6a4a2e' : FSIDE[f] ? FSIDE[f] : b.side[h - 1];
-        poly([t[3], t[2], g[2], g[3]], mul(sc, 0.86), 'rgba(0,0,0,.25)');
+        poly([t[3], t[2], g[2], g[3]], mul(sc, ISO() ? 0.9 : 0.86), 'rgba(0,0,0,.25)');
+        if (ISO()) poly([t[2], t[1], g[1], g[2]], mul(sc, 0.72), 'rgba(0,0,0,.25)');
         if (b.brick) {
           ctx.strokeStyle = 'rgba(0,0,0,.25)';
           ctx.lineWidth = 1;
@@ -2310,6 +2369,7 @@ function drawNow(partOk) {
             ctx.beginPath();
             ctx.moveTo(t[3][0], t[3][1] + (g[3][1] - t[3][1]) * f);
             ctx.lineTo(t[2][0], t[2][1] + (g[2][1] - t[2][1]) * f);
+            if (ISO()) ctx.lineTo(t[1][0], t[1][1] + (g[1][1] - t[1][1]) * f);
             ctx.stroke();
           }
         }
@@ -2347,11 +2407,13 @@ function drawNow(partOk) {
       const ob = OM.get(ck);
       if (ob && h >= 0 && TW >= 4) drawObj(ob, vx, vy, h);
     }
+    ctx.globalAlpha = 1;
     {
       const tl = TKM.get(ck);
       if (tl) for (const k of tl) drawTokAt(k);
     }
   }
+  ctx.globalAlpha = 1;
   drawFloat();
   if (typeof drawTpls === 'function') drawTpls();
   drawMarks();
@@ -3080,7 +3142,48 @@ function icon(ty, cx, cy, r) {
   ctx.restore();
   return ok;
 }
+function inPoly(p, x, y) {
+  let s = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    const [a, b] = p[i],
+      [c, d] = p[j];
+    if (b > y !== d > y && x < ((c - a) * (y - b)) / (d - b) + a) s = !s;
+  }
+  return s;
+}
+// the screen shape of a cell in isometric view: its top and, when raised, its two visible faces
+function isoShape(c) {
+  const h = H[c.x][c.y];
+  if (h <= 0) return tileCorners(c.vx, c.vy, 0);
+  const t = tileCorners(c.vx, c.vy, h),
+    g = tileCorners(c.vx, c.vy, 0);
+  return [t[0], t[1], g[1], g[2], g[3], t[3]];
+}
+function pickIso(mx, my) {
+  const S0 = (my - oy) / (TW / 4),
+    D0 = (mx - ox) / (TW / 2);
+  let best = null,
+    bs = -1e9;
+  for (let S = Math.floor(S0 - 5); S <= Math.ceil(S0 + (MAX_ELEVATION * LH) / (TW / 4) + 2); S++)
+    for (let D = Math.floor(D0 - 2); D <= Math.ceil(D0 + 2); D++) {
+      if ((S + D) & 1) continue;
+      const vx = (S + D) / 2,
+        vy = (S - D) / 2;
+      if (vx < 0 || vy < 0 || vx >= N || vy >= N) continue;
+      const [x, y] = unview(vx, vy),
+        c = { x, y, vx, vy };
+      if (inPoly(isoShape(c), mx, my)) {
+        const sc = S * 1000 + vx;
+        if (sc > bs) {
+          bs = sc;
+          best = c;
+        }
+      }
+    }
+  return best;
+}
 function pick(mx, my) {
+  if (ISO()) return pickIso(mx, my);
   const vx = Math.floor((mx - ox) / TW);
   if (vx < 0 || vx >= N) return null;
   const groundRow = Math.max(0, Math.floor((my - oy) / TW)),
@@ -3109,7 +3212,7 @@ function tokAt(c) {
   return tokens.findIndex(k => covers(k, c.x, c.y));
 }
 function fits(x, y, n, id) {
-  if (!Number.isInteger(x)||!Number.isInteger(y)||x < 0 || y < 0 || x + n > N || y + n > N) return false;
+  if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x + n > N || y + n > N) return false;
   for (let i = x; i < x + n; i++)
     for (let j = y; j < y + n; j++) {
       if (H[i][j] <= -2) return false;
@@ -3721,6 +3824,26 @@ document.getElementById('rot').onclick = () => {
   save();
   draw();
 };
+// isometric (Dofus-like) or top-down view: a personal setting, never shared with the table
+function projLabel() {
+  const b = document.getElementById('proj');
+  if (!b) return;
+  b.textContent = ISO() ? L2('Top view', 'Vue de dessus') : L2('Isometric', 'Isométrique');
+  b.title = ISO()
+    ? L2('Switch to the view from above', 'Passer à la vue de dessus')
+    : L2('Switch to the isometric view', 'Passer à la vue isométrique');
+}
+document.getElementById('proj').onclick = () => {
+  PROJ = ISO() ? 'top' : 'iso';
+  lsSet('luparis-proj', PROJ);
+  projLabel();
+  CAM.z = 1;
+  CAM.px = 0;
+  CAM.py = 0;
+  layout();
+};
+projLabel();
+document.addEventListener('play-labels', projLabel);
 function fitMap() {
   CAM.z = 1;
   CAM.px = 0;
@@ -3739,7 +3862,20 @@ document.getElementById('undo').onclick = () => {
   ENV = d.env || {};
   OBJS = d.objs || [];
   TPLS = d.tpls || [];
-  if(d.N){N=d.N;bio=d.bio;scene=d.scene;INI=d.ini;rot=d.rot;CAM.z=1;CAM.px=0;CAM.py=0;showSize();legend();fillScenes();layout();}
+  if (d.N) {
+    N = d.N;
+    bio = d.bio;
+    scene = d.scene;
+    INI = d.ini;
+    rot = d.rot;
+    CAM.z = 1;
+    CAM.px = 0;
+    CAM.py = 0;
+    showSize();
+    legend();
+    fillScenes();
+    layout();
+  }
   save();
   draw();
 };

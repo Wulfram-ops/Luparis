@@ -335,7 +335,48 @@ function icon(ty, cx, cy, r) {
   ctx.restore();
   return ok;
 }
+function inPoly(p, x, y) {
+  let s = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    const [a, b] = p[i],
+      [c, d] = p[j];
+    if (b > y !== d > y && x < ((c - a) * (y - b)) / (d - b) + a) s = !s;
+  }
+  return s;
+}
+// the screen shape of a cell in isometric view: its top and, when raised, its two visible faces
+function isoShape(c) {
+  const h = H[c.x][c.y];
+  if (h <= 0) return tileCorners(c.vx, c.vy, 0);
+  const t = tileCorners(c.vx, c.vy, h),
+    g = tileCorners(c.vx, c.vy, 0);
+  return [t[0], t[1], g[1], g[2], g[3], t[3]];
+}
+function pickIso(mx, my) {
+  const S0 = (my - oy) / (TW / 4),
+    D0 = (mx - ox) / (TW / 2);
+  let best = null,
+    bs = -1e9;
+  for (let S = Math.floor(S0 - 5); S <= Math.ceil(S0 + (MAX_ELEVATION * LH) / (TW / 4) + 2); S++)
+    for (let D = Math.floor(D0 - 2); D <= Math.ceil(D0 + 2); D++) {
+      if ((S + D) & 1) continue;
+      const vx = (S + D) / 2,
+        vy = (S - D) / 2;
+      if (vx < 0 || vy < 0 || vx >= N || vy >= N) continue;
+      const [x, y] = unview(vx, vy),
+        c = { x, y, vx, vy };
+      if (inPoly(isoShape(c), mx, my)) {
+        const sc = S * 1000 + vx;
+        if (sc > bs) {
+          bs = sc;
+          best = c;
+        }
+      }
+    }
+  return best;
+}
 function pick(mx, my) {
+  if (ISO()) return pickIso(mx, my);
   const vx = Math.floor((mx - ox) / TW);
   if (vx < 0 || vx >= N) return null;
   const groundRow = Math.max(0, Math.floor((my - oy) / TW)),
@@ -364,7 +405,7 @@ function tokAt(c) {
   return tokens.findIndex(k => covers(k, c.x, c.y));
 }
 function fits(x, y, n, id) {
-  if (!Number.isInteger(x)||!Number.isInteger(y)||x < 0 || y < 0 || x + n > N || y + n > N) return false;
+  if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0 || x + n > N || y + n > N) return false;
   for (let i = x; i < x + n; i++)
     for (let j = y; j < y + n; j++) {
       if (H[i][j] <= -2) return false;
@@ -976,6 +1017,26 @@ document.getElementById('rot').onclick = () => {
   save();
   draw();
 };
+// isometric (Dofus-like) or top-down view: a personal setting, never shared with the table
+function projLabel() {
+  const b = document.getElementById('proj');
+  if (!b) return;
+  b.textContent = ISO() ? L2('Top view', 'Vue de dessus') : L2('Isometric', 'Isométrique');
+  b.title = ISO()
+    ? L2('Switch to the view from above', 'Passer à la vue de dessus')
+    : L2('Switch to the isometric view', 'Passer à la vue isométrique');
+}
+document.getElementById('proj').onclick = () => {
+  PROJ = ISO() ? 'top' : 'iso';
+  lsSet('luparis-proj', PROJ);
+  projLabel();
+  CAM.z = 1;
+  CAM.px = 0;
+  CAM.py = 0;
+  layout();
+};
+projLabel();
+document.addEventListener('play-labels', projLabel);
 function fitMap() {
   CAM.z = 1;
   CAM.px = 0;
@@ -994,7 +1055,20 @@ document.getElementById('undo').onclick = () => {
   ENV = d.env || {};
   OBJS = d.objs || [];
   TPLS = d.tpls || [];
-  if(d.N){N=d.N;bio=d.bio;scene=d.scene;INI=d.ini;rot=d.rot;CAM.z=1;CAM.px=0;CAM.py=0;showSize();legend();fillScenes();layout();}
+  if (d.N) {
+    N = d.N;
+    bio = d.bio;
+    scene = d.scene;
+    INI = d.ini;
+    rot = d.rot;
+    CAM.z = 1;
+    CAM.px = 0;
+    CAM.py = 0;
+    showSize();
+    legend();
+    fillScenes();
+    layout();
+  }
   save();
   draw();
 };
