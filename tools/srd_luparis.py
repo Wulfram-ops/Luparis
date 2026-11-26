@@ -273,7 +273,7 @@ def attack(name: str, text: str, cx: Ctx) -> dict | None:
     md = MAIN_DMG.match(hit)
     a = {"kind": kind, "ab": cx.hit(int(to_hit)), "rng": rng, "target": target or ""}
     if md:
-        die, k = int(md[3]), int(md[5] or 0) * (-1 if md[4] == "-" else 1)
+        die = int(md[3])
         a.update(nd=cx.t, dd=die, mod=cx.t, ty=md[6] if md[6] in DMG else "")
         rest = hit[md.end():].strip()
         # "plus 7 (2d6) fire damage" rides along with the hit: kept as extra dice (D&D values)
