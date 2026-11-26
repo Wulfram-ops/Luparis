@@ -1322,9 +1322,10 @@ function drawDirty(c) {
       if (x < 0 || y < 0 || x >= N || y >= N) continue;
       const [vx, vy] = view(x, y),
         [cx, cy] = scr(vx, vy, 0);
-      r[0] = Math.min(r[0], cx - TW / 2 - 3);
+      // generous on every side: tall decor (trees, statues) and the faces of raised cells overflow the tile
+      r[0] = Math.min(r[0], cx - TW - 3);
       r[2] = Math.max(r[2], cx + TW * 1.5 + 3);
-      r[1] = Math.min(r[1], cy - LH * 4 - TW * 0.6);
+      r[1] = Math.min(r[1], cy - LH * 4 - TW * 1.2);
       r[3] = Math.max(r[3], cy + TW + LH * 3 + 3);
     }
   DIRTY = DIRTY
@@ -5906,7 +5907,7 @@ function renderB() {
   $('bt').tBodies[0].innerHTML = L.length
     ? L.map(m => {
         const v = conv(m);
-        return `<tr><td><b>${esc(nm(m))}</b>${noT(m) ? `<div class="small">${esc(noT(m))}</div>` : ''}</td><td>${esc(tyName(m.type))}<div class="small">${esc(t('szn')[monSz(m)] || '')}</div></td><td class="r">${esc(m.fp)}</td><td>${m.hab.map(h => (B[h] ? `<span class="tag">${esc(tr(B[h].n))}</span>` : '')).join('')}</td><td class="r">${v.esq}</td><td class="r">${v.maj} / ${v.sev}</td><td class="r">${v.cases} <span class="small">(${esc(m.pv)} ${t('hp')})</span></td><td class="r"><div class="acts"><button class="go" data-place="${esc(m.id)}">${t('place')}</button><button data-sheet="${esc(m.id)}">${L2('Sheet', 'Fiche')}</button><button data-rev="${esc(m.id)}" class="${REV.has(m.id) ? 'on' : ''}" title="${L2("Show in the players' bestiary", 'Montrer dans le bestiaire des joueurs')}" aria-pressed="${REV.has(m.id)}">${REV.has(m.id) ? L2('👁 Shown', '👁 Montré') : L2('👁 Show', '👁 Montrer')}</button><button data-edit="${esc(m.id)}">${t('edit')}</button><button data-del="${esc(m.id)}">${t('del')}</button></div></td></tr>`;
+        return `<tr><td><b>${esc(nm(m))}</b>${noT(m) ? `<div class="small">${esc(noT(m))}</div>` : ''}</td><td>${esc(tyName(m.type))}<div class="small">${esc(t('szn')[monSz(m)] || '')}</div></td><td class="r">${esc(m.fp)}</td><td>${m.hab.map(h => (B[h] ? `<span class="tag">${esc(tr(B[h].n))}</span>` : '')).join('')}</td><td class="r">${v.esq}</td><td class="r">${v.maj} / ${v.sev}</td><td class="r">${v.cases} <span class="small">(${esc(m.pv)} ${t('hp')})</span></td><td class="r"><div class="acts"><button class="go" data-place="${esc(m.id)}">${t('place')}</button><button data-sheet="${esc(m.id)}">${L2('Sheet', 'Fiche')}</button><button data-rev="${esc(m.id)}" class="ico${REV.has(m.id) ? ' on' : ''}" title="${REV.has(m.id) ? L2("Shown in the players' bestiary", 'Montré dans le bestiaire des joueurs') : L2("Show in the players' bestiary", 'Montrer dans le bestiaire des joueurs')}" aria-label="${L2('Show to players', 'Montrer aux joueurs')}" aria-pressed="${REV.has(m.id)}">👁</button><button data-edit="${esc(m.id)}" class="ico" title="${esc(t('edit'))}" aria-label="${esc(t('edit'))}">✎</button><button data-del="${esc(m.id)}" class="ico" title="${esc(t('del'))}" aria-label="${esc(t('del'))}">🗑</button></div></td></tr>`;
       }).join('')
     : `<tr><td colspan="8" class="empty">${t('none')}</td></tr>`;
 }
@@ -10472,8 +10473,16 @@ function applyLang() {
   renderRes();
   rlRender();
   // the table modules are rebuilt in the new language too
-  for (const f of [renderMarks, renderTpls, imgRender, snRender]) try { f(); } catch (e) {}
-  if(typeof playLabels==='function'&&$('play_workspace')?.dataset.ready){playLabels();playSync();playFit();mpRender();}
+  for (const f of [renderMarks, renderTpls, imgRender, snRender])
+    try {
+      f();
+    } catch (e) {}
+  if (typeof playLabels === 'function' && $('play_workspace')?.dataset.ready) {
+    playLabels();
+    playSync();
+    playFit();
+    mpRender();
+  }
   if (WS) wRender();
   draw();
 }
@@ -10669,11 +10678,19 @@ const klab = code => {
   return (v || KLAY[KL][code] || code.replace(/^Key|^Digit/, '')).toUpperCase();
 };
 function kbRows() {
-  const v = activeView(), r = { 1: [], 2: [], 3: [] };
+  const v = activeView(),
+    r = { 1: [], 2: [], 3: [] };
   if (v === 'carte') {
     r[1] = [...document.querySelectorAll('#tools button')];
     r[2] = ['pl_q', 'in_roll', 'in_next', 'in_end'].map(id => $(id));
-    r[3] = [() => zoomAt(1 / 1.4, W / 2, Hc / 2), () => zoomAt(1.4, W / 2, Hc / 2), fitMap, $('undo'), $('gen'), $('savemap')];
+    r[3] = [
+      () => zoomAt(1 / 1.4, W / 2, Hc / 2),
+      () => zoomAt(1.4, W / 2, Hc / 2),
+      fitMap,
+      $('undo'),
+      $('gen'),
+      $('savemap'),
+    ];
   } else if (v === 'monde') {
     r[1] = [...document.querySelectorAll('#w_layers input')];
     r[2] = ['w_fit', 'w_zout', 'w_zin', 'w_goparty'].map(id => $(id)).filter(Boolean);
@@ -11020,6 +11037,36 @@ function monSheet(m, tk) {
       DD = o[k2];
       paint();
     }
+  });
+}
+
+// ---- left rail: fold to icons (remembered), and on small screens the settings open on demand
+{
+  const mini = $('rail_mini'),
+    more = $('rail_more'),
+    prefs = $('prefs');
+  const setMini = on => {
+    document.body.classList.toggle('rail-mini', on);
+    mini.setAttribute('aria-pressed', String(on));
+    mini.title = mini.ariaLabel = on
+      ? L2('Expand the menu', 'Déplier le menu')
+      : L2('Fold the menu', 'Replier le menu');
+  };
+  setMini(lsGet('luparis-rail-mini', false) === true);
+  mini.onclick = () => {
+    const on = !document.body.classList.contains('rail-mini');
+    lsSet('luparis-rail-mini', on);
+    setMini(on);
+  };
+  more.title = more.ariaLabel = L2('Settings', 'Réglages');
+  more.onclick = () => {
+    const open = prefs.classList.toggle('open');
+    more.setAttribute('aria-expanded', String(open));
+  };
+  // on a phone, choosing a tab folds the settings again
+  document.querySelector('header.rail .tabs').addEventListener('click', () => {
+    prefs.classList.remove('open');
+    more.setAttribute('aria-expanded', 'false');
   });
 }
 // ---- 55-tools.js
@@ -12238,6 +12285,7 @@ const PLAY_LAYOUT_LABELS = {
   play_restore: ['Reset layout', 'Rétablir le preset'],
   play_done: ['Done', 'Terminer'],
   play_terrain: ['Terrain', 'Terrain'],
+  play_help: ['Help and shortcuts', 'Aide et raccourcis'],
   play_tk_title: ['Token', 'Pion'],
   play_tk_empty: ['Select a token on the map to see it here.', 'Sélectionne un pion sur la carte pour le voir ici.'],
   play_grid_hint: [

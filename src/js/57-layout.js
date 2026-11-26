@@ -19,6 +19,7 @@ const PLAY_LAYOUT_LABELS = {
   play_restore: ['Reset layout', 'Rétablir le preset'],
   play_done: ['Done', 'Terminer'],
   play_terrain: ['Terrain', 'Terrain'],
+  play_help: ['Help and shortcuts', 'Aide et raccourcis'],
   play_tk_title: ['Token', 'Pion'],
   play_tk_empty: ['Select a token on the map to see it here.', 'Sélectionne un pion sur la carte pour le voir ici.'],
   play_grid_hint: [

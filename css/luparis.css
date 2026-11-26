@@ -39,7 +39,7 @@ input[type=range]{width:96px;accent-color:var(--acc)}
 .sb h4{font:700 17px "IM Fell English SC",Georgia,serif;color:#7a1f14;border-bottom:1px solid #7a1f14;margin:12px 0 6px}.sb p{margin:4px 0}.sbab{display:grid;grid-template-columns:repeat(6,1fr);text-align:center;gap:4px}.sbab div{display:flex;flex-direction:column}.sbab b{color:#7a1f14}
 .sb .matks{margin:4px 0}.sb .matk button{border:1px solid #c9b58e;min-height:32px}.sb .matk button.go{background:#7a1f14;color:#fff;border-color:#7a1f14}.sbsrc{margin-top:12px!important;color:#7a6a58}.sbd{font-style:italic}
 .mpcode{font:700 20px/1 "Alegreya Sans",monospace;letter-spacing:.12em;color:var(--acc2)}#mp_box .row{gap:6px;flex-wrap:wrap;margin-top:6px}#mp_box input{min-width:0}.mpmsg{color:var(--acc2)}
-body.mp-player #tools button:not([data-t=move]):not([data-t=measure]):not([data-t=tpl]):not([data-t=env]):not(#rot),body.mp-player #tools label:not([data-for=tpl]):not([data-for=env]),body.mp-player #tools .scn:not([data-for=tpl]):not([data-for=env]),body.mp-player .bar>.grp:not(#tools),body.mp-player #sn_card,body.mp-player #mk_card .small{display:none!important}
+body.mp-player #tools button:not([data-t=move]):not([data-t=measure]):not([data-t=tpl]):not([data-t=env]):not(#rot):not(#proj),body.mp-player #tools label:not([data-for=tpl]):not([data-for=env]),body.mp-player #tools .scn:not([data-for=tpl]):not([data-for=env]),body.mp-player .bar>.grp:not(#tools):not(.play-layout-bar),body.mp-player #sn_card,body.mp-player #mk_card .small{display:none!important}
 #tools [data-for]{display:none}#tools[data-tool="surf"] [data-for~="surf"]{display:inline-flex}#tools[data-tool="env"] [data-for~="env"]{display:inline-flex}#tools[data-tool="tpl"] [data-for~="tpl"]{display:inline-flex}#tools[data-tool="obj"] [data-for~="obj"]{display:inline-flex}#tools[data-tool="pref"] [data-for~="pref"]{display:inline-flex}
 #tools[data-tool="env"] .envdc{display:inline-flex}.thint{max-width:26em;line-height:1.25;align-self:center}
 .lswarn{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99;background:#5a1f1f;color:#fff;padding:10px 16px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.3);cursor:pointer;max-width:90vw}
@@ -314,7 +314,7 @@ summary{cursor:pointer;font-weight:600;min-height:32px;display:flex;align-items:
 .ms .msrcs{font-size:13px;color:var(--acc2)}.ms .msrcs.wait{color:#b0552c}
 .icd{font-size:12px;color:#b0552c;white-space:nowrap}
 
-body.mp-spec #tools button:not([data-t=measure]):not(#rot),body.mp-spec #tools label,body.mp-spec #hand,body.mp-spec #mk_card .small{display:none!important}
+body.mp-spec #tools button:not([data-t=measure]):not(#rot):not(#proj),body.mp-spec #tools label,body.mp-spec #hand,body.mp-spec #mk_card .small{display:none!important}
 body:not(.mp-host) #tools button[data-t=hide]{display:none}
 .mpj{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.mpj input{flex:1 1 7em;min-width:0}
 .mppl{list-style:none;margin:6px 0;padding:0}.mppl li{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--line,#0002)}.mppl li .small{flex:1;opacity:.8}.mppl select{max-width:8.5em}.mpsec{display:flex;gap:6px;align-items:center;margin:4px 0}
@@ -398,7 +398,7 @@ body.table-display.table-ready .stage{visibility:visible}
 
 /* The map is present in every layout. Optional panels share the same game state. */
 #v-carte>.bar{padding-inline:max(1vw,8px);gap:5px}
-#pl_toggle,#play_preset_select,#map_fields_toggle,.mode-play #map_fields{display:none}
+#play_preset_select,#map_fields_toggle,.mode-play #map_fields{display:none}
 #map_fields{display:contents}
 #save_msg:empty{display:none}
 .play-layout-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:5px max(1vw,8px) 2px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
@@ -536,14 +536,6 @@ button.play-stat{border-color:var(--acc)}
   .mode-edit #map_fields:not(.open){display:none}
 }
 @media(max-width:600px){
-  body:has(#v-carte:not([hidden])) header{padding:8px 8px 4px;gap:3px 8px}
-  body:has(#v-carte:not([hidden])) header .prefs{margin:0;gap:4px}
-  body:has(#v-carte:not([hidden])) header .prefs button{min-height:30px;padding:1px 6px;font-size:13px}
-  body:has(#v-carte:not([hidden])) header .prefs .grp{padding:2px;gap:2px}
-  body:has(#v-carte:not([hidden])) header .usb{min-width:0}
-  body:has(#v-carte:not([hidden])) header .usb kbd{display:none}
-  nav.tabs{padding-inline:8px;gap:4px;flex-wrap:wrap}
-  nav.tabs a{min-height:34px;padding:4px 8px;font-size:13px}
   #v-carte>.bar .grp>button{min-height:34px;padding-inline:8px;font-size:14px}
   #v-carte #thint,#play_presets{display:none}
   #play_preset_select{display:block;flex:1 1 0;width:auto;min-height:36px}
@@ -556,9 +548,6 @@ button.play-stat{border-color:var(--acc)}
   #play_workspace .htrk button{width:24px}
 }
 @media(max-width:360px){
-  body:has(#v-carte:not([hidden])) header .usb .us-label{display:none}
-  nav.tabs{padding-inline:7px;gap:3px}
-  nav.tabs a{padding-inline:4px;font-size:12px}
   #v-carte>.bar #tools>button{padding-inline:4px;font-size:13px}
 }
 body.table-display #v-carte>*:not(#play_workspace){display:none!important}
@@ -580,3 +569,62 @@ body.table-display #play_aux,body.table-display #play_workspace #hand,body.table
 #play_workspace .hc .chip{min-height:30px;font-size:14px}
 #play_workspace .hmore,#play_workspace .hhint{margin:2px 0 0;color:var(--muted);font-size:12.5px}
 #play_workspace .k-atk .wpn{margin-top:2px}
+
+/* ---- Left rail: the site navigation, language, units, search and backup in one column */
+:root{--rail:212px}
+body{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);align-items:start;padding-bottom:0}
+body>*:not(header){grid-column:2;min-width:0}
+header.rail{grid-column:1;grid-row:1/span 40;position:sticky;top:0;height:100dvh;box-sizing:border-box;display:flex;flex-direction:column;align-items:stretch;gap:12px;padding:14px 10px;border-right:1px solid var(--line);background:var(--panel);overflow-y:auto;z-index:40}
+.rail-top{display:flex;align-items:center;gap:6px}
+.rail-top h1{margin:0 auto 0 6px;font-size:24px}
+.rail-btn{min-height:32px;width:32px;padding:0;justify-content:center;border:1px solid var(--line);border-radius:8px;background:transparent}
+.rail-btn svg,.tabs a svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.rail-btn circle{fill:currentColor;stroke:none}
+header.rail .tabs{flex-direction:column;gap:3px;padding:0}
+header.rail .tabs a{gap:11px;padding:8px 10px;border:0;border-radius:9px;background:transparent;min-height:40px;font-size:15.5px}
+header.rail .tabs a:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
+header.rail .tabs a[aria-current=page]{background:var(--ink);color:var(--bg)}
+header.rail .tabs a[data-kb]::after{top:50%;right:8px;transform:translateY(-50%);opacity:.55}
+header.rail .prefs{margin:auto 0 0;flex-direction:column;align-items:stretch;gap:6px}
+header.rail .prefs .grp{display:flex;justify-content:stretch}
+header.rail .prefs .grp button{flex:1;justify-content:center}
+header.rail .usb{min-width:0;width:100%}
+.rail-more{display:none}
+/* folded rail: icons only */
+body.rail-mini{--rail:62px}
+body.rail-mini .rail-top{flex-direction:column}
+body.rail-mini .rail-top h1,body.rail-mini header.rail .tabs a span,body.rail-mini header.rail .tabs a[data-kb]::after,body.rail-mini .usb .us-label,body.rail-mini .usb kbd,body.rail-mini #units{display:none}
+body.rail-mini header.rail .tabs a{justify-content:center;padding:8px 0}
+body.rail-mini #rail_mini svg{transform:rotate(180deg)}
+body.rail-mini header.rail .prefs .grp{flex-direction:column}
+body.rail-mini .usb{justify-content:center;padding-inline:0}
+/* the map toolbar on one line: presets at the end; quick place and help open on demand */
+#v-carte>.bar .play-layout-bar{order:99;margin:0 0 0 auto;padding:2px;border:0;background:transparent;flex-wrap:nowrap}
+#v-carte>.bar .play-presets{flex:none}
+#pl_toggle{display:inline-flex;min-height:34px;padding:2px 10px;background:var(--panel);border:1px solid var(--line)}
+#pl_bar:not(.open){display:none!important}
+details.help{margin:8px max(1vw,8px) 12px;padding:4px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+details.help:not([open]){display:block}
+details.help>summary{cursor:pointer;font-weight:600;padding:6px 0}
+details.help[open]{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px 18px}
+details.help[open]>summary{grid-column:1/-1}
+/* bestiary: compact rows, actions on one line */
+#bt td{padding-block:6px}
+#bt td .acts{flex-wrap:nowrap}
+#bt td .acts button{min-height:30px;padding:2px 8px;font-size:13.5px}
+#bt td .acts .ico{width:32px;justify-content:center;padding:0}
+@media(max-width:900px){
+  body{display:block}
+  header.rail{position:sticky;top:0;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px 6px;padding:6px 8px;border-right:0;border-bottom:1px solid var(--line)}
+  .rail-top h1{font-size:19px;margin:0 4px}
+  #rail_mini{display:none}
+  header.rail .tabs{flex-direction:row;flex:1 1 0;overflow-x:auto;scrollbar-width:none;gap:2px}
+  header.rail .tabs a{padding:6px 8px;min-height:36px;font-size:14px;gap:6px;white-space:nowrap}
+  header.rail .tabs a[data-kb]::after{display:none}
+  .rail-more{display:inline-flex}
+  header.rail .prefs{display:none;flex:1 0 100%;flex-direction:row;flex-wrap:wrap;margin:0}
+  header.rail .prefs.open{display:flex}
+  header.rail .usb{width:auto;flex:1}
+}
+@media(max-width:560px){header.rail .tabs a span{display:none}header.rail .tabs a{padding:6px 10px}}
+@media(max-width:900px){#v-carte>.bar .play-layout-bar{flex:1 1 100%;margin:0;flex-wrap:wrap}#play_preset_select{min-width:9em}}

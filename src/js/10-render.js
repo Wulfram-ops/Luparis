@@ -667,9 +667,10 @@ function drawDirty(c) {
       if (x < 0 || y < 0 || x >= N || y >= N) continue;
       const [vx, vy] = view(x, y),
         [cx, cy] = scr(vx, vy, 0);
-      r[0] = Math.min(r[0], cx - TW / 2 - 3);
+      // generous on every side: tall decor (trees, statues) and the faces of raised cells overflow the tile
+      r[0] = Math.min(r[0], cx - TW - 3);
       r[2] = Math.max(r[2], cx + TW * 1.5 + 3);
-      r[1] = Math.min(r[1], cy - LH * 4 - TW * 0.6);
+      r[1] = Math.min(r[1], cy - LH * 4 - TW * 1.2);
       r[3] = Math.max(r[3], cy + TW + LH * 3 + 3);
     }
   DIRTY = DIRTY

@@ -35,8 +35,16 @@ function applyLang() {
   renderRes();
   rlRender();
   // the table modules are rebuilt in the new language too
-  for (const f of [renderMarks, renderTpls, imgRender, snRender]) try { f(); } catch (e) {}
-  if(typeof playLabels==='function'&&$('play_workspace')?.dataset.ready){playLabels();playSync();playFit();mpRender();}
+  for (const f of [renderMarks, renderTpls, imgRender, snRender])
+    try {
+      f();
+    } catch (e) {}
+  if (typeof playLabels === 'function' && $('play_workspace')?.dataset.ready) {
+    playLabels();
+    playSync();
+    playFit();
+    mpRender();
+  }
   if (WS) wRender();
   draw();
 }
@@ -232,11 +240,19 @@ const klab = code => {
   return (v || KLAY[KL][code] || code.replace(/^Key|^Digit/, '')).toUpperCase();
 };
 function kbRows() {
-  const v = activeView(), r = { 1: [], 2: [], 3: [] };
+  const v = activeView(),
+    r = { 1: [], 2: [], 3: [] };
   if (v === 'carte') {
     r[1] = [...document.querySelectorAll('#tools button')];
     r[2] = ['pl_q', 'in_roll', 'in_next', 'in_end'].map(id => $(id));
-    r[3] = [() => zoomAt(1 / 1.4, W / 2, Hc / 2), () => zoomAt(1.4, W / 2, Hc / 2), fitMap, $('undo'), $('gen'), $('savemap')];
+    r[3] = [
+      () => zoomAt(1 / 1.4, W / 2, Hc / 2),
+      () => zoomAt(1.4, W / 2, Hc / 2),
+      fitMap,
+      $('undo'),
+      $('gen'),
+      $('savemap'),
+    ];
   } else if (v === 'monde') {
     r[1] = [...document.querySelectorAll('#w_layers input')];
     r[2] = ['w_fit', 'w_zout', 'w_zin', 'w_goparty'].map(id => $(id)).filter(Boolean);
@@ -583,5 +599,35 @@ function monSheet(m, tk) {
       DD = o[k2];
       paint();
     }
+  });
+}
+
+// ---- left rail: fold to icons (remembered), and on small screens the settings open on demand
+{
+  const mini = $('rail_mini'),
+    more = $('rail_more'),
+    prefs = $('prefs');
+  const setMini = on => {
+    document.body.classList.toggle('rail-mini', on);
+    mini.setAttribute('aria-pressed', String(on));
+    mini.title = mini.ariaLabel = on
+      ? L2('Expand the menu', 'Déplier le menu')
+      : L2('Fold the menu', 'Replier le menu');
+  };
+  setMini(lsGet('luparis-rail-mini', false) === true);
+  mini.onclick = () => {
+    const on = !document.body.classList.contains('rail-mini');
+    lsSet('luparis-rail-mini', on);
+    setMini(on);
+  };
+  more.title = more.ariaLabel = L2('Settings', 'Réglages');
+  more.onclick = () => {
+    const open = prefs.classList.toggle('open');
+    more.setAttribute('aria-expanded', String(open));
+  };
+  // on a phone, choosing a tab folds the settings again
+  document.querySelector('header.rail .tabs').addEventListener('click', () => {
+    prefs.classList.remove('open');
+    more.setAttribute('aria-expanded', 'false');
   });
 }

@@ -289,7 +289,9 @@ def run(chrome: str | None) -> None:
         check("English workspace labels", page.locator("#play_customize").inner_text()=="Customize")
         # Quick placement belongs to the map toolbar, not the draggable layout.
         page.click('.tabs a[data-v="carte"]')
-        check("quick place is in GM toolbar", page.locator("#v-carte > .bar #pl_bar").is_visible() and page.locator('#cgrid [data-mod="pl"]').count() == 0)
+        check("quick place opens from the GM toolbar", not page.locator("#pl_bar").is_visible())
+        page.locator("#pl_toggle").click()
+        check("quick place is in GM toolbar", page.locator("#v-carte > .bar #pl_bar").is_visible())
         check("quick placement not duplicated", page.locator("#pl_bar").count()==1)
         page.fill("#pl_q", "dragon")
         check("toolbar quick place search still works", page.locator("#pl_res button[data-pm]").count() > 0)
