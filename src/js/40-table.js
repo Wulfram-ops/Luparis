@@ -589,7 +589,7 @@ function showCand() {
     v = conv(m);
   $('ai_msg').textContent = '';
   $('ai_out').innerHTML =
-    `<div class="aiprev"><b>${esc(m.n)}</b> · ${esc(tyName(m.type))} · ${lang === 'fr' ? 'FP' : 'CR'} ${esc(m.fp)}<div class="small">${t('esq')} ${v.esq} · ${t('thr')} ${v.maj}/${v.sev} · ${t('box')} ${v.cases} (${m.pv} ${t('hp')}) · Init ${sgn(m.init)}</div>${(m.atk || []).length ? `<ul class="small">${m.atk.map(a => `<li><b>${esc(a.n)}</b>${a.k > 1 ? ' ×' + a.k : ''} ${sgn(a.ab)}, ${a.nd}d${a.dd}${a.mod ? sgn(a.mod) : ''}</li>`).join('')}</ul>` : ''}<p>${esc(m.no)}</p><div class="row"><button class="go" type="button" id="ai_add">${t('ai_add')}</button></div></div>`;
+    `<div class="aiprev"><b>${esc(m.n)}</b> · ${esc(tyName(m.type))} · ${lang === 'fr' ? 'FP' : 'CR'} ${esc(m.fp)}<div class="small">${t('esq')} ${v.esq} · ${t('thr')} ${v.maj}/${v.sev} · ${t('box')} ${v.cases} (${m.pv} ${t('hp')}) · Init ${sgn(m.init)}</div>${(m.atk || []).length ? `<ul class="small">${m.atk.map(a => `<li><b>${esc(a.n)}</b>${a.k > 1 ? ' ×' + a.k : ''} ${sgn(a.ab)}, ${monsterDamageFormula(a)}</li>`).join('')}</ul>` : ''}<p>${esc(m.no)}</p><div class="row"><button class="go" type="button" id="ai_add">${t('ai_add')}</button></div></div>`;
 }
 $('ai_go').onclick = async () => {
   const q = $('ai_q').value.trim();
@@ -1446,10 +1446,11 @@ function renderTok() {
     }
     const no = m ? noT(m) : k.no;
     if (no) h += `<p class="tno">${esc(no)}</p>`;
+    if (m && srdKey(m)) loadMonsterActions();
     const MA = m ? monAtk(m) : parseAtk(no || '');
     if (MA.length)
       h +=
-        `<div class="matks">${MA.map((a, i) => `<div class="matk"><span>${esc(a.n)}${a.k > 1 ? ' ×' + a.k : ''}</span><button type="button" class="go" data-ma="${i}" data-r="atk" aria-label="${esc(a.n)} : ${t('sk_attack')}">${sgn(a.ab)}</button><button type="button" data-ma="${i}" data-r="dmg" aria-label="${esc(a.n)} : ${t('sk_damage')}">${a.nd}d${a.dd}${a.mod ? sgn(a.mod) : ''}</button></div>`).join('')}</div>` +
+        `<div class="matks">${MA.map((a, i) => `<div class="matk"><span>${esc(a.n)}${a.k > 1 ? ' ×' + a.k : ''}</span><button type="button" class="go" data-ma="${i}" data-r="atk" aria-label="${esc(a.n)} : ${t('sk_attack')}">${sgn(a.ab)}</button>${a.nd || a.mod ? `<button type="button" data-ma="${i}" data-r="dmg" aria-label="${esc(a.n)} : ${t('sk_damage')}">${monsterDamageFormula(a)}${a.plus ? ' ' + esc(a.plus) : ''}</button>` : ''}</div>`).join('')}</div>` +
         '';
     if (m)
       h += `<p class="small">${esc(tyName(m.type))} · ${lang === 'fr' ? 'FP' : 'CR'} ${esc(m.fp)} · ${m.pv} ${t('hp')}</p>`;
@@ -1479,20 +1480,7 @@ $('tk_panel').addEventListener('click', e => {
     if (!a) return;
     const nm = (k.nm ? tr(k.nm) + (k.num ? ' ' + k.num : '') : k.n) + ' · ' + a.n,
       key = k.id + '_' + b.dataset.ma;
-    if (b.dataset.r === 'atk') {
-      const r = dRoll(20),
-        tot = r + a.ab;
-      TKCRIT[key] = r === 20;
-      pushRoll(
-        `${esc(nm)} · d20 (${r}) ${sgn(a.ab)} = <b>${tot}</b>${r === 20 ? ` <span class="cr">${t('sk_crit')}</span>` : r === 1 ? ` <span class="ko">${t('sk_miss')}</span>` : ''}`,
-      );
-    } else {
-      const n = TKCRIT[key] ? a.nd * 2 : a.nd,
-        rs = Array.from({ length: n }, () => dRoll(a.dd)),
-        tot = rs.reduce((x, y) => x + y, 0) + a.mod;
-      TKCRIT[key] = false;
-      pushRoll(`${esc(nm)} · ${n}d${a.dd}${a.mod ? sgn(a.mod) : ''} [${rs.join(', ')}] = <b>${tot}</b>`);
-    }
+    rollMonsterAttack(a, nm, key, b.dataset.r, k);
     renderTok();
     return;
   }

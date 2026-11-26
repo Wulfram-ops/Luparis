@@ -9,7 +9,8 @@ What changes, following the Luparis rules (chapter 10, "Convertir un monstre de 
 - saving throws become domains (Physical, Mental, Social), skills keep their name;
 - distances are given in tiles (1 tile = 5 ft), healing in boxes (hit points ÷ (4 + CR));
 - attack bonuses and save DCs use the Luparis Mastery (Tier + 1) instead of the D&D proficiency;
-- weapon damage uses Tier dice of the weapon die (as srd.py does); other damage keeps its D&D dice;
+- weapon damage uses Tier weapon dice plus its source modifier; innate spell attacks use d8;
+- spell repertoires use schools, Mana and the shared Luparis effects (tools/monster_magic.py);
 - every dragon is chaotic neutral in Luparis.
 
 Every ability text is cut into a template (numbers and game terms replaced by numbered slots)
@@ -25,6 +26,8 @@ import json
 import re
 import sys
 from pathlib import Path
+
+from monster_magic import repertoire
 
 ROOT = Path(__file__).resolve().parent.parent
 FR_FILE = Path(__file__).resolve().parent / "srd_fr.json"
@@ -134,7 +137,7 @@ class Ctx:
         return n - self.pb + self.t + 1
 
     def boxes(self, hp: float) -> int:
-        return 0 if hp <= 0 else max(1, round(hp / self.hp_box))
+        return 0 if hp <= 0 else max(1, int(hp / self.hp_box + 0.5))
 
 
 def dice(nd: str, sign: str | None, k: str | None) -> str:
@@ -258,23 +261,42 @@ def fill(template: str, slots: list, cx: Ctx, lang: str, self_en: str, recharge:
 
 # ---------------------------------------------------------------- attacks
 ATK_RX = re.compile(
-    r"^(Melee or Ranged|Melee|Ranged) (Weapon|Spell) Attack: \+(\d+) to hit, (.*?)(?:, (one [^.]*?|[^,.]*targets?[^.]*?))?\. Hit: (.*)$",
+    r"^(Melee or Ranged|Melee|Ranged) (Weapon|Spell) Attack: \+(\d+) to hit(?: \(\+\d+ to hit with shillelagh\))?, (.*?)(?:, (one [^.]*?|[^,.]*targets?[^.]*?))?\. Hit: (.*)$",
     re.S,
 )
 MAIN_DMG = re.compile(r"^(\d+) \((\d+)d(\d+)(?: ([+-]) (\d+))?\) (\w+) damage")
 
 
+WEAPON_FAMILIES = {
+    "taille": "Battleaxe|Greataxe|Greatsword|Longsword|Scimitar|Sword|Whip",
+    "estoc": "Dagger|Rapier|Shortsword|War Pick|Spiked Shield",
+    "cont": "Chain|Club|Greatclub|Heavy Club|Mace|Maul|Morningstar|Quarterstaff|Warhammer|Spiked Bone Club|Shield Bash",
+    "hast": "Fork|Glaive|Harpoon|Pike|Spear",
+    "tir": "Hand Crossbow|Heavy Crossbow|Javelin|Light Crossbow|Longbow|Poisoned Dart|Rock|Shortbow|Slaying Longbow|Sling",
+    "martial": "Fist|Unarmed Strike",
+    "nat": "Beak|Beaks|Beard|Bite|Bites|Claw|Claws|Constrict|Crush|Gore|Hooves|Horn|Horns|Pincer|Pseudopod|Rake|Ram|Rotting Fist|Slam|Snake Hair|Sting|Stinger|Stomp|Tail|Tail Spike|Tail Stinger|Talons|Tendril|Tentacle|Tentacles|Tusk|Tusks",
+    "special": "Blood Drain|Life Drain|Rotting Touch|Smother|Spit Poison|Strength Drain|Touch|Web|Withering Touch",
+}
+FAMILY_BY_NAME = {name: family for family, names in WEAPON_FAMILIES.items() for name in names.split("|")}
+
+
 def attack(name: str, text: str, cx: Ctx) -> dict | None:
-    m = ATK_RX.match(text)
+    m = ATK_RX.match(text.strip())
     if not m:
         return None
-    kind, _, to_hit, rng, target, hit = m.groups()
+    kind, category, to_hit, rng, target, hit = m.groups()
     md = MAIN_DMG.match(hit)
-    a = {"kind": kind, "ab": cx.hit(int(to_hit)), "rng": rng, "target": target or ""}
+    a = {"category": category, "kind": kind, "ab": cx.hit(int(to_hit)), "rng": rng, "target": target or ""}
     if md:
         die, k = int(md[3]), int(md[5] or 0) * (-1 if md[4] == "-" else 1)
-        a.update(nd=cx.t, dd=die, mod=k, ty=md[6] if md[6] in DMG else "")
+        a.update(nd=cx.t, dd=8 if category == "Spell" else die, mod=0 if category == "Spell" else k, ty=md[6] if md[6] in DMG else "")
         rest = hit[md.end():].strip()
+        # These two wielding modes are separate attacks with their own roll.
+        alternate = re.match(r"^,? (?:or )?\d+ \(\d+d(\d+)(?: [+-] \d+)?\) \w+ damage if (?:used|wielded) with two hands(?: to make a melee attack)?", rest)
+        if alternate:
+            a["two"] = int(alternate[1])
+            rest = rest[alternate.end():].strip()
+        rest = re.sub(r"^,? (?:or )?\d+ \(.*?\) \w+ damage with shillelagh", "", rest)
         # "plus 7 (2d6) fire damage" rides along with the hit: kept as extra dice (D&D values)
         mp = re.match(r"^,? ?plus (\d+) \((\d+d\d+)(?: ([+-]) (\d+))?\) (\w+) damage", rest)
         if mp and mp[5] in DMG:
@@ -284,6 +306,14 @@ def attack(name: str, text: str, cx: Ctx) -> dict | None:
     else:
         a.update(nd=0, dd=0, mod=0, ty="")
         rest = hit.strip()
+        fixed = re.match(r"^(\d+) (\w+) damage", rest)
+        if fixed:
+            a.update(mod=int(fixed[1]), ty=fixed[2])
+            rest = rest[fixed.end():].lstrip("., ")
+            extra = re.match(r"^plus \d+ \((\d+d\d+)\) (\w+) damage", rest)
+            if extra:
+                a["plus"] = [extra[1], extra[2]]
+                rest = rest[extra.end():].lstrip("., ")
     a["rest"] = rest
     return a
 
@@ -346,12 +376,12 @@ def speed(s: str, lang: str) -> str:
     return ", ".join(out)
 
 
-def senses(s: str, lang: str) -> str:
+def senses(s: str, lang: str, passive: int) -> str:
     out = []
     for p in [x.strip() for x in s.split(",") if x.strip()]:
         m = re.match(r"passive perception (\d+)", p, re.I)
         if m:
-            out.append(f"Perception passive {m[1]}" if lang == "fr" else f"passive Perception {m[1]}")
+            out.append(f"Perception passive {passive}" if lang == "fr" else f"passive Perception {passive}")
             continue
         m = re.match(r"(darkvision|blindsight|truesight|tremorsense) (\d+) ft\.(.*)", p)
         if m:
@@ -492,6 +522,16 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
     def entry(n: str, t: str) -> list:
         np_ = name_pair(n)
         rc = recharge_of(n, t)
+        if n.startswith("Cast a Spell"):
+            return np_ + ["Cast one repertoire spell and pay its Mana cost.", "Lancer un sort du répertoire et payer son coût en Mana."]
+        if n == "Limited Magic Immunity":
+            return np_ + ["Unless willing, the creature ignores spells cast at school Tiers 1–4. It has advantage on saves against other magic.", "Sauf si elle y consent, la créature ignore les sorts des écoles de Tier 1 à 4. Elle a l’avantage aux sauvegardes contre les autres effets magiques."]
+        if n == "Cantrip":
+            return np_ + ["Cast a free repertoire spell.", "Lancer un sort gratuit du répertoire."]
+        if n == "Divine Eminence":
+            return np_ + ["Infuse one weapon strike with Surge before rolling. Each Mana adds 1d8 radiant, up to the school Tier.", "Infuser un coup avec Afflux avant le jet. Chaque Mana ajoute 1d8 radiant, dans la limite du Tier de l’école."]
+        if n == "Spell Storing":
+            return np_ + ["The amulet wearer can pay for and store one school spell of value 4 or less. The guardian releases it once on command or on the chosen trigger, using the caster’s statistics.", "Le porteur de l’amulette peut payer et stocker un sort d’école de valeur 4 ou moins. Le gardien le libère une fois sur ordre ou au déclencheur choisi, avec les statistiques du lanceur."]
         e = np_ + tidy(np_, both(t, n, bool(rc)))
         if rc:
             base_en = re.sub(r"\s*\(Recharge[^)]*\)", "", e[0])
@@ -524,14 +564,35 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
         fr_full = (fr_base or base) + (f" ({fr_extra})" if extra else "")
         return [en_full, fr_full]
 
+    # A trained skill uses the Matrix cell for the ordinary situation.
+    # Preserve expertise (two proficiency bonuses) and any intrinsic bonus.
+    skill_cells = {
+        "Athletics": (0, 0), "Acrobatics": (1, 3), "Stealth": (1, 3), "Sleight of Hand": (1, 3),
+        "Arcana": (3, 1), "History": (3, 1), "Religion": (3, 1), "Nature": (3, 1), "Investigation": (3, 4),
+        "Animal Handling": (4, 4), "Perception": (4, 4), "Medicine": (4, 4), "Survival": (4, 4), "Insight": (4, 4),
+        "Intimidation": (5, 2), "Performance": (5, 5), "Deception": (5, 5), "Persuasion": (5, 5),
+    }
+    mx = cells(d["ab"])
+    skills = []
+    passive = 10 + mx[4]
+    for raw in filter(None, d.get("sk", "").split(", ")):
+        skill, original = raw.split(" +")
+        ability, cell = skill_cells[skill]
+        trained = int(original) - mod(d["ab"][ability])
+        ranks = 2 if trained >= 2 * cx.pb else 1
+        bonus = mx[cell] + trained + ranks * (cx.t + 1 - cx.pb)
+        skills.append([f"{skill} {bonus:+}", f"{SKILL[skill]} {bonus:+}"])
+        if skill == "Perception":
+            passive += bonus - mx[4]
+
     out = {
         "al": [alignment(d.get("al", ""), is_dragon, "en"), alignment(d.get("al", ""), is_dragon, "fr")],
         "spd": [speed(d.get("spd", ""), "en"), speed(d.get("spd", ""), "fr")],
-        "sen": [senses(d.get("sen", ""), "en"), senses(d.get("sen", ""), "fr")],
+        "sen": [senses(d.get("sen", ""), "en", passive), senses(d.get("sen", ""), "fr", passive)],
         "lng": [languages(d.get("lng", ""), "en"), languages(d.get("lng", ""), "fr")],
-        "mx": cells(d["ab"]) if d.get("ab") else None,
+        "mx": mx,
         "sv": sorted({DOMAIN[SHORT[x.split()[0]]] for x in (d.get("sv") or "").split(",") if x.strip()}),
-        "sk": [[x.split(" +")[0].strip(), SKILL.get(x.split(" +")[0].strip(), x.split(" +")[0].strip())] for x in (d.get("sk") or "").split(",") if x.strip()],
+        "sk": skills,
         "res": [d.get("res", ""), dmg_list(d.get("res", ""), "fr")],
         "imm": [d.get("imm", ""), dmg_list(d.get("imm", ""), "fr")],
         "vul": [d.get("vul", ""), dmg_list(d.get("vul", ""), "fr")],
@@ -541,20 +602,49 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
         "atk": [], "tr": [], "act": [], "leg": [], "rea": [],
     }
     for n, t in d.get("tr", []):
-        out["tr"].append(entry(n, t))
+        if "Spellcasting" in n:
+            spells = repertoire(t)
+            tiers = {}
+            for spell in spells:
+                school = spell["school"]
+                tiers[school] = max(1, tiers.get(school, 0), spell["cost"])
+            primary = max(tiers, key=lambda school: sum(s["school"] == school for s in spells))
+            tiers[primary] = max(tiers[primary], cx.t)
+            mana = sum([0, 2, 6, 14, 24, 36][v] for v in tiers.values()) + out["mx"][7] * (max(tiers.values()) // 2)
+            out["magic"] = {"tiers": tiers, "mana": mana, "spells": spells}
+        else:
+            out["tr"].append(entry(n, t))
     for n, t in d.get("act", []):
         a = attack(n, t, cx)
         if a:
             rest = both(a["rest"], n) if a["rest"] else ["", ""]
+            swarm = "if the swarm has half of its hit points or fewer" in a["rest"]
+            if swarm:
+                # The original weakened dice could exceed a converted full-strength hit.
+                rest = [lead + text.partition(".")[2] for lead, text in zip(
+                    ["At half boxes or fewer, halve the primary damage (round down).",
+                     "À la moitié des cases ou moins, diviser les dégâts principaux par deux (arrondi inférieur)."], rest)]
             out["atk"].append({
-                "n": name_pair(n), "ab": a["ab"], "nd": a["nd"], "dd": a["dd"], "mod": a["mod"],
+                "category": a["category"], "n": name_pair(n), "ab": a["ab"], "nd": a["nd"], "dd": a["dd"], "mod": a["mod"],
                 "ty": [a["ty"], DMG.get(a["ty"], "")],
                 "how": [f"{a['kind']}, {range_text(a['rng'], cx, 'en')}" + (f", {a['target']}" if a["target"] else ""),
                         f"{KIND_FR[a['kind']]}, {range_text(a['rng'], cx, 'fr')}" + (f", {TARGET_FR.get(a['target'], a['target'])}" if a["target"] else "")],
                 "plus": [f"+ {a['plus'][0]} {a['plus'][1]}", f"+ {a['plus'][0]} {DMG[a['plus'][1]]}"] if a.get("plus") else None,
                 "rest": rest,
             })
+            row = out["atk"][-1]
+            if swarm:
+                row["swarm"] = True
+            if a["category"] == "Spell":
+                row["school"] = {"Hurl Flame": "afflux", "Shock": "afflux", "Life Drain": "eidolon",
+                                 "Intoxicating Touch": "eidolon", "Paralyzing Touch": "mirage"}[n]
+            else:
+                row["family"] = FAMILY_BY_NAME[n.split(" (")[0]]
+            if a.get("two"):
+                out["atk"].append({**row, "dd": a["two"], "n": [row["n"][0] + " (two hands)", row["n"][1] + " (deux mains)"]})
         else:
+            if " Attack:" in t:
+                raise ValueError(f"Unconverted attack: {m['id']} {n}")
             out["act"].append(entry(n, t))
     for n, t in d.get("leg", []):
         out["leg"].append(entry(n, t))
@@ -573,6 +663,8 @@ def main() -> int:
     fr = json.loads(FR_FILE.read_text(encoding="utf-8")) if FR_FILE.exists() else {}
     missing: dict = {}
     out = {k: convert(mons[k], d, fr, missing) for k, d in det.items() if k in mons}
+    # The original starter list also contains a banshee, absent from the SRD.
+    out["d22"] = json.loads((ROOT / "tools/banshee.json").read_text(encoding="utf-8"))
     if args.templates:
         items = sorted(missing.values(), key=lambda e: (-e["n"], e["id"]))
         args.templates.write_text(json.dumps(items, ensure_ascii=False, indent=1), encoding="utf-8")

@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from fractions import Fraction
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -91,7 +92,27 @@ def check_luparis(ids: set[str]) -> None:
     missing = {i for i in ids if i.startswith("s-")} - data.keys()
     if missing:
         err(f"srd-luparis.json: no Luparis stat block for {len(missing)} SRD monsters, e.g. {sorted(missing)[:3]}")
+    details = load("srd-details.json")
+    catalog = {m["id"]: m for m in load("srd-monsters.json")}
     for k, v in data.items():
+        if k in details and k in catalog:
+            cr = float(Fraction(catalog[k]["fp"]))
+            tier = min(5, int(1.5 + cr / 4.5))
+            pb = 2 + max(0, (int(cr) - 1) // 4)
+            if v["mast"] != tier + 1:
+                err(f"{k}: mastery differs from chapter 10")
+            if any("Spellcasting" in name for name, _ in details[k]["tr"]) != bool(v.get("magic")):
+                err(f"{k}: missing or unexpected school repertoire")
+            attacks = {a["n"][0]: a for a in v["atk"]}
+            for name, text in details[k]["act"]:
+                hit = re.search(r"(Weapon|Spell) Attack: \+(\d+) to hit", text)
+                if not hit:
+                    continue
+                row = attacks.get(name)
+                if not row or row["category"] != hit[1] or row["ab"] != int(hit[2]) - pb + tier + 1:
+                    err(f"{k}: wrong attack type or modifier for {name}")
+                elif row["nd"] not in (0, tier):
+                    err(f"{k}: damage dice do not follow monster Tier for {name}")
         if v.get("mx") is not None and len(v["mx"]) != 9:
             err(f"srd-luparis.json[{k}]: mx must hold the nine cells")
         for sec in ("tr", "act", "leg", "rea"):
@@ -101,7 +122,21 @@ def check_luparis(ids: set[str]) -> None:
                 rc = x[4].get("rc") if len(x) == 5 and isinstance(x[4], dict) else None
                 if len(x) == 5 and not (rc and all(isinstance(rc.get(f), int) for f in ("t", "d"))):
                     err(f"srd-luparis.json[{k}]: {x[0]} has a malformed recharge")
+        magic = v.get("magic")
+        schools = {"afflux", "creuset", "mirage", "horizon", "eidolon", "egide", "harmonie"}
+        if magic:
+            tiers = magic["tiers"]
+            if not tiers.keys() <= schools or not all(1 <= t <= 5 for t in tiers.values()):
+                err(f"{k}: invalid school Tier")
+            expected = sum([0, 2, 6, 14, 24, 36][t] for t in tiers.values()) + v["mx"][7] * (max(tiers.values()) // 2)
+            if magic["mana"] != expected:
+                err(f"{k}: incorrect Mana reserve")
+            for spell in magic["spells"]:
+                if not 0 <= spell["cost"] <= tiers.get(spell["school"], -1) or not all(spell["effect"]):
+                    err(f"{k}: invalid school effect {spell['n']}")
         for a in v.get("atk", []):
+            if a.get("category") == "Spell" and (a.get("school") not in schools or (a["nd"] and (a["dd"] != 8 or a["mod"] != 0))):
+                err(f"{k}: invalid school attack {a['n']}")
             if not all(isinstance(a.get(f), int) for f in ("ab", "nd", "dd", "mod")):
                 err(f"srd-luparis.json[{k}]: attack {a.get('n')} has non-integer fields")
 

@@ -5670,7 +5670,20 @@ const DEFSZ = {
   Tarrasque: 'G',
 };
 const SZK = ['T', 'S', 'M', 'L', 'H', 'G'];
+let SRDL = null,
+  SRDLP = null;
+const officialMonsters = new Map();
 function noT(m) {
+  const source = officialMonsters.get(srdKey(m));
+  if (source && (lang === 'fr' ? m.no === source.no : (m.noen || m.no) === source.noen)) {
+    const block = SRDL?.[source.id];
+    if (!block) return '';
+    const names = block.atk.map(a => tr(a.n));
+    if (block.magic) names.push(...Object.keys(block.magic.tiers).map(k => tr(SCH[k])));
+    names.push(...block.tr.slice(0, 4).map(row => tr(row)));
+    if (block.leg?.length) names.push(L2('Legendary', 'Légendaire'));
+    return names.join(' · ');
+  }
   return lang === 'en' && m.noen ? m.noen : m.no || '';
 }
 function monSz(m) {
@@ -5820,6 +5833,13 @@ fetch('srd-monsters.json')
   .then(d => {
     if (!Array.isArray(d)) return;
     SRD = d;
+    for (const m of SRD)
+      if (m.src === 'srd') {
+        officialMonsters.set(m.id, m);
+        const starter = DEF.find(x => x.n[0] === m.n[0]);
+        if (starter) officialMonsters.set(starter.id, m);
+      }
+
     let done = null;
     try {
       done = localStorage.getItem('luparis-srd');
@@ -5880,6 +5900,7 @@ function renderB() {
     return;
   }
   BDIRTY = false;
+  if (SRD.length) loadMonsterActions();
   const q = $('q').value.trim().toLowerCase(),
     ft = $('ft').value,
     fh = $('fh').value,
@@ -5981,20 +6002,25 @@ function resetForm() {
   prev();
 }
 $('mcancel').onclick = resetForm;
-function atkRow(a) {
+let editorAttacks = [],
+  originalAttackFields = '';
+function atkRow(a, index = -1) {
   a = a || { n: '', k: 1, ab: 4, nd: 1, dd: 8, mod: 2 };
   const sel = (cls, vals, v, fmt) =>
       `<select class="${cls}" aria-label="${cls}">${vals.map(x => `<option value="${x}"${x === v ? ' selected' : ''}>${fmt(x)}</option>`).join('')}</select>`,
     rg = (a2, b2) => Array.from({ length: b2 - a2 + 1 }, (_, i) => a2 + i);
-  return `<div class="arow"><input class="an" value="${esc(a.n)}" placeholder="${L2('Attack name', "Nom de l'attaque")}" aria-label="${L2('Attack name', "Nom de l'attaque")}">${sel('ak', rg(1, 4), a.k, x => '×' + x)}${sel('ab', rg(-2, 20), a.ab, x => L2('hit ', 'att. ') + sgn(x))}${sel('nd', rg(1, 10), a.nd, x => x)}${sel('dd', [4, 6, 8, 10, 12], a.dd, x => 'd' + x)}${sel('mod', rg(-5, 15), a.mod, x => (x ? sgn(x) : '+0'))}<button type="button" class="adel" aria-label="${L2('Remove', 'Retirer')}">×</button></div>`;
+  return `<div class="arow" data-index="${index}"><input class="an" value="${esc(a.n)}" placeholder="${L2('Attack name', "Nom de l'attaque")}" aria-label="${L2('Attack name', "Nom de l'attaque")}">${sel('ak', rg(1, 4), a.k, x => '×' + x)}${sel('ab', rg(-2, 20), a.ab, x => L2('hit ', 'att. ') + sgn(x))}${sel('nd', rg(0, 10), a.nd, x => x)}${sel('dd', [0, 4, 6, 8, 10, 12], a.dd, x => (x ? 'd' + x : '—'))}${sel('mod', rg(-5, 15), a.mod, x => (x ? sgn(x) : '+0'))}<button type="button" class="adel" aria-label="${L2('Remove', 'Retirer')}">×</button></div>`;
 }
 function atkFill(list) {
+  editorAttacks = list;
   $('matk').innerHTML =
     `<span class="small">${L2('Attacks (clickable on the map)', 'Attaques (cliquables sur la carte)')}</span><div class="arows">${(list || []).map(atkRow).join('')}</div><button type="button" id="matk_add">${L2('Add an attack', 'Ajouter une attaque')}</button>`;
+  originalAttackFields = JSON.stringify(atkRead());
 }
 function atkRead() {
   return [...$('matk').querySelectorAll('.arow')]
     .map(r => ({
+      ...editorAttacks[+r.dataset.index],
       n: r.querySelector('.an').value.trim().slice(0, 40),
       k: +r.querySelector('.ak').value,
       ab: +r.querySelector('.ab').value,
@@ -6012,7 +6038,17 @@ $('matk').addEventListener('click', e => {
   } else if (e.target.classList.contains('adel')) e.target.closest('.arow').remove();
 });
 function monAtk(m) {
-  return m && Array.isArray(m.atk) && m.atk.length ? m.atk : parseAtk((m ? noT(m) : '') || '');
+  if (m?.atk?.length) return m.atk;
+  const key = m && srdKey(m);
+  if (!key) return parseAtk(m ? noT(m) : '');
+  return (SRDL?.[key]?.atk || []).map(a => ({
+    ...a,
+    n: tr(a.n),
+    ty: tr(a.ty),
+    how: tr(a.how),
+    rest: tr(a.rest),
+    plus: a.plus ? tr(a.plus) : '',
+  }));
 }
 atkFill([]);
 
@@ -6033,8 +6069,8 @@ $('mf').addEventListener('submit', e => {
     pv: +$('mpv').value,
     init: Math.max(-5, Math.min(15, +$('min').value || 0)),
     hab: [...$('mhab').querySelectorAll('input:checked')].map(c => c.value),
-    no: $('mno').value.trim(),
-    atk: atkRead(),
+    no: old && $('mno').value === noT(old) ? old.no : $('mno').value.trim(),
+    atk: old && JSON.stringify(atkRead()) === originalAttackFields ? old.atk : atkRead(),
     desc: $('mdesc').value.trim().slice(0, 2000),
     tr: trParse($('mtr').value),
   };
@@ -8355,7 +8391,7 @@ function showCand() {
     v = conv(m);
   $('ai_msg').textContent = '';
   $('ai_out').innerHTML =
-    `<div class="aiprev"><b>${esc(m.n)}</b> · ${esc(tyName(m.type))} · ${lang === 'fr' ? 'FP' : 'CR'} ${esc(m.fp)}<div class="small">${t('esq')} ${v.esq} · ${t('thr')} ${v.maj}/${v.sev} · ${t('box')} ${v.cases} (${m.pv} ${t('hp')}) · Init ${sgn(m.init)}</div>${(m.atk || []).length ? `<ul class="small">${m.atk.map(a => `<li><b>${esc(a.n)}</b>${a.k > 1 ? ' ×' + a.k : ''} ${sgn(a.ab)}, ${a.nd}d${a.dd}${a.mod ? sgn(a.mod) : ''}</li>`).join('')}</ul>` : ''}<p>${esc(m.no)}</p><div class="row"><button class="go" type="button" id="ai_add">${t('ai_add')}</button></div></div>`;
+    `<div class="aiprev"><b>${esc(m.n)}</b> · ${esc(tyName(m.type))} · ${lang === 'fr' ? 'FP' : 'CR'} ${esc(m.fp)}<div class="small">${t('esq')} ${v.esq} · ${t('thr')} ${v.maj}/${v.sev} · ${t('box')} ${v.cases} (${m.pv} ${t('hp')}) · Init ${sgn(m.init)}</div>${(m.atk || []).length ? `<ul class="small">${m.atk.map(a => `<li><b>${esc(a.n)}</b>${a.k > 1 ? ' ×' + a.k : ''} ${sgn(a.ab)}, ${monsterDamageFormula(a)}</li>`).join('')}</ul>` : ''}<p>${esc(m.no)}</p><div class="row"><button class="go" type="button" id="ai_add">${t('ai_add')}</button></div></div>`;
 }
 $('ai_go').onclick = async () => {
   const q = $('ai_q').value.trim();
@@ -9212,10 +9248,11 @@ function renderTok() {
     }
     const no = m ? noT(m) : k.no;
     if (no) h += `<p class="tno">${esc(no)}</p>`;
+    if (m && srdKey(m)) loadMonsterActions();
     const MA = m ? monAtk(m) : parseAtk(no || '');
     if (MA.length)
       h +=
-        `<div class="matks">${MA.map((a, i) => `<div class="matk"><span>${esc(a.n)}${a.k > 1 ? ' ×' + a.k : ''}</span><button type="button" class="go" data-ma="${i}" data-r="atk" aria-label="${esc(a.n)} : ${t('sk_attack')}">${sgn(a.ab)}</button><button type="button" data-ma="${i}" data-r="dmg" aria-label="${esc(a.n)} : ${t('sk_damage')}">${a.nd}d${a.dd}${a.mod ? sgn(a.mod) : ''}</button></div>`).join('')}</div>` +
+        `<div class="matks">${MA.map((a, i) => `<div class="matk"><span>${esc(a.n)}${a.k > 1 ? ' ×' + a.k : ''}</span><button type="button" class="go" data-ma="${i}" data-r="atk" aria-label="${esc(a.n)} : ${t('sk_attack')}">${sgn(a.ab)}</button>${a.nd || a.mod ? `<button type="button" data-ma="${i}" data-r="dmg" aria-label="${esc(a.n)} : ${t('sk_damage')}">${monsterDamageFormula(a)}${a.plus ? ' ' + esc(a.plus) : ''}</button>` : ''}</div>`).join('')}</div>` +
         '';
     if (m)
       h += `<p class="small">${esc(tyName(m.type))} · ${lang === 'fr' ? 'FP' : 'CR'} ${esc(m.fp)} · ${m.pv} ${t('hp')}</p>`;
@@ -9245,20 +9282,7 @@ $('tk_panel').addEventListener('click', e => {
     if (!a) return;
     const nm = (k.nm ? tr(k.nm) + (k.num ? ' ' + k.num : '') : k.n) + ' · ' + a.n,
       key = k.id + '_' + b.dataset.ma;
-    if (b.dataset.r === 'atk') {
-      const r = dRoll(20),
-        tot = r + a.ab;
-      TKCRIT[key] = r === 20;
-      pushRoll(
-        `${esc(nm)} · d20 (${r}) ${sgn(a.ab)} = <b>${tot}</b>${r === 20 ? ` <span class="cr">${t('sk_crit')}</span>` : r === 1 ? ` <span class="ko">${t('sk_miss')}</span>` : ''}`,
-      );
-    } else {
-      const n = TKCRIT[key] ? a.nd * 2 : a.nd,
-        rs = Array.from({ length: n }, () => dRoll(a.dd)),
-        tot = rs.reduce((x, y) => x + y, 0) + a.mod;
-      TKCRIT[key] = false;
-      pushRoll(`${esc(nm)} · ${n}d${a.dd}${a.mod ? sgn(a.mod) : ''} [${rs.join(', ')}] = <b>${tot}</b>`);
-    }
+    rollMonsterAttack(a, nm, key, b.dataset.r, k);
     renderTok();
     return;
   }
@@ -10380,6 +10404,7 @@ function applyLang() {
     playFit();
     mpRender();
   }
+  if (document.getElementById('sbdlg')?.open) SBRP?.();
   if (WS) wRender();
   draw();
 }
@@ -10699,29 +10724,35 @@ const SZN2 = {
   H: ['Huge', 'Très grand'],
   G: ['Gargantuan', 'Gigantesque'],
 };
-// Luparis stat blocks of the SRD creatures (srd-luparis.json, built by tools/srd_luparis.py), loaded with the first sheet
-let SRDL = null,
-  SRDLP = null;
+// Shared by the bestiary, the token panel and the monster sheet.
+
 function srdLuparis() {
   if (SRDL) return Promise.resolve(SRDL);
   if (!SRDLP)
     SRDLP = fetch('srd-luparis.json')
-      .then(r => (r.ok ? r.json() : {}))
-      .catch(() => ({}))
-      .then(o => (SRDL = o));
+      .then(r => {
+        if (!r.ok) throw Error(String(r.status));
+        return r.json();
+      })
+      .then(o => (SRDL = o))
+      .catch(() => {
+        SRDLP = null;
+        return {};
+      });
   return SRDLP;
 }
+function loadMonsterActions() {
+  if (!SRDL && !SRDLP)
+    srdLuparis().then(() => {
+      if (SRDL) {
+        renderB();
+        renderTok();
+      }
+    });
+}
 function srdKey(m) {
-  const en = Array.isArray(m.n) ? m.n[0] : String(m.n);
-  return String(m.id).startsWith('s-')
-    ? m.id
-    : 's-' +
-        en
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[̀-ͯ]/g, '')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '');
+  if (m.id === 'd22') return m.id;
+  return officialMonsters.get(m.id)?.id || (String(m.id).startsWith('s-') ? m.id : null);
 }
 // attacks shown on the sheet: the Luparis conversion when there is one, else the bestiary line
 let SBA = [],
@@ -10730,28 +10761,8 @@ function monBlockHTML(m, D, tk, LU) {
   const v = conv(m),
     P = x => (Array.isArray(x) ? x[lang === 'fr' ? 1 : 0] : x || ''),
     f = fpNum(m.fp),
-    T = monTier(f),
-    key = tk ? tk.id : m.id;
-  SBA =
-    LU && LU.atk && LU.atk.length
-      ? LU.atk.map(a => ({
-          n: P(a.n),
-          ab: a.ab,
-          nd: a.nd,
-          dd: a.dd,
-          mod: a.mod,
-          ty: P(a.ty),
-          how: P(a.how),
-          plus: a.plus ? P(a.plus) : '',
-          rest: P(a.rest),
-        }))
-      : monAtk(m).map(a => ({
-          n: (a.n || '') + (a.k > 1 ? ' ×' + a.k : ''),
-          ab: a.ab,
-          nd: a.nd,
-          dd: a.dd,
-          mod: a.mod,
-        }));
+    T = monTier(f);
+  SBA = monAtk(m);
   const stat = (k, val) => `<div><span>${k}</span><b>${val}</b></div>`,
     line = (k, x) => (x ? `<p><span class="mk">${k}</span> ${esc(x)}</p>` : ''),
     list = (h, a, sec) =>
@@ -10819,9 +10830,21 @@ function monBlockHTML(m, D, tk, LU) {
       `<h4>${L2('Attacks', 'Attaques')}</h4><div class="msa">` +
       SBA.map(
         (a, i) =>
-          `<div class="msai"><div class="msah"><b>${esc(a.n)}</b><button type="button" class="go" data-sbr="atk" data-i="${i}" title="${L2('Attack roll', "Jet d'attaque")}">${sgn(a.ab)}</button>${a.nd ? `<button type="button" data-sbr="dmg" data-i="${i}" title="${L2('Damage', 'Dégâts')}">${a.nd}d${a.dd}${a.mod ? sgn(a.mod) : ''}${a.plus ? ' ' + esc(a.plus.replace(/^\+ /, '+')).replace(/ .*/, '') : ''}</button>` : ''}<span class="msty">${esc([a.ty, a.plus && a.plus.replace(/^\+ \S+ /, '+ ')].filter(Boolean).join(' '))}</span></div>${a.how ? `<p class="msh">${esc(a.how)}</p>` : ''}${a.rest ? `<p>${esc(a.rest)}</p>` : ''}</div>`,
+          `<div class="msai"><div class="msah"><b>${esc(a.n)}${a.k > 1 ? ' ×' + a.k : ''}</b><button type="button" class="go" data-sbr="atk" data-i="${i}" title="${L2('Attack roll', "Jet d'attaque")}">${sgn(a.ab)}</button>${a.nd || a.mod ? `<button type="button" data-sbr="dmg" data-i="${i}" title="${L2('Damage', 'Dégâts')}">${monsterDamageFormula(a)}${a.plus ? ' ' + esc(a.plus.replace(/^\+ /, '+')).replace(/ .*/, '') : ''}</button>` : ''}<span class="msty">${esc([a.ty, a.plus && a.plus.replace(/^\+ \S+ /, '+ ')].filter(Boolean).join(' '))}</span></div>${a.how ? `<p class="msh">${esc([a.category === 'Spell' ? tr(SCH[a.school]) : a.family === 'special' ? L2('Special attack', 'Attaque spéciale') : a.family ? tr(FAM[a.family].n) : '', a.how].filter(Boolean).join(' · '))}</p>` : ''}${a.rest ? `<p>${esc(a.rest)}</p>` : ''}</div>`,
       ).join('') +
       `</div>`;
+  if (LU?.magic) {
+    const { tiers, mana, spells } = LU.magic;
+    h += `<h4>${L2('School magic', 'Magie des écoles')} · ${mana} Mana</h4>`;
+    for (const [school, tier] of Object.entries(tiers)) {
+      const ab = LU.mx[1] + tier;
+      h += `<details class="msmagic"><summary><b>${tr(SCH[school])}</b> · Tier ${tier}</summary><p>${L2('Basic strike', 'Frappe de base')} · <button type="button" data-school="${school}" data-mode="atk">d20 ${sgn(ab)}</button> <button type="button" data-school="${school}" data-mode="dmg">${tier}d8</button> · ${L2('DC', 'DD')} ${8 + ab}${school === 'afflux' ? L2(' · ignores 2 armour', ' · ignore 2 points d’armure') : ''}</p>`;
+      for (const spell of spells.filter(x => x.school === school)) {
+        h += `<p><b>${esc(P(spell.n))}</b> · ${spell.cost} Mana · ${esc(P(spell.effect))}${spell.limit ? ' (' + esc(P(spell.limit)) + ')' : ''}</p>`;
+      }
+      h += '</details>';
+    }
+  }
   if (LU) {
     h +=
       list(L2('Traits', 'Capacités'), LU.tr, 'tr') +
@@ -10847,6 +10870,30 @@ function monBlockHTML(m, D, tk, LU) {
 }
 let SBM = null,
   SBT = null;
+function monsterDamageFormula(a) {
+  return a.nd ? a.nd + 'd' + a.dd + (a.mod ? sgn(a.mod) : '') : String(a.mod);
+}
+function rollMonsterAttack(a, nm, key, mode, token) {
+  if (mode === 'atk') {
+    const r = dRoll(20);
+    TKCRIT[key] = r === 20;
+    pushRoll(
+      `${esc(nm)} · d20 (${r}) ${sgn(a.ab)} = <b>${r + a.ab}</b>${r === 20 ? ` <span class="cr">${t('sk_crit')}</span>` : r === 1 ? ` <span class="ko">${t('sk_miss')}</span>` : ''}`,
+    );
+  } else {
+    const n = TKCRIT[key] ? a.nd * 2 : a.nd,
+      rs = Array.from({ length: n }, () => dRoll(a.dd)),
+      px = /^\+ ?(\d+)d(\d+)([+-]\d+)?/.exec(a.plus || ''),
+      ps = px ? Array.from({ length: +px[1] }, () => dRoll(+px[2])) : [],
+      primary = rs.reduce((x, y) => x + y, 0) + a.mod,
+      weakened = a.swarm && token && token.hp * 2 <= token.hpMax,
+      tot = (weakened ? Math.floor(primary / 2) : primary) + ps.reduce((x, y) => x + y, 0) + (px && px[3] ? +px[3] : 0);
+    TKCRIT[key] = false;
+    pushRoll(
+      `${esc(nm)} · ${monsterDamageFormula({ ...a, nd: n })}${rs.length ? ' [' + rs.join(', ') + ']' : ''}${weakened ? ' ÷ 2' : ''}${px ? ` + ${px[1]}d${px[2]}${px[3] || ''} [${ps.join(', ')}]` : ''} = <b>${tot}</b>`,
+    );
+  }
+}
 function monSheet(m, tk) {
   SBM = m;
   SBT = tk || null;
@@ -10865,6 +10912,19 @@ function monSheet(m, tk) {
       if (!b) return;
       if (b.id === 'sb_close') {
         dl.close();
+        return;
+      }
+      if (b.dataset.school) {
+        const school = b.dataset.school,
+          block = SRDL?.[srdKey(SBM)],
+          tier = block?.magic?.tiers[school];
+        if (tier)
+          rollMonsterAttack(
+            { ab: block.mx[1] + tier, nd: tier, dd: 8, mod: 0 },
+            tr(SBM.n) + ' · ' + tr(SCH[school]),
+            (SBT?.id || SBM.id) + '_' + school,
+            b.dataset.mode,
+          );
         return;
       }
       if (b.dataset.sbrc) {
@@ -10891,24 +10951,8 @@ function monSheet(m, tk) {
         const a = SBA[+b.dataset.i];
         if (!a) return;
         const nm = tr(SBM.n) + (SBT && SBT.num ? ' ' + SBT.num : '') + ' · ' + a.n,
-          key = 'sb_' + (SBT ? SBT.id : SBM.id) + '_' + b.dataset.i;
-        if (b.dataset.sbr === 'atk') {
-          const r = dRoll(20);
-          TKCRIT[key] = r === 20;
-          pushRoll(
-            `${esc(nm)} · d20 (${r}) ${sgn(a.ab)} = <b>${r + a.ab}</b>${r === 20 ? ` <span class="cr">${t('sk_crit')}</span>` : r === 1 ? ` <span class="ko">${t('sk_miss')}</span>` : ''}`,
-          );
-        } else {
-          const n = TKCRIT[key] ? a.nd * 2 : a.nd,
-            rs = Array.from({ length: n }, () => dRoll(a.dd)),
-            px = /^\+ ?(\d+)d(\d+)([+-]\d+)?/.exec(a.plus || ''),
-            ps = px ? Array.from({ length: +px[1] }, () => dRoll(+px[2])) : [],
-            tot = rs.reduce((x, y) => x + y, 0) + a.mod + ps.reduce((x, y) => x + y, 0) + (px && px[3] ? +px[3] : 0);
-          TKCRIT[key] = false;
-          pushRoll(
-            `${esc(nm)} · ${n}d${a.dd}${a.mod ? sgn(a.mod) : ''} [${rs.join(', ')}]${px ? ` + ${px[1]}d${px[2]} [${ps.join(', ')}]` : ''} = <b>${tot}</b>`,
-          );
-        }
+          key = (SBT ? SBT.id : SBM.id) + '_' + b.dataset.i;
+        rollMonsterAttack(a, nm, key, b.dataset.sbr, SBT);
       }
     });
   }

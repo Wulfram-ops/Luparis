@@ -34,7 +34,20 @@ const DEFSZ = {
   Tarrasque: 'G',
 };
 const SZK = ['T', 'S', 'M', 'L', 'H', 'G'];
+let SRDL = null,
+  SRDLP = null;
+const officialMonsters = new Map();
 function noT(m) {
+  const source = officialMonsters.get(srdKey(m));
+  if (source && (lang === 'fr' ? m.no === source.no : (m.noen || m.no) === source.noen)) {
+    const block = SRDL?.[source.id];
+    if (!block) return '';
+    const names = block.atk.map(a => tr(a.n));
+    if (block.magic) names.push(...Object.keys(block.magic.tiers).map(k => tr(SCH[k])));
+    names.push(...block.tr.slice(0, 4).map(row => tr(row)));
+    if (block.leg?.length) names.push(L2('Legendary', 'Légendaire'));
+    return names.join(' · ');
+  }
   return lang === 'en' && m.noen ? m.noen : m.no || '';
 }
 function monSz(m) {
@@ -184,6 +197,13 @@ fetch('srd-monsters.json')
   .then(d => {
     if (!Array.isArray(d)) return;
     SRD = d;
+    for (const m of SRD)
+      if (m.src === 'srd') {
+        officialMonsters.set(m.id, m);
+        const starter = DEF.find(x => x.n[0] === m.n[0]);
+        if (starter) officialMonsters.set(starter.id, m);
+      }
+
     let done = null;
     try {
       done = localStorage.getItem('luparis-srd');
@@ -244,6 +264,7 @@ function renderB() {
     return;
   }
   BDIRTY = false;
+  if (SRD.length) loadMonsterActions();
   const q = $('q').value.trim().toLowerCase(),
     ft = $('ft').value,
     fh = $('fh').value,
@@ -345,20 +366,25 @@ function resetForm() {
   prev();
 }
 $('mcancel').onclick = resetForm;
-function atkRow(a) {
+let editorAttacks = [],
+  originalAttackFields = '';
+function atkRow(a, index = -1) {
   a = a || { n: '', k: 1, ab: 4, nd: 1, dd: 8, mod: 2 };
   const sel = (cls, vals, v, fmt) =>
       `<select class="${cls}" aria-label="${cls}">${vals.map(x => `<option value="${x}"${x === v ? ' selected' : ''}>${fmt(x)}</option>`).join('')}</select>`,
     rg = (a2, b2) => Array.from({ length: b2 - a2 + 1 }, (_, i) => a2 + i);
-  return `<div class="arow"><input class="an" value="${esc(a.n)}" placeholder="${L2('Attack name', "Nom de l'attaque")}" aria-label="${L2('Attack name', "Nom de l'attaque")}">${sel('ak', rg(1, 4), a.k, x => '×' + x)}${sel('ab', rg(-2, 20), a.ab, x => L2('hit ', 'att. ') + sgn(x))}${sel('nd', rg(1, 10), a.nd, x => x)}${sel('dd', [4, 6, 8, 10, 12], a.dd, x => 'd' + x)}${sel('mod', rg(-5, 15), a.mod, x => (x ? sgn(x) : '+0'))}<button type="button" class="adel" aria-label="${L2('Remove', 'Retirer')}">×</button></div>`;
+  return `<div class="arow" data-index="${index}"><input class="an" value="${esc(a.n)}" placeholder="${L2('Attack name', "Nom de l'attaque")}" aria-label="${L2('Attack name', "Nom de l'attaque")}">${sel('ak', rg(1, 4), a.k, x => '×' + x)}${sel('ab', rg(-2, 20), a.ab, x => L2('hit ', 'att. ') + sgn(x))}${sel('nd', rg(0, 10), a.nd, x => x)}${sel('dd', [0, 4, 6, 8, 10, 12], a.dd, x => (x ? 'd' + x : '—'))}${sel('mod', rg(-5, 15), a.mod, x => (x ? sgn(x) : '+0'))}<button type="button" class="adel" aria-label="${L2('Remove', 'Retirer')}">×</button></div>`;
 }
 function atkFill(list) {
+  editorAttacks = list;
   $('matk').innerHTML =
     `<span class="small">${L2('Attacks (clickable on the map)', 'Attaques (cliquables sur la carte)')}</span><div class="arows">${(list || []).map(atkRow).join('')}</div><button type="button" id="matk_add">${L2('Add an attack', 'Ajouter une attaque')}</button>`;
+  originalAttackFields = JSON.stringify(atkRead());
 }
 function atkRead() {
   return [...$('matk').querySelectorAll('.arow')]
     .map(r => ({
+      ...editorAttacks[+r.dataset.index],
       n: r.querySelector('.an').value.trim().slice(0, 40),
       k: +r.querySelector('.ak').value,
       ab: +r.querySelector('.ab').value,
@@ -376,7 +402,17 @@ $('matk').addEventListener('click', e => {
   } else if (e.target.classList.contains('adel')) e.target.closest('.arow').remove();
 });
 function monAtk(m) {
-  return m && Array.isArray(m.atk) && m.atk.length ? m.atk : parseAtk((m ? noT(m) : '') || '');
+  if (m?.atk?.length) return m.atk;
+  const key = m && srdKey(m);
+  if (!key) return parseAtk(m ? noT(m) : '');
+  return (SRDL?.[key]?.atk || []).map(a => ({
+    ...a,
+    n: tr(a.n),
+    ty: tr(a.ty),
+    how: tr(a.how),
+    rest: tr(a.rest),
+    plus: a.plus ? tr(a.plus) : '',
+  }));
 }
 atkFill([]);
 
@@ -397,8 +433,8 @@ $('mf').addEventListener('submit', e => {
     pv: +$('mpv').value,
     init: Math.max(-5, Math.min(15, +$('min').value || 0)),
     hab: [...$('mhab').querySelectorAll('input:checked')].map(c => c.value),
-    no: $('mno').value.trim(),
-    atk: atkRead(),
+    no: old && $('mno').value === noT(old) ? old.no : $('mno').value.trim(),
+    atk: old && JSON.stringify(atkRead()) === originalAttackFields ? old.atk : atkRead(),
     desc: $('mdesc').value.trim().slice(0, 2000),
     tr: trParse($('mtr').value),
   };

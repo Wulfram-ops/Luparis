@@ -111,6 +111,19 @@ def run(chrome: str | None) -> None:
         check("dragons are chaotic neutral", "chaotic neutral" in sheet or "chaotique neutre" in sheet)
         page.evaluate("document.getElementById('sbdlg').close()")
 
+        D("monSheet(MON.find(x => x.id === 'd39'))")  # starter alias of the lich
+        page.locator("#sbdlg .msmagic").first.wait_for()
+        school = page.locator("#sbdlg .msmagic").filter(has=page.locator('[data-school="afflux"]'))
+        school.locator("summary").click()
+        check("school repertoire prices fireball in Mana", "3 Mana" in school.inner_text())
+        school.locator('[data-mode="dmg"]').click()
+        check("school damage rolls use d8", D("RL[0].h.includes('d8')"))
+        check("token and sheet use the same lich attack", D("SBA[0].dd===8 && SBA[0].ab===monAtk(SBM)[0].ab"))
+        D("monSheet(MON.find(x => x.id === 's-flying-snake'))")
+        check("fixed bite and poison use one damage roll", "3d4" in page.locator('#sbdlg [data-sbr="dmg"]').first.inner_text())
+        check("starter vampire resolves to its published form", D("srdKey(MON.find(x=>x.id==='d36'))==='s-vampire-vampire'"))
+        page.evaluate("document.getElementById('sbdlg').close()")
+
         # backup round trip
         page.click("#bk_open")
         with page.expect_download() as dl:
@@ -266,7 +279,7 @@ def run(chrome: str | None) -> None:
         for target in ("[data-ha=atk]", "[data-pfr]", ".k-spl", ".k-inv", "[data-hnotes]"):
             check(f"character module {target} shown", page.locator(f'#play_workspace {target}').first.is_visible())
         page.locator('[data-ha="atk"]').first.click()
-        check("weapon attack reaches the roll log from the play sheet", D("RL.at(-1).h.includes('d20')"))
+        check("weapon attack reaches the roll log from the play sheet", D("RL[0].h.includes('d20')"))
         check("roll log floats outside the play workspace", D("$('rolls').parentNode === document.body && getComputedStyle($('rolls')).position === 'fixed'"))
         if page.locator("#rl_tog").get_attribute("aria-expanded") == "true":
             page.locator("#rl_tog").click()

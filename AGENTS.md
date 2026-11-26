@@ -78,6 +78,7 @@ Each point below was asked for by Fred. Most are covered by `tests/smoke.py`; ke
 - Mage reflex shield: reaction paid in Mana, +2 Evasion per point (Aegis +3 and on an ally).
 - Campaign folders with campaign XP (GM only), rename and delete; XP purchases by players go through the host.
 - Open question for Fred: monsters still use Tier + 1 to hit.
+- The published GM conversion preserves monster mastery (Tier + 1) for imported attack and save bonuses. School repertoire strikes use the school rules. The token and monster sheet must use the same converted attack, including secondary damage.
 
 ## When you finish
 

@@ -330,6 +330,10 @@
 "Withering Touch": "Toucher flétrissant"
 },
 "texts": {
+"0edbcbc8d8": "La cible fait une {1}. Sur un échec, elle est empoisonnée une minute. Sur un échec d’au moins 5, elle reste empoisonnée et inconsciente pendant 1d10 minutes.",
+"5d57fa3be6": "La cible est agrippée (évasion {1}). Tant que la prise dure, les tentacules ne peuvent pas saisir une autre cible.",
+"8cd78d3694": "La cible fait une {1}. Sur un échec, elle est empoisonnée une minute. Sur un résultat de 5 ou moins, elle perd aussi connaissance jusqu’à la fin de l’effet, jusqu’à subir des dégâts ou jusqu’à ce qu’une autre créature la secoue par une action.",
+"e992dd83bf": "La cible fait une {1}. Sur un échec, elle subit {2}.",
 "0025791fff": "Rouille : toute arme de métal non magique qui le touche prend −1 aux dégâts, cumulatif ; détruite à −5. Les munitions métalliques sont détruites.",
 "002c79b5e0": "Parle avec les bêtes et les plantes.",
 "00f3cae31c": "et il s'accroche à la cible. Accroché, il n'attaque plus : au début de chacun de ses tours, la cible perd {1}. Il se détache (coût {2}) après avoir pris {3} ou à la mort de la cible ; une créature peut l'arracher (action).",
