@@ -1,8 +1,10 @@
 # Feuille de route — Luparis
 
-Mise à jour : 25 novembre 2026. Ce fichier suit ce qui est fait, ce qui vient ensuite et la dette technique repérée à la relecture.
+Mise à jour : 26 novembre 2026. Ce fichier suit ce qui est fait, ce qui vient ensuite et la dette technique repérée à la relecture.
 
-Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l'écran de jeu (jets, jauges, inventaire, notes, initiative). L'onglet **Personnage** est une fiche fixe qui sert à monter de niveau.
+Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trouver l'utile**. Un bandeau latéral gauche porte la navigation et les réglages. L'onglet **Jeu** est l'écran de partie : une grille de modules (carte, personnage, matrice, chaque carte, initiative, pion, repères, images, notes) que chacun dispose à sa guise, avec des presets. L'onglet **Personnage** est une fiche fixe qui sert à monter de niveau.
+
+**Pour les IA qui reprennent le projet : lire `AGENTS.md` avant tout changement.** Il liste les fondamentaux qui ne doivent pas disparaître.
 
 ---
 
@@ -74,6 +76,9 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 ## 2. Améliorations prévues (sans ordre strict)
 
 - **Carte de bataille**
+  - Bâtiments des scènes Taverne et Village : intérieurs, portes vers la rue (aujourd'hui des blocs pleins).
+  - Roche des souterrains : relief et teinte variés au lieu d'une masse uniforme ; rendre les murs plus bas loin des salles.
+  - Vue isométrique : silhouette des pions cachés en plus de la transparence ; option pour baisser tous les murs (façon jeux de tactique).
   - Effets animés (feu, brouillard) : précalculer les sprites et n'animer que la partie visible.
   - Peindre le relief au pinceau : déjà en redessin partiel ; faire de même pour la zone rectangulaire au relâchement.
   - Lignes de vue / brouillard de guerre révélé par les tokens joueurs.
@@ -85,7 +90,20 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 
 ---
 
-## 3. Dette technique (relectures du 25 novembre, avis croisés Claude / Gemini / GPT / Perplexity)
+## 3. Dette technique
+
+### Relecture du 26 novembre (Claude)
+- **Corrigé** : code mort de l'ancienne main de cartes (repli au clic, glisser pour réordonner, `hSaveOrder`, boutons `hfold`/`hmv`) retiré de `40-table.js` ; règle CSS associée retirée.
+- **Corrigé** : `fadeCells` parcourait tous les objets pour chaque case testée ; un ensemble est construit une fois par dessin.
+- **Corrigé** : la zone de redessin partiel était trop juste en vue isométrique (arbres et statues dépassaient) ; marges élargies.
+- **Corrigé** : l'aperçu de bâtiment dessinait une seule arête verticale en isométrique ; il en dessine trois.
+- **Corrigé** : les joueurs perdaient les presets de l'onglet Jeu et le choix de vue (règle CSS `mp-player` trop large).
+- **À surveiller** : deux projections (iso / dessus) partagent les mêmes fonctions (`scr`, `tileQuad`, `tilePoint`, `pick`) ; tout nouveau dessin doit passer par elles, jamais par des calculs `TW / 2` ou `TW / 4` en dur.
+- **À surveiller** : `57-layout.js` réécrit `renderHand` et `renderTok` ; une IA qui modifie ces fonctions doit garder les modules `data-gk` (sinon la grille perd ses cartes).
+- **À faire** : `makeReorder` (50-ui) ne sert plus qu'au panneau latéral de l'onglet Monde ; l'ancienne clé `luparis-play-layout-v1` reste dans les navigateurs, sans effet.
+- **À faire** : plusieurs fichiers écrits par d'autres agents ne sont pas formatés par Prettier (lignes très longues dans `57-layout.js` d'origine, `58-mapgen.js`, `10-render.js`) ; formater domaine par domaine, en commit séparé.
+
+### Relectures du 25 novembre (avis croisés Claude / Gemini / GPT / Perplexity)
 
 | Sujet | État | Suite |
 | --- | --- | --- |
@@ -103,6 +121,11 @@ Principe d'interface retenu : **sobre et minimaliste**. L'onglet **Carte** est l
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
+- **Interface (26 novembre)** : bandeau latéral gauche (navigation, recherche, langue, unités, sauvegarde), repliable en icônes, barre compacte sur téléphone ; barre de la carte sur une ligne avec les presets ; placement rapide et aide repliés ; bestiaire compact (actions sur une ligne).
+- **Onglet Jeu modulaire (26 novembre)** : grille de 12 colonnes, chaque carte du personnage est un module ; déplacement par le titre avec aperçu des autres modules, redimensionnement par le coin ; aucun module ne défile ; presets Table, Combat, Exploration, Préparation (le preset Fiche est retiré) ; « Personnaliser » montre ou masque les modules.
+- **Cartes unifiées (26 novembre)** : une structure et une couleur par famille, doublons retirés, options hors tier repliées, libellés traduits au changement de langue.
+- **Vue isométrique 2:1 façon Dofus (26 novembre)** : vue par défaut, vue de dessus en option personnelle ; murs et objets devant un pion deviennent transparents.
+- **Génération de cartes (26 novembre)** : souterrains creusés dans la roche, arbres en bosquets, plus d'éléments isolés, couvert et point haut garantis, étals décalés ; la nuit n'est plus une zone de ténèbres.
 - Carte dessinée à partir d'une phrase (25 novembre) : champ « Décris la scène » dans la barre de la carte. Sans clé, mots-clés français et anglais (biomes, scènes, temple et bâtiments, « en ruines », « abandonné », objets, dangers, taille) ; avec une clé Gemini enregistrée dans le navigateur du MJ (⚙), l'IA écrit la recette. La clé n'est jamais exportée, même dans la sauvegarde 💾. Reste : d'autres générateurs (crypte, navire, grotte aménagée, camp militaire…), poser des monstres depuis la phrase.
 - Bouclier réflexe (25 novembre) : réaction en Mana, +2 Esquive par point (Égide +3, et sur un allié). Simulation : rentable dès le niveau 10 (mages de 70 à 80 % de l'optimum), inutile au niveau 1 faute de Mana.
 - Carte « Images » sur l'onglet Carte (25 novembre) : le MJ garde une galerie sur son ordinateur, montre une image aux joueurs (elle s'ouvre en grand chez eux), la masque d'un clic.
@@ -110,13 +133,13 @@ Points des avis externes écartés : framework (React/Vue) inutile pour l'instan
 - **Performance de la carte** (novembre 2026)
   - Scène mise en cache avec marge hors écran : survol, déplacement, zoom et glisser de token sans redessin complet.
   - Tuiles du sol pré-rendues ; peinture du relief en redessin partiel ; zone de sélection en surcouche.
-  - Réglage Qualité (Auto / Haute / Allégée), bascule automatique sur les PC lents.
+  - Bascule automatique en qualité allégée sur les PC lents (le réglage manuel a été retiré).
   - Sauvegarde différée (une écriture par geste, forcée à la fermeture de la page).
   - Bestiaire rendu à l'ouverture de l'onglet (page deux fois plus légère).
   - Carte du monde : déplacement en image, image HD chargée au premier zoom.
 - **Sécurité multijoueur** : jets reçus des joueurs assainis ; un joueur n'agit que pour son personnage.
 - **Structure** : code découpé et lisible (`src/js/`), CSS et règles séparés, outils Python reproductibles, tests navigateur et CI, sauvegarde complète exportable.
-- **Interface** : barre d'outils contextuelle, aperçu avant placement (empreinte, rotation, hauteur), recherche universelle (Ctrl+K), titres de cartes cliquables (réduire) et déplaçables (maintenir), fiche Personnage fixe en trois colonnes.
+- **Interface** : barre d'outils contextuelle, aperçu avant placement (empreinte, rotation, hauteur), recherche universelle (Ctrl+K), fiche Personnage fixe en trois colonnes.
 - **Jeu** : fiches de monstres depuis les tokens, zones d'effet (cercle, sphère, cône, ligne, cube), notes de séance du MJ, multijoueur de test.
 - **Règles v0.5** : six stats, talents, pactes, équilibrage par simulations.
 - **Bestiaire** : fiches de monstres minimalistes converties aux règles Luparis (EN/FR), dragons chaotiques neutres, souffles à recharge choisie (1 à 3 tours).

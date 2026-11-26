@@ -2275,6 +2275,7 @@ let FADEK = '',
 function fadeCells() {
   const out = new Set();
   if (!ISO() || !SEETHRU) return out;
+  const objCells = new Set(OBJS.map(o => o.x * 4096 + o.y));
   for (const k of tokens) {
     if (k.x < 0 || k.y < 0 || k.x >= N || k.y >= N) continue;
     const [tvx, tvy] = view(k.x, k.y),
@@ -2286,7 +2287,7 @@ function fadeCells() {
           vy = tvy + (d - e) / 2;
         if (vx < 0 || vy < 0 || vx >= N || vy >= N) continue;
         const [x, y] = unview(vx, vy),
-          h = Math.max(H[x][y], 0) - th + (OBJS.some(o => o.x === x && o.y === y) ? 2 : 0);
+          h = Math.max(H[x][y], 0) - th + (objCells.has(x * 4096 + y) ? 2 : 0);
         // a cell of height h covers about 1.1 h + 2 quarter-tiles of what stands behind it
         if (h > 0 && d < 1.12 * h + 2) out.add(x * 4096 + y);
       }
@@ -8737,12 +8738,6 @@ function hOrder(c, cards) {
       .replace(/^<(div|form) class="hc /, `<$1 data-ck="${esc(x.k)}" class="hc `),
   );
 }
-function hSaveOrder(c) {
-  const box = document.querySelector('#hand .hcards');
-  if (!box) return;
-  c.corder = [...box.children].map(x => x.dataset.ck).filter(Boolean);
-  saveC();
-}
 function renderHand() {
   handGen++;
   const P = document.getElementById('hand');
@@ -8896,84 +8891,6 @@ document.getElementById('hand').addEventListener('submit', e => {
   if (c === C && CH.active) renderSheet();
   renderHand();
 });
-{
-  let hDrag = null;
-  const H0 = document.getElementById('hand');
-  const hFold = card => {
-    const k = 'c:' + card.dataset.ck;
-    FOLD[k] = !FOLD[k];
-    if (!FOLD[k]) delete FOLD[k];
-    foldSave();
-    card.classList.toggle('fold', !!FOLD[k]);
-    const t2 = card.querySelector('[data-htit]');
-    if (t2) t2.setAttribute('aria-expanded', String(!FOLD[k]));
-  };
-  H0.addEventListener('pointerdown', e => {
-    const g = e.target.closest('[data-htit]');
-    if (g && e.button === 0) {
-      const cd = g.closest('[data-ck]');
-      if (cd) cd.draggable = true;
-    }
-  });
-  H0.addEventListener('pointerup', e => {
-    const g = e.target.closest('[data-htit]');
-    if (g && !hDrag) {
-      const cd = g.closest('[data-ck]');
-      if (cd) cd.draggable = false;
-    }
-  });
-  H0.addEventListener('click', e => {
-    const g = e.target.closest('[data-htit]');
-    if (!g || e.target.closest('button,a,input,select,textarea,label')) return;
-    const cd = g.closest('[data-ck]');
-    if (cd) hFold(cd);
-  });
-  H0.addEventListener('keydown', e => {
-    const g = e.target.closest && e.target.closest('[data-htit]');
-    if (!g || e.target !== g) return;
-    const cd = g.closest('[data-ck]');
-    if (!cd) return;
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      hFold(cd);
-    } else if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-      e.preventDefault();
-      const box = cd.parentNode;
-      if (e.key === 'ArrowLeft' && cd.previousElementSibling) box.insertBefore(cd, cd.previousElementSibling);
-      else if (e.key === 'ArrowRight' && cd.nextElementSibling) box.insertBefore(cd.nextElementSibling, cd);
-      const c = handChar();
-      if (c) hSaveOrder(c);
-      g.focus();
-    }
-  });
-  H0.addEventListener('dragstart', e => {
-    const cd = e.target.closest && e.target.closest('[data-ck]');
-    if (!cd || !cd.draggable) return;
-    hDrag = cd;
-    cd.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-    try {
-      e.dataTransfer.setData('text/plain', 'card');
-    } catch (x) {}
-  });
-  H0.addEventListener('dragover', e => {
-    if (!hDrag) return;
-    e.preventDefault();
-    const t2 = e.target.closest('[data-ck]');
-    if (!t2 || t2 === hDrag || t2.parentNode !== hDrag.parentNode) return;
-    const r = t2.getBoundingClientRect(),
-      before = e.clientY < r.top + 8 || (e.clientY < r.bottom && e.clientX < r.left + r.width / 2);
-    t2.parentNode.insertBefore(hDrag, before ? t2 : t2.nextSibling);
-  });
-  H0.addEventListener('dragend', () => {
-    if (!hDrag) return;
-    hDrag.classList.remove('dragging');
-    hDrag.draggable = false;
-    hDrag = null;
-    const c = handChar();
-    if (c) hSaveOrder(c);
-  });
-}
 document.getElementById('hand').addEventListener('input', e => {
   if (!e.target.dataset || !e.target.dataset.hnotes) return;
   const c = handChar();
@@ -9081,26 +8998,6 @@ document.getElementById('hand').addEventListener('click', e => {
     hRoll(
       `${esc(cellName(k))}${f ? ' + ' + esc(f.n) : ''} · d20 (${r2 != null ? r1 + ', ' + r2 + ' → ' + r : r}) ${sgn(b)} = <b>${r + b}</b>${r === 20 ? ` <span class="cr">${t('sk_crit')}</span>` : r === 1 ? ` <span class="ko">${t('sk_miss')}</span>` : ''}`,
     );
-    return;
-  }
-  if (ds.hfold) {
-    const card = b.closest('[data-ck]');
-    if (!card) return;
-    const k = 'c:' + card.dataset.ck;
-    FOLD[k] = !FOLD[k];
-    if (!FOLD[k]) delete FOLD[k];
-    foldSave();
-    card.classList.toggle('fold', !!FOLD[k]);
-    b.setAttribute('aria-expanded', String(!FOLD[k]));
-    return;
-  }
-  if (ds.hmv) {
-    const card = b.closest('[data-ck]'),
-      box = card && card.parentNode;
-    if (!card) return;
-    if (+ds.hmv < 0 && card.previousElementSibling) box.insertBefore(card, card.previousElementSibling);
-    else if (+ds.hmv > 0 && card.nextElementSibling) box.insertBefore(card.nextElementSibling, card);
-    hSaveOrder(c);
     return;
   }
   if (ds.hinv) {
@@ -11609,7 +11506,7 @@ function drawPlacePreview() {
           ctx.strokeStyle = 'rgba(60,50,40,.35)';
           ctx.lineWidth = 1;
           ctx.beginPath();
-          for (const i of [2, 3]) {
+          for (const i of ISO() ? [1, 2, 3] : [2, 3]) {
             ctx.moveTo(g[i][0], g[i][1]);
             ctx.lineTo(t[i][0], t[i][1]);
           }

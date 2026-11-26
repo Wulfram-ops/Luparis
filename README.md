@@ -1,6 +1,6 @@
 # Luparis
 
-Site tout-en-un pour la campagne Luparis (règles maison D&D 5.5 × Daggerheart) : carte tactique à grille carrée en vue presque verticale, fiches de personnage par campagne, bestiaire avec générateur IA, livre de règles, carte du monde et cartes de villes jouables. Bilingue anglais/français.
+Site tout-en-un pour la campagne Luparis (règles maison D&D 5.5 × Daggerheart) : carte tactique en vue isométrique façon Dofus (vue de dessus en option), fiches de personnage par campagne, bestiaire avec générateur IA, livre de règles, carte du monde et cartes de villes jouables. Bilingue anglais/français.
 
 Version en ligne : https://wulfram-ops.github.io/Luparis/
 
@@ -58,6 +58,7 @@ Les mêmes vérifications tournent sur GitHub à chaque push (`.github/workflows
 | `srd-details.json` | Texte original des fiches SRD (anglais), chargé à l'ouverture d'une fiche |
 | `srd-luparis.json` | Fiches SRD converties aux règles Luparis (EN/FR), chargées à l'ouverture d'une fiche |
 | `ROADMAP.md` | Feuille de route : prochaines étapes, améliorations, dette technique |
+| `AGENTS.md` | Consignes pour les IA qui modifient le site : règles du propriétaire, vérifications, fonctionnalités à ne pas perdre |
 
 ### Outils (`tools/`)
 

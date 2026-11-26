@@ -537,7 +537,7 @@ function drawPlacePreview() {
           ctx.strokeStyle = 'rgba(60,50,40,.35)';
           ctx.lineWidth = 1;
           ctx.beginPath();
-          for (const i of [2, 3]) {
+          for (const i of ISO() ? [1, 2, 3] : [2, 3]) {
             ctx.moveTo(g[i][0], g[i][1]);
             ctx.lineTo(t[i][0], t[i][1]);
           }

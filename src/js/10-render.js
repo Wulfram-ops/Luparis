@@ -1620,6 +1620,7 @@ let FADEK = '',
 function fadeCells() {
   const out = new Set();
   if (!ISO() || !SEETHRU) return out;
+  const objCells = new Set(OBJS.map(o => o.x * 4096 + o.y));
   for (const k of tokens) {
     if (k.x < 0 || k.y < 0 || k.x >= N || k.y >= N) continue;
     const [tvx, tvy] = view(k.x, k.y),
@@ -1631,7 +1632,7 @@ function fadeCells() {
           vy = tvy + (d - e) / 2;
         if (vx < 0 || vy < 0 || vx >= N || vy >= N) continue;
         const [x, y] = unview(vx, vy),
-          h = Math.max(H[x][y], 0) - th + (OBJS.some(o => o.x === x && o.y === y) ? 2 : 0);
+          h = Math.max(H[x][y], 0) - th + (objCells.has(x * 4096 + y) ? 2 : 0);
         // a cell of height h covers about 1.1 h + 2 quarter-tiles of what stands behind it
         if (h > 0 && d < 1.12 * h + 2) out.add(x * 4096 + y);
       }
