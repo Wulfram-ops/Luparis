@@ -73,11 +73,11 @@ Each point below was asked for by Fred. Most are covered by `tests/smoke.py`; ke
 
 ### Characters and rules (`35-character.js`, `40-table.js`, `rules/`)
 - No classes: one shared menu of effects, each school only has a small extra. All schools roll d8; Surge ignores 2 armour.
-- Attack: d20 + the Matrix cell chosen for the situation + Tier. Weapon damage: Tier dice + Tier.
+- Attack: d20 + the Matrix cell chosen for the situation, **no Tier to hit** (Fred, 26 November). Damage: Tier dice of the weapon or magic school + Tier. Save DC: 8 + cell + Tier.
 - Shields give Evasion by size (buckler +1, round +1, heater +2, great +3 with Finesse cap +2, pavise +3 with cap +1); no Parry roll; Interception targets the interceptor's Evasion.
 - Mage reflex shield: reaction paid in Mana, +2 Evasion per point (Aegis +3 and on an ally).
 - Campaign folders with campaign XP (GM only), rename and delete; XP purchases by players go through the host.
-- Open question for Fred: monsters still use Tier + 1 to hit.
+- Open question for Fred: converted monsters still add Tier + 1 to hit (`tools/srd_luparis.py`).
 
 ## When you finish
 

@@ -121,6 +121,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
+- **Règle d'attaque (26 novembre)** : jet d'attaque = d20 + case de la Matrice, sans le Tier ; dégâts = Tier dés de l'arme ou de l'école + Tier (les sorts gagnent le + Tier) ; DD inchangé (8 + case + Tier). Reste à décider : les monstres convertis ajoutent encore Tier + 1 au toucher.
 - **Interface (26 novembre)** : bandeau latéral gauche (navigation, recherche, langue, unités, sauvegarde), repliable en icônes, barre compacte sur téléphone ; barre de la carte sur une ligne avec les presets ; placement rapide et aide repliés ; bestiaire compact (actions sur une ligne).
 - **Onglet Jeu modulaire (26 novembre)** : grille de 12 colonnes, chaque carte du personnage est un module ; déplacement par le titre avec aperçu des autres modules, redimensionnement par le coin ; aucun module ne défile ; presets Table, Combat, Exploration, Préparation (le preset Fiche est retiré) ; « Personnaliser » montre ou masque les modules.
 - **Cartes unifiées (26 novembre)** : une structure et une couleur par famille, doublons retirés, options hors tier repliées, libellés traduits au changement de langue.

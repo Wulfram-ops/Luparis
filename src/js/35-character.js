@@ -334,7 +334,7 @@ function weaponAttack(c, i, target) {
     tier = c.fam[w.f] || 0,
     q = weaponInput(c, i),
     cell = weaponCell(c, i),
-    ab = (c.cells[cell] || 0) + mb(tier),
+    ab = c.cells[cell] || 0,
     r = dRoll(20),
     total = r + ab,
     result = weaponOutcome(w.f, tier, r, total, weaponNumber(target), weaponNumber(q.second));
@@ -1006,7 +1006,7 @@ function renderSheet() {
     .map((x, i) => {
       const tier = C.fam[x.f] || 0,
         mod = tier,
-        ab = C.cells[FAM[x.f].c] + mb(tier),
+        ab = C.cells[FAM[x.f].c],
         nd = Math.max(1, tier),
         dd = SZ[x.s];
       return `<div class="atk"><div><div class="an">${esc(x.n)}</div><div class="ad">${esc(tr(FAM[x.f].n))} · ${esc(szLabel(x.f, x.s))} · ${tier ? 'Tier ' + tier : esc(t('sk_unm'))}<br>${t('sk_attack')} ${sgn(ab)} · ${t('sk_damage')} ${nd}d${dd}${mod ? sgn(mod) : ''}</div>${weaponPassiveHTML(C, i, x, tier)}</div>
@@ -1018,8 +1018,8 @@ function renderSheet() {
       .filter(k => C.sch[k] > 0)
       .map(k => {
         const tier = C.sch[k],
-          ab = sMod + mb(tier);
-        return `<div class="atk"><div><div class="an">${esc(tr(SCH[k]))} — ${t('sk_spell')}</div><div class="ad">Tier ${tier} · ${esc(t('sk_fx')(tier))} · ${t('sk_dc')} ${8 + ab}<br>${t('sk_attack')} ${sgn(ab)} · ${t('sk_damage')} ${tier}d8</div></div>
+          ab = sMod;
+        return `<div class="atk"><div><div class="an">${esc(tr(SCH[k]))} — ${t('sk_spell')}</div><div class="ad">Tier ${tier} · ${esc(t('sk_fx')(tier))} · ${t('sk_dc')} ${8 + ab + tier}<br>${t('sk_attack')} ${sgn(ab)} · ${t('sk_damage')} ${tier}d${SDIE[k] || 8}${sgn(tier)}</div></div>
   <div class="ab"><button type="button" class="go" data-roll="satk" data-k="${k}">${t('sk_attack')}</button><button type="button" data-roll="sdmg" data-k="${k}">${t('sk_damage')}</button></div></div>`;
       })
       .join('');
@@ -1266,8 +1266,8 @@ fiche.addEventListener('click', e => {
       const k = ds.k,
         tier = C.sch[k],
         nm = tr(SCH[k]);
-      if (ds.roll === 'satk') rollAtk(nm, C.cells.P_men + mb(tier), 's' + k);
-      else rollDmg(nm, tier, SDIE[k] || 8, 0, 's' + k);
+      if (ds.roll === 'satk') rollAtk(nm, C.cells.P_men, 's' + k);
+      else rollDmg(nm, tier, SDIE[k] || 8, tier, 's' + k);
     }
     return;
   } else if (b.id === 'c_short' || b.id === 'c_long') {

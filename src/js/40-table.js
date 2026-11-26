@@ -1012,7 +1012,7 @@ function renderHand() {
     const tier = c.fam[w.f] || 0,
       cellK = weaponCell(c, i),
       mod = tier,
-      ab = (c.cells[cellK] || 0) + mb(tier),
+      ab = c.cells[cellK] || 0,
       nd = Math.max(1, tier),
       dd = SZ[w.s] || 6;
     const srcs = [...Object.keys(SCH).filter(k => c.sch[k] > 0), ...((c.apex || 0) > 0 ? ['apex'] : [])],
@@ -1043,11 +1043,11 @@ function renderHand() {
   for (const k of Object.keys(SCH)) {
     const tier = c.sch[k] || 0;
     if (!tier) continue;
-    const ab = sMod + mb(tier),
+    const ab = sMod,
       list = fxFor(k),
       st = handSel[c.id + k] || (handSel[c.id + k] = new Set()),
       cost = [...st].reduce((s, i) => s + list[i][0], 0);
-    cards.push(`<div class="hc k-spl"><div class="ht">${L2('Magic', 'Magie')} · Tier ${tier}</div><div class="hn">${esc(tr(SCH[k]))}</div><div class="hb">${L2('Attack', 'Attaque')} <b>${sgn(ab)}</b> · ${L2('Save DC', 'DD')} <b>${8 + ab}</b> · ${L2('Damage', 'Dégâts')} <b>${tier}d${SDIE[k] || 8}</b></div>
+    cards.push(`<div class="hc k-spl"><div class="ht">${L2('Magic', 'Magie')} · Tier ${tier}</div><div class="hn">${esc(tr(SCH[k]))}</div><div class="hb">${L2('Attack', 'Attaque')} <b>${sgn(ab)}</b> · ${L2('Save DC', 'DD')} <b>${8 + ab + tier}</b> · ${L2('Damage', 'Dégâts')} <b>${tier}d${SDIE[k] || 8}${sgn(tier)}</b></div>
   <div class="fx">${list
     .map((f, i) => {
       // effects above the tier are not playable yet: they stay out of the card
@@ -1346,12 +1346,12 @@ document.getElementById('hand').addEventListener('click', e => {
   if (ds.ha === 'cast' || ds.ha === 'sdmg') {
     const k = ds.k,
       tier = c.sch[k],
-      ab = (c.cells.P_men || 0) + mb(tier),
+      ab = c.cells.P_men || 0,
       list = fxFor(k),
       st = handSel[c.id + k],
       nm = tr(SCH[k]);
     if (ds.ha === 'sdmg') {
-      hRoll(hDmg(nm, tier, SDIE[k] || 8, 0));
+      hRoll(hDmg(nm, tier, SDIE[k] || 8, tier));
       return;
     }
     const cost = [...st].reduce((s, i) => s + list[i][0], 0);
@@ -1432,15 +1432,15 @@ function renderTok() {
         .map(w => {
           const tier = ch.fam[w.f] || 0,
             mod = ch.cells[FAM[w.f].c];
-          return `<p class="tline"><b>${esc(w.n)}</b> · ${t('sk_attack')} ${sgn(mod + mb(tier))} · ${Math.max(1, tier)}d${SZ[w.s]}${tier ? sgn(tier) : ''}</p>`;
+          return `<p class="tline"><b>${esc(w.n)}</b> · ${t('sk_attack')} ${sgn(mod)} · ${Math.max(1, tier)}d${SZ[w.s]}${tier ? sgn(tier) : ''}</p>`;
         })
         .join('');
       h += Object.keys(SCH)
         .filter(x => ch.sch[x])
         .map(x => {
           const tier = ch.sch[x],
-            ab = ch.cells.P_men + mb(tier);
-          return `<p class="tline"><b>${esc(tr(SCH[x]))}</b> · Tier ${tier} · ${t('sk_attack')} ${sgn(ab)} · ${tier}d${SDIE[x] || 8} · ${t('sk_dc')} ${8 + ab}</p>`;
+            ab = ch.cells.P_men;
+          return `<p class="tline"><b>${esc(tr(SCH[x]))}</b> · Tier ${tier} · ${t('sk_attack')} ${sgn(ab)} · ${tier}d${SDIE[x] || 8}${sgn(tier)} · ${t('sk_dc')} ${8 + ab + tier}</p>`;
         })
         .join('');
     }
