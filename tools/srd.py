@@ -75,7 +75,7 @@ def build(d: list) -> list:
             mod=a['attack_bonus']-pb;die=int(mm[2])
             nm=a['name'].split(' (')[0]
             k=counts.get(a['name'],1)
-            acts.append((nm,k,mod+T+1,f"{T}d{die}"+(f"{mod:+d}" if mod else "")))
+            acts.append((nm,k,mod,f"{T}d{die}+{T}"))  # Luparis: to hit = modifier only; damage = Tier dice + Tier
         sp=[s['name'].split(' (')[0] for s in m.get('special_abilities',[])][:4]
         leg=bool(m.get('legendary_actions'))
         def note(lang):
@@ -92,7 +92,7 @@ def build(d: list) -> list:
     NPC=[('Innkeeper','Tavernier','0',10,9,0,'Club','Gourdin',4,0),('Merchant','Marchand','0',10,4,0,'Dagger','Dague',4,0),('Beggar','Mendiant','0',10,3,0,'Fist','Poing',4,0),('Farmer','Paysan','0',10,6,0,'Pitchfork','Fourche',6,0),('Sailor','Marin','1/8',12,9,1,'Cutlass','Coutelas',6,1),('Blacksmith','Forgeron','1/4',11,16,0,'Hammer','Marteau',8,2),('Hunter','Chasseur','1/4',13,13,2,'Longbow','Arc long',8,2),('Wandering bard','Barde ambulant','1/2',12,22,2,'Rapier','Rapière',8,2),('Novice adventurer','Aventurier novice','1/2',14,16,2,'Longsword','Épée longue',8,2),('Seasoned adventurer','Aventurier aguerri','3',16,52,2,'Longsword ×2','Épée longue ×2',8,3),('Town watch captain','Capitaine de la garde','2',16,45,1,'Longsword ×2','Épée longue ×2',8,3),('Village elder','Ancien du village','0',10,8,0,'Staff','Bâton',6,0)]
     for i,(en,f,fp,ca,pv,ini,a_en,a_fr,die,mod) in enumerate(NPC):
         c={'1/8':.125,'1/4':.25,'1/2':.5}.get(fp) or float(fp);T=tier(c)
-        out.append({'id':'n-'+str(i),'n':[en,f],'type':'humanoid','fp':fp,'sz':'M','ca':ca,'pv':pv,'init':ini,'hab':['prairie'],'no':f"PNJ. Attaque : {a_fr} +{mod+T+1}, {T}d{die}{'+'+str(mod) if mod else ''}.",'noen':f"NPC. Attack: {a_en} +{mod+T+1}, {T}d{die}{'+'+str(mod) if mod else ''}.",'src':'npc'})
+        out.append({'id':'n-'+str(i),'n':[en,f],'type':'humanoid','fp':fp,'sz':'M','ca':ca,'pv':pv,'init':ini,'hab':['prairie'],'no':f"PNJ. Attaque : {a_fr} {mod:+d}, {T}d{die}+{T}.",'noen':f"NPC. Attack: {a_en} {mod:+d}, {T}d{die}+{T}.",'src':'npc'})
 
     return out
 

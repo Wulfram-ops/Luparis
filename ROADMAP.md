@@ -100,6 +100,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 - **Corrigé** : les joueurs perdaient les presets de l'onglet Jeu et le choix de vue (règle CSS `mp-player` trop large).
 - **À surveiller** : deux projections (iso / dessus) partagent les mêmes fonctions (`scr`, `tileQuad`, `tilePoint`, `pick`) ; tout nouveau dessin doit passer par elles, jamais par des calculs `TW / 2` ou `TW / 4` en dur.
 - **À surveiller** : `57-layout.js` réécrit `renderHand` et `renderTok` ; une IA qui modifie ces fonctions doit garder les modules `data-gk` (sinon la grille perd ses cartes).
+- **À surveiller** : le test « partial redraw matches a full redraw » échoue rarement d'un pixel en vue isométrique (anticrénelage au bord de la zone redessinée) ; il passe en relançant. Piste : arrondir la zone redessinée aux pixels entiers.
 - **À faire** : `makeReorder` (50-ui) ne sert plus qu'au panneau latéral de l'onglet Monde ; l'ancienne clé `luparis-play-layout-v1` reste dans les navigateurs, sans effet.
 - **À faire** : plusieurs fichiers écrits par d'autres agents ne sont pas formatés par Prettier (lignes très longues dans `57-layout.js` d'origine, `58-mapgen.js`, `10-render.js`) ; formater domaine par domaine, en commit séparé.
 
@@ -121,7 +122,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
-- **Règle d'attaque (26 novembre)** : jet d'attaque = d20 + case de la Matrice, sans le Tier ; dégâts = Tier dés de l'arme ou de l'école + Tier (les sorts gagnent le + Tier) ; DD inchangé (8 + case + Tier). Reste à décider : les monstres convertis ajoutent encore Tier + 1 au toucher.
+- **Règle d'attaque (26 novembre)** : jet d'attaque = d20 + case de la Matrice, sans le Tier ; dégâts = Tier dés de l'arme ou de l'école + Tier (les sorts gagnent le + Tier) ; DD inchangé (8 + case + Tier). Les monstres suivent la même logique : toucher = modificateur seul, dégâts = Tier dés + Tier, DD = 8 + modificateur + Tier (bestiaire SRD reconverti).
 - **Interface (26 novembre)** : bandeau latéral gauche (navigation, recherche, langue, unités, sauvegarde), repliable en icônes, barre compacte sur téléphone ; barre de la carte sur une ligne avec les presets ; placement rapide et aide repliés ; bestiaire compact (actions sur une ligne).
 - **Onglet Jeu modulaire (26 novembre)** : grille de 12 colonnes, chaque carte du personnage est un module ; déplacement par le titre avec aperçu des autres modules, redimensionnement par le coin ; aucun module ne défile ; presets Table, Combat, Exploration, Préparation (le preset Fiche est retiré) ; « Personnaliser » montre ou masque les modules.
 - **Cartes unifiées (26 novembre)** : une structure et une couleur par famille, doublons retirés, options hors tier repliées, libellés traduits au changement de langue.

@@ -77,7 +77,7 @@ Each point below was asked for by Fred. Most are covered by `tests/smoke.py`; ke
 - Shields give Evasion by size (buckler +1, round +1, heater +2, great +3 with Finesse cap +2, pavise +3 with cap +1); no Parry roll; Interception targets the interceptor's Evasion.
 - Mage reflex shield: reaction paid in Mana, +2 Evasion per point (Aegis +3 and on an ally).
 - Campaign folders with campaign XP (GM only), rename and delete; XP purchases by players go through the host.
-- Open question for Fred: converted monsters still add Tier + 1 to hit (`tools/srd_luparis.py`).
+- Monsters follow the same logic (Fred, 26 November): to hit = modifier only, damage = Tier dice + Tier, DC = 8 + modifier + Tier (`tools/srd.py`, `tools/srd_luparis.py`, the AI monster prompt in `40-table.js`).
 
 ## When you finish
 

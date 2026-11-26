@@ -8,8 +8,9 @@ What changes, following the Luparis rules (chapter 10, "Convertir un monstre de 
 - the six D&D abilities become the nine cells of the Matrix (intention × domain);
 - saving throws become domains (Physical, Mental, Social), skills keep their name;
 - distances are given in tiles (1 tile = 5 ft), healing in boxes (hit points ÷ (4 + CR));
-- attack bonuses and save DCs use the Luparis Mastery (Tier + 1) instead of the D&D proficiency;
-- weapon damage uses Tier dice of the weapon die (as srd.py does); other damage keeps its D&D dice;
+- attack bonuses drop the D&D proficiency (to hit = modifier only, like a character's Matrix cell);
+- save DCs use Tier instead of the D&D proficiency (8 + modifier + Tier);
+- weapon damage is Tier dice of the weapon die + Tier (as srd.py does); other damage keeps its D&D dice;
 - every dragon is chaotic neutral in Luparis.
 
 Every ability text is cut into a template (numbers and game terms replaced by numbered slots)
@@ -128,10 +129,10 @@ class Ctx:
         self.self_names = sorted({en.lower(), words[-1], *([" ".join(words[-2:])] if len(words) > 1 else [])}, key=len, reverse=True)
 
     def dc(self, n: int) -> int:
-        return n - self.pb + self.t + 1
+        return n - self.pb + self.t
 
     def hit(self, n: int) -> int:
-        return n - self.pb + self.t + 1
+        return n - self.pb
 
     def boxes(self, hp: float) -> int:
         return 0 if hp <= 0 else max(1, round(hp / self.hp_box))
@@ -273,7 +274,7 @@ def attack(name: str, text: str, cx: Ctx) -> dict | None:
     a = {"kind": kind, "ab": cx.hit(int(to_hit)), "rng": rng, "target": target or ""}
     if md:
         die, k = int(md[3]), int(md[5] or 0) * (-1 if md[4] == "-" else 1)
-        a.update(nd=cx.t, dd=die, mod=k, ty=md[6] if md[6] in DMG else "")
+        a.update(nd=cx.t, dd=die, mod=cx.t, ty=md[6] if md[6] in DMG else "")
         rest = hit[md.end():].strip()
         # "plus 7 (2d6) fire damage" rides along with the hit: kept as extra dice (D&D values)
         mp = re.match(r"^,? ?plus (\d+) \((\d+d\d+)(?: ([+-]) (\d+))?\) (\w+) damage", rest)
@@ -537,7 +538,7 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
         "vul": [d.get("vul", ""), dmg_list(d.get("vul", ""), "fr")],
         "cimm": [", ".join(x.strip().lower() for x in (d.get("cimm") or "").split(",") if x.strip()),
                  ", ".join(COND.get(x.strip(), x.strip().lower()) for x in (d.get("cimm") or "").split(",") if x.strip())],
-        "mast": cx.t + 1,
+        "mast": cx.t,
         "atk": [], "tr": [], "act": [], "leg": [], "rea": [],
     }
     for n, t in d.get("tr", []):

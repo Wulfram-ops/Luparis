@@ -8379,7 +8379,7 @@ Return ONLY a JSON object with these keys:
 "desc": 2 or 3 sentences describing its look, behavior and lore, for the game master to read aloud,
 "tr": array of its special abilities as ["Name", "what it does, in Luparis terms (thresholds, boxes, Mastery, D&D conditions, DCs)"], 0 to 5 entries,
 "no": short tactics note under 300 characters (not the attacks).
-Luparis attacks: Mastery Tier 1 to 5 (Tier = 1 + CR ÷ 4.5, rounded, between 1 and 5); attack bonus = modifier + Tier + 1; damage = Tier × weapon die + modifier; weapon die d6 one-handed, d8 versatile in one hand, d10 versatile in two hands, d12 two-handed. Conditions are the D&D 5.5 conditions; no damage over time. Choose CR, AC and HP like a balanced official D&D monster of that concept.
+Luparis attacks: Mastery Tier 1 to 5 (Tier = 1 + CR ÷ 4.5, rounded, between 1 and 5); attack bonus = modifier only (no proficiency, no Tier); save DC = 8 + modifier + Tier; damage = Tier × weapon die + Tier; weapon die d6 one-handed, d8 versatile in one hand, d10 versatile in two hands, d12 two-handed. Conditions are the D&D 5.5 conditions; no damage over time. Choose CR, AC and HP like a balanced official D&D monster of that concept.
 Game master's description, between the markers: <<<${q}>>>`;
   if (AIC.p === 'copy') {
     aiLast = prompt;
