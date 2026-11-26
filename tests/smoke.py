@@ -74,7 +74,16 @@ def run(chrome: str | None) -> None:
         page.wait_for_timeout(300)
 
         # map: generate, paint, and compare the cached scene with a full redraw
-        D("document.getElementById('gen').click()")
+        # This scene exposes rasterisation differences when paths are clipped during painting.
+        D("""(() => {
+            const random = Math.random;
+            try {
+                Math.random = mulberry(3);
+                document.getElementById('gen').click();
+            } finally {
+                Math.random = RNG = random;
+            }
+        })()""")
         page.wait_for_timeout(500)
         D("CAM.z=2;camSet();drawNow();hover=null")
         D("""(()=>{for(const[x,y,v]of[[5,5,3],[6,5,-2],[7,7,2]]){H[x][y]=v;if(v<0)F[x][y]=0;drawDirty({x,y})}})()""")
@@ -354,18 +363,25 @@ def run(chrome: str | None) -> None:
         host.click('.tabs a[data-v="multijoueur"]')
         host.locator("#mp_host").click()
         host.wait_for_timeout(400)
+        host.click('.tabs a[data-v="carte"]')
+        if host.locator("#rl_tog").get_attribute("aria-expanded") == "false":
+            host.locator("#rl_tog").click()
+        secret = host.locator("#rolls #mp_secret")
+        secret.check()
         code = host.evaluate("DBG('MP.code')")
         host.evaluate("DBG(`{const c=blankC();c.id='xp-test';c.name='XP Test';c.xp=150;CH.list.push(c);saveC()}`)")
         host.evaluate(
             "DBG(`tokens.push({id:'f1',x:1,y:1,t:'foe',n:'G1',nm:'Gob',esq:12,maj:8,sev:16,hp:2,hpMax:4,mid:'x',no:'secret'},"
-            "{id:'h1',x:3,y:3,t:'foe',n:'H'}); tokens[tokens.length-1].hid=1; MP.secret=true; pushRoll('<b>7</b>','GM'); MP.secret=false`)"
+            "{id:'h1',x:3,y:3,t:'foe',n:'H'}); tokens[tokens.length-1].hid=1; pushRoll('<b>7</b>','GM');`)"
         )
+        secret.uncheck()
         player = ctx.new_page()
         player.goto(url + "?debug=1&local=1")
         player.wait_for_timeout(800)
         player.evaluate(f"DBG(\"mpJoin('{code}',{{me:'xp-test'}})\")")
         player.wait_for_timeout(1000)
         check("player joins the game", player.evaluate("DBG('MP.got')") is True)
+        check("only the GM can set roll privacy", player.locator("#rl_secret").is_hidden())
         seen = player.evaluate("DBG('JSON.stringify(tokens.filter(k=>k.t===\\'foe\\'))')")
         check(
             "players see no hidden token nor monster numbers",

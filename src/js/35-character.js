@@ -1035,6 +1035,7 @@ try {
   RL = lsGet('luparis-rolls', null) || [];
   RL = Array.isArray(RL)
     ? RL.slice(0, 40).map(r => ({
+        ...(r?.gm ? { gm: 1 } : {}),
         h: safeRoll((r && r.h) || ''),
         s: String((r && r.s) || ''),
         t: +(r && r.t) || Date.now(),

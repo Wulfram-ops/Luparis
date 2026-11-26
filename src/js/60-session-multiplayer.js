@@ -963,6 +963,10 @@ function mpRender(msg) {
   const B = document.getElementById('mp_box');
   if (!B) return;
   if (msg !== undefined) MP.msg = msg;
+  const secret = document.getElementById('mp_secret');
+  secret.parentElement.hidden = MP.role !== 'host';
+  secret.checked = MP.secret;
+  secret.nextElementSibling.textContent = L2('My rolls stay secret', 'Mes jets restent secrets');
   const saved = ssGet(MPK) || {};
   if (!MP.role)
     B.innerHTML = `<p class="small">${L2('The game master opens a game; players and spectators join with the code. Everyone keeps their own data on their computer.', 'Le MJ ouvre une partie ; joueurs et spectateurs entrent le code. Chacun garde ses données sur son ordinateur.')}</p><div class="row"><button type="button" class="go" id="mp_host">${L2('Open a game (GM)', 'Ouvrir une partie (MJ)')}</button></div><form class="mpj" id="mp_jf"><input id="mp_name" placeholder="${L2('Your name', 'Ton nom')}" maxlength="30" value="${esc(saved.name || '')}" aria-label="${L2('Your name', 'Ton nom')}"><input id="mp_code" placeholder="${L2('Code', 'Code')}" maxlength="8" size="8" aria-label="Code"><select id="mp_role" aria-label="${L2('Role', 'Rôle')}"><option value="player">${L2('Player', 'Joueur')}</option><option value="spec">${L2('Spectator', 'Spectateur')}</option></select><button type="submit">${L2('Join', 'Rejoindre')}</button></form>`;
@@ -983,7 +987,6 @@ function mpRender(msg) {
           }).join('')
         : `<li class="small">${L2('Nobody yet.', 'Personne pour l’instant.')}</li>`
     }</ul>
-<label class="small mpsec"><input type="checkbox" id="mp_secret"${MP.secret ? ' checked' : ''}> ${L2('My rolls stay secret', 'Mes jets restent secrets')}</label>
 <p class="small">${L2('Players never see what you hide (eye tool), nor monster numbers. They see whether a monster is hurt.', 'Les joueurs ne voient jamais ce que tu caches (outil œil), ni les chiffres des monstres. Ils voient seulement si un monstre est blessé.')}</p>
 <div class="row"><button type="button" id="mp_link">${L2('Copy the invitation link', "Copier le lien d'invitation")}</button><button type="button" id="mp_stop">${L2('Close the game', 'Fermer la partie')}</button></div>`;
   } else {
@@ -995,7 +998,7 @@ function mpRender(msg) {
     }<div class="row"><button type="button" id="mp_leave">${L2('Leave', 'Quitter')}</button></div>`;
   }
   if (MP.msg) B.insertAdjacentHTML('beforeend', `<p class="small mpmsg" aria-live="polite">${esc(MP.msg)}</p>`);
-  if($('play_workspace')?.dataset.ready)playSync();
+  if ($('play_workspace')?.dataset.ready) playSync();
 }
 function mpHostPeople() {
   return MP.conns.filter(c => c.open || MP.local);
@@ -1026,7 +1029,8 @@ document.getElementById('mp_card').addEventListener('click', e => {
     if (MP.lc) delete MP.lc[c.uid];
     mpRender();
   } else if (b.id === 'mp_link') {
-    const link = location.origin + location.pathname + '?join=' + MP.code + (MP.local ? '&local=1' : '') + '#multijoueur';
+    const link =
+      location.origin + location.pathname + '?join=' + MP.code + (MP.local ? '&local=1' : '') + '#multijoueur';
     navigator.clipboard.writeText(link).then(
       () => mpRender(L2('Link copied.', 'Lien copié.')),
       () => mpRender(link),
@@ -1041,11 +1045,10 @@ document.getElementById('mp_card').addEventListener('submit', e => {
     role: document.getElementById('mp_role').value,
   });
 });
+document.getElementById('mp_secret').addEventListener('change', e => {
+  if (MP.role === 'host') MP.secret = e.target.checked;
+});
 document.getElementById('mp_card').addEventListener('change', e => {
-  if (e.target.id === 'mp_secret') {
-    MP.secret = e.target.checked;
-    return;
-  }
   if (e.target.dataset.mpr != null) {
     const c = mpHostPeople()[+e.target.dataset.mpr];
     if (!c) return;
@@ -1075,8 +1078,7 @@ mpRender();
       const returning = s && s.code === j[1].toUpperCase();
       if (!returning && (!location.hash || location.hash === '#carte')) location.hash = '#multijoueur';
       setTimeout(() => mpJoin(j[1], returning ? s : {}), 300);
-    }
-    else if (s && s.code) setTimeout(() => mpJoin(s.code, s), 300);
+    } else if (s && s.code) setTimeout(() => mpJoin(s.code, s), 300);
     else if (h && h.code && !!h.local === MP.local) setTimeout(() => mpHost(h.code), 300);
   }
 }
