@@ -77,6 +77,9 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 ## 2. Améliorations prévues (sans ordre strict)
 
 - **Carte de bataille**
+  - Brouillard de guerre (calque d'ombre, révélé au pinceau par le MJ puis par la vision des héros) et crayon d'annotation partagé : prévus avec le style aquarelle, pas encore faits.
+  - Aquarelle : berges et routes vraiment sinueuses (aujourd'hui elles suivent encore les cases), murs effondrés en pierres éparses, courbes de niveau pour le relief, et une construction plus rapide des grandes cartes (≈ 2 s en 64×64).
+  - Retirer le code mort de la vue isométrique (`ISO()`, `pickIso`, `fadeCells`, faces latérales).
   - Bâtiments des scènes Taverne et Village : intérieurs, portes vers la rue (aujourd'hui des blocs pleins).
   - Roche des souterrains : relief et teinte variés au lieu d'une masse uniforme ; rendre les murs plus bas loin des salles.
   - Vue isométrique : silhouette des pions cachés en plus de la transparence ; option pour baisser tous les murs (façon jeux de tactique).
@@ -123,6 +126,8 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
+- **Carte de bataille « Lavis & Aquarelle » (27 novembre)** : vue de dessus peinte (papier blanc, lavis par terrain, grille à la main, murs en pierres, toits, arbres modelés, tampons d'objets), peinte une fois puis réutilisée ; la vue isométrique est retirée. Maquette validée par Fred.
+- **Fiches de lieu sur la carte du monde (27 novembre)** : villes et repères ont une description, un lien et une illustration (montrable aux joueurs) ; nouveau repère Temple / monastère.
 - **Carte** : le pinceau recopie les pixels de la zone modifiée après rastérisation pour conserver le même lissage que le redessin complet.
 - **Jets** : le MJ peut basculer ses jets en mode secret depuis le panneau flottant, quel que soit l’onglet actif.
 - **Règle d'attaque (26 novembre)** : jet d'attaque = d20 + case de la Matrice, sans le Tier ; dégâts = Tier dés de l'arme ou de l'école + Tier (les sorts gagnent le + Tier) ; DD inchangé (8 + case + Tier). Les monstres suivent la même logique : toucher = modificateur seul, dégâts = Tier dés + Tier, DD = 8 + modificateur + Tier (bestiaire SRD reconverti).

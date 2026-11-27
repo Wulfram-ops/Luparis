@@ -56,12 +56,14 @@ Each point below was asked for by Fred. Most are covered by `tests/smoke.py`; ke
 - Titles do not fold modules on the Play tab.
 
 ### Battle map (`10-render.js`, `15-tokens-input.js`, `55-tools.js`, `56-menu.js`)
-- **Isometric 2:1 view (Dofus-like) by default**, top-down view as a personal option (`PROJ`, `luparis-proj`, button `#proj`). Both views must keep working: drawing, picking (`pick`), zones, measures, objects, tokens, multiplayer.
+- **"Lavis & Aquarelle" style, seen from above** (`11-watercolor.js`, Fred, 27 November): white paper, washes per terrain, hand-drawn grid, stone-block walls, roofs, tree canopies, ink stamps for objects. The whole map is painted once into an offscreen canvas (`wcGet`, rebuilt when terrain, objects, biome, size or rotation change; while a button is held on the map, changed cells get a flat preview). Tokens, zones, templates and tools are drawn on top. No image file: everything is drawn in code. The isometric view was removed at Fred's request: do not bring it back (`ISO()` stays false; its branches are dead code to clear).
 - Rotation by quarter turns (`rot`), kept per player.
-- **See-through walls**: raised cells and objects drawn in front of a token are faded (`fadeCells`).
 - Play / Edit modes; the asset mover (`shift`); doors and levers that players can open; right-drag pans; wheel and keys zoom; no zoom, fit or quality buttons (Fred removed them).
 - Wounded monsters show a red ring and a drop of blood.
 - Map size up to 128×128 must stay in sync in multiplayer (messages are cut into 48 KB pieces).
+
+### World map (`45-world.js`)
+- Towns and pins open a place sheet: description, link, and an illustration kept in the image gallery (IndexedDB, `luparis-images`) that the GM can show to the players.
 
 ### Map generation (`58-mapgen.js`, `59-map-presets.js`)
 - A sentence becomes a recipe (keywords, or an AI with the GM's keys, tried in order: Gemini, Groq, Cerebras, OpenRouter, Mistral, Claude, OpenAI). The recipe is cleaned (`mgClean`) before drawing; a preview is shown before replacing the map; Undo restores.

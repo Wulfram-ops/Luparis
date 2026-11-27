@@ -40,11 +40,13 @@ function drawTok(a, ...r) {
   return v;
 }
 function drawTok0(k, vx, vy, h, sc = 1) {
-  const [cx, y] = scr(vx + 0.5, vy + 0.5, h),
-    r = TW * 0.24 * (sc > 1 ? sc * 0.82 : sc);
-  ctx.fillStyle = 'rgba(0,0,0,.28)';
+  // a flat counter seen from above, centred on its cell, with a soft shadow on the paper
+  const [cx, y0] = scr(vx + 0.5, vy + 0.5, h),
+    r = TW * 0.38 * (sc > 1 ? sc * 0.82 : sc),
+    y = y0 + r * 0.8;
+  ctx.fillStyle = 'rgba(40,30,20,.3)';
   ctx.beginPath();
-  ctx.ellipse(cx, y + r * 0.35, r, r * 0.45, 0, 0, 7);
+  ctx.arc(cx + r * 0.1, y0 + r * 0.16, r * 1.02, 0, 7);
   ctx.fill();
   const g = ctx.createRadialGradient(cx - r * 0.3, y - r * 1.2, r * 0.1, cx, y - r * 0.8, r * 1.1);
   const c = k.t === 'pj' ? ['#7fb0e6', '#2b5c9c'] : k.hp === 0 ? ['#9a9590', '#4d4944'] : ['#ec8a7a', '#9c2f25'];
@@ -1017,26 +1019,6 @@ document.getElementById('rot').onclick = () => {
   save();
   draw();
 };
-// isometric (Dofus-like) or top-down view: a personal setting, never shared with the table
-function projLabel() {
-  const b = document.getElementById('proj');
-  if (!b) return;
-  b.textContent = ISO() ? L2('Top view', 'Vue de dessus') : L2('Isometric', 'Isométrique');
-  b.title = ISO()
-    ? L2('Switch to the view from above', 'Passer à la vue de dessus')
-    : L2('Switch to the isometric view', 'Passer à la vue isométrique');
-}
-document.getElementById('proj').onclick = () => {
-  PROJ = ISO() ? 'top' : 'iso';
-  lsSet('luparis-proj', PROJ);
-  projLabel();
-  CAM.z = 1;
-  CAM.px = 0;
-  CAM.py = 0;
-  layout();
-};
-projLabel();
-document.addEventListener('play-labels', projLabel);
 function fitMap() {
   CAM.z = 1;
   CAM.px = 0;

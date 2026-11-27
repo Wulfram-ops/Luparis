@@ -14,7 +14,9 @@ const ELEVATION_SCALE = Math.tan((12 * Math.PI) / 180),
   TOP_CLEARANCE = 1 + MAX_ELEVATION * ELEVATION_SCALE;
 let TW, LH, ox, oy, W, Hc, TW0;
 // Projection: 'iso' (2:1 diamonds, like Dofus) or 'top' (square tiles seen from above). A personal view setting.
-let PROJ = lsGet('luparis-proj', 'iso') === 'top' ? 'top' : 'iso';
+// The battle map is drawn from above in the "Lavis & Aquarelle" style (11-watercolor.js); the isometric
+// view was removed at Fred's request (27 November). ISO() stays false; its branches are dead code to clear.
+const PROJ = 'top';
 const ISO = () => PROJ === 'iso';
 // circles on the ground are squashed in isometric view
 const YR = () => (ISO() ? 0.5 : 1);
@@ -43,7 +45,8 @@ function camSet() {
     oy = (Hc - (N * TW) / 2) / 2 + LH * 2.2 + CAM.py;
     return;
   }
-  LH = TW * ELEVATION_SCALE;
+  // flat watercolour map: no height offset on screen
+  LH = 0;
   ox = (W - N * TW) / 2 + CAM.px;
   oy = (Hc - (N - TOP_CLEARANCE) * TW) / 2 + CAM.py;
 }
@@ -1644,7 +1647,8 @@ function drawNow(partOk) {
     lodS = TW >= 5;
   // see-through walls: in isometric view, raised cells and objects drawn in front of a token are faded
   const fade = fadeCells(),
-    fadeK = [...fade].join(',');
+    fadeK = [...fade].join(','),
+    wcImg = wcGet();
   let part =
     partOk &&
     DIRTY &&
@@ -1656,11 +1660,15 @@ function drawNow(partOk) {
       ? DIRTY
       : null;
   if (fadeK !== FADEK) part = null;
+  // a freshly painted picture changes the whole map (washes bleed): redraw everything
+  if (WC.fresh) part = null;
+  WC.fresh = false;
   FADEK = fadeK;
   DIRTY = null;
   hoverInfo();
   {
-    const bg = `radial-gradient(ellipse at 50% 40%,${mul(b.bg[0], 0.36)},${mul(b.bg[1], 0.24)})`;
+    // a desk under the sheet of paper
+    const bg = 'radial-gradient(ellipse at 50% 40%,#5d5246,#3b332b)';
     if (bg !== STBG) {
       STBG = bg;
       stage.style.background = bg;
@@ -1668,6 +1676,8 @@ function drawNow(partOk) {
   }
   const MAINX = ctx,
     M = baseBegin(part);
+  // the painted map lies under everything; cells, decor and objects are already in it
+  if (wcImg) ctx.drawImage(wcImg, ox, oy, N * TW, N * TW);
   const spAnim = b.sp && b.sp.k === 'ember';
   BHIDE = drag !== null && tokens[drag] ? tokens[drag].id : null;
   const TKM = new Map(),
@@ -1697,7 +1707,17 @@ function drawNow(partOk) {
       if (sx < CL - TW || sx > CR + TW || sy < CT - TW - LH * 4 || sy > CB + TW + LH * 3) continue;
     }
     ctx.globalAlpha = fade.has(c.x * 4096 + c.y) ? 0.32 : 1;
-    if (h < 0) pit(c, h);
+    if (wcImg) {
+      // a cell changed since the picture was painted: a flat preview until it is repainted
+      if (WC.stale && (WC.H[c.x][c.y] !== h || WC.F[c.x][c.y] !== F[c.x][c.y])) {
+        const f = F[c.x][c.y];
+        poly(
+          tileCorners(vx, vy, 0),
+          f ? FC[f][0] : h < 0 ? '#7aa3b8' : h > 0 ? b.top[h - 1] : b.g[0],
+          'rgba(0,0,0,.2)',
+        );
+      }
+    } else if (h < 0) pit(c, h);
     else {
       const f = F[c.x][c.y],
         t = tileCorners(vx, vy, h);
@@ -1739,7 +1759,7 @@ function drawNow(partOk) {
       }
     }
 
-    if (h > 0 && !F[c.x][c.y] && TW >= 7) {
+    if (!wcImg && h > 0 && !F[c.x][c.y] && TW >= 7) {
       const [cx, cy] = scr(vx, vy, h);
       deco(b.deco[h - 1], cx, cy, h, c.x, c.y);
     }
@@ -1750,7 +1770,7 @@ function drawNow(partOk) {
     }
     {
       const ob = OM.get(ck);
-      if (ob && h >= 0 && TW >= 4) drawObj(ob, vx, vy, h);
+      if (ob && h >= 0 && TW >= 4 && !wcImg) drawObj(ob, vx, vy, h);
     }
     ctx.globalAlpha = 1;
     {

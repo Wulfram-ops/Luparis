@@ -166,12 +166,8 @@ def run(chrome: str | None) -> None:
         )
 
         # Restored square geometry and migration of hex-era saves.
-        check("isometric view by default, with 2:1 diamonds", D("""(() => {
-            const [t, r, b, l] = tileCorners(0, 0, 0);
-            return PROJ === 'iso' && Math.abs((r[0] - l[0]) - 2 * (b[1] - t[1])) < 1e-6;
-        })()"""))
-        check("picking in isometric view", D("""(() => {const oldH=H;try{H=blank(N);for(let x=0;x<N;x+=3)for(let y=0;y<N;y+=3){const [vx,vy]=view(x,y),[cx,cy]=scr(vx+.5,vy+.5,0),c=pick(cx,cy);if(!c||c.x!==x||c.y!==y)return false}return true}finally{H=oldH}})()"""))
-        D("PROJ='top';layout()")
+        check("watercolour map painted under the board", D("!!(wcGet() && WC.c.width >= N * 14)"))
+        check("no isometric view any more", D("PROJ === 'top' && !ISO()") and page.locator("#proj").count() == 0)
         check("camera projects a square board aligned with the screen", D("""(() => {
             const [topLeft, topRight] = tileCorners(0, 0, 0),
                 [, , bottomRight, bottomLeft] = tileCorners(N - 1, N - 1, 0),
@@ -199,7 +195,6 @@ def run(chrome: str | None) -> None:
                 return true;
             } finally { H = oldH; rot = oldRot; }
         })()"""))
-        D("PROJ='iso';layout()")
         check("square radius two has 13 cells", D("tplCells({k:'circle',x:5,y:5,s:10,a:0}).length===13"))
         check("four rotations round trip", D("(()=>{const old=rot;try{for(rot=0;rot<4;rot++){const p=unview(...view(3,5));if(p[0]!==3||p[1]!==5)return false;}return true;}finally{rot=old}})()"))
         check("hex-era saves retain cells and entities", D("""(()=>{const original=JSON.parse(JSON.stringify(memStateNow()));try{for(const grid of ['hex','hex-offset']){const d={...original,grid,rot:5};if(!applyState(d))return false;const s=memStateNow();if(s.grid!=='square'||rot<0||rot>3)return false;for(const k of ['N','H','F','tokens','marks','objs','env','ini'])if(JSON.stringify(s[k])!==JSON.stringify(original[k]))return false;}return true;}finally{applyState(original);layout();}})()"""))
