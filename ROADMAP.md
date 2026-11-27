@@ -1,6 +1,6 @@
 # Feuille de route — Luparis
 
-Mise à jour : 26 novembre 2026. Ce fichier suit ce qui est fait, ce qui vient ensuite et la dette technique repérée à la relecture.
+Mise à jour : 27 novembre 2026. Ce fichier suit ce qui est fait, ce qui vient ensuite et la dette technique repérée à la relecture.
 
 Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trouver l'utile**. Un bandeau latéral gauche porte la navigation et les réglages. L'onglet **Jeu** est l'écran de partie : une grille de modules (carte, personnage, matrice, chaque carte, initiative, pion, repères, images, notes) que chacun dispose à sa guise, avec des presets. L'onglet **Personnage** est une fiche fixe qui sert à monter de niveau.
 
@@ -51,7 +51,8 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 - Reste : brouillard de guerre (zones de carte non révélées).
 
 ### 1.2 Multijoueur fiable
-- **Envoyer des différences, pas l'état complet** : aujourd'hui l'hôte renvoie carte + personnages + jets à chaque changement (200 ms de regroupement). Passer à des messages ciblés (`terrain` par cases, `token` par id, `ini`, `roll`) avec un numéro de révision ; état complet seulement à la connexion et en secours.
+- **Fait (27 novembre) : envoyer des différences, pas l'état complet.** L'hôte compare la vue envoyée (copie profonde — la vue contient des références vivantes aux pions) avec la vue actuelle et n'envoie que : `tok` (un pion par id, position, PV, états), `cells` (listes de `[[x, y, h, f], …]`, regroupées par le débounce de 200 ms de la sauvegarde), `ini` (ordre d'initiative). Chaque message porte un numéro de révision par connexion ; un joueur qui détecte un trou demande un `resync` (état complet à lui seul, au plus un par 200 ms). L'état complet ne part plus qu'à la connexion, en secours, et quand une donnée non ciblée change. Les jets et le chat gardent leurs propres messages. Objets, zones, gabarits, biome, taille de carte, personnages, dossiers, bestiaire et rolls voyagent encore en état complet (rolls : flux inchangé par décision du 27 novembre). Mesure (1 MJ + 1 joueur, 5 déplacements + 20 cases + 3 jets) : avant, 9 messages de 17 018 o, tous des états complets (un état seul pèse 2 027 o) ; après, 9 messages de 8 500 o — 4 `tok` de 86 o, 1 `cells` de 274 o, 4 états complets (3 jets + le premier push après l'arrivée du joueur). 20 cases peintes reconstruisent l'aquarelle du joueur une fois, pas 20 fois. Un joueur ne peut forger ni pion ni case (l'hôte fait foi).
+  - **À faire** : le premier push après l'arrivée d'un joueur renvoie l'état complet (la baseline de diff est remise à zéro quand l'hôte n'a plus de connexion) ; la rétablir dans la branche `hello`.
 - Curseurs et sélections des autres participants (couleur par joueur, envoi limité à ~15 fois par seconde).
 - ~~Reconnexion automatique~~ fait le 25 novembre : le joueur réessaie seul et reprend son personnage ; si le MJ recharge sa page, la partie se rouvre avec le même code.
 - Conflits d'édition : l'hôte fait foi ; chaque objet porte une révision, la plus récente validée par l'hôte gagne ; verrou léger pendant qu'un token est tenu.
@@ -127,6 +128,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
+- **Multijoueur par différences (27 novembre)** : l'hôte envoie `tok` / `cells` / `ini` au lieu de l'état complet, numéros de révision par connexion, `resync` en secours (1 par 200 ms) ; 5 déplacements + 20 cases + 3 jets : 17 018 o → 8 500 o (−50 %) ; carte et pions identiques chez le joueur ; aquarelle reconstruite une fois pour 20 cases ; un joueur ne peut forger ni pion ni case ; 5 checks smoke dédiés.
 - **Carte du monde : Vingeland et Batheolia échangent leurs places (27 novembre)** : Vingeland (scandinave) au nord, Batheolia (latine et gothique, très croyante) au sud ; les bourgs prennent les noms de leur nouveau pays, du plus grand au plus petit ; Krönnegard, Fort Ursa, Oxhendyr et Lagooncairn ne bougent pas et rejoignent Vingeland ; capitales Hjartvik (nord) et Sanctoria (sud, ancien site de Hjartvik) ; Tlanoxa, tenu par un dragon, devient indépendant ; les fiches de lieu suivent le nom de leur bourg. Correction reproductible dans `tools/world_data.py`. Frontières plus épaisses, avec un liseré clair.
 - **Carte de bataille « Lavis & Aquarelle » (27 novembre)** : vue de dessus peinte (papier blanc, lavis par terrain, grille à la main, murs en pierres, toits, arbres modelés, tampons d'objets), peinte une fois puis réutilisée ; la vue isométrique est retirée. Maquette validée par Fred.
 - **Fiches de lieu sur la carte du monde (27 novembre)** : villes et repères ont une description, un lien et une illustration (montrable aux joueurs) ; nouveau repère Temple / monastère.
