@@ -548,6 +548,86 @@ def run(chrome: str | None) -> None:
         creator.wait_for_timeout(700)
         mine = creator.evaluate("[...document.querySelectorAll('#rl_list li.mine .rlw')].map(l=>l.innerText.toUpperCase()).join('|')")
         check("your own rolls stand out", "MOI" in mine and "MJ" not in mine, mine)
+        # ---- ROADMAP §1.2: state deltas, resync, security, watercolor ----
+        # Observe which message types the player receives.
+        creator.evaluate(
+            "x => DBG(x)",
+            "(() => { window.__origCM = mpClientMsg; window.__in_types = []; mpClientMsg = m => { window.__in_types.push(m && m.type); return window.__origCM(m); }; return 1; })()",
+        )
+        host.evaluate(
+            "x => DBG(x)",
+            "(() => { const k = tokens.find(k => k.id === 'f1'); k.x = 4; k.y = 4; save(); return 1; })()",
+        )
+        creator.wait_for_timeout(700)
+        tok = creator.evaluate("x => DBG(x)", "tokens.find(k=>k.id==='f1')")
+        in_t = creator.evaluate("x => DBG(x)", "window.__in_types.join(',')")
+        check(
+            "a moved token arrives as a tok message, not a full state",
+            tok and tok.get("x") == 4 and tok.get("y") == 4 and "tok" in in_t and "state" not in in_t,
+            str(tok) + " | " + in_t,
+        )
+        creator.evaluate("x => DBG(x)", "window.__in_types = []")
+        host.evaluate(
+            "x => DBG(x)",
+            "(() => { for (const q of [[8,8],[9,8],[8,9]]) { const x = q[0], y = q[1]; H[x][y] = (H[x][y] % 4) + 1; } save(); return 1; })()",
+        )
+        creator.wait_for_timeout(700)
+        same = creator.evaluate("x => DBG(x)", "JSON.stringify([H,F])") == host.evaluate("x => DBG(x)", "JSON.stringify([H,F])")
+        in_t = creator.evaluate("x => DBG(x)", "window.__in_types.join(',')")
+        check(
+            "painted cells arrive as a cells message, and the player map matches the host",
+            same and "cells" in in_t and "state" not in in_t,
+            in_t,
+        )
+        # Capture the player's outbound messages, then drop the next state message: the
+        # following one must expose the gap and trigger a resync.
+        creator.evaluate(
+            "x => DBG(x)",
+            "(() => { window.__origSend = mpSend; window.__out_types = []; mpSend = (o, c) => { if (o && o.type) window.__out_types.push(o.type); return window.__origSend(o, c); }; window.__dropArmed = true; mpClientMsg = m => { if (window.__dropArmed && m && m.rev != null) { window.__dropArmed = false; window.__dropped = (m && m.type) || ''; return; } return window.__origCM(m); }; return 1; })()",
+        )
+        host.evaluate("x => DBG(x)", "(() => { const k = tokens.find(k => k.id === 'f1'); k.x = 5; k.y = 5; save(); return 1; })()")
+        host.wait_for_timeout(300)
+        host.evaluate("x => DBG(x)", "(() => { const k = tokens.find(k => k.id === 'f1'); k.x = 6; k.y = 6; save(); return 1; })()")
+        creator.wait_for_timeout(900)
+        out_t = creator.evaluate("x => DBG(x)", "window.__out_types.join(',')")
+        tok = creator.evaluate("x => DBG(x)", "tokens.find(k=>k.id==='f1')")
+        same = creator.evaluate("x => DBG(x)", "JSON.stringify([H,F])") == host.evaluate("x => DBG(x)", "JSON.stringify([H,F])")
+        check(
+            "a missed message triggers a resync and both tables match again",
+            "resync" in out_t and tok and tok.get("x") == 6 and tok.get("y") == 6 and same,
+            out_t + " | dropped: " + str(creator.evaluate("x => DBG(x)", "window.__dropped")),
+        )
+        creator.evaluate(
+            "x => DBG(x)",
+            "(() => { if (window.__origSend) mpSend = window.__origSend; if (window.__origCM) mpClientMsg = window.__origCM; return 1; })()",
+        )
+        # A player must not be able to move a foreign token or paint the host map.
+        before = host.evaluate("x => DBG(x)", "tokens.find(k=>k.id==='f1').x + '|' + H[1][1] + ',' + F[1][1]")
+        creator.evaluate("x => DBG(x)", "mpSend({type:'tok',t:[{id:'f1',x:99}]})")
+        creator.evaluate("x => DBG(x)", "mpSend({type:'cells',c:[[1,1,5,0]]})")
+        host.wait_for_timeout(500)
+        after = host.evaluate("x => DBG(x)", "tokens.find(k=>k.id==='f1').x + '|' + H[1][1] + ',' + F[1][1]")
+        check("a player cannot move a foreign token or paint the map", before == after, f"{before} -> {after}")
+        # 20 painted cells must not rebuild the player's watercolor 20 times.
+        creator.evaluate(
+            "x => DBG(x)",
+            "(() => { const o = wcGet; window.__origWC = o; window.__wcReb = 0; wcGet = (...a) => { const k0 = WC.k; const r = o(...a); if (WC.k !== k0) window.__wcReb++; return r; }; return 1; })()",
+        )
+        creator.wait_for_timeout(300)
+        creator.evaluate("x => DBG(x)", "window.__wcReb = 0")
+        host.evaluate(
+            "x => DBG(x)",
+            "(() => { for (let x = 4; x < 8; x++) for (let y = 10; y < 14; y++) H[x][y] = (H[x][y] % 4) + 1; save(); return 1; })()",
+        )
+        creator.wait_for_timeout(800)
+        reb = creator.evaluate("x => DBG(x)", "window.__wcReb")
+        same = creator.evaluate("x => DBG(x)", "JSON.stringify([H,F])") == host.evaluate("x => DBG(x)", "JSON.stringify([H,F])")
+        creator.evaluate("x => DBG(x)", "(() => { if (window.__origWC) wcGet = window.__origWC; return 1; })()")
+        check(
+            "20 painted cells rebuild the player's watercolor fewer than 20 times",
+            same and isinstance(reb, int) and 1 <= reb < 20,
+            "rebuilds: " + str(reb),
+        )
         spec = ctx.new_page()
         spec.goto(url + "?debug=1&local=1")
         spec.wait_for_timeout(800)
