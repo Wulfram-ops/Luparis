@@ -17447,16 +17447,25 @@ function dcMark(ok, msg) {
 function dcPost(payload) {
   const c = dcCfg();
   if (!c.u) return Promise.resolve(false);
-  dcChain = dcChain.then(() => {
+  // One attempt only, never a retry: once the message has left the browser, sending it again
+  // would post it twice in the channel. The statuses are therefore distinct:
+  //   offline          → the message was not sent (safe to retry);
+  //   Discord answered → it rejected the message (status shown, safe to retry);
+  //   network failure  → the connection failed, the message did not leave (safe to retry);
+  //   readable answer  → delivered. Discord answers webhooks with CORS headers (verified in a
+  //                      real browser, November 2026), so when the message leaves, the answer is readable.
+  const run = () => {
     if (!dcUrlOk(c.u)) {
+      dcMark(false, L2('This does not look like a Discord webhook URL.', 'Ça ne ressemble pas à une URL de webhook Discord.'));
+      return Promise.resolve(false);
+    }
+    if (navigator.onLine === false) {
       dcMark(
         false,
-        L2('This does not look like a Discord webhook URL.', 'Ça ne ressemble pas à une URL de webhook Discord.'),
+        L2('Offline — the message was not sent (you can retry).', 'Hors ligne — le message n’a pas été envoyé (tu peux réessayer).'),
       );
-      return false;
+      return Promise.resolve(false);
     }
-    // a form is a "simple" request: no preflight. If the browser cannot read the answer, the message
-    // has still left: it is never sent twice.
     const fd = new FormData();
     fd.append('payload_json', JSON.stringify(payload));
     return fetch(c.u, { method: 'POST', body: fd }).then(
@@ -17470,10 +17479,23 @@ function dcPost(payload) {
         return r.ok;
       },
       () => {
-        dcMark(null, L2('Sent, the answer could not be read.', 'Envoyé, réponse non lisible.'));
-        return true;
+        dcMark(
+          false,
+          L2('Network failure — the message was not sent (you can retry).', 'Échec réseau — le message n’a pas été envoyé (tu peux réessayer).'),
+        );
+        return false;
       },
     );
+  };
+  // The chain must never die: a synchronous throw or a rejected link would silently skip every
+  // following send. run() can only throw synchronously, and the fetch always settles.
+  dcChain = dcChain.then(() => {
+    try {
+      return run();
+    } catch (e) {
+      dcMark(false, L2('Sending failed. ', 'L’envoi a échoué. ') + String(e).slice(0, 120));
+      return false;
+    }
   });
   return dcChain;
 }

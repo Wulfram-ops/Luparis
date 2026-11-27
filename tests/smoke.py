@@ -579,7 +579,7 @@ def run(chrome: str | None) -> None:
                 let seen = null;
                 window.fetch = (u, o) => {
                     seen = { u: String(u), b: o && o.body && o.body.get ? o.body.get('payload_json') : o && o.body };
-                    return Promise.resolve(new Response('{}', { status: 204 }));
+                    return Promise.resolve(new Response(null, { status: 204 }));
                 };
                 try {
                     localStorage.setItem('luparis-discord', JSON.stringify({ u: 'https://discord.com/api/webhooks/123456789012345678/AbCdEfGhIjKlMnOpQrStUvWx', ch: true, r: true }));
@@ -602,7 +602,7 @@ def run(chrome: str | None) -> None:
                 let n = 0;
                 window.fetch = () => {
                     n++;
-                    return Promise.resolve(new Response('{}', { status: 204 }));
+                    return Promise.resolve(new Response(null, { status: 204 }));
                 };
                 try {
                     chPost('secret whisper', 'gm');
@@ -623,6 +623,57 @@ def run(chrome: str | None) -> None:
         check(
             "the Discord URL never enters a backup",
             host.evaluate("DBG('!!JSON.parse(localStorage.getItem(\\'luparis-discord\\')) && !bkCollect().data[\\'luparis-discord\\']')"),
+        )
+        dc_off = host.evaluate(
+            """async () => {
+                const orig = window.fetch;
+                let n = 0;
+                window.fetch = () => { n++; return Promise.reject(new TypeError('Failed to fetch')); };
+                const desc = Object.getOwnPropertyDescriptor(Navigator.prototype, 'onLine');
+                Object.defineProperty(Navigator.prototype, 'onLine', { get: () => false, configurable: true });
+                try {
+                    chPost('offline probe', '');
+                    await new Promise(r => setTimeout(r, 250));
+                } finally {
+                    Object.defineProperty(Navigator.prototype, 'onLine', desc);
+                    window.fetch = orig;
+                }
+                return { fetches: n, flag: DBG('JSON.stringify(dcFlag||null)') };
+            }"""
+        )
+        f_off = json.loads(dc_off["flag"]) if dc_off else None
+        check(
+            "offline: the Discord message is not sent and the status says so",
+            bool(dc_off)
+            and dc_off["fetches"] == 0
+            and f_off is not None
+            and f_off.get("ok") is False
+            and ("offline" in f_off.get("msg", "").lower() or "hors ligne" in f_off.get("msg", "").lower()),
+            str(dc_off),
+        )
+        dc_net = host.evaluate(
+            """async () => {
+                const orig = window.fetch;
+                let n = 0;
+                window.fetch = () => { n++; return Promise.reject(new TypeError('Failed to fetch')); };
+                try {
+                    chPost('network probe', '');
+                    await new Promise(r => setTimeout(r, 250));
+                } finally {
+                    window.fetch = orig;
+                }
+                return { fetches: n, flag: DBG('JSON.stringify(dcFlag||null)') };
+            }"""
+        )
+        f_net = json.loads(dc_net["flag"]) if dc_net else None
+        check(
+            "network failure: exactly one attempt, status says the message did not leave",
+            bool(dc_net)
+            and dc_net["fetches"] == 1
+            and f_net is not None
+            and f_net.get("ok") is False
+            and ("network" in f_net.get("msg", "").lower() or "seau" in f_net.get("msg", "").lower()),
+            str(dc_net),
         )
 
         check("no script error during the run", not errors, "; ".join(errors[:3]))
