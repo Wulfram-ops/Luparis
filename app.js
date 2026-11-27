@@ -9402,6 +9402,7 @@ Object.assign(T.en, {
     "The playable map opens in the Map tab (64×64 for a town, 128×128 for a city), always built the same way from this town's data; your edits, tokens and landmarks stay saved for it.",
   w_pk: {
     place: 'Place',
+    temple: 'Temple, monastery',
     quest: 'Quest',
     dungeon: 'Dungeon',
     inn: 'Inn',
@@ -9468,6 +9469,7 @@ Object.assign(T.fr, {
     "La carte jouable s'ouvre dans l'onglet Carte (64×64 pour un bourg, 128×128 pour une cité), toujours construite de la même façon d'après les données de la ville ; tes modifications, pions et repères restent enregistrés pour elle.",
   w_pk: {
     place: 'Lieu',
+    temple: 'Temple, monastère',
     quest: 'Quête',
     dungeon: 'Donjon',
     inn: 'Auberge',
@@ -9538,6 +9540,8 @@ try {
     WST.lore = o.lore && typeof o.lore === 'object' ? o.lore : {};
   }
 } catch (e) {}
+const wPid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+for (const p of WST.pins) if (!p.id) p.id = wPid();
 const wSave = () => {
   lsSet('luparis-world', WST);
 };
@@ -9812,7 +9816,7 @@ function wRender() {
   };
   const badge = p => {
     const k = PIN[p.k] ? p.k : 'place',
-      g = wEl('g', { transform: `translate(${p.x},${p.y}) scale(${s})` });
+      g = wEl('g', { transform: `translate(${p.x},${p.y}) scale(${s})`, class: 'wpin', 'data-pid': p.id || '' });
     g.append(
       wEl('path', { d: 'M0,0 L-5,-9 A10,10 0 1 1 5,-9Z', fill: PIN[k].c, stroke: '#f6efdc', 'stroke-width': 1.4 }),
     );
@@ -9892,6 +9896,7 @@ const PIN = {
   portal: { c: '#7b2a7a', d: ['~M-3,4 L-3,-1 Q0,-6.5 3,-1 L3,4'] },
   danger: { c: '#9c2f25', d: ['~M-4,4 L4,-4 M4,4 L-4,-4', '~M-4.5,-1.5 L-1.5,-4.5 M4.5,-1.5 L1.5,-4.5'] },
   camp: { c: '#3f6e45', d: ['M-5,4 L0,-4.5 L5,4Z'] },
+  temple: { c: '#b08a2a', d: ['M-1,-5 L1,-5 L1,-2.5 L3.5,-2.5 L3.5,-.5 L1,-.5 L1,4.5 L-1,4.5 L-1,-.5 L-3.5,-.5 L-3.5,-2.5 L-1,-2.5Z'] },
   bmap: { c: '#7a5a1e', d: ['M-4.5,-3.5 L-1.5,-4.5 L1.5,-3.5 L4.5,-4.5 L4.5,3.5 L1.5,4.5 L-1.5,3.5 L-4.5,4.5Z'] },
 };
 let memPlace = null;
@@ -10083,7 +10088,7 @@ function wUp(e) {
     const mm = memList().find(x => x.id === memPlace);
     if (mm) {
       WST.pins = WST.pins.filter(p => p.mid !== mm.id);
-      WST.pins.push({ x: m[0], y: m[1], l: mm.n.slice(0, 40), k: 'bmap', mid: mm.id });
+      WST.pins.push({ id: wPid(), x: m[0], y: m[1], l: mm.n.slice(0, 40), k: 'bmap', mid: mm.id });
       wSave();
       wRender();
     }
@@ -10092,7 +10097,7 @@ function wUp(e) {
     return;
   }
   if (WT === 'pin') {
-    WST.pins.push({ x: m[0], y: m[1], l: '', k: 'place' });
+    WST.pins.push({ id: wPid(), x: m[0], y: m[1], l: '', k: 'place' });
     wSave();
     if (document.activeElement) document.activeElement.blur();
     wRender();
@@ -10100,6 +10105,8 @@ function wUp(e) {
     if (ins.length) ins[ins.length - 1].focus();
     return;
   }
+  const pg = d.t && d.t.closest && d.t.closest('.wpin');
+  if (pg) return wShowPin(pg.dataset.pid);
   const g = d.t && d.t.closest && d.t.closest('.bg,.mk');
   if (g) wShow(g);
 }
@@ -10130,14 +10137,83 @@ function wShow(g) {
               ? L2('Flying cathedral, chained to the ground', 'Cathédrale volante, enchaînée au sol')
               : t('w_k')[b.c] || '',
     pop = b.d && b.d.pop ? ` · ${t('w_pop')} ${(+b.d.pop).toLocaleString(lang)}` : '';
-  const url = (L.u || '').trim(),
-    safe = /^https:\/\//.test(url);
   S.innerHTML = `<h3>${esc(b.n)}</h3><p class="small">${esc(kind)}${b.s ? ' · ' + esc(b.s) : ''}${pop}</p>
- <label><span>${t('w_lore')}</span><textarea id="w_lore" rows="5" data-id="${esc(b.id)}" placeholder="${esc(t('w_lore_ph'))}">${esc(L.t || '')}</textarea></label>
- <label><span>${t('w_link')}</span><input id="w_link" data-id="${esc(b.id)}" value="${esc(url)}" placeholder="https://…"></label>
- <div class="row" style="margin-top:8px"><button type="button" class="go" data-town="${esc(b.id)}">${t('w_battle')}</button>${safe ? `<a class="btn" href="${esc(url)}" target="_blank" rel="noopener">${t('w_openlink')}</a>` : ''}</div>
+ ${wLoreHTML(b.id, b.n)}
+ <div class="row" style="margin-top:8px"><button type="button" class="go" data-town="${esc(b.id)}">${t('w_battle')}</button></div>
  <p class="small">${t('w_citynote')}</p>`;
+  wLoreImg(b.id);
 }
+// the sheet of a place (town or pin): description, a link, and an illustration kept in the image gallery
+function wLoreHTML(id, name) {
+  const L = WST.lore[id] || {},
+    url = (L.u || '').trim(),
+    safe = /^https:\/\//.test(url);
+  return `<figure class="wfig" data-lid="${esc(id)}" hidden><img alt="${esc(name)}" data-wzoom="${esc(id)}"><figcaption class="row"><button type="button" class="go" data-wshow="${esc(id)}">${L2('Show to the players', 'Montrer aux joueurs')}</button><button type="button" data-wimgdel="${esc(id)}">${L2('Remove the picture', "Retirer l'illustration")}</button></figcaption></figure>
+ <label class="imgadd wimgadd"><input type="file" accept="image/*" data-wimg="${esc(id)}" data-wname="${esc(name)}" hidden><span>${L.img ? L2('Change the picture', "Changer l'illustration") : L2('Add a picture', 'Ajouter une illustration')}</span></label>
+ <label><span>${t('w_lore')}</span><textarea id="w_lore" rows="6" data-id="${esc(id)}" placeholder="${esc(t('w_lore_ph'))}">${esc(L.t || '')}</textarea></label>
+ <label><span>${t('w_link')}</span><input id="w_link" data-id="${esc(id)}" value="${esc(url)}" placeholder="https://…"></label>
+ ${safe ? `<div class="row"><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">${t('w_openlink')}</a></div>` : ''}`;
+}
+async function wLoreImg(id) {
+  const L = WST.lore[id] || {},
+    f = document.querySelector(`.wfig[data-lid="${CSS.escape(id)}"]`);
+  if (!f || !L.img) return;
+  const x = await imgTx('readonly', st => st.get(L.img));
+  if (x && imgOk(x.d) && f.isConnected) {
+    f.querySelector('img').src = x.d;
+    f.hidden = false;
+  }
+}
+function wShowPin(pid) {
+  const p = WST.pins.find(x => x.id === pid);
+  if (!p) return;
+  const S = $('w_sel'),
+    k = PIN[p.k] ? p.k : 'place',
+    id = 'pin:' + p.id,
+    name = p.l || t('w_pk')[k];
+  S.hidden = false;
+  S.innerHTML = `<h3>${esc(name)}</h3><p class="small">${esc(t('w_pk')[k])}</p>${wLoreHTML(id, name)}${p.mid ? `<div class="row" style="margin-top:8px"><button type="button" class="go" data-pmo="${esc(p.mid)}">${L2('Open the battle map', 'Ouvrir la carte de bataille')}</button></div>` : ''}`;
+  wLoreImg(id);
+}
+$('w_sel').addEventListener('change', async e => {
+  const inp = e.target.closest('[data-wimg]');
+  if (!inp || !inp.files || !inp.files[0]) return;
+  const id = inp.dataset.wimg,
+    f = inp.files[0];
+  if (!/^image\//.test(f.type)) return;
+  try {
+    const d = await imgFit(f),
+      iid = tid();
+    await imgTx('readwrite', st =>
+      st.put({ id: iid, n: (inp.dataset.wname || f.name).slice(0, 80), d, t: Date.now() }),
+    );
+    WST.lore[id] = { ...(WST.lore[id] || {}), img: iid };
+    wSave();
+    imgLoad();
+    if (id.startsWith('pin:')) wShowPin(id.slice(4));
+    else {
+      const b = wBurgs.find(x => x.id === id);
+      if (b) wShow(b.g);
+    }
+  } catch (x) {}
+});
+$('w_sel').addEventListener('click', async e => {
+  const b = e.target.closest('[data-wshow],[data-wimgdel],[data-wzoom],[data-pmo]');
+  if (!b) return;
+  if (b.dataset.pmo) return openMem(b.dataset.pmo);
+  const id = b.dataset.wshow || b.dataset.wimgdel || b.dataset.wzoom,
+    L = WST.lore[id] || {},
+    x = L.img ? await imgTx('readonly', st => st.get(L.img)) : null;
+  if (b.dataset.wzoom && x) imgZoom(x);
+  else if (b.dataset.wshow && x) imgShow(x);
+  else if (b.dataset.wimgdel) {
+    // the picture stays in the gallery of the Play tab; only the link to this place goes
+    delete WST.lore[id].img;
+    wSave();
+    const f = b.closest('.wfig');
+    if (f) f.hidden = true;
+  }
+});
 $('w_sel').addEventListener('input', e => {
   const id = e.target.dataset.id;
   if (!id) return;
