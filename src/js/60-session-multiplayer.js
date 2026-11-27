@@ -282,6 +282,12 @@ function mpSend(o, conn) {
       for (const p of mpPieces(o)) MP.conn.send(p);
     } catch (e) {}
 }
+// state messages carry a per-connection revision: the player tracks it and asks for the full
+// state when a message is missed; the host re-sends it to that player only
+function mpSendRev(o, conn) {
+  conn.rev = (conn.rev || 0) + 1;
+  return mpSend({ ...o, rev: conn.rev }, conn);
+}
 let mpT = null;
 function mpPush() {
   if (MP.role !== 'host') return;
@@ -428,6 +434,13 @@ function mpHostMsg(m, conn) {
     m = mpJoinPiece((conn._pieces = conn._pieces || {}), m);
     if (!m) return;
   }
+  if (m.type === 'resync') {
+    const now = Date.now();
+    if ((conn._rs || 0) + 200 > now) return;
+    conn._rs = now;
+    mpSendRev(mpState(), conn);
+    return;
+  }
   if (m.type === 'hello') {
     conn.pname = String(m.name || '').slice(0, 30) || L2('Player', 'Joueur');
     conn.prole = m.role === 'spec' ? 'spec' : 'player';
@@ -442,7 +455,7 @@ function mpHostMsg(m, conn) {
           } catch (e) {}
       }
     conn.me = conn.prole === 'player' && id && CH.list.some(c => c.id === id) && !mpTaken(id, conn) ? id : null;
-    mpSend(mpState(), conn);
+    mpSendRev(mpState(), conn);
     mpYou(conn);
     if (IMGSHOW) mpSend({ type: 'img', n: IMGSHOW.n, d: IMGSHOW.d }, conn);
     mpRender();
@@ -458,7 +471,7 @@ function mpHostMsg(m, conn) {
     if (known && CH.list.some(c => c.id === known)) {
       if (mpTaken(known, conn)) return reply(null, L2('Character already claimed.', 'Personnage déjà attribué.'));
       conn.me = known;
-      mpSend(mpState(), conn);
+      mpSendRev(mpState(), conn);
       reply(known);
       mpRender();
       return;
@@ -494,7 +507,7 @@ function mpHostMsg(m, conn) {
     requests.set(m.request, c.id);
     saveCNow(); // durable on the GM before the client receives confirmation
     saveC();
-    mpSend(mpState(), conn);
+    mpSendRev(mpState(), conn);
     reply(c.id);
     mpRender();
     if (CH.active) renderSheet();
@@ -696,6 +709,20 @@ function mpClientMsg(m) {
     imgReceive(m);
     return;
   }
+  // revisions: accept in order, ask for the full state on a gap, drop stale messages
+  if (m.rev != null) {
+    const got = MP.rev || 0;
+    if (m.type === 'state' && MP.resync) {
+      MP.resync = false;
+      MP.rev = m.rev;
+    } else if (m.rev === got + 1) {
+      MP.rev = m.rev;
+    } else if (m.rev > got + 1) {
+      MP.resync = true;
+      mpSend({ type: 'resync' });
+      return;
+    } else return;
+  }
   if (m.type !== 'state') return;
   const first = !MP.got,
     n0 = N,
@@ -873,6 +900,8 @@ async function mpHost(code) {
 }
 function mpConnect() {
   const code = MP.code;
+  MP.rev = 0;
+  MP.resync = false;
   MP.conn = MP.peer.connect('luparis-' + code, { reliable: true, serialization: 'json' });
   MP.conn.on('open', () => {
     MP.tries = 0;
@@ -924,6 +953,8 @@ async function mpJoin(code, opt) {
   MP.name = String(opt.name || '').slice(0, 30);
   MP.me = opt.me || null;
   MP.got = false;
+  MP.rev = 0;
+  MP.resync = false;
   MP.closed = false;
   mpSetRole(opt.role);
   document.body.classList.add('mp-player');
