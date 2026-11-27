@@ -228,6 +228,7 @@ function mpState() {
     chars: CH.list,
     folders: campaignFolders(),
     rolls: v.rolls,
+    party: WST.party || null,
     code: MP.code,
   };
 }
@@ -359,6 +360,7 @@ function mpPushNow() {
     prev.folders !== folders ||
     prev.best !== best ||
     prev.rolls !== rolls ||
+    prev.party !== JSON.stringify(WST.party || null) ||
     JSON.stringify(prev.marks) !== JSON.stringify(cur.marks) ||
     JSON.stringify(prev.objs) !== JSON.stringify(cur.objs) ||
     JSON.stringify(prev.tpls) !== JSON.stringify(cur.tpls) ||
@@ -380,6 +382,7 @@ function mpPushNow() {
   MP_SENT.folders = folders;
   MP_SENT.best = best;
   MP_SENT.rolls = rolls;
+  MP_SENT.party = JSON.stringify(WST.party || null);
 }
 function mpPlayerSave() {
   if (!MP.me || MP.prole === 'spec') return;
@@ -867,6 +870,10 @@ function mpClientMsg(m) {
     CAM.px = 0;
     CAM.py = 0;
   }
+  // the party's position on the world map is the GM's: every player sees the same flag
+  const pa = m.party;
+  WST.party = pa && isFinite(pa.x) && isFinite(pa.y) ? { x: +pa.x, y: +pa.y } : null;
+  wRender();
   CH.list = m.chars || [];
   CH.folders = Array.isArray(m.folders) ? m.folders.filter(validCampaignName) : camps();
   if (CH.active && !CH.list.some(c => c.id === CH.active)) CH.active = null;
@@ -1268,6 +1275,16 @@ async function imgTx(mode, f) {
     return null;
   }
 }
+// the Play gallery lists only the pictures added there: the world map's place illustrations
+// (WST.lore[*].img, stored with k: 'lieu') live in the same database but stay on their place sheet
+function imgGame() {
+  const used = new Set(
+    Object.values((typeof WST !== 'undefined' && WST.lore) || {})
+      .map(l => l && l.img)
+      .filter(Boolean),
+  );
+  return IMGS.filter(x => !x.k && !used.has(x.id));
+}
 async function imgLoad() {
   IMGS = ((await imgTx('readonly', s => s.getAll())) || []).sort((a, b) => b.t - a.t);
   imgRender();
@@ -1339,11 +1356,13 @@ function imgRender() {
 <label class="imgadd"><input type="file" accept="image/*" multiple id="img_file" hidden><span>${L2('Add images', 'Ajouter des images')}</span></label>
 ${IMGSHOW ? `<div class="imgon">${cur}<button type="button" id="img_hide">${L2('Hide from the players', 'Masquer aux joueurs')}</button></div>` : ''}
 ${
-  IMGS.length
-    ? `<ul class="imgg">${IMGS.map(
-        x =>
-          `<li class="${IMGSHOW && IMGSHOW.id === x.id ? 'on' : ''}"><img src="" data-imgi="${esc(x.id)}" alt="${esc(x.n)}" title="${esc(x.n)}"><div class="row"><button type="button" class="go" data-imgs="${esc(x.id)}">${IMGSHOW && IMGSHOW.id === x.id ? L2('Shown', 'Affichée') : L2('Show', 'Montrer')}</button><button type="button" data-imgd="${esc(x.id)}" aria-label="${L2('Delete', 'Supprimer')} ${esc(x.n)}">×</button></div></li>`,
-      ).join('')}</ul>`
+  imgGame().length
+    ? `<ul class="imgg">${imgGame()
+        .map(
+          x =>
+            `<li class="${IMGSHOW && IMGSHOW.id === x.id ? 'on' : ''}"><img src="" data-imgi="${esc(x.id)}" alt="${esc(x.n)}" title="${esc(x.n)}"><div class="row"><button type="button" class="go" data-imgs="${esc(x.id)}">${IMGSHOW && IMGSHOW.id === x.id ? L2('Shown', 'Affichée') : L2('Show', 'Montrer')}</button><button type="button" data-imgd="${esc(x.id)}" aria-label="${L2('Delete', 'Supprimer')} ${esc(x.n)}">×</button></div></li>`,
+        )
+        .join('')}</ul>`
     : ''
 }`;
     for (const im of B.querySelectorAll('[data-imgi]')) {

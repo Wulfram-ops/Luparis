@@ -335,6 +335,73 @@ def cells(ab: list[int]) -> list[int]:
     return [s, i, h, d, avg(i, w), h, c, w, avg(w, h)]
 
 
+def six_stats(cells9: list[int], used: tuple = ()) -> list[int]:
+    """Monsters have six stats like the players (Fred, 27 November 2026): three rows (Power,
+    Finesse, Resilience) and three columns (Physical, Mental, Social), each cell = row + column.
+    The six are the closest additive fit of the nine D&D-derived cells, weighted: the Physical
+    column counts triple and the cells the creature attacks with count four times more, so a
+    nimble goblin stays nimble. Integer search from the rounded plain fit; ties go to the most
+    balanced split between rows and columns. Returns [P, F, R, phy, men, soc]."""
+    O = [cells9[i * 3:i * 3 + 3] for i in range(3)]
+    W = [[(3 if j == 0 else 1) * (4 if i * 3 + j in used else 1) for j in range(3)] for i in range(3)]
+    g = sum(cells9) / 9
+    st = [round(sum(O[i]) / 3 - g / 2) for i in range(3)]
+    st += [round(sum(O[i][j] - st[i] for i in range(3)) / 3) for j in range(3)]
+
+    def cost(v):
+        e = sum(W[i][j] * (v[i] + v[3 + j] - O[i][j]) ** 2 for i in range(3) for j in range(3))
+        return (e, abs(sum(v[:3]) - sum(v[3:])))
+
+    best = cost(st)
+    moved = True
+    while moved:
+        moved = False
+        for k in range(6):
+            for dlt in (-1, 1):
+                v = st[:]
+                v[k] += dlt
+                c = cost(v)
+                if c < best:
+                    st, best, moved = v, c, True
+        for a in range(3):  # shift one row and the columns the other way (same cells, better balance)
+            for dlt in (-1, 1):
+                v = st[:]
+                v[a] += dlt
+                for j in range(3):
+                    v[3 + j] -= dlt
+                c = cost(v)
+                if c < best:
+                    st, best, moved = v, c, True
+    return st
+
+
+def refit(block: dict) -> dict:
+    """Give a stat block its six stats, rebuild its matrix from them, and move every attack
+    bonus onto the new matrix (an attack keeps the cell it used, or its offset from the nearest
+    physical cell when it had a magic bonus)."""
+    old = block.get("mx")
+    if not (isinstance(old, list) and len(old) == 9):
+        return block
+    used = tuple(k for a in block.get("atk") or [] for k in range(9) if old[k] == a.get("ab"))
+    st = six_stats(old, used)
+    new = [st[i] + st[3 + j] for i in range(3) for j in range(3)]
+    for a in block.get("atk") or []:
+        ab = a.get("ab")
+        if not isinstance(ab, int):
+            continue
+        k = next((k for k in (0, 3, 1, 4, 2, 5, 6, 7, 8) if old[k] == ab), None)
+        if k is None:
+            k = min((0, 3), key=lambda k: abs(ab - old[k]))
+        a["ab"] = ab - old[k] + new[k]
+    block["st"] = st
+    block["mx"] = new
+    mg = block.get("magic")
+    if mg and mg.get("tiers"):  # Mana follows the new Mental Resilience cell
+        t = mg["tiers"]
+        mg["mana"] = sum([0, 2, 6, 14, 24, 36][v] for v in t.values()) + new[7] * (max(t.values()) // 2)
+    return block
+
+
 def speed(s: str, lang: str) -> str:
     out = []
     for p in [x.strip() for x in s.split(",") if x.strip()]:
@@ -572,7 +639,8 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
                 tiers[school] = max(1, tiers.get(school, 0), spell["cost"])
             primary = max(tiers, key=lambda school: sum(s["school"] == school for s in spells))
             tiers[primary] = max(tiers[primary], cx.t)
-            res_men = out["mx"][7] if out.get("mx") else 0
+            st6 = six_stats(out["mx"]) if out.get("mx") else None
+            res_men = st6[2] + st6[4] if st6 else 0  # Mental Resilience of the refitted matrix
             mana = sum([0, 2, 6, 14, 24, 36][v] for v in tiers.values()) + res_men * (max(tiers.values()) // 2)
             out["magic"] = {"tiers": tiers, "mana": mana, "spells": spells}
         else:
@@ -595,7 +663,7 @@ def convert(m: dict, d: dict, fr: dict, missing: dict | None) -> dict:
         out["leg"].append(entry(n, t))
     for n, t in d.get("rea", []):
         out["rea"].append(entry(n, t))
-    return out
+    return refit(out)
 
 
 def main() -> int:
@@ -609,7 +677,7 @@ def main() -> int:
     missing: dict = {}
     out = {k: convert(mons[k], d, fr, missing) for k, d in det.items() if k in mons}
     # The starter bestiary also has a banshee, absent from the SRD.
-    out["d22"] = json.loads((ROOT / "tools/banshee.json").read_text(encoding="utf-8"))
+    out["d22"] = refit(json.loads((ROOT / "tools/banshee.json").read_text(encoding="utf-8")))
     if args.templates:
         items = sorted(missing.values(), key=lambda e: (-e["n"], e["id"]))
         args.templates.write_text(json.dumps(items, ensure_ascii=False, indent=1), encoding="utf-8")

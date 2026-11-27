@@ -319,7 +319,7 @@ function dcDialog() {
     'Facultatif. Dans ton salon : ⋯ → Intégrations → Webhooks → copier l’URL. L’URL reste dans ce navigateur uniquement : jamais envoyée aux joueurs, jamais copiée dans une sauvegarde.',
   )}</p>
 <label><span class="small">${L2('Webhook URL', 'URL du webhook')}</span><input id="dc_url" type="text" autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/…" value="${esc(c.u)}"></label>
-<label class="small"><input type="checkbox" id="dc_ch"${c.ch ? ' checked' : ''}><span>${L2('Mirror the chat', 'Miroir du chat')}</span></label>
+<label class="small"><input type="checkbox" id="dc_ch"${c.ch || !c.u ? ' checked' : ''}><span>${L2('Mirror the chat', 'Miroir du chat')}</span></label>
 <label class="small"><input type="checkbox" id="dc_r"${c.r ? ' checked' : ''}><span>${L2('Mirror the public rolls too', 'Les jets publics aussi')}</span></label>
 <div class="row"><button type="button" class="go" id="dc_save">${L2('Save', 'Enregistrer')}</button><button type="button" id="dc_test">${L2('Send a test', 'Envoyer un test')}</button><button type="button" id="dc_del">${L2('Forget the URL', 'Oublier l’URL')}</button><button type="button" id="dc_close">${L2('Close', 'Fermer')}</button></div>
 <p class="small" id="dc_msg" aria-live="polite"></p>`;
@@ -351,14 +351,24 @@ function dcDialog() {
       return msg(
         L2('This does not look like a Discord webhook URL.', 'Ça ne ressemble pas à une URL de webhook Discord.'),
       );
-    lsSet(DC_KEY, { u, ch: true, r: d.querySelector('#dc_r').checked });
+    // the test saves the boxes as they are: it used to force the chat mirror on, and a later
+    // « Enregistrer » with the box still unticked switched it off again (test OK, no chat message)
+    const ch = d.querySelector('#dc_ch').checked;
+    lsSet(DC_KEY, { u, ch, r: d.querySelector('#dc_r').checked });
     msg(L2('Sending…', 'Envoi…'));
     const ok = await dcPost({
       username: 'Luparis',
       content: L2('Luparis test: the mirror works.', 'Test Luparis : le miroir fonctionne.'),
     });
     msg(
-      ok ? L2('Sent — check your channel.', 'Envoyé — vérifie ton salon.') : L2('Sending failed.', 'L’envoi a échoué.'),
+      ok
+        ? ch
+          ? L2('Sent — check your channel.', 'Envoyé — vérifie ton salon.')
+          : L2(
+              'Sent — but « Mirror the chat » is unticked: chat messages will not go to Discord.',
+              'Envoyé — mais « Miroir du chat » est décoché : les messages du chat n’iront pas sur Discord.',
+            )
+        : L2('Sending failed.', 'L’envoi a échoué.'),
     );
   };
   d.showModal();

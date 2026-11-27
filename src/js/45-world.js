@@ -824,6 +824,7 @@ function wUp(e) {
     WST.party = { x: m[0], y: m[1] };
     wSave();
     wRender();
+    mpPush();
     return;
   }
   if (memPlace) {
@@ -927,7 +928,7 @@ $('w_sel').addEventListener('change', async e => {
     const d = await imgFit(f),
       iid = tid();
     await imgTx('readwrite', st =>
-      st.put({ id: iid, n: (inp.dataset.wname || f.name).slice(0, 80), d, t: Date.now() }),
+      st.put({ id: iid, k: 'lieu', n: (inp.dataset.wname || f.name).slice(0, 80), d, t: Date.now() }),
     );
     WST.lore[id] = { ...(WST.lore[id] || {}), img: iid };
     wSave();

@@ -602,7 +602,7 @@ function restCharacter(c, long) {
   if (long) c.used = { hp: 0, mana: 0, st: 0 };
   else {
     c.used.hp = Math.floor((c.used.hp || 0) / 2);
-    c.used.mana = Math.ceil((c.used.mana || 0) / 2);
+    // Mana does not come back on a short rest (Fred, 27 November 2026): only a long rest refills it
     c.used.st = 0;
   }
   syncCharacterVitality(c, derived(c).hp);

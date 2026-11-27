@@ -169,7 +169,9 @@ def run(chrome: str | None) -> None:
             ("school magic" in lich or "magie des écoles" in lich) and "mana" in lich,
             lich[:140],
         )
-        check("lich basic strike is d20 + Mental Power", "d20 +5" in lich, lich[:140])
+        # Mental Power of the lich's six-stat matrix (row Power +1, column Mental +3)
+        check("lich basic strike is d20 + Mental Power", "d20 +4" in lich, lich[:140])
+        check("monster sheet shows the six stats", "power +1" in lich or "puissance +1" in lich, lich[:200])
         page.click("#sbdlg .msmagic summary")  # expand a school so its buttons are clickable
         before = D("RL.length")
         page.click("#sbdlg .msmagic button[data-mode='atk']")
@@ -446,6 +448,13 @@ def run(chrome: str | None) -> None:
         check("secret GM rolls stay secret", player.evaluate("DBG('RL.some(r=>r.s===\\'GM\\')')") is False)
         player.click('.tabs a[data-v="fiche"]')
         player.locator('[data-open="xp-test"]').click()
+        host.evaluate("x => DBG(x)", "(WST.party = { x: 512, y: 300 }, mpPush(), 1)")
+        host.wait_for_timeout(700)
+        check("the party flag on the world map reaches the players", player.evaluate("x => DBG(x)", "JSON.stringify(WST.party)") == '{"x":512,"y":300}')
+        check(
+            "the Play gallery leaves the place illustrations out",
+            host.evaluate("x => DBG(x)", "(IMGS = [{ id: 'g1', n: 'a', d: '' }, { id: 'w1', k: 'lieu', n: 'b', d: '' }], imgGame().map(x => x.id).join())") == "g1",
+        )
         check("player cannot award own XP", player.locator("#c_xp").get_attribute("readonly") is not None)
         player.locator('[data-stat="P"][data-d="1"]').click()
         host.wait_for_timeout(600)

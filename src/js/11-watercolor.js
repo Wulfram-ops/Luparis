@@ -77,16 +77,19 @@ let wcBuild;
   // a noise field for pigment granulation and blooms
   let NOISE = null;
   function noise(w, h) {
-    if (NOISE && NOISE.width === w && NOISE.height === h) return NOISE;
+    if (NOISE && NOISE.width === w && NOISE.height === h && NOISE.s === S) return NOISE;
     const c = new OffscreenCanvas(w, h),
       g = c.getContext('2d'),
       R = rng(99);
-    for (let i = 0; i < 900; i++) {
+    // granulation in proportion to the cell (it used to be fixed in pixels: once the picture was
+    // scaled up on screen, cell-sized soft blotches made the ground look blurred)
+    const n = Math.round(((w * h) / (S * S)) * 2.2);
+    for (let i = 0; i < n; i++) {
       const x = R() * w,
         y = R() * h,
-        r = 6 + R() * 40,
+        r = S * (0.08 + R() * 0.32),
         gr = g.createRadialGradient(x, y, 0, x, y, r);
-      gr.addColorStop(0, `rgba(0,0,0,${0.25 + R() * 0.45})`);
+      gr.addColorStop(0, `rgba(0,0,0,${0.2 + R() * 0.35})`);
       gr.addColorStop(1, 'rgba(0,0,0,0)');
       g.fillStyle = gr;
       g.fillRect(x - r, y - r, r * 2, r * 2);
@@ -95,6 +98,7 @@ let wcBuild;
       g.fillStyle = `rgba(0,0,0,${R() * 0.5})`;
       g.fillRect(R() * w, R() * h, 1.5, 1.5);
     }
+    c.s = S;
     return (NOISE = c);
   }
 
@@ -146,12 +150,30 @@ let wcBuild;
   // spread > 0 lets the colour bleed past the cells like a loose brush.
   function wash(g, cells, color, alpha, seed, rim = true, spread = 0.18) {
     if (!cells.length) return;
-    const w = g.canvas.width,
-      h = g.canvas.height,
+    // work only on the cells' bounding box (plus a margin for the bleed): much faster on big maps
+    let x0 = 1e9,
+      y0 = 1e9,
+      x1 = -1,
+      y1 = -1;
+    for (const [x, y] of cells) {
+      if (x < x0) x0 = x;
+      if (y < y0) y0 = y;
+      if (x > x1) x1 = x;
+      if (y > y1) y1 = y;
+    }
+    const W0 = g.canvas.width,
+      H0 = g.canvas.height,
+      pad = Math.ceil(S * (Math.max(0, spread) + 0.4)),
+      ox = Math.max(0, x0 * S - pad),
+      oy = Math.max(0, y0 * S - pad),
+      w = Math.min(W0, (x1 + 1) * S + pad) - ox,
+      h = Math.min(H0, (y1 + 1) * S + pad) - oy,
       R = rng(seed),
       M = new OffscreenCanvas(w, h),
       m = M.getContext('2d');
-    // mask: each cell a slightly wobbly square, a bit larger than the cell, then softened
+    // mask: each cell a slightly wobbly square, a bit larger than the cell, then softened a little
+    // (a crisp edge reads as a dried wash; a wide blur read as an out-of-focus ground)
+    m.translate(-ox, -oy);
     m.fillStyle = '#000';
     for (const [x, y] of cells) {
       const e = S * spread;
@@ -164,7 +186,7 @@ let wcBuild;
     }
     const P = new OffscreenCanvas(w, h),
       p = P.getContext('2d');
-    p.filter = `blur(${Math.round(S * 0.28)}px)`;
+    p.filter = `blur(${Math.max(1, Math.round(S * 0.06))}px)`;
     p.drawImage(M, 0, 0);
     p.drawImage(M, 0, 0);
     p.filter = 'none';
@@ -173,20 +195,20 @@ let wcBuild;
     p.fillRect(0, 0, w, h);
     // granulation: lift some pigment off in soft patches
     p.globalCompositeOperation = 'destination-out';
-    p.globalAlpha = 0.55;
-    p.drawImage(noise(w, h), (R() - 0.5) * 200, (R() - 0.5) * 200);
+    p.globalAlpha = 0.35;
+    p.drawImage(noise(W0, H0), -ox + (R() - 0.5) * 4 * S, -oy + (R() - 0.5) * 4 * S);
     g.save();
     g.globalCompositeOperation = 'multiply';
     g.globalAlpha = alpha;
-    g.drawImage(P, 0, 0);
+    g.drawImage(P, ox, oy);
     g.restore();
     if (!rim || cells.length < 4) return;
     // dried edge: the crisp mask minus a shrunken, softer copy leaves a band along the border
     const E = new OffscreenCanvas(w, h),
       e = E.getContext('2d');
-    e.filter = 'blur(1.5px)';
+    e.filter = `blur(${Math.max(0.6, S * 0.012)}px)`;
     e.drawImage(M, 0, 0);
-    e.filter = 'blur(6px)';
+    e.filter = `blur(${Math.max(2, S * 0.05)}px)`;
     e.globalCompositeOperation = 'destination-out';
     e.drawImage(M, 0, 0);
     e.drawImage(M, 0, 0);
@@ -196,8 +218,8 @@ let wcBuild;
     e.fillRect(0, 0, w, h);
     g.save();
     g.globalCompositeOperation = 'multiply';
-    g.globalAlpha = alpha * 0.8;
-    g.drawImage(E, 0, 0);
+    g.globalAlpha = alpha * 0.55;
+    g.drawImage(E, ox, oy);
     g.restore();
   }
 
@@ -963,7 +985,7 @@ let wcBuild;
     g.save();
     g.globalCompositeOperation = 'multiply';
     g.fillStyle = 'rgba(90,85,60,.18)';
-    g.filter = 'blur(4px)';
+    g.filter = `blur(${Math.max(2, (4 * S) / 40)}px)`;
     for (const [x, y] of cellsOf('mound')) g.fillRect(x * S + S * 0.3, y * S + S * 0.35, S * 0.8, S * 0.8);
     g.restore();
     // objects, each with a small shadow
@@ -977,7 +999,9 @@ let wcBuild;
   };
 }
 // the cached picture of the current map, rebuilt when it changes (a little later while the GM paints)
-let WC = { k: '', c: null, t: 0, q: 0, busy: false, H: null, F: null, stale: false };
+const WC_STEPS = [24, 32, 48, 64, 80, 96],
+  WC_BUDGET = 2400;
+let WC = { s: 0, zq: 0, k: '', c: null, t: 0, q: 0, busy: false, H: null, F: null, stale: false };
 // while a button is held on the map (painting terrain, dragging), the picture waits: changed cells get a quick flat preview
 document.addEventListener('pointerdown', e => {
   if (e.target && e.target.id === 'cv') WC.busy = true;
@@ -999,9 +1023,23 @@ function wcSig() {
   return bio + ':' + N + ':' + rot + ':' + (h >>> 0) + ':' + o;
 }
 function wcGet() {
-  const k = wcSig();
-  if (k === WC.k && WC.c) return ((WC.stale = false), WC.c);
-  const now = performance.now();
+  // paint at the resolution the board is shown at (a cell is TW CSS px × the screen's pixel ratio),
+  // in steps, within a size budget: the old fixed 40 px per cell was blown up, hence a blurred ground.
+  // Zooming in repaints sharper once the zoom has settled; zooming out keeps the sharper picture.
+  const dpr = Math.min(2, window.devicePixelRatio || 1),
+    want = WC_STEPS.find(v => v >= TW * dpr) || WC_STEPS[WC_STEPS.length - 1],
+    S = Math.max(14, Math.min(want, Math.floor(WC_BUDGET / N))),
+    k = wcSig();
+  if (k === WC.k && WC.c) {
+    WC.stale = false;
+    if (S <= WC.s) return WC.c;
+    clearTimeout(WC.zq);
+    WC.zq = setTimeout(() => {
+      WC.k = '';
+      draw();
+    }, 300);
+    return WC.c;
+  }
   // while the map is being painted, wait for the button to be released (or a short pause) before repainting
   if (WC.c && WC.busy && WC.H && WC.H.length === N) {
     WC.stale = true;
@@ -1031,7 +1069,8 @@ function wcGet() {
     return { ...b, x: vx, y: vy, r: ((b.r || 0) + rot) % 4 };
   });
   try {
-    WC.c = wcBuild({ N, H: Hv, F: Fv, D: Dv, OBJS: O, bio }, Math.max(14, Math.min(40, Math.floor(2000 / N))));
+    WC.c = wcBuild({ N, H: Hv, F: Fv, D: Dv, OBJS: O, bio }, S);
+    WC.s = S;
   } catch (e) {
     WC.c = null;
   }

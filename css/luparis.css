@@ -646,3 +646,6 @@ details.help[open]>summary{grid-column:1/-1}
 .wfig figcaption{margin-top:6px}
 .wimgadd{margin:4px 0 8px}
 #w-ov .wpin{cursor:pointer;pointer-events:all}
+
+/* the party flag on the world map belongs to the GM: players see it, they do not move it */
+body.mp-player #w_tools [data-w="party"] { display: none; }

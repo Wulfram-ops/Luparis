@@ -2920,16 +2920,19 @@ let wcBuild;
   // a noise field for pigment granulation and blooms
   let NOISE = null;
   function noise(w, h) {
-    if (NOISE && NOISE.width === w && NOISE.height === h) return NOISE;
+    if (NOISE && NOISE.width === w && NOISE.height === h && NOISE.s === S) return NOISE;
     const c = new OffscreenCanvas(w, h),
       g = c.getContext('2d'),
       R = rng(99);
-    for (let i = 0; i < 900; i++) {
+    // granulation in proportion to the cell (it used to be fixed in pixels: once the picture was
+    // scaled up on screen, cell-sized soft blotches made the ground look blurred)
+    const n = Math.round(((w * h) / (S * S)) * 2.2);
+    for (let i = 0; i < n; i++) {
       const x = R() * w,
         y = R() * h,
-        r = 6 + R() * 40,
+        r = S * (0.08 + R() * 0.32),
         gr = g.createRadialGradient(x, y, 0, x, y, r);
-      gr.addColorStop(0, `rgba(0,0,0,${0.25 + R() * 0.45})`);
+      gr.addColorStop(0, `rgba(0,0,0,${0.2 + R() * 0.35})`);
       gr.addColorStop(1, 'rgba(0,0,0,0)');
       g.fillStyle = gr;
       g.fillRect(x - r, y - r, r * 2, r * 2);
@@ -2938,6 +2941,7 @@ let wcBuild;
       g.fillStyle = `rgba(0,0,0,${R() * 0.5})`;
       g.fillRect(R() * w, R() * h, 1.5, 1.5);
     }
+    c.s = S;
     return (NOISE = c);
   }
 
@@ -2989,12 +2993,30 @@ let wcBuild;
   // spread > 0 lets the colour bleed past the cells like a loose brush.
   function wash(g, cells, color, alpha, seed, rim = true, spread = 0.18) {
     if (!cells.length) return;
-    const w = g.canvas.width,
-      h = g.canvas.height,
+    // work only on the cells' bounding box (plus a margin for the bleed): much faster on big maps
+    let x0 = 1e9,
+      y0 = 1e9,
+      x1 = -1,
+      y1 = -1;
+    for (const [x, y] of cells) {
+      if (x < x0) x0 = x;
+      if (y < y0) y0 = y;
+      if (x > x1) x1 = x;
+      if (y > y1) y1 = y;
+    }
+    const W0 = g.canvas.width,
+      H0 = g.canvas.height,
+      pad = Math.ceil(S * (Math.max(0, spread) + 0.4)),
+      ox = Math.max(0, x0 * S - pad),
+      oy = Math.max(0, y0 * S - pad),
+      w = Math.min(W0, (x1 + 1) * S + pad) - ox,
+      h = Math.min(H0, (y1 + 1) * S + pad) - oy,
       R = rng(seed),
       M = new OffscreenCanvas(w, h),
       m = M.getContext('2d');
-    // mask: each cell a slightly wobbly square, a bit larger than the cell, then softened
+    // mask: each cell a slightly wobbly square, a bit larger than the cell, then softened a little
+    // (a crisp edge reads as a dried wash; a wide blur read as an out-of-focus ground)
+    m.translate(-ox, -oy);
     m.fillStyle = '#000';
     for (const [x, y] of cells) {
       const e = S * spread;
@@ -3007,7 +3029,7 @@ let wcBuild;
     }
     const P = new OffscreenCanvas(w, h),
       p = P.getContext('2d');
-    p.filter = `blur(${Math.round(S * 0.28)}px)`;
+    p.filter = `blur(${Math.max(1, Math.round(S * 0.06))}px)`;
     p.drawImage(M, 0, 0);
     p.drawImage(M, 0, 0);
     p.filter = 'none';
@@ -3016,20 +3038,20 @@ let wcBuild;
     p.fillRect(0, 0, w, h);
     // granulation: lift some pigment off in soft patches
     p.globalCompositeOperation = 'destination-out';
-    p.globalAlpha = 0.55;
-    p.drawImage(noise(w, h), (R() - 0.5) * 200, (R() - 0.5) * 200);
+    p.globalAlpha = 0.35;
+    p.drawImage(noise(W0, H0), -ox + (R() - 0.5) * 4 * S, -oy + (R() - 0.5) * 4 * S);
     g.save();
     g.globalCompositeOperation = 'multiply';
     g.globalAlpha = alpha;
-    g.drawImage(P, 0, 0);
+    g.drawImage(P, ox, oy);
     g.restore();
     if (!rim || cells.length < 4) return;
     // dried edge: the crisp mask minus a shrunken, softer copy leaves a band along the border
     const E = new OffscreenCanvas(w, h),
       e = E.getContext('2d');
-    e.filter = 'blur(1.5px)';
+    e.filter = `blur(${Math.max(0.6, S * 0.012)}px)`;
     e.drawImage(M, 0, 0);
-    e.filter = 'blur(6px)';
+    e.filter = `blur(${Math.max(2, S * 0.05)}px)`;
     e.globalCompositeOperation = 'destination-out';
     e.drawImage(M, 0, 0);
     e.drawImage(M, 0, 0);
@@ -3039,8 +3061,8 @@ let wcBuild;
     e.fillRect(0, 0, w, h);
     g.save();
     g.globalCompositeOperation = 'multiply';
-    g.globalAlpha = alpha * 0.8;
-    g.drawImage(E, 0, 0);
+    g.globalAlpha = alpha * 0.55;
+    g.drawImage(E, ox, oy);
     g.restore();
   }
 
@@ -3806,7 +3828,7 @@ let wcBuild;
     g.save();
     g.globalCompositeOperation = 'multiply';
     g.fillStyle = 'rgba(90,85,60,.18)';
-    g.filter = 'blur(4px)';
+    g.filter = `blur(${Math.max(2, (4 * S) / 40)}px)`;
     for (const [x, y] of cellsOf('mound')) g.fillRect(x * S + S * 0.3, y * S + S * 0.35, S * 0.8, S * 0.8);
     g.restore();
     // objects, each with a small shadow
@@ -3820,7 +3842,9 @@ let wcBuild;
   };
 }
 // the cached picture of the current map, rebuilt when it changes (a little later while the GM paints)
-let WC = { k: '', c: null, t: 0, q: 0, busy: false, H: null, F: null, stale: false };
+const WC_STEPS = [24, 32, 48, 64, 80, 96],
+  WC_BUDGET = 2400;
+let WC = { s: 0, zq: 0, k: '', c: null, t: 0, q: 0, busy: false, H: null, F: null, stale: false };
 // while a button is held on the map (painting terrain, dragging), the picture waits: changed cells get a quick flat preview
 document.addEventListener('pointerdown', e => {
   if (e.target && e.target.id === 'cv') WC.busy = true;
@@ -3842,9 +3866,23 @@ function wcSig() {
   return bio + ':' + N + ':' + rot + ':' + (h >>> 0) + ':' + o;
 }
 function wcGet() {
-  const k = wcSig();
-  if (k === WC.k && WC.c) return ((WC.stale = false), WC.c);
-  const now = performance.now();
+  // paint at the resolution the board is shown at (a cell is TW CSS px × the screen's pixel ratio),
+  // in steps, within a size budget: the old fixed 40 px per cell was blown up, hence a blurred ground.
+  // Zooming in repaints sharper once the zoom has settled; zooming out keeps the sharper picture.
+  const dpr = Math.min(2, window.devicePixelRatio || 1),
+    want = WC_STEPS.find(v => v >= TW * dpr) || WC_STEPS[WC_STEPS.length - 1],
+    S = Math.max(14, Math.min(want, Math.floor(WC_BUDGET / N))),
+    k = wcSig();
+  if (k === WC.k && WC.c) {
+    WC.stale = false;
+    if (S <= WC.s) return WC.c;
+    clearTimeout(WC.zq);
+    WC.zq = setTimeout(() => {
+      WC.k = '';
+      draw();
+    }, 300);
+    return WC.c;
+  }
   // while the map is being painted, wait for the button to be released (or a short pause) before repainting
   if (WC.c && WC.busy && WC.H && WC.H.length === N) {
     WC.stale = true;
@@ -3874,7 +3912,8 @@ function wcGet() {
     return { ...b, x: vx, y: vy, r: ((b.r || 0) + rot) % 4 };
   });
   try {
-    WC.c = wcBuild({ N, H: Hv, F: Fv, D: Dv, OBJS: O, bio }, Math.max(14, Math.min(40, Math.floor(2000 / N))));
+    WC.c = wcBuild({ N, H: Hv, F: Fv, D: Dv, OBJS: O, bio }, S);
+    WC.s = S;
   } catch (e) {
     WC.c = null;
   }
@@ -7788,7 +7827,7 @@ function restCharacter(c, long) {
   if (long) c.used = { hp: 0, mana: 0, st: 0 };
   else {
     c.used.hp = Math.floor((c.used.hp || 0) / 2);
-    c.used.mana = Math.ceil((c.used.mana || 0) / 2);
+    // Mana does not come back on a short rest (Fred, 27 November 2026): only a long rest refills it
     c.used.st = 0;
   }
   syncCharacterVitality(c, derived(c).hp);
@@ -11261,6 +11300,7 @@ function wUp(e) {
     WST.party = { x: m[0], y: m[1] };
     wSave();
     wRender();
+    mpPush();
     return;
   }
   if (memPlace) {
@@ -11364,7 +11404,7 @@ $('w_sel').addEventListener('change', async e => {
     const d = await imgFit(f),
       iid = tid();
     await imgTx('readwrite', st =>
-      st.put({ id: iid, n: (inp.dataset.wname || f.name).slice(0, 80), d, t: Date.now() }),
+      st.put({ id: iid, k: 'lieu', n: (inp.dataset.wname || f.name).slice(0, 80), d, t: Date.now() }),
     );
     WST.lore[id] = { ...(WST.lore[id] || {}), img: iid };
     wSave();
@@ -12056,18 +12096,23 @@ function monBlockHTML(m, D, tk, LU) {
  <p class="mss">${esc(sub)}</p>
  <div class="msk">${stat(L2('Evasion', 'Esquive'), v.esq)}${stat(L2('Thresholds', 'Seuils'), v.maj + ' / ' + v.sev)}${stat(L2('Boxes', 'Cases'), tk ? tk.hp + ' / ' + tk.hpMax : v.cases)}${stat(L2('Mastery', 'Maîtrise'), sgn(T))}${stat('Init', sgn(+m.init || 0))}</div>`;
   if (LU && LU.mx) {
-    const I = [L2('Power', 'Puissance'), 'Finesse', L2('Resilience', 'Résistance')],
+    // six stats like the players (row + column = cell); older blocks without them show the cells only
+    const st6 = Array.isArray(LU.st) && LU.st.length === 6 ? LU.st : null,
+      I = [L2('Power', 'Puissance'), 'Finesse', L2('Resilience', 'Résistance')],
       Dm = [
         [L2('Physical', 'Physique'), 'phy'],
         [L2('Mental', 'Mental'), 'men'],
         [L2('Social', 'Social'), 'soc'],
       ];
     h +=
-      `<table class="msm"><thead><tr><th></th>${Dm.map(([n, k]) => `<th${(LU.sv || []).includes(k) ? ` class="sv" title="${L2('Mastered saving throws', 'Sauvegardes maîtrisées')}"` : ''}>${n}</th>`).join('')}</tr></thead><tbody>` +
-      I.map((n, i) => `<tr><th>${n}</th>${[0, 1, 2].map(j => `<td>${sgn(LU.mx[i * 3 + j])}</td>`).join('')}</tr>`).join(
-        '',
-      ) +
+      `<table class="msm"><thead><tr><th></th>${Dm.map(([n, k]) => `<th${(LU.sv || []).includes(k) ? ` class="sv" title="${L2('Mastered saving throws', 'Sauvegardes maîtrisées')}"` : ''}>${n}${st6 ? ` <small>${sgn(st6[3 + Dm.findIndex(d => d[1] === k)])}</small>` : ''}</th>`).join('')}</tr></thead><tbody>` +
+      I.map(
+        (n, i) =>
+          `<tr><th>${n}${st6 ? ` <small>${sgn(st6[i])}</small>` : ''}</th>${[0, 1, 2].map(j => `<td>${sgn(LU.mx[i * 3 + j])}</td>`).join('')}</tr>`,
+      ).join('') +
       `</tbody></table>`;
+    if (st6)
+      h += `<p class="msn">${L2('Each cell = its row + its column, as for the players.', 'Chaque case = sa ligne + sa colonne, comme pour les joueurs.')}</p>`;
     if ((LU.sv || []).length)
       h += `<p class="msn">${L2('● mastered saving throws: add the Mastery', '● sauvegardes maîtrisées : ajoute la Maîtrise')}</p>`;
   }
@@ -16435,6 +16480,7 @@ function mpState() {
     chars: CH.list,
     folders: campaignFolders(),
     rolls: v.rolls,
+    party: WST.party || null,
     code: MP.code,
   };
 }
@@ -16566,6 +16612,7 @@ function mpPushNow() {
     prev.folders !== folders ||
     prev.best !== best ||
     prev.rolls !== rolls ||
+    prev.party !== JSON.stringify(WST.party || null) ||
     JSON.stringify(prev.marks) !== JSON.stringify(cur.marks) ||
     JSON.stringify(prev.objs) !== JSON.stringify(cur.objs) ||
     JSON.stringify(prev.tpls) !== JSON.stringify(cur.tpls) ||
@@ -16587,6 +16634,7 @@ function mpPushNow() {
   MP_SENT.folders = folders;
   MP_SENT.best = best;
   MP_SENT.rolls = rolls;
+  MP_SENT.party = JSON.stringify(WST.party || null);
 }
 function mpPlayerSave() {
   if (!MP.me || MP.prole === 'spec') return;
@@ -17074,6 +17122,10 @@ function mpClientMsg(m) {
     CAM.px = 0;
     CAM.py = 0;
   }
+  // the party's position on the world map is the GM's: every player sees the same flag
+  const pa = m.party;
+  WST.party = pa && isFinite(pa.x) && isFinite(pa.y) ? { x: +pa.x, y: +pa.y } : null;
+  wRender();
   CH.list = m.chars || [];
   CH.folders = Array.isArray(m.folders) ? m.folders.filter(validCampaignName) : camps();
   if (CH.active && !CH.list.some(c => c.id === CH.active)) CH.active = null;
@@ -17475,6 +17527,16 @@ async function imgTx(mode, f) {
     return null;
   }
 }
+// the Play gallery lists only the pictures added there: the world map's place illustrations
+// (WST.lore[*].img, stored with k: 'lieu') live in the same database but stay on their place sheet
+function imgGame() {
+  const used = new Set(
+    Object.values((typeof WST !== 'undefined' && WST.lore) || {})
+      .map(l => l && l.img)
+      .filter(Boolean),
+  );
+  return IMGS.filter(x => !x.k && !used.has(x.id));
+}
 async function imgLoad() {
   IMGS = ((await imgTx('readonly', s => s.getAll())) || []).sort((a, b) => b.t - a.t);
   imgRender();
@@ -17546,11 +17608,13 @@ function imgRender() {
 <label class="imgadd"><input type="file" accept="image/*" multiple id="img_file" hidden><span>${L2('Add images', 'Ajouter des images')}</span></label>
 ${IMGSHOW ? `<div class="imgon">${cur}<button type="button" id="img_hide">${L2('Hide from the players', 'Masquer aux joueurs')}</button></div>` : ''}
 ${
-  IMGS.length
-    ? `<ul class="imgg">${IMGS.map(
-        x =>
-          `<li class="${IMGSHOW && IMGSHOW.id === x.id ? 'on' : ''}"><img src="" data-imgi="${esc(x.id)}" alt="${esc(x.n)}" title="${esc(x.n)}"><div class="row"><button type="button" class="go" data-imgs="${esc(x.id)}">${IMGSHOW && IMGSHOW.id === x.id ? L2('Shown', 'Affichée') : L2('Show', 'Montrer')}</button><button type="button" data-imgd="${esc(x.id)}" aria-label="${L2('Delete', 'Supprimer')} ${esc(x.n)}">×</button></div></li>`,
-      ).join('')}</ul>`
+  imgGame().length
+    ? `<ul class="imgg">${imgGame()
+        .map(
+          x =>
+            `<li class="${IMGSHOW && IMGSHOW.id === x.id ? 'on' : ''}"><img src="" data-imgi="${esc(x.id)}" alt="${esc(x.n)}" title="${esc(x.n)}"><div class="row"><button type="button" class="go" data-imgs="${esc(x.id)}">${IMGSHOW && IMGSHOW.id === x.id ? L2('Shown', 'Affichée') : L2('Show', 'Montrer')}</button><button type="button" data-imgd="${esc(x.id)}" aria-label="${L2('Delete', 'Supprimer')} ${esc(x.n)}">×</button></div></li>`,
+        )
+        .join('')}</ul>`
     : ''
 }`;
     for (const im of B.querySelectorAll('[data-imgi]')) {
@@ -17915,7 +17979,7 @@ function dcDialog() {
     'Facultatif. Dans ton salon : ⋯ → Intégrations → Webhooks → copier l’URL. L’URL reste dans ce navigateur uniquement : jamais envoyée aux joueurs, jamais copiée dans une sauvegarde.',
   )}</p>
 <label><span class="small">${L2('Webhook URL', 'URL du webhook')}</span><input id="dc_url" type="text" autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/…" value="${esc(c.u)}"></label>
-<label class="small"><input type="checkbox" id="dc_ch"${c.ch ? ' checked' : ''}><span>${L2('Mirror the chat', 'Miroir du chat')}</span></label>
+<label class="small"><input type="checkbox" id="dc_ch"${c.ch || !c.u ? ' checked' : ''}><span>${L2('Mirror the chat', 'Miroir du chat')}</span></label>
 <label class="small"><input type="checkbox" id="dc_r"${c.r ? ' checked' : ''}><span>${L2('Mirror the public rolls too', 'Les jets publics aussi')}</span></label>
 <div class="row"><button type="button" class="go" id="dc_save">${L2('Save', 'Enregistrer')}</button><button type="button" id="dc_test">${L2('Send a test', 'Envoyer un test')}</button><button type="button" id="dc_del">${L2('Forget the URL', 'Oublier l’URL')}</button><button type="button" id="dc_close">${L2('Close', 'Fermer')}</button></div>
 <p class="small" id="dc_msg" aria-live="polite"></p>`;
@@ -17947,14 +18011,24 @@ function dcDialog() {
       return msg(
         L2('This does not look like a Discord webhook URL.', 'Ça ne ressemble pas à une URL de webhook Discord.'),
       );
-    lsSet(DC_KEY, { u, ch: true, r: d.querySelector('#dc_r').checked });
+    // the test saves the boxes as they are: it used to force the chat mirror on, and a later
+    // « Enregistrer » with the box still unticked switched it off again (test OK, no chat message)
+    const ch = d.querySelector('#dc_ch').checked;
+    lsSet(DC_KEY, { u, ch, r: d.querySelector('#dc_r').checked });
     msg(L2('Sending…', 'Envoi…'));
     const ok = await dcPost({
       username: 'Luparis',
       content: L2('Luparis test: the mirror works.', 'Test Luparis : le miroir fonctionne.'),
     });
     msg(
-      ok ? L2('Sent — check your channel.', 'Envoyé — vérifie ton salon.') : L2('Sending failed.', 'L’envoi a échoué.'),
+      ok
+        ? ch
+          ? L2('Sent — check your channel.', 'Envoyé — vérifie ton salon.')
+          : L2(
+              'Sent — but « Mirror the chat » is unticked: chat messages will not go to Discord.',
+              'Envoyé — mais « Miroir du chat » est décoché : les messages du chat n’iront pas sur Discord.',
+            )
+        : L2('Sending failed.', 'L’envoi a échoué.'),
     );
   };
   d.showModal();

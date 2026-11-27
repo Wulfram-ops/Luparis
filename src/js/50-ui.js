@@ -454,18 +454,23 @@ function monBlockHTML(m, D, tk, LU) {
  <p class="mss">${esc(sub)}</p>
  <div class="msk">${stat(L2('Evasion', 'Esquive'), v.esq)}${stat(L2('Thresholds', 'Seuils'), v.maj + ' / ' + v.sev)}${stat(L2('Boxes', 'Cases'), tk ? tk.hp + ' / ' + tk.hpMax : v.cases)}${stat(L2('Mastery', 'Maîtrise'), sgn(T))}${stat('Init', sgn(+m.init || 0))}</div>`;
   if (LU && LU.mx) {
-    const I = [L2('Power', 'Puissance'), 'Finesse', L2('Resilience', 'Résistance')],
+    // six stats like the players (row + column = cell); older blocks without them show the cells only
+    const st6 = Array.isArray(LU.st) && LU.st.length === 6 ? LU.st : null,
+      I = [L2('Power', 'Puissance'), 'Finesse', L2('Resilience', 'Résistance')],
       Dm = [
         [L2('Physical', 'Physique'), 'phy'],
         [L2('Mental', 'Mental'), 'men'],
         [L2('Social', 'Social'), 'soc'],
       ];
     h +=
-      `<table class="msm"><thead><tr><th></th>${Dm.map(([n, k]) => `<th${(LU.sv || []).includes(k) ? ` class="sv" title="${L2('Mastered saving throws', 'Sauvegardes maîtrisées')}"` : ''}>${n}</th>`).join('')}</tr></thead><tbody>` +
-      I.map((n, i) => `<tr><th>${n}</th>${[0, 1, 2].map(j => `<td>${sgn(LU.mx[i * 3 + j])}</td>`).join('')}</tr>`).join(
-        '',
-      ) +
+      `<table class="msm"><thead><tr><th></th>${Dm.map(([n, k]) => `<th${(LU.sv || []).includes(k) ? ` class="sv" title="${L2('Mastered saving throws', 'Sauvegardes maîtrisées')}"` : ''}>${n}${st6 ? ` <small>${sgn(st6[3 + Dm.findIndex(d => d[1] === k)])}</small>` : ''}</th>`).join('')}</tr></thead><tbody>` +
+      I.map(
+        (n, i) =>
+          `<tr><th>${n}${st6 ? ` <small>${sgn(st6[i])}</small>` : ''}</th>${[0, 1, 2].map(j => `<td>${sgn(LU.mx[i * 3 + j])}</td>`).join('')}</tr>`,
+      ).join('') +
       `</tbody></table>`;
+    if (st6)
+      h += `<p class="msn">${L2('Each cell = its row + its column, as for the players.', 'Chaque case = sa ligne + sa colonne, comme pour les joueurs.')}</p>`;
     if ((LU.sv || []).length)
       h += `<p class="msn">${L2('● mastered saving throws: add the Mastery', '● sauvegardes maîtrisées : ajoute la Maîtrise')}</p>`;
   }

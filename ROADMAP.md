@@ -78,6 +78,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 ## 2. Améliorations prévues (sans ordre strict)
 
 - **Carte de bataille**
+  - Logique de génération par l'IA : pas encore retravaillée (noté le 27 novembre, à reprendre).
   - Brouillard de guerre (calque d'ombre, révélé au pinceau par le MJ puis par la vision des héros) et crayon d'annotation partagé : prévus avec le style aquarelle, pas encore faits.
   - Aquarelle : berges et routes vraiment sinueuses (aujourd'hui elles suivent encore les cases), murs effondrés en pierres éparses, courbes de niveau pour le relief, et une construction plus rapide des grandes cartes (≈ 2 s en 64×64).
   - Retirer le code mort de la vue isométrique (`ISO()`, `pickIso`, `fadeCells`, faces latérales).
@@ -128,6 +129,13 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
+- **Notes de Fred du 27 novembre au soir** :
+  - le drapeau du groupe sur la carte du monde est celui du MJ, envoyé à tous les joueurs (le bouton « Placer le groupe » est masqué chez eux) ;
+  - carte de bataille plus nette : l'aquarelle est peinte à la résolution affichée (zoom × écran, par paliers, dans une limite de taille), bords des lavis plus francs, grain proportionnel à la case, travail limité à la zone de chaque lavis (plus rapide) ;
+  - la galerie d'images de l'onglet Jeu ne montre plus les illustrations de lieux de la carte du monde ;
+  - le repos court ne rend plus de Mana (aide-mémoire, règles et bouton de repos) ;
+  - monstres à 6 caractéristiques comme les joueurs (ligne + colonne = case), ajustées au plus près des neuf valeurs D&D en privilégiant la colonne physique et les cases d'attaque ; attaques et Mana recalculés (`tools/srd_luparis.py`, `six_stats`, `refit`) ;
+  - Discord : le bouton de test forçait le miroir du chat puis « Enregistrer » pouvait le couper ; la case est cochée par défaut et le test prévient si elle est décochée.
 - **Multijoueur par différences (27 novembre)** : l'hôte envoie `tok` / `cells` / `ini` au lieu de l'état complet, numéros de révision par connexion, `resync` en secours (1 par 200 ms) ; 5 déplacements + 20 cases + 3 jets : 17 018 o → 8 500 o (−50 %) ; carte et pions identiques chez le joueur ; aquarelle reconstruite une fois pour 20 cases ; un joueur ne peut forger ni pion ni case ; 5 checks smoke dédiés.
 - **Carte du monde : Vingeland et Batheolia échangent leurs places (27 novembre)** : Vingeland (scandinave) au nord, Batheolia (latine et gothique, très croyante) au sud ; les bourgs prennent les noms de leur nouveau pays, du plus grand au plus petit ; Krönnegard, Fort Ursa, Oxhendyr et Lagooncairn ne bougent pas et rejoignent Vingeland ; capitales Hjartvik (nord) et Sanctoria (sud, ancien site de Hjartvik) ; Tlanoxa, tenu par un dragon, devient indépendant ; les fiches de lieu suivent le nom de leur bourg. Correction reproductible dans `tools/world_data.py`. Frontières plus épaisses, avec un liseré clair.
 - **Carte de bataille « Lavis & Aquarelle » (27 novembre)** : vue de dessus peinte (papier blanc, lavis par terrain, grille à la main, murs en pierres, toits, arbres modelés, tampons d'objets), peinte une fois puis réutilisée ; la vue isométrique est retirée. Maquette validée par Fred.
