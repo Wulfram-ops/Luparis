@@ -233,8 +233,8 @@ function dcPost(payload) {
         dcMark(
           false,
           L2(
-            'Network failure — the message was not sent (you can retry).',
-            'Échec réseau — le message n’a pas été envoyé (tu peux réessayer).',
+            'Network failure — the message most likely did not leave (you can retry).',
+            'Échec réseau — le message n’est sans doute pas parti (tu peux réessayer).',
           ),
         );
         return false;

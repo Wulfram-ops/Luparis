@@ -1,0 +1,7 @@
+# Keep LF in the repository and in every working copy (Windows included);
+# the build (tools/build_site.py) writes LF too.
+* text=auto eol=lf
+*.bat -text
+*.webp binary
+*.png binary
+*.jpg binary
