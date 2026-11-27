@@ -494,8 +494,7 @@ function monBlockHTML(m, D, tk, LU) {
     h += `<h4>${L2('School magic', 'Magie des écoles')} · ${mana} ${L2('Mana', 'Mana')}</h4>`;
     for (const [school, tier] of Object.entries(tiers)) {
       const ab = LU.mx[1];
-      h +=
-        `<details class="msmagic"><summary><b>${tr(SCH[school])}</b> · ${L2('Tier', 'Tier')} ${tier}</summary><p>${L2('Basic strike', 'Frappe de base')} · <button type="button" data-school="${school}" data-mode="atk">d20 ${sgn(ab)}</button> <button type="button" data-school="${school}" data-mode="dmg">${tier}d8${sgn(tier)}</button> · ${L2('DC', 'DD')} ${8 + ab + tier}${school === 'afflux' ? L2(' · ignores 2 armour', ' · ignore 2 points d’armure') : ''}</p>`;
+      h += `<details class="msmagic"><summary><b>${tr(SCH[school])}</b> · ${L2('Tier', 'Tier')} ${tier}</summary><p>${L2('Basic strike', 'Frappe de base')} · <button type="button" data-school="${school}" data-mode="atk">d20 ${sgn(ab)}</button> <button type="button" data-school="${school}" data-mode="dmg">${tier}d8${sgn(tier)}</button> · ${L2('DC', 'DD')} ${8 + ab + tier}${school === 'afflux' ? L2(' · ignores 2 armour', ' · ignore 2 points d’armure') : ''}</p>`;
       for (const spell of spells.filter(x => x.school === school)) {
         h += `<p><b>${esc(P(spell.n))}</b> · ${spell.cost} ${L2('Mana', 'Mana')} · ${esc(P(spell.effect))}${spell.limit ? ' (' + esc(P(spell.limit)) + ')' : ''}</p>`;
       }

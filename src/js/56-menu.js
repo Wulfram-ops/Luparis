@@ -385,7 +385,8 @@ function setMode(m, savePreference = true) {
 // ---- the asset mover: drag an object or a marker to another square (Edit mode)
 {
   let mv = null;
-  const free = (c, o) => c && H[c.x][c.y] >= 0 && H[c.x][c.y] < 3 && (objAt(c.x, c.y) < 0 || OBJS[objAt(c.x, c.y)] === o);
+  const free = (c, o) =>
+    c && H[c.x][c.y] >= 0 && H[c.x][c.y] < 3 && (objAt(c.x, c.y) < 0 || OBJS[objAt(c.x, c.y)] === o);
   cv.addEventListener('pointerdown', e => {
     if (tool !== 'shift' || e.button !== 0 || MP.role === 'player') return;
     const [mx, my] = pos(e),

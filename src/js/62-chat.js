@@ -201,13 +201,19 @@ function dcPost(payload) {
   //                      real browser, November 2026), so when the message leaves, the answer is readable.
   const run = () => {
     if (!dcUrlOk(c.u)) {
-      dcMark(false, L2('This does not look like a Discord webhook URL.', 'Ça ne ressemble pas à une URL de webhook Discord.'));
+      dcMark(
+        false,
+        L2('This does not look like a Discord webhook URL.', 'Ça ne ressemble pas à une URL de webhook Discord.'),
+      );
       return Promise.resolve(false);
     }
     if (navigator.onLine === false) {
       dcMark(
         false,
-        L2('Offline — the message was not sent (you can retry).', 'Hors ligne — le message n’a pas été envoyé (tu peux réessayer).'),
+        L2(
+          'Offline — the message was not sent (you can retry).',
+          'Hors ligne — le message n’a pas été envoyé (tu peux réessayer).',
+        ),
       );
       return Promise.resolve(false);
     }
@@ -226,7 +232,10 @@ function dcPost(payload) {
       () => {
         dcMark(
           false,
-          L2('Network failure — the message was not sent (you can retry).', 'Échec réseau — le message n’a pas été envoyé (tu peux réessayer).'),
+          L2(
+            'Network failure — the message was not sent (you can retry).',
+            'Échec réseau — le message n’a pas été envoyé (tu peux réessayer).',
+          ),
         );
         return false;
       },

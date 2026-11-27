@@ -513,20 +513,23 @@ function applyState(d) {
   tokens = d.tokens || [];
   // Maps from the short-lived hex renderer use the same array indices.
   // Only the camera bearing needs conversion; preserve every cell and entity.
-  const hex=d.grid==='hex'||d.grid==='hex-offset';
-  const bearing=Math.round(Number(d.rot)||0);
-  rot=((Math.round(hex?bearing*2/3:bearing)%4)+4)%4;
+  const hex = d.grid === 'hex' || d.grid === 'hex-offset';
+  const bearing = Math.round(Number(d.rot) || 0);
+  rot = ((Math.round(hex ? (bearing * 2) / 3 : bearing) % 4) + 4) % 4;
   bio = B[d.bio] ? d.bio : 'gen';
   INI = d.ini && Array.isArray(d.ini.o) ? d.ini : { o: [], cur: 0, round: 0 };
   MARKS = Array.isArray(d.marks) ? d.marks : [];
   ENV = d.env && typeof d.env === 'object' ? d.env : {};
   OBJS = Array.isArray(d.objs) ? d.objs.filter(o => o && OBJT[o.k]) : [];
-  TPLS=Array.isArray(d.tpls)?d.tpls.map(t=>{
-    if(!hex||!t||!Number.isFinite(t.a))return t;
-    // Hex aiming used a 60-degree axial basis. Convert back to square axes.
-    const dy=2*Math.sin(t.a)/Math.sqrt(3),dx=Math.cos(t.a)-dy/2;
-    return {...t,a:Math.atan2(dy,dx)};
-  }):[];
+  TPLS = Array.isArray(d.tpls)
+    ? d.tpls.map(t => {
+        if (!hex || !t || !Number.isFinite(t.a)) return t;
+        // Hex aiming used a 60-degree axial basis. Convert back to square axes.
+        const dy = (2 * Math.sin(t.a)) / Math.sqrt(3),
+          dx = Math.cos(t.a) - dy / 2;
+        return { ...t, a: Math.atan2(dy, dx) };
+      })
+    : [];
   return true;
 }
 function load() {
