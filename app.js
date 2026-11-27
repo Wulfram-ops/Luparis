@@ -10573,7 +10573,7 @@ const MI_PX = 3;
 let WS = null,
   WV = { x: 0, y: 0, w: 1920, h: 945 },
   WT = 'pan',
-  WST = { party: null, pins: [], ed: {}, add: [], lore: {} },
+  WST = { v: 2, party: null, pins: [], ed: {}, add: [], lore: {} },
   wMeas = null,
   wSel = null,
   wNew = false;
@@ -10585,8 +10585,137 @@ try {
     WST.ed = o.ed && typeof o.ed === 'object' ? o.ed : {};
     WST.add = Array.isArray(o.add) ? o.add : [];
     WST.lore = o.lore && typeof o.lore === 'object' ? o.lore : {};
+    WST.v = o.v || 1;
   }
 } catch (e) {}
+// Vingeland and Batheolia swapped places on 27 November 2026 (tools/world_data.py): the burgs took
+// the names of their new country. A place sheet belongs to the name, so it follows it: old id → new id.
+// Applied once (WST.v), the four burgs that kept their place and Tlanoxa are not in the list.
+const W_SWAP_2611 = [
+  'b12',
+  'b204',
+  'b29',
+  'b261',
+  'b31',
+  'b63',
+  'b39',
+  'b250',
+  'b44',
+  'b56',
+  'b45',
+  'b297',
+  'b53',
+  'b44',
+  'b56',
+  'b31',
+  'b63',
+  'b176',
+  'b66',
+  'b253',
+  'b74',
+  'b285',
+  'b76',
+  'b199',
+  'b77',
+  'b112',
+  'b86',
+  'b101',
+  'b101',
+  'b138',
+  'b112',
+  'b76',
+  'b114',
+  'b292',
+  'b116',
+  'b66',
+  'b126',
+  'b287',
+  'b130',
+  'b266',
+  'b138',
+  'b53',
+  'b144',
+  'b216',
+  'b151',
+  'b276',
+  'b163',
+  'b280',
+  'b165',
+  'b244',
+  'b176',
+  'b165',
+  'b187',
+  'b45',
+  'b193',
+  'b126',
+  'b194',
+  'b86',
+  'b197',
+  'b223',
+  'b199',
+  'b286',
+  'b204',
+  'b187',
+  'b211',
+  'b130',
+  'b216',
+  'b193',
+  'b218',
+  'b246',
+  'b223',
+  'b248',
+  'b225',
+  'b29',
+  'b231',
+  'b218',
+  'b236',
+  'b211',
+  'b244',
+  'b77',
+  'b246',
+  'b225',
+  'b247',
+  'b144',
+  'b248',
+  'b247',
+  'b250',
+  'b116',
+  'b253',
+  'b163',
+  'b254',
+  'b194',
+  'b261',
+  'b254',
+  'b266',
+  'b290',
+  'b276',
+  'b74',
+  'b280',
+  'b151',
+  'b286',
+  'b236',
+  'b287',
+  'b114',
+  'b290',
+  'b197',
+  'b292',
+  'b39',
+  'b297',
+  'b231',
+];
+if (!(WST.v >= 2)) {
+  const old = WST.lore,
+    moved = {};
+  for (let i = 0; i < W_SWAP_2611.length; i += 2)
+    if (old[W_SWAP_2611[i]]) moved[W_SWAP_2611[i + 1]] = old[W_SWAP_2611[i]];
+  for (let i = 0; i < W_SWAP_2611.length; i += 2)
+    if (old[W_SWAP_2611[i]] && !moved[W_SWAP_2611[i]]) delete old[W_SWAP_2611[i]];
+  Object.assign(old, moved);
+  WST.v = 2;
+  try {
+    lsSet('luparis-world', WST);
+  } catch (e) {}
+}
 const wPid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 for (const p of WST.pins) if (!p.id) p.id = wPid();
 const wSave = () => {

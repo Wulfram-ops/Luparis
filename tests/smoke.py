@@ -67,6 +67,32 @@ def run(chrome: str | None) -> None:
             page.wait_for_timeout(700 if tab != "monde" else 1500)
         check("tabs open without errors", not errors, "; ".join(errors[:3]))
         check("bestiary rendered on open", page.locator("#bt tr").count() > 100)
+        # world map: Vingeland (north) and Batheolia (south) swapped places on 27 November 2026
+        sw = D("""(() => { const f = n => BASEB.find(b => b.n === n) || {};
+            return JSON.stringify(['Krönnegard','Fort Ursa','Oxhendyr','Lagooncairn','Tlanoxa','Sanctoria','Hjartvik']
+                .map(n => { const b = f(n); return [b.i, b.x, b.y, b.c, b.s]; })); })()""")
+        sw = json.loads(sw) if sw else []
+        check(
+            "world: the four fixed burgs kept place and joined Vingeland, Tlanoxa is independent, Sanctoria and Hjartvik are capitals",
+            sw == [[156, 918.4, 173.5, "town", "Vingeland"], [51, 906.5, 234.7, "town", "Vingeland"],
+                   [243, 822.5, 238.3, "town", "Vingeland"], [22, 956.3, 252.5, "city", "Vingeland"],
+                   [296, 678.4, 261.3, "cap", ""], [12, 805.2, 495.9, "cap", "Batheolia"], [204, 943.0, 386.2, "cap", "Vingeland"]],
+            str(sw),
+        )
+        saved_world = page.evaluate("localStorage.getItem('luparis-world')")
+        page.evaluate("""localStorage.setItem('luparis-world', JSON.stringify({ pins: [], ed: {}, add: [],
+            lore: { b12: { t: 'old Hjartvik' }, b22: { t: 'Lagooncairn' } } }))""")
+        wp = ctx.new_page()
+        wp.goto(url + "?debug=1")
+        wp.wait_for_timeout(800)
+        lore = wp.evaluate("JSON.parse(localStorage.getItem('luparis-world')).lore")
+        wp.close()
+        page.evaluate("v => v === null ? localStorage.removeItem('luparis-world') : localStorage.setItem('luparis-world', v)", saved_world)
+        check(
+            "world: a place sheet follows its burg's name after the swap (fixed burgs keep theirs)",
+            lore == {"b204": {"t": "old Hjartvik"}, "b22": {"t": "Lagooncairn"}},
+            str(lore),
+        )
         page.click('.tabs a[data-v="regles"]')
         page.wait_for_timeout(500)
         check("rules loaded on demand", page.locator("#rbody h2").count() >= 10)

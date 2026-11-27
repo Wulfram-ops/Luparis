@@ -49,6 +49,37 @@ def prepare(src: str | Path) -> SimpleNamespace:
         if c['f']==MAINF and land(c) and 670<=c['p'][1]<=795 and c['state'] in (S_DES,6,S_THA):
             if c['p'][0]>LINEX: c['state']=S_DES
             elif c['state']==S_DES: c['state']=6
+    # --- Vingeland and Batheolia swap places (Fred, 27 November 2026). The land stays; the countries
+    # (name, colour, culture, label) trade territories, and the burgs take names of the country they now
+    # belong to, biggest name to biggest town. Four burgs keep their name and place and now belong to
+    # Vingeland; Tlanoxa (ex Sanctuaria), ruled by a dragon, becomes independent (neutral island).
+    # Batheolia's capital moves to Hjartvik's old site under the name Sanctoria.
+    SWAP_KEEP={'Krönnegard','Fort Ursa','Oxhendyr','Lagooncairn'}
+    SWAP_NEW_NORSE=['Vargholm','Isfjell']   # only used if the north has more burgs than Norse names (not the case today)
+    S_VIN=next(s_['i'] for s_ in p['states'] if s_.get('name')=='Vingeland')
+    S_BAT=next(s_['i'] for s_ in p['states'] if s_.get('name')=='Batheolia')
+    _pb=[b for b in p['burgs'][1:] if b and 'x' in b and not b.get('removed')]
+    _key=lambda b:(-b.get('capital',0),-b.get('population',0))   # the capital first, then by population
+    _north=sorted((b for b in _pb if cells[b['cell']]['state']==S_BAT and b['name'] not in SWAP_KEEP and b['name']!='Sanctuaria'),key=_key)
+    _south=sorted((b for b in _pb if cells[b['cell']]['state']==S_VIN),key=_key)
+    _norse=[RENAME.get(b['name'],b['name']) for b in _south]+SWAP_NEW_NORSE   # Hjartvik first
+    _latin=['Sanctoria']+[RENAME.get(b['name'],b['name']) for b in _north]
+    assert len(_norse)>=len(_north) and len(_latin)>=len(_south), (len(_north),len(_norse),len(_south),len(_latin))
+    assert not {*SWAP_NEW_NORSE,'Sanctoria'}&{RENAME.get(b['name'],b['name']) for b in _pb}
+    SWAP_NAMES={}
+    for b,n in zip(_north,_norse): SWAP_NAMES[b['name']]=n
+    for b,n in zip(_south,_latin): SWAP_NAMES[b['name']]=n
+    SWAP_UNUSED=_latin[len(_south):]+_norse[len(_north):]
+    _north[0]['capital']=1   # Hjartvik, capital of Vingeland in the north
+    _north[0]['capital']=1   # Hjartvik, capital of Vingeland in the north
+    RENAME.update(SWAP_NAMES)
+    for c in cells:
+        if c['state']==S_VIN: c['state']=S_BAT
+        elif c['state']==S_BAT: c['state']=S_VIN
+    cells[burg['Sanctuaria']['cell']]['state']=0
+    _sv,_sb=p['states'][S_VIN],p['states'][S_BAT]
+    for k_ in ('pole','center'):
+        _sv[k_],_sb[k_]=_sb.get(k_),_sv.get(k_)
     def isWall(a,b): return MAINF==a['f']==b['f'] and S_DES in (a['state'],b['state']) and {a['state'],b['state']}-{S_DES}<= {6,S_THA} and min(a['p'][1],b['p'][1])<=800
     def desx(c): return c['state']==S_DES
     def basecol(c):

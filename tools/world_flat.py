@@ -108,7 +108,7 @@ def render(w: SimpleNamespace, full_svg: Path, burgs_json: Path) -> int:
         o.append(f'<path d="{"".join(wall)}" stroke="#3a3128" stroke-width="2.2"/><path d="{"".join(wall)}" stroke="#d9d2c4" stroke-width="1" stroke-dasharray="1.2 1"/>')
     o.append('</g>')
     bd="".join(border)
-    o.append(f'<g id="w-borders" class="ly-states" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="{bd}" stroke="#7a2335" stroke-opacity=".8" stroke-width="1.6" stroke-dasharray="5 2.5 1 2.5" vector-effect="non-scaling-stroke"/></g>')
+    o.append(f'<g id="w-borders" class="ly-states" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="{bd}" stroke="#fffaf0" stroke-opacity=".75" stroke-width="5.5" vector-effect="non-scaling-stroke"/><path d="{bd}" stroke="#7a2335" stroke-opacity=".9" stroke-width="3" stroke-dasharray="7 3 1.5 3" vector-effect="non-scaling-stroke"/></g>')
     o.append('<g id="w-burgs" class="ly-burgs"></g><g id="w-slabels">')
     st={s['i']:s for s in p['states'] if not s.get('removed')}
     for sid,s in st.items():
@@ -125,6 +125,7 @@ def render(w: SimpleNamespace, full_svg: Path, burgs_json: Path) -> int:
         cap=b.get('capital',0);city=b.get('group')=='cities' or cap;nm=RENAME.get(b['name'],b['name'])
         e={'i':b['i'],'n':nm,'x':round(b['x'],1),'y':round(b['y'],1),'c':'cap' if cap else ('city' if city else 'town'),'s':STATE_RENAME.get(st.get(cells[b['cell']]['state'],{}).get('name',''),st.get(cells[b['cell']]['state'],{}).get('name','')),
            'pop':round(b.get('population',0)*1000),'ft':''.join(k[0] for k in ('citadel','walls','plaza','temple','shanty') if b.get(k)),'port':1 if b.get('port') else 0,'river':1 if cells[b['cell']].get('r') else 0,'seed':SEED+b['i']}
+        if cells[b['cell']]['state']==0: e['s']=''   # independent (Tlanoxa)
         if b['name'] in BURG_MOVE:
             mc=cells[BURG_MOVE[b['name']]];sn=st.get(mc['state'],{}).get('name','');e.update(x=round(mc['p'][0],1),y=round(mc['p'][1],1)+2,s=STATE_RENAME.get(sn,sn))
         if b['name']=='Zigilgathol': e.update(x=ZIG[0],y=ZIG[1])
