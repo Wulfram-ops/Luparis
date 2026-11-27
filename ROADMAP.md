@@ -107,6 +107,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 - **À surveiller** : le test « partial redraw matches a full redraw » échoue rarement d'un pixel en vue isométrique (anticrénelage au bord de la zone redessinée) ; il passe en relançant. Piste : arrondir la zone redessinée aux pixels entiers.
 - **À faire** : `makeReorder` (50-ui) ne sert plus qu'au panneau latéral de l'onglet Monde ; l'ancienne clé `luparis-play-layout-v1` reste dans les navigateurs, sans effet.
 - **À faire** : plusieurs fichiers écrits par d'autres agents ne sont pas formatés par Prettier (lignes très longues dans `57-layout.js` d'origine, `58-mapgen.js`, `10-render.js`) ; formater domaine par domaine, en commit séparé.
+- **À faire** (repéré le 26 novembre, port de la magie des monstres) : le panneau du pion d'un monstre SRD (sur la carte) affiche encore le texte brut du SRD et des attaques aux valeurs D&D (`noT` / `monAtk`), alors que la fiche du monstre affiche la version convertie Luparis ; unifier les deux affichages (le panneau du pion doit montrer la conversion, comme la fiche).
 
 ### Relectures du 25 novembre (avis croisés Claude / Gemini / GPT / Perplexity)
 
