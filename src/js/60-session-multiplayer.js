@@ -288,11 +288,98 @@ function mpSendRev(o, conn) {
   conn.rev = (conn.rev || 0) + 1;
   return mpSend({ ...o, rev: conn.rev }, conn);
 }
-let mpT = null;
+let mpT = null,
+  MP_SENT = null;
 function mpPush() {
   if (MP.role !== 'host') return;
   clearTimeout(mpT);
-  mpT = setTimeout(() => mpSend(mpState()), 200);
+  mpT = setTimeout(mpPushNow, 200);
+}
+// ROADMAP §1.2: send only what changed. MP_SENT is the last view sent, deep-copied (the
+// view contains live token objects; in-place host edits must not corrupt the diff).
+// Everything not yet a targeted message (objects, zones, templates, biome, map size,
+// characters, folders, bestiary, rolls) still rides the full state — noted in the ROADMAP.
+function mpTokDiff(prev, cur) {
+  const out = [],
+    pm = new Map(prev.map(k => [k.id, k])),
+    ids = new Set();
+  for (const k of cur) {
+    ids.add(k.id);
+    const p = pm.get(k.id);
+    if (!p) {
+      out.push({ ...k });
+      continue;
+    }
+    const d = { id: k.id };
+    let ch = false;
+    for (const f in k)
+      if (f !== 'id' && JSON.stringify(p[f]) !== JSON.stringify(k[f])) {
+        d[f] = k[f];
+        ch = true;
+      }
+    for (const f in p)
+      if (f !== 'id' && !Object.hasOwn(k, f)) {
+        d[f] = null;
+        ch = true;
+      }
+    if (ch) out.push(d);
+  }
+  for (const k of prev) if (!ids.has(k.id)) out.push({ id: k.id, del: 1 });
+  return out;
+}
+function mpCellDiff(prev, cur) {
+  if (!prev || prev.N !== cur.N || prev.H.length !== cur.H.length) return null;
+  const out = [];
+  for (let x = 0; x < cur.N; x++)
+    for (let y = 0; y < cur.N; y++)
+      if (prev.H[x][y] !== cur.H[x][y] || prev.F[x][y] !== cur.F[x][y])
+        out.push([x, y, cur.H[x].charCodeAt(y) - 99, cur.F[x].charCodeAt(y) - 48]);
+  return out;
+}
+function mpPushNow() {
+  if (MP.role !== 'host') return;
+  const conns = MP.conns.filter(c => c.open || MP.local);
+  if (!conns.length) {
+    MP_SENT = null;
+    return;
+  }
+  const cur = mpView(memStateNow(), null),
+    chars = JSON.stringify(CH.list),
+    folders = JSON.stringify(campaignFolders()),
+    best = JSON.stringify(revList()),
+    rolls = JSON.stringify(RL.slice(0, 40)),
+    prev = MP_SENT;
+  const other =
+    !prev ||
+    prev.N !== cur.N ||
+    prev.scene !== cur.scene ||
+    prev.bio !== cur.bio ||
+    prev.rot !== cur.rot ||
+    prev.chars !== chars ||
+    prev.folders !== folders ||
+    prev.best !== best ||
+    prev.rolls !== rolls ||
+    JSON.stringify(prev.marks) !== JSON.stringify(cur.marks) ||
+    JSON.stringify(prev.objs) !== JSON.stringify(cur.objs) ||
+    JSON.stringify(prev.tpls) !== JSON.stringify(cur.tpls) ||
+    JSON.stringify(prev.env) !== JSON.stringify(cur.env);
+  if (other) {
+    for (const c of conns) mpSendRev(mpState(), c);
+  } else {
+    const tok = mpTokDiff(prev.tokens, cur.tokens),
+      cells = mpCellDiff(prev, cur) || [],
+      ini = JSON.stringify(prev.ini) !== JSON.stringify(cur.ini);
+    for (const c of conns) {
+      if (tok.length) mpSendRev({ type: 'tok', t: tok }, c);
+      if (cells.length) mpSendRev({ type: 'cells', c: cells }, c);
+      if (ini) mpSendRev({ type: 'ini', i: cur.ini }, c);
+    }
+  }
+  MP_SENT = JSON.parse(JSON.stringify(cur));
+  MP_SENT.chars = chars;
+  MP_SENT.folders = folders;
+  MP_SENT.best = best;
+  MP_SENT.rolls = rolls;
 }
 function mpPlayerSave() {
   if (!MP.me || MP.prole === 'spec') return;
@@ -723,7 +810,48 @@ function mpClientMsg(m) {
       return;
     } else return;
   }
-  if (m.type !== 'state') return;
+  if (m.type !== 'state') {
+    if (m.type === 'tok') {
+      for (const u of m.t || []) {
+        if (!u || !u.id) continue;
+        const i = tokens.findIndex(k => k.id === u.id);
+        if (u.del) {
+          if (i >= 0) tokens.splice(i, 1);
+          continue;
+        }
+        if (i < 0) {
+          tokens.push({ ...u });
+          continue;
+        }
+        for (const f in u)
+          if (f !== 'id') {
+            if (u[f] == null) delete tokens[i][f];
+            else tokens[i][f] = u[f];
+          }
+      }
+      draw();
+      if (typeof renderTok === 'function') renderTok();
+      return;
+    }
+    if (m.type === 'cells') {
+      for (const q of m.c || []) {
+        if (!Array.isArray(q) || q.length < 4) continue;
+        const x = Math.round(+q[0]),
+          y = Math.round(+q[1]);
+        if (x < 0 || y < 0 || x >= N || y >= N) continue;
+        H[x][y] = +q[2];
+        F[x][y] = +q[3];
+      }
+      draw();
+      return;
+    }
+    if (m.type === 'ini') {
+      if (m.i && Array.isArray(m.i.o)) INI = m.i;
+      if (typeof renderIni === 'function') renderIni();
+      return;
+    }
+    return;
+  }
   const first = !MP.got,
     n0 = N,
     rot0 = rot;
@@ -769,6 +897,7 @@ function mpClientMsg(m) {
 function mpStop() {
   if (MP.role !== 'host') return;
   clearTimeout(mpT);
+  MP_SENT = null;
   ssSet(MPH, null);
   mpSend({ type: 'closed' });
   setTimeout(() => {
@@ -831,6 +960,7 @@ async function mpHost(code) {
   MP.code = code || mpCode();
   MP.role = 'host';
   MP.conns = [];
+  MP_SENT = null;
   document.body.classList.add('mp-host');
   ssSet(MPH, { code: MP.code, local: MP.local });
   mpRender(L2('Opening…', 'Ouverture…'));
