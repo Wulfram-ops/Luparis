@@ -68,8 +68,12 @@ def main() -> int:
         print("Build is up to date.")
         return 0
 
-    APP.write_text(app, encoding="utf-8")
-    INDEX.write_text(index, encoding="utf-8")
+    # newline="\n": keep LF on every platform (Windows text mode would rewrite CRLF,
+    # making the build output diverge from the committed blobs).
+    with APP.open("w", encoding="utf-8", newline="\n") as f:
+        f.write(app)
+    with INDEX.open("w", encoding="utf-8", newline="\n") as f:
+        f.write(index)
     print(f"app.js written ({len(app) // 1024} KB from {len(list(SRC.glob('*.js')))} files); index.html stamped.")
     return 0
 
