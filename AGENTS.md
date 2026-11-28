@@ -70,6 +70,8 @@ Each point below was asked for by Fred. Most are covered by `tests/smoke.py`; ke
 - Database changes are new files in `supabase/migrations/` (never edit a pushed one): Supabase deploys them on every push to main.
 - Only the public `anon` key may be in the code. AI keys and the Discord webhook never go to Supabase.
 - The site keeps working without an account, locally.
+- `src/js/06-cloud.js`: the Supabase library (pinned version, SRI hash) is loaded only when someone signs in or already has a session; the session lives in `sb-luparis-auth`, outside the `luparis-` prefix, so it never goes into a backup. Sign-in uses the PKCE flow (`?code=`), which leaves the `#tab` routing alone.
+- The site is served at https://luparis.fr/ (file `CNAME`, DNS at OVH); the old github.io address redirects there.
 
 ### World map (`45-world.js`)
 - Towns and pins open a place sheet: description, link, and an illustration kept in the image gallery (IndexedDB, `luparis-images`) that the GM can show to the players.

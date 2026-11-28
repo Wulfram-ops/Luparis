@@ -35,7 +35,7 @@ function applyLang() {
   renderRes();
   rlRender();
   // the table modules are rebuilt in the new language too
-  for (const f of [renderMarks, renderTpls, imgRender, snRender])
+  for (const f of [renderMarks, renderTpls, imgRender, snRender, cloudRender])
     try {
       f();
     } catch (e) {}

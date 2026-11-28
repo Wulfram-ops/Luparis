@@ -649,3 +649,16 @@ details.help[open]>summary{grid-column:1/-1}
 
 /* the party flag on the world map belongs to the GM: players see it, they do not move it */
 body.mp-player #w_tools [data-w="party"] { display: none; }
+
+/* account button (ROADMAP §1.4, lot B) */
+header.rail .acct{display:flex;align-items:center;gap:10px;width:100%;min-width:0;padding:6px 10px;border:1px solid var(--line);border-radius:9px;background:transparent;font:600 14px "Alegreya Sans",sans-serif;color:var(--ink);cursor:pointer}
+header.rail .acct svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;flex:none}
+header.rail .acct .acct-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header.rail .acct.on{border-color:var(--acc2,var(--ink))}
+body.rail-mini header.rail .acct{justify-content:center;padding-inline:0}
+body.rail-mini header.rail .acct .acct-label{display:none}
+#acctdlg{max-width:420px}
+#acctdlg form.row{display:flex;gap:6px;flex-wrap:wrap}
+#acctdlg input[type=email]{flex:1 1 180px}
+#acctdlg .acct-err{color:#a33}
+#acctdlg .acct-err:empty{display:none}

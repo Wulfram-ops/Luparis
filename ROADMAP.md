@@ -93,7 +93,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 | Lot | Contenu | Dépend de | Fichiers principaux |
 |---|---|---|---|
 | **A. Schéma et sécurité** — **fait le 28 novembre** (`supabase/migrations/`, `supabase/README.md`, 68 contrôles dans `tests/supabase/rls.test.mjs`, lancés par la CI) | `supabase/migrations/` (tables ci-dessus, RLS, fonctions `is_*`, contraintes), `supabase/README.md` (créer le projet, coller le schéma, mettre Fred dans `owners`). Tests SQL des règles : un joueur ne lit pas `gm_notes`, ne crée pas de campagne, ne met pas son personnage dans une campagne dont il n'est pas membre, ne modifie pas son XP. | — | `supabase/` (nouveau) |
-| **B. Client et connexion** | Charger `supabase-js` (une seule version épinglée), `src/js/05-cloud.js` : `CLOUD.user`, connexion Google et lien par e-mail, déconnexion, état hors ligne. Bouton « Se connecter » dans le bandeau latéral. Sans configuration, rien ne change. | A (URL + clé `anon`) | `src/js/05-cloud.js` (nouveau), `index.html`, `50-ui.js` (bouton) |
+| **B. Client et connexion** — **fait le 28 novembre** (`src/js/06-cloud.js` : bouton « Se connecter » dans le bandeau, Google et lien par e-mail, flux PKCE, bibliothèque chargée seulement si on se connecte, session hors des sauvegardes ; 5 tests smoke avec un faux client) | Charger `supabase-js` (une seule version épinglée), `src/js/05-cloud.js` : `CLOUD.user`, connexion Google et lien par e-mail, déconnexion, état hors ligne. Bouton « Se connecter » dans le bandeau latéral. Sans configuration, rien ne change. | A (URL + clé `anon`) | `src/js/05-cloud.js` (nouveau), `index.html`, `50-ui.js` (bouton) |
 | **C. Profils** | Préférences et dispositions (`luparis-prefs`, `luparis-play-grid-v1`, langue, presets, rail) lues et écrites dans `profiles.prefs` quand on est connecté ; repli local sinon ; fusion à la première connexion (le plus récent gagne, rien n'est perdu). | B | `05-cloud.js`, `57-layout.js` (lecture/écriture seulement) |
 | **D. Personnages en ligne** | La création et l'édition des fiches écrivent dans `characters` quand on est connecté (débounce, `rev` pour les conflits, avertissement si la fiche a changé ailleurs). Liste « Mes personnages ». Choix de la campagne du personnage, parmi celles dont le joueur est membre (une seule à la fois). | B, A | `35-character.js`, `05-cloud.js` |
 | **E. Gestion des campagnes (propriétaire)** | Écran réservé à Fred : créer, renommer, archiver une campagne ; inviter un joueur (par e-mail ou par lien) ; donner ou retirer le rôle MJ ; voir les personnages rattachés. Invisible pour les autres comptes (et refusé par la base de toute façon). | A, B | nouveau panneau (onglet Campagne), `05-cloud.js` |
@@ -112,6 +112,8 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 ---
 
 ## 2. Améliorations prévues (sans ordre strict)
+
+- **Grille de l'onglet Jeu (demande de Fred, 28 novembre)** : passer la grille de placement des modules de 12 colonnes à **5 colonnes**, avec des **cellules carrées** (aujourd'hui des rangées de 8 px). Points à reprendre : `GL[key]=[c,r,w,h]` et les presets (`gBuild`, `PLAY_PRESETS`), le redimensionnement, `gGrow`/`gFit` (rien ne doit défiler), et la conversion des dispositions déjà enregistrées (`luparis-play-grid-v1` → nouvelle version) pour que personne ne perde la sienne.
 
 - **Carte de bataille**
   - Logique de génération par l'IA : pas encore retravaillée (noté le 27 novembre, à reprendre).
@@ -165,6 +167,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
+- **Comptes en ligne, lot B (28 novembre)** : connexion Google (application Google publiée) et par lien e-mail ; site sur **luparis.fr** (OVH, DNSSEC) avec page `confidentialite.html` ; le propriétaire voit ★ devant son nom.
 - **Lot A des comptes en ligne (28 novembre)** : base Supabase et règles de sécurité appliquées par la base (propriétaire seul créateur des campagnes, rôles par campagne, notes MJ réservées aux MJ de la campagne, un personnage dans une seule campagne, XP réservé au MJ), testées dans un vrai PostgreSQL (PGlite) à chaque envoi. Le projet Supabase de Fred est relié au dépôt : les migrations sont appliquées à chaque envoi sur `main`. Le propriétaire peut créer un personnage et l'attribuer à un joueur.
 - **Notes de Fred du 27 novembre au soir** :
   - le drapeau du groupe sur la carte du monde est celui du MJ, envoyé à tous les joueurs (le bouton « Placer le groupe » est masqué chez eux) ;

@@ -93,6 +93,51 @@ def run(chrome: str | None) -> None:
             lore == {"b204": {"t": "old Hjartvik"}, "b22": {"t": "Lagooncairn"}},
             str(lore),
         )
+        # online accounts (lot B): nothing is loaded without an account; sign-in through a stand-in client
+        check(
+            "accounts: a visitor without an account loads no account library",
+            D("!window.supabase && !CLOUD.sb") and page.locator("#acct_open").is_visible(),
+        )
+        page.evaluate("""() => {
+          window.__sb = [];
+          window.supabase = { createClient: (u, k, o) => { let cb = null, sess = null;
+            const q = t => { const r = { select: () => r, eq: () => r,
+              maybeSingle: async () => ({ data: t === 'owners' ? { user_id: 'u1' } : null, error: null }),
+              upsert: async v => (window.__sb.push(['upsert', t, v]), { error: null }) }; return r; };
+            window.__sb.push(['create', u, k, o.auth.flowType, o.auth.storageKey]);
+            return { from: q, auth: { onAuthStateChange: f => (cb = f), getSession: async () => ({ data: { session: sess } }),
+              signInWithOAuth: async a => (window.__sb.push(['oauth', a.provider]), { error: null }),
+              signOut: async () => { sess = null; cb && cb('SIGNED_OUT', null); },
+              _in: () => { sess = { user: { id: 'u1', email: 'f@x.fr', user_metadata: { full_name: 'Fred' } } };
+                localStorage.setItem('sb-luparis-auth', '{"token":"secret"}'); cb && cb('SIGNED_IN', sess); } } };
+          } };
+        }""")
+        page.click("#acct_open")
+        page.click("#acct_google")
+        page.wait_for_timeout(200)
+        D("CLOUD.sb.auth._in()")
+        page.wait_for_timeout(300)
+        calls = page.evaluate("window.__sb")
+        check(
+            "accounts: Google sign-in uses the PKCE flow and the public key only",
+            calls[0][3] == "pkce" and calls[0][2].startswith("sb_publishable_") and ["oauth", "google"] in calls,
+            str(calls[:2]),
+        )
+        check(
+            "accounts: the owner sees their name with a star",
+            "Fred" in page.locator("#acct_open").inner_text() and "★" in page.locator("#acct_open").inner_text(),
+        )
+        check(
+            "accounts: the session is never copied into a backup",
+            D("!Object.keys(bkCollect().data).some(k => k.includes('auth') || k.startsWith('sb-'))"),
+        )
+        page.click("#acct_out")
+        page.wait_for_timeout(200)
+        check(
+            "accounts: signing out forgets the session",
+            D("!CLOUD.user && !localStorage.getItem('sb-luparis-auth')"),
+        )
+        page.evaluate("document.getElementById('acctdlg').close(); delete window.supabase; DBG('CLOUD.sb = null; CLOUD.loading = null')")
         page.click('.tabs a[data-v="regles"]')
         page.wait_for_timeout(500)
         check("rules loaded on demand", page.locator("#rbody h2").count() >= 10)
