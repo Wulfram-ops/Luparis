@@ -56,7 +56,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 - Curseurs et sélections des autres participants (couleur par joueur, envoi limité à ~15 fois par seconde).
 - ~~Reconnexion automatique~~ fait le 25 novembre : le joueur réessaie seul et reprend son personnage ; si le MJ recharge sa page, la partie se rouvre avec le même code.
 - Conflits d'édition : l'hôte fait foi ; chaque objet porte une révision, la plus récente validée par l'hôte gagne ; verrou léger pendant qu'un token est tenu.
-- Identité des joueurs : aujourd'hui un joueur se déclare sur un personnage. Lier la connexion à un personnage (fait en partie) puis, avec la connexion Google, à un compte.
+- Identité des joueurs : aujourd'hui un joueur se déclare sur un personnage. Lier la connexion à un personnage (fait en partie) puis à un compte : voir §1.4.
 
 ### 1.3 Onglet Campagne
 - Préparation de séance (fil, scènes prévues, PNJ, rencontres prêtes à poser sur la carte).
@@ -65,10 +65,46 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 - Brainstorm assisté par IA (accroches, PNJ, conséquences des choix des joueurs).
 - Regroupe l'XP de campagne et l'historique des notes de séance déjà existants.
 
-### 1.4 Comptes et données partagées
-- Connexion Google + base partagée (Firebase ou Supabase) pour personnages, bestiaire, cartes et campagnes.
-- Règle d'écriture : seul le MJ (et toi) modifie ; les joueurs ne modifient que leur personnage.
-- Migration des données du navigateur (localStorage) vers la base, export/import JSON conservé.
+### 1.4 Comptes, campagnes et rôles en ligne (Supabase) — décidé le 28 novembre, découpé en lots
+
+**Pourquoi** : les joueurs veulent créer et modifier leurs personnages, et jouer des séances ou des tests sans Fred, depuis n'importe quel appareil.
+
+**Décisions de Fred (28 novembre), à ne pas changer sans lui :**
+- **Supabase**, offre gratuite. La clé publique (`anon`) peut aller dans le code. Aucune autre clé ne va dans le code ni dans le dépôt.
+- **Seul Fred crée les campagnes.** Aucun joueur ne peut en créer une, même pour tester.
+- **Les rôles se donnent par campagne** : MJ ou joueur. Fred (le propriétaire) les attribue. Un joueur peut être MJ d'une campagne que Fred lui a ouverte, et joueur ailleurs.
+- **Un MJ ne voit les notes MJ que de ses propres campagnes.** Le refus est fait par la base (Row Level Security), pas par l'interface.
+- **Un personnage appartient à son joueur** et se trouve dans **une seule campagne à la fois**, ou dans aucune. Le joueur le déplace librement d'une campagne à une autre dont il est membre.
+- Les clés IA et le webhook Discord restent dans le navigateur de chacun (`AGENTS.md`) : jamais dans Supabase.
+- Le site reste utilisable sans compte, en local comme aujourd'hui. Le compte est un plus, pas un passage obligé.
+
+**Le contrat commun (lot A) : à lire par tous les lots.** Les tables (Postgres, Supabase) :
+- `profiles` : `id` (= `auth.users.id`), `name`, `prefs jsonb` (langue, presets, disposition des modules, réglages). Le joueur lit et écrit le sien.
+- `owners` : la liste des comptes propriétaires (Fred). Seuls les propriétaires créent ou suppriment une campagne et attribuent les rôles.
+- `campaigns` : `id`, `name`, `created_by`, `created_at`.
+- `members` : `campaign_id`, `user_id`, `role` (`gm` | `player`), clé primaire sur les deux. Seul un propriétaire écrit ici.
+- `characters` : `id`, `owner` (user), `campaign_id` (nullable), `data jsonb` (la fiche actuelle, même format que `luparis-chars`), `rev`, `updated_at`. Le propriétaire lit et écrit son personnage ; les membres de sa campagne le lisent ; les MJ de sa campagne écrivent l'XP et les PV. `campaign_id` n'accepte qu'une campagne dont le propriétaire du personnage est membre. Une seule campagne par personnage : c'est une colonne, pas une table de liaison.
+- `campaign_state` : `campaign_id`, `data jsonb` (carte, pions, initiative, objets, zones, jets publics), `rev`, `updated_at`. Les membres lisent, les MJ écrivent.
+- `gm_notes` : `campaign_id`, `data jsonb` (notes MJ, jets secrets, rencontres préparées, monstres maison). **Seuls les MJ de la campagne lisent et écrivent.**
+- Tout passe par RLS. Une fonction SQL `is_gm(campaign)` / `is_member(campaign)` / `is_owner()` évite de répéter les règles.
+
+**Les lots.** Chaque lot donne un commit ou une petite série, passe tous les contrôles (`AGENTS.md`) et ne pousse pas : relecture par Claude, puis push.
+
+| Lot | Contenu | Dépend de | Fichiers principaux |
+|---|---|---|---|
+| **A. Schéma et sécurité** | `supabase/schema.sql` (tables ci-dessus, RLS, fonctions `is_*`, contraintes), `supabase/README.md` (créer le projet, coller le schéma, mettre Fred dans `owners`). Tests SQL des règles : un joueur ne lit pas `gm_notes`, ne crée pas de campagne, ne met pas son personnage dans une campagne dont il n'est pas membre, ne modifie pas son XP. | — | `supabase/` (nouveau) |
+| **B. Client et connexion** | Charger `supabase-js` (une seule version épinglée), `src/js/05-cloud.js` : `CLOUD.user`, connexion Google et lien par e-mail, déconnexion, état hors ligne. Bouton « Se connecter » dans le bandeau latéral. Sans configuration, rien ne change. | A (URL + clé `anon`) | `src/js/05-cloud.js` (nouveau), `index.html`, `50-ui.js` (bouton) |
+| **C. Profils** | Préférences et dispositions (`luparis-prefs`, `luparis-play-grid-v1`, langue, presets, rail) lues et écrites dans `profiles.prefs` quand on est connecté ; repli local sinon ; fusion à la première connexion (le plus récent gagne, rien n'est perdu). | B | `05-cloud.js`, `57-layout.js` (lecture/écriture seulement) |
+| **D. Personnages en ligne** | La création et l'édition des fiches écrivent dans `characters` quand on est connecté (débounce, `rev` pour les conflits, avertissement si la fiche a changé ailleurs). Liste « Mes personnages ». Choix de la campagne du personnage, parmi celles dont le joueur est membre (une seule à la fois). | B, A | `35-character.js`, `05-cloud.js` |
+| **E. Gestion des campagnes (propriétaire)** | Écran réservé à Fred : créer, renommer, archiver une campagne ; inviter un joueur (par e-mail ou par lien) ; donner ou retirer le rôle MJ ; voir les personnages rattachés. Invisible pour les autres comptes (et refusé par la base de toute façon). | A, B | nouveau panneau (onglet Campagne), `05-cloud.js` |
+| **F. État de partie par campagne** | Choisir la campagne active ; charger et enregistrer `campaign_state` (carte, pions, initiative…) et, pour un MJ, `gm_notes`. Remplace `luparis-table-state` / `luparis-maps` / notes de séance quand on est connecté. Le MJ de la campagne lance la séance multijoueur comme aujourd'hui (l'hôte reste la vérité pendant la séance, Supabase garde l'état entre les séances). | B, D, E | `60-session-multiplayer.js` (chargement/sauvegarde seulement), `05-cloud.js` |
+| **G. Reprise des données de Fred** | Un bouton (propriétaire uniquement) qui envoie ses données locales actuelles (personnages, notes, cartes, sessions) dans sa campagne principale, avec un aperçu avant envoi et une sauvegarde JSON locale juste avant. Une seule fois, relançable sans doublon. | E, F | `05-cloud.js`, sauvegarde (`bkCollect`) |
+| **H. Réveil du projet gratuit** | Action GitHub planifiée (une fois par jour) qui fait une petite lecture publique sur Supabase pour éviter la mise en pause après 7 jours sans activité. Aucune clé secrète : la clé `anon` suffit. | A | `.github/workflows/` |
+| **I. Tests et documentation** | Tests smoke avec un faux client Supabase (pas de réseau en CI) : connexion simulée, fiches enregistrées, notes MJ invisibles pour un joueur, un personnage dans une seule campagne. `AGENTS.md` : règles ci-dessus dans « Fundamentals ». Règles du site : page « Comptes et campagnes ». | au fil des lots | `tests/smoke.py`, `AGENTS.md`, `rules/` |
+
+**En parallèle sans se gêner** : A, puis B ; ensuite C, D, E et H en même temps (fichiers différents) ; F après D et E ; G en dernier. I avance avec chaque lot.
+
+**Ce que Fred fait lui-même (une fois)** : créer le projet Supabase (offre gratuite), y coller `supabase/schema.sql`, activer la connexion Google, se mettre dans `owners`, puis donner l'URL du projet et la clé `anon` (pas la clé `service_role`, qui ne quitte jamais le tableau de bord Supabase).
 
 ### 1.5 Google Drive
 - Mettre à jour les documents de règles et de lore sur Drive depuis le site (export des règles, des fiches, des notes de séance).

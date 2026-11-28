@@ -62,6 +62,13 @@ Each point below was asked for by Fred. Most are covered by `tests/smoke.py`; ke
 - Wounded monsters show a red ring and a drop of blood.
 - Map size up to 128×128 must stay in sync in multiplayer (messages are cut into 48 KB pieces).
 
+### Accounts and campaigns (ROADMAP §1.4, planned with Supabase, decided by Fred on 28 November)
+- Only the owner (Fred) creates campaigns and gives roles; a role (GM or player) is per campaign.
+- A GM reads GM notes of their own campaigns only, enforced by the database (RLS), not just hidden.
+- A character belongs to its player and sits in one campaign at a time (or none); the player moves it freely between campaigns they belong to.
+- Only the public `anon` key may be in the code. AI keys and the Discord webhook never go to Supabase.
+- The site keeps working without an account, locally.
+
 ### World map (`45-world.js`)
 - Towns and pins open a place sheet: description, link, and an illustration kept in the image gallery (IndexedDB, `luparis-images`) that the GM can show to the players.
 
