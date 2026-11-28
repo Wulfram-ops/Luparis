@@ -16,7 +16,7 @@ Ce dossier contient la base de données en ligne prévue dans `ROADMAP.md` §1.4
 ## Mise en place (Fred, une seule fois, environ 15 minutes)
 
 1. Créer un compte sur <https://supabase.com>, puis un projet (offre **Free**). Choisir la région **Europe (Paris ou Francfort)** et noter le mot de passe de la base dans un endroit sûr. Il ne sert qu'en cas de besoin, le site ne l'utilise pas.
-2. **Rien à coller** : le projet est relié au dépôt GitHub, avec « Deploy to production » activé et le dossier de travail `.`. Supabase applique donc lui-même chaque nouveau fichier de `supabase/migrations/` à chaque envoi sur `main`. Si un jour l'intégration est coupée, on peut coller les fichiers de `supabase/migrations/` dans **SQL Editor**, dans l'ordre.
+2. **Rien à coller** (intégration activée le 28 novembre) : le projet est relié au dépôt GitHub, avec « Deploy to production » activé et le dossier de travail `.`. Supabase applique donc lui-même chaque nouveau fichier de `supabase/migrations/` à chaque envoi sur `main`. Si un jour l'intégration est coupée, on peut coller les fichiers de `supabase/migrations/` dans **SQL Editor**, dans l'ordre.
 3. Ouvrir **Authentication › Providers** :
    - activer **Email**, avec le lien de connexion par e-mail (« magic link ») ;
    - activer **Google** : le tableau de bord Supabase explique comment créer l'identifiant Google, environ 10 minutes.
