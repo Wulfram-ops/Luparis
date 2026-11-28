@@ -106,6 +106,21 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 
 **Ce que Fred fait lui-même (une fois)** : créer le projet Supabase (offre gratuite), y coller `supabase/migrations/`, activer la connexion Google, se mettre dans `owners`, puis donner l'URL du projet et la clé `anon` (pas la clé `service_role`, qui ne quitte jamais le tableau de bord Supabase).
 
+### 1.4 bis Règles modifiables par le propriétaire seul — demandé par Fred le 28 novembre, à peaufiner
+
+**But** : Fred modifie les règles depuis le site, sans passer par une IA ni par le code. Lui seul peut le faire ; tout le monde lit la version à jour.
+
+**Principe proposé** (à valider avec Fred avant de commencer) :
+- Une table `rules_pages` dans Supabase (nouvelle migration) : `lang` (fr/en), `slug` (section), `body` (texte en Markdown simple ou HTML nettoyé), `rev`, `updated_at`, `updated_by`. **Lecture pour tous**, y compris sans compte. **Écriture réservée au propriétaire** (`is_owner()`), imposée par la base (RLS).
+- Une table `rules_history` : chaque enregistrement garde l'ancienne version, pour revenir en arrière.
+- Le site affiche la version en ligne si elle existe, et sinon les pages actuelles `rules/fr.html` et `rules/en.html` (le site marche toujours hors ligne et sans compte).
+- Dans l'onglet Règles, un bouton « Modifier » visible seulement par le propriétaire : édition section par section, aperçu, enregistrement, historique.
+- Les « règles maison » décidées en séance (voir le journal de séance, si Fred le valide) peuvent être proposées ici, puis acceptées par Fred.
+
+**Lots** : A′ migration + tests RLS (`tests/supabase/rls.test.mjs`) ; B′ affichage de la version en ligne avec repli sur les fichiers ; C′ éditeur réservé au propriétaire avec historique ; D′ reprise des pages actuelles dans la base (une fois, par Fred).
+
+**Points à trancher avec Fred** : format d'édition (texte simple avec titres, ou éditeur visuel) ; garder les deux langues synchronisées (traduction proposée par l'IA, à valider) ; les tableaux (dégâts, repos) restent-ils éditables ?
+
 ### 1.5 Google Drive
 - Mettre à jour les documents de règles et de lore sur Drive depuis le site (export des règles, des fiches, des notes de séance).
 
