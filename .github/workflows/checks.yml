@@ -24,3 +24,11 @@ jobs:
         run: python tools/validate_data.py
       - name: Browser smoke tests
         run: python tests/smoke.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Database rules (supabase/schema.sql in PGlite)
+        working-directory: tests/supabase
+        run: |
+          npm ci --no-audit --no-fund
+          npm test

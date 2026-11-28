@@ -3,3 +3,4 @@ __pycache__/
 .DS_Store
 Luparis_Full*.json
 world-full.svg
+node_modules/

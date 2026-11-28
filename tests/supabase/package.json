@@ -1,0 +1,8 @@
+{
+  "name": "luparis-supabase-tests",
+  "private": true,
+  "type": "module",
+  "description": "Checks supabase/schema.sql in a real PostgreSQL (PGlite, WebAssembly). ROADMAP §1.4, lot A.",
+  "scripts": { "test": "node rls.test.mjs" },
+  "devDependencies": { "@electric-sql/pglite": "0.3.16" }
+}
