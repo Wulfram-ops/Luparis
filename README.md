@@ -2,7 +2,7 @@
 
 Site tout-en-un pour la campagne Luparis (règles maison D&D 5.5 × Daggerheart) : carte tactique en vue isométrique façon Dofus (vue de dessus en option), fiches de personnage par campagne, bestiaire avec générateur IA, livre de règles, carte du monde et cartes de villes jouables. Bilingue anglais/français.
 
-Version en ligne : https://wulfram-ops.github.io/Luparis/
+Version en ligne : https://luparis.fr/ (anciennement https://wulfram-ops.github.io/Luparis/, qui y redirige)
 
 ## Lancer en local
 
