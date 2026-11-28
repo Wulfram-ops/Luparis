@@ -32,7 +32,7 @@ python3 -m http.server 8765 &      # the smoke test expects this server
 python3 tests/smoke.py             # must end with "All checks passed."
 python3 tools/validate_data.py
 ruff check tools tests --select F,E9   # same lint as the CI
-(cd tests/supabase && npm ci && npm test)   # when supabase/schema.sql changes: the database rules
+(cd tests/supabase && npm ci && npm test)   # when supabase/migrations/ changes: the database rules
 ```
 
 The same checks run on GitHub (`.github/workflows/checks.yml`). Look at the screen too: take Playwright screenshots of what you changed, at desktop (1440×900) and phone (390×844) sizes, in French.
@@ -66,7 +66,8 @@ Each point below was asked for by Fred. Most are covered by `tests/smoke.py`; ke
 ### Accounts and campaigns (ROADMAP §1.4, planned with Supabase, decided by Fred on 28 November)
 - Only the owner (Fred) creates campaigns and gives roles; a role (GM or player) is per campaign.
 - A GM reads GM notes of their own campaigns only, enforced by the database (RLS), not just hidden.
-- A character belongs to its player and sits in one campaign at a time (or none); the player moves it freely between campaigns they belong to.
+- A character belongs to its player and sits in one campaign at a time (or none); the player moves it freely between campaigns they belong to. The owner may create a character, edit it and give it to a player.
+- Database changes are new files in `supabase/migrations/` (never edit a pushed one): Supabase deploys them on every push to main.
 - Only the public `anon` key may be in the code. AI keys and the Discord webhook never go to Supabase.
 - The site keeps working without an account, locally.
 

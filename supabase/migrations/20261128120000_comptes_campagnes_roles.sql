@@ -1,7 +1,8 @@
 -- Luparis — accounts, campaigns and roles (ROADMAP §1.4, lot A). Decided by Fred on 28 November 2026.
 --
--- Paste the whole file into Supabase › SQL Editor › New query › Run. It can be run again: every object
--- is created with "if not exists" / "create or replace", and the policies are dropped and recreated.
+-- Applied by Supabase itself: the project's GitHub integration ("Deploy to production") runs every new
+-- file of supabase/migrations/ on a push to main. Never edit a migration that has been pushed: add a new
+-- file (a later timestamp) instead. This one is idempotent anyway ("if not exists", "create or replace").
 --
 -- The rules, enforced here by the database (Row Level Security), not by the site:
 --   * only an owner (Fred, listed in public.owners) creates, renames, archives or deletes a campaign
@@ -10,6 +11,8 @@
 --   * a character belongs to its player and sits in one campaign at a time, or none; the player moves it
 --     to any campaign they are a member of; the campaign's GMs change its XP and its used boxes/Mana
 --     only, never anything else; a player never changes their own XP;
+--   * the owner may create a character, edit it and give it to a player (for players who would rather
+--     have Fred do it); the character must then sit in a campaign its new player belongs to, or none;
 --   * nothing here holds AI keys or the Discord webhook: those stay in each browser.
 --
 -- Only the public "anon" key and the project URL go into the site. The "service_role" key bypasses every
@@ -139,10 +142,10 @@ begin
     return new; -- dashboard / service role
   end if;
   if tg_op = 'INSERT' then
-    if new.owner is distinct from me then
+    if new.owner is distinct from me and not public.is_owner() then
       raise exception 'a character is created by its own player';
     end if;
-    if not public.is_gm(new.campaign_id) then
+    if not public.is_gm(new.campaign_id) and not public.is_owner() then
       new.data := new.data - 'xp'; -- a player does not set their own XP (the campaign GM does)
     end if;
     if new.campaign_id is not null and not public.user_in(new.campaign_id, new.owner) then
@@ -150,7 +153,20 @@ begin
     end if;
     return new;
   end if;
+  if public.is_owner() and me is distinct from old.owner then
+    -- the owner (Fred): may rewrite or give a character to a player, who must belong to its campaign
+    if new.campaign_id is not null and not public.user_in(new.campaign_id, new.owner) then
+      raise exception 'the player is not a member of that campaign';
+    end if;
+    return new;
+  end if;
   if new.owner is distinct from old.owner then
+    if public.is_owner() then -- the owner gives away one of their own characters
+      if new.campaign_id is not null and not public.user_in(new.campaign_id, new.owner) then
+        raise exception 'the player is not a member of that campaign';
+      end if;
+      return new;
+    end if;
     raise exception 'a character cannot change player';
   end if;
   if new.campaign_id is null and old.campaign_id is not null
@@ -270,19 +286,21 @@ create policy members_delete on public.members for delete to authenticated
   using (public.is_owner() or user_id = auth.uid());
 
 -- characters: the player reads and writes theirs; members of its campaign read it; the campaign's GMs
--- update it (the trigger limits them to XP and used boxes/Mana); the owner reads all of them.
+-- update it (the trigger limits them to XP and used boxes/Mana); the owner reads, creates, edits,
+-- gives and deletes any of them.
 drop policy if exists characters_read on public.characters;
 create policy characters_read on public.characters for select to authenticated
   using (owner = auth.uid() or public.is_owner() or public.is_member(campaign_id));
 drop policy if exists characters_insert on public.characters;
 create policy characters_insert on public.characters for insert to authenticated
-  with check (owner = auth.uid());
+  with check (owner = auth.uid() or public.is_owner());
 drop policy if exists characters_update on public.characters;
 create policy characters_update on public.characters for update to authenticated
-  using (owner = auth.uid() or public.is_gm(campaign_id))
-  with check (owner = auth.uid() or public.is_gm(campaign_id));
+  using (owner = auth.uid() or public.is_gm(campaign_id) or public.is_owner())
+  with check (owner = auth.uid() or public.is_gm(campaign_id) or public.is_owner());
 drop policy if exists characters_delete on public.characters;
-create policy characters_delete on public.characters for delete to authenticated using (owner = auth.uid());
+create policy characters_delete on public.characters for delete to authenticated
+  using (owner = auth.uid() or public.is_owner());
 
 -- campaign_state: members read; GMs write; an owner may delete.
 drop policy if exists state_read on public.campaign_state;

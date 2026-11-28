@@ -27,7 +27,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Database rules (supabase/schema.sql in PGlite)
+      - name: Database rules (supabase/migrations/ in PGlite)
         working-directory: tests/supabase
         run: |
           npm ci --no-audit --no-fund

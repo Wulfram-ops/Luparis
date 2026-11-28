@@ -9,13 +9,14 @@ Ce dossier contient la base de données en ligne prévue dans `ROADMAP.md` §1.4
 - **Un personnage appartient à son joueur** et se trouve dans **une seule campagne à la fois**, ou dans aucune. Le joueur le déplace vers n'importe quelle campagne dont il est membre.
 - **Le MJ de la campagne** donne l'XP et coche les cases ou le Mana utilisés. Il ne peut rien changer d'autre sur la fiche d'un joueur, ni la déplacer. **Un joueur ne modifie jamais son propre XP.**
 - Un joueur peut quitter une campagne : ses personnages en sortent avec lui. Si une campagne est supprimée, les personnages sont gardés, simplement sans campagne.
+- **Le propriétaire peut créer un personnage, le modifier et l'attribuer à un joueur**, pour ceux qui préfèrent que Fred le fasse. Le personnage doit alors être dans une campagne dont ce joueur est membre, ou dans aucune.
 - Un visiteur non connecté ne voit rien (sauf `ping()`, qui sert à garder le projet éveillé : lot H).
 - **Aucune clé IA ni aucun webhook Discord** ne va dans cette base : ils restent dans le navigateur de chacun.
 
 ## Mise en place (Fred, une seule fois, environ 15 minutes)
 
 1. Créer un compte sur <https://supabase.com>, puis un projet (offre **Free**). Choisir la région **Europe (Paris ou Francfort)** et noter le mot de passe de la base dans un endroit sûr. Il ne sert qu'en cas de besoin, le site ne l'utilise pas.
-2. Dans le projet, ouvrir **SQL Editor › New query**, coller tout `supabase/schema.sql`, puis cliquer sur **Run**. Le fichier peut être recollé plus tard sans risque, par exemple après une mise à jour.
+2. **Rien à coller** : le projet est relié au dépôt GitHub, avec « Deploy to production » activé et le dossier de travail `.`. Supabase applique donc lui-même chaque nouveau fichier de `supabase/migrations/` à chaque envoi sur `main`. Si un jour l'intégration est coupée, on peut coller les fichiers de `supabase/migrations/` dans **SQL Editor**, dans l'ordre.
 3. Ouvrir **Authentication › Providers** :
    - activer **Email**, avec le lien de connexion par e-mail (« magic link ») ;
    - activer **Google** : le tableau de bord Supabase explique comment créer l'identifiant Google, environ 10 minutes.
@@ -32,7 +33,7 @@ Ce dossier contient la base de données en ligne prévue dans `ROADMAP.md` §1.4
 | `owners` | les comptes propriétaires (Fred) | soi (pour savoir si on l'est) | personne depuis le site (tableau de bord seulement) |
 | `campaigns` | nom, archivée ou non | ses membres ; le propriétaire | le propriétaire |
 | `members` | qui est dans quelle campagne, avec quel rôle (`gm` ou `player`) | les membres de la campagne ; le propriétaire | le propriétaire (un joueur peut seulement se retirer) |
-| `characters` | la fiche (`data`, même format que `luparis-chars`), son joueur (`owner`), sa campagne (`campaign_id`, une seule) | son joueur ; les membres de sa campagne ; le propriétaire | son joueur (sauf l'XP) ; les MJ de sa campagne (XP et `used` seulement) |
+| `characters` | la fiche (`data`, même format que `luparis-chars`), son joueur (`owner`), sa campagne (`campaign_id`, une seule) | son joueur ; les membres de sa campagne ; le propriétaire | son joueur (sauf l'XP) ; les MJ de sa campagne (XP et `used` seulement) ; le propriétaire (tout, y compris l'attribuer à un joueur) |
 | `campaign_state` | la table entre deux séances : carte, pions, initiative, objets, jets publics | les membres | les MJ de la campagne |
 | `gm_notes` | notes MJ, jets secrets, rencontres préparées, monstres maison | **les MJ de la campagne seulement** | les MJ de la campagne |
 
@@ -42,13 +43,13 @@ Ce dossier contient la base de données en ligne prévue dans `ROADMAP.md` §1.4
 ## Pour les IA qui font les lots suivants
 
 - Le site ne parle à la base qu'avec la clé `anon` et la session de l'utilisateur. Toute la sécurité est ici : ne jamais la « compléter » côté site par des contrôles qui la remplaceraient.
-- **Une règle à changer ?** On modifie `schema.sql` **et** `tests/supabase/rls.test.mjs`, puis Fred recolle le schéma dans son projet.
+- **Une règle à changer ?** On **ajoute** un fichier dans `supabase/migrations/`, avec un horodatage plus récent dans le nom. On ne modifie jamais une migration déjà envoyée. On adapte aussi `tests/supabase/rls.test.mjs`. L'envoi sur `main` la déploie : seuls Fred et Claude envoient sur `main`.
 - Fonctions disponibles pour les requêtes : `is_owner()`, `is_member(campagne)`, `is_gm(campagne)`.
-- **Lot G (reprise des données de Fred) :** un personnage est créé par son propre joueur, Fred ne peut pas en créer un au nom d'un autre. Les fiches actuelles des joueurs seront donc importées par chaque joueur depuis son compte, ou par Fred comme personnages à lui, que le joueur reprendra.
+- **Lot G (reprise des données de Fred) :** le propriétaire peut créer un personnage pour un joueur, le modifier et le lui attribuer (décision du 28 novembre, pour les joueurs moins à l'aise). Les fiches actuelles peuvent donc être importées par Fred, puis attribuées à chaque joueur.
 
 ## Tests
 
-`tests/supabase/rls.test.mjs` charge `schema.sql` dans un vrai PostgreSQL (PGlite, en WebAssembly : pas de serveur, pas de réseau), avec une imitation du schéma `auth` de Supabase. Il joue ensuite chaque rôle : propriétaire, MJ, joueur, joueur MJ ailleurs, inconnu, visiteur non connecté. Il vérifie chaque règle ci-dessus, soit 60 contrôles.
+`tests/supabase/rls.test.mjs` charge toutes les migrations, dans l'ordre, dans un vrai PostgreSQL (PGlite, en WebAssembly : pas de serveur, pas de réseau), avec une imitation du schéma `auth` de Supabase. Il joue ensuite chaque rôle : propriétaire, MJ, joueur, joueur MJ ailleurs, inconnu, visiteur non connecté. Il vérifie chaque règle ci-dessus, soit 68 contrôles.
 
 ```
 cd tests/supabase

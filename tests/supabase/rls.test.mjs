@@ -1,8 +1,8 @@
-// Tests of supabase/schema.sql (ROADMAP §1.4, lot A): the rules are enforced by the database itself.
+// Tests of supabase/migrations/*.sql (ROADMAP §1.4, lot A): the rules are enforced by the database itself.
 // Runs the schema in a real PostgreSQL (PGlite, WebAssembly: no server, no network) with a small stand-in
 // for Supabase's auth schema, then plays each role.  Run:  cd tests/supabase && npm install && npm test
 import { PGlite } from '@electric-sql/pglite';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 const db = new PGlite();
 let failed = 0,
@@ -26,9 +26,12 @@ await db.exec(`
   grant execute on function auth.uid() to anon, authenticated;
   grant usage on schema public to anon, authenticated;
 `);
-await db.exec(readFileSync(new URL('../../supabase/schema.sql', import.meta.url), 'utf8'));
-// running it twice must work (the README says it can be pasted again)
-await db.exec(readFileSync(new URL('../../supabase/schema.sql', import.meta.url), 'utf8'));
+// every migration, in order, as Supabase applies them on a push to main
+const MIG = new URL('../../supabase/migrations/', import.meta.url);
+for (const f of readdirSync(MIG)
+  .filter(f => f.endsWith('.sql'))
+  .sort())
+  await db.exec(readFileSync(new URL(f, MIG), 'utf8'));
 
 const U = {
   fred: '00000000-0000-0000-0000-00000000f0ed',
@@ -167,13 +170,18 @@ r = await as('fred', `update characters set data = jsonb_set(data, '{used}', '{"
   KAEL,
 ]);
 ok('the GM marks used boxes', r.rows.length === 1, r.error);
+// a GM who is not the owner: Thomas runs the sandbox, Léa plays in it
+r = await as('lea', `insert into characters (data, campaign_id) values ('{"n":"Ilya"}', $1) returning id`, [SAND]);
+const ILYA = r.rows[0]?.id;
+r = await as('thomas', `update characters set data = jsonb_set(data, '{xp}', '200') where id = $1 returning 1`, [ILYA]);
+ok('a GM (not owner) gives XP in his campaign', r.rows.length === 1, r.error);
 ok(
-  "the GM cannot rewrite the rest of a player's sheet",
-  refused(await as('fred', `update characters set data = jsonb_set(data, '{n}', '"Renamed"') where id = $1`, [KAEL])),
+  "a GM (not owner) cannot rewrite the rest of a player's sheet",
+  refused(await as('thomas', `update characters set data = jsonb_set(data, '{n}', '"Renamed"') where id = $1`, [ILYA])),
 );
 ok(
-  "the GM cannot move a player's character",
-  refused(await as('fred', 'update characters set campaign_id = null where id = $1', [KAEL])),
+  "a GM (not owner) cannot move a player's character",
+  refused(await as('thomas', 'update characters set campaign_id = null where id = $1', [ILYA])),
 );
 r = await as('lea', `update characters set data = '{}' where id = $1 returning 1`, [KAEL]);
 ok('another player cannot touch Kael', r.rows.length === 0);
@@ -193,6 +201,35 @@ ok(
 );
 r = await as('lea', 'delete from characters where id = $1 returning 1', [KAEL]);
 ok("a player cannot delete someone else's character", r.rows.length === 0);
+
+// --- Fred creates a character for a player who would rather he did it, then gives it to him
+r = await as(
+  'fred',
+  `insert into characters (data, campaign_id) values ('{"n":"Gyatso","xp":150}', $1) returning id, data`,
+  [TOD],
+);
+const GYA = r.rows[0]?.id;
+ok('the owner creates a character (with its XP)', !!GYA && r.rows[0].data.xp === 150, r.error);
+r = await as('fred', 'update characters set owner = $2 where id = $1 returning owner', [GYA, U.thomas]);
+ok('the owner gives it to a player of that campaign', r.rows[0]?.owner === U.thomas, r.error);
+r = await as('thomas', 'select data from characters where id = $1 and owner = $2', [GYA, U.thomas]);
+ok('the player now owns it', r.rows.length === 1);
+ok(
+  'the owner cannot give a character into a campaign its player is not in',
+  refused(await as('fred', 'update characters set owner = $2 where id = $1', [GYA, U.stranger])),
+);
+r = await as(
+  'fred',
+  `update characters set data = jsonb_set(data, '{bio}', '"écrit par Fred"') where id = $1 returning 1`,
+  [GYA],
+);
+ok("the owner edits a player's sheet for him", r.rows.length === 1, r.error);
+r = await as('fred', `insert into characters (owner, data) values ($1, '{"n":"Corellus"}') returning owner`, [U.lea]);
+ok('the owner creates a character directly for a player', r.rows[0]?.owner === U.lea, r.error);
+ok(
+  'a GM who is not owner still cannot give a character away',
+  refused(await as('thomas', 'update characters set owner = $2 where id = $1', [GYA, U.lea])),
+);
 
 // --- leaving a campaign takes the characters out of it
 ok(

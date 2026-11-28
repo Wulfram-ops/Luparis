@@ -92,7 +92,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 
 | Lot | Contenu | Dépend de | Fichiers principaux |
 |---|---|---|---|
-| **A. Schéma et sécurité** — **fait le 28 novembre** (`supabase/schema.sql`, `supabase/README.md`, 60 contrôles dans `tests/supabase/rls.test.mjs`, lancés par la CI) | `supabase/schema.sql` (tables ci-dessus, RLS, fonctions `is_*`, contraintes), `supabase/README.md` (créer le projet, coller le schéma, mettre Fred dans `owners`). Tests SQL des règles : un joueur ne lit pas `gm_notes`, ne crée pas de campagne, ne met pas son personnage dans une campagne dont il n'est pas membre, ne modifie pas son XP. | — | `supabase/` (nouveau) |
+| **A. Schéma et sécurité** — **fait le 28 novembre** (`supabase/migrations/`, `supabase/README.md`, 68 contrôles dans `tests/supabase/rls.test.mjs`, lancés par la CI) | `supabase/migrations/` (tables ci-dessus, RLS, fonctions `is_*`, contraintes), `supabase/README.md` (créer le projet, coller le schéma, mettre Fred dans `owners`). Tests SQL des règles : un joueur ne lit pas `gm_notes`, ne crée pas de campagne, ne met pas son personnage dans une campagne dont il n'est pas membre, ne modifie pas son XP. | — | `supabase/` (nouveau) |
 | **B. Client et connexion** | Charger `supabase-js` (une seule version épinglée), `src/js/05-cloud.js` : `CLOUD.user`, connexion Google et lien par e-mail, déconnexion, état hors ligne. Bouton « Se connecter » dans le bandeau latéral. Sans configuration, rien ne change. | A (URL + clé `anon`) | `src/js/05-cloud.js` (nouveau), `index.html`, `50-ui.js` (bouton) |
 | **C. Profils** | Préférences et dispositions (`luparis-prefs`, `luparis-play-grid-v1`, langue, presets, rail) lues et écrites dans `profiles.prefs` quand on est connecté ; repli local sinon ; fusion à la première connexion (le plus récent gagne, rien n'est perdu). | B | `05-cloud.js`, `57-layout.js` (lecture/écriture seulement) |
 | **D. Personnages en ligne** | La création et l'édition des fiches écrivent dans `characters` quand on est connecté (débounce, `rev` pour les conflits, avertissement si la fiche a changé ailleurs). Liste « Mes personnages ». Choix de la campagne du personnage, parmi celles dont le joueur est membre (une seule à la fois). | B, A | `35-character.js`, `05-cloud.js` |
@@ -104,7 +104,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 
 **En parallèle sans se gêner** : A, puis B ; ensuite C, D, E et H en même temps (fichiers différents) ; F après D et E ; G en dernier. I avance avec chaque lot.
 
-**Ce que Fred fait lui-même (une fois)** : créer le projet Supabase (offre gratuite), y coller `supabase/schema.sql`, activer la connexion Google, se mettre dans `owners`, puis donner l'URL du projet et la clé `anon` (pas la clé `service_role`, qui ne quitte jamais le tableau de bord Supabase).
+**Ce que Fred fait lui-même (une fois)** : créer le projet Supabase (offre gratuite), y coller `supabase/migrations/`, activer la connexion Google, se mettre dans `owners`, puis donner l'URL du projet et la clé `anon` (pas la clé `service_role`, qui ne quitte jamais le tableau de bord Supabase).
 
 ### 1.5 Google Drive
 - Mettre à jour les documents de règles et de lore sur Drive depuis le site (export des règles, des fiches, des notes de séance).
@@ -165,7 +165,7 @@ Principe d'interface retenu : **sobre et minimaliste, sans défilement pour trou
 Points des avis externes écartés : framework (React/Vue) inutile pour l'instant ; TypeScript/Vitest/ESLint prématurés avant les modules ES ; « JSON embarqués » et « images chargées au démarrage » ne correspondaient pas au code (déjà chargés à la demande) ; un aperçu de carte à 150 Ko n'est pas réaliste pour une image de 3840 px qui sert aussi d'affichage principal.
 
 ## 4. Fait récemment
-- **Lot A des comptes en ligne (28 novembre)** : base Supabase et règles de sécurité appliquées par la base (propriétaire seul créateur des campagnes, rôles par campagne, notes MJ réservées aux MJ de la campagne, un personnage dans une seule campagne, XP réservé au MJ), testées dans un vrai PostgreSQL (PGlite) à chaque envoi. Fred doit créer le projet et coller le schéma (`supabase/README.md`).
+- **Lot A des comptes en ligne (28 novembre)** : base Supabase et règles de sécurité appliquées par la base (propriétaire seul créateur des campagnes, rôles par campagne, notes MJ réservées aux MJ de la campagne, un personnage dans une seule campagne, XP réservé au MJ), testées dans un vrai PostgreSQL (PGlite) à chaque envoi. Le projet Supabase de Fred est relié au dépôt : les migrations sont appliquées à chaque envoi sur `main`. Le propriétaire peut créer un personnage et l'attribuer à un joueur.
 - **Notes de Fred du 27 novembre au soir** :
   - le drapeau du groupe sur la carte du monde est celui du MJ, envoyé à tous les joueurs (le bouton « Placer le groupe » est masqué chez eux) ;
   - carte de bataille plus nette : l'aquarelle est peinte à la résolution affichée (zoom × écran, par paliers, dans une limite de taille), bords des lavis plus francs, grain proportionnel à la case, travail limité à la zone de chaque lavis (plus rapide) ;
